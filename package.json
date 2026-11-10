@@ -1,0 +1,74 @@
+{
+	"name": "tutora",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"imports": {
+		"#lib": "./src/lib/index.js",
+		"#lib/*": "./src/lib/*"
+	},
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "wrangler dev .svelte-kit/cloudflare/_worker.js --port 4173",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+		"lint": "prettier --check . && eslint .",
+		"format": "prettier --write .",
+		"test:unit": "vitest",
+		"test": "vitest --run",
+		"test:e2e": "playwright test",
+		"gen": "wrangler types",
+		"db:push": "drizzle-kit push",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:studio": "drizzle-kit studio",
+		"auth:schema": "auth generate --config scripts/auth-cli.ts --output src/lib/server/db/auth.schema.ts --yes"
+	},
+	"devDependencies": {
+		"@better-auth/utils": "0.5.1",
+		"@eslint/js": "^10.0.1",
+		"@inlang/paraglide-js": "^2.18.2",
+		"@inlang/plugin-message-format": "^4.6.0",
+		"@neondatabase/serverless": "^1.1.0",
+		"@playwright/test": "^1.60.0",
+		"@sveltejs/adapter-cloudflare": "^8.0.0",
+		"@sveltejs/kit": "^3.0.0",
+		"@sveltejs/vite-plugin-svelte": "^7.2.0",
+		"@types/node": "^22",
+		"@types/pg": "^8.23.1",
+		"auth": "^1.6.24",
+		"better-auth": "^1.6.24",
+		"drizzle-kit": "^0.31.10",
+		"drizzle-orm": "^0.45.2",
+		"eslint": "^10.4.1",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-svelte": "^3.19.0",
+		"globals": "^17.6.0",
+		"pg": "^8.23.1",
+		"prettier": "^3.8.3",
+		"prettier-plugin-svelte": "^4.1.0",
+		"svelte": "^5.57.2",
+		"svelte-check": "^4.6.0",
+		"typescript": "^6.0.3",
+		"typescript-eslint": "^8.60.1",
+		"vite": "^8.3.0",
+		"vitest": "^4.1.8",
+		"wrangler": "^4.97.0"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"esbuild",
+			"workerd"
+		]
+	},
+	"engines": {
+		"node": ">=22"
+	},
+	"packageManager": "pnpm@10.28.0",
+	"dependencies": {
+		"uqr": "^0.1.3",
+		"zod": "^4.6.7"
+	}
+}

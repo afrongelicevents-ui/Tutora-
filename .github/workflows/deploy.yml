@@ -1,0 +1,64 @@
+name: Deploy
+
+# Deploys to Cloudflare Workers when CI passes on main.
+# Needs repository secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, DATABASE_URL.
+# App secrets (BETTER_AUTH_SECRET, TUTOR_EMAIL, RESEND_API_KEY, ...) live in Cloudflare;
+# see docs/DEPLOY.md.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Only deploy code that was pushed to main in this repository (never a fork's pull request,
+    # even one whose branch is also called "main"). Manual runs only from main.
+    if: >-
+      ${{
+        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+        (github.event.workflow_run.conclusion == 'success' &&
+         github.event.workflow_run.event == 'push' &&
+         github.event.workflow_run.head_branch == 'main' &&
+         github.event.workflow_run.head_repository.full_name == github.repository)
+      }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Check secrets are set
+        env:
+          CF: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DB: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$CF" ] || [ -z "$DB" ]; then
+            echo "::error::Set CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and DATABASE_URL secrets first (docs/DEPLOY.md)."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply database migrations
+        run: pnpm db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - run: pnpm build
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

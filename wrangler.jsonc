@@ -1,0 +1,15 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "tutora",
+	"compatibility_date": "2026-11-10",
+	"compatibility_flags": ["nodejs_als"],
+	"main": ".svelte-kit/cloudflare/_worker.js",
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit/cloudflare"
+	},
+	// The free *.workers.dev address is the site's only address until tutora.co.zw is bought.
+	// Set this to false once the custom domain is live.
+	"workers_dev": true,
+	"preview_urls": false
+}

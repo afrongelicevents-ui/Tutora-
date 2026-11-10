@@ -1,0 +1,107 @@
+CREATE TABLE "account" (
+	"id" text PRIMARY KEY NOT NULL,
+	"account_id" text NOT NULL,
+	"provider_id" text NOT NULL,
+	"user_id" text NOT NULL,
+	"access_token" text,
+	"refresh_token" text,
+	"id_token" text,
+	"access_token_expires_at" timestamp,
+	"refresh_token_expires_at" timestamp,
+	"scope" text,
+	"password" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "rate_limit" (
+	"id" text PRIMARY KEY NOT NULL,
+	"key" text NOT NULL,
+	"count" integer NOT NULL,
+	"last_request" bigint NOT NULL,
+	CONSTRAINT "rate_limit_key_unique" UNIQUE("key")
+);
+--> statement-breakpoint
+CREATE TABLE "session" (
+	"id" text PRIMARY KEY NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"token" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp NOT NULL,
+	"ip_address" text,
+	"user_agent" text,
+	"user_id" text NOT NULL,
+	CONSTRAINT "session_token_unique" UNIQUE("token")
+);
+--> statement-breakpoint
+CREATE TABLE "two_factor" (
+	"id" text PRIMARY KEY NOT NULL,
+	"secret" text NOT NULL,
+	"backup_codes" text NOT NULL,
+	"user_id" text NOT NULL,
+	"verified" boolean DEFAULT true,
+	"failed_verification_count" integer DEFAULT 0,
+	"locked_until" timestamp
+);
+--> statement-breakpoint
+CREATE TABLE "user" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"email" text NOT NULL,
+	"email_verified" boolean DEFAULT false NOT NULL,
+	"image" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"two_factor_enabled" boolean DEFAULT false,
+	"role" text DEFAULT 'student',
+	CONSTRAINT "user_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "verification" (
+	"id" text PRIMARY KEY NOT NULL,
+	"identifier" text NOT NULL,
+	"value" text NOT NULL,
+	"expires_at" timestamp NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "action_limit" (
+	"key" text PRIMARY KEY NOT NULL,
+	"count" integer NOT NULL,
+	"reset_at" bigint NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "profile" (
+	"user_id" text PRIMARY KEY NOT NULL,
+	"phone" text,
+	"is_under_18" boolean DEFAULT false NOT NULL,
+	"parent_name" text,
+	"parent_phone" text,
+	"parent_email" text,
+	"level" text,
+	"consent_at" timestamp with time zone NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "profile_minor_needs_parent" CHECK (not "profile"."is_under_18" or ("profile"."parent_name" is not null and "profile"."parent_phone" is not null))
+);
+--> statement-breakpoint
+CREATE TABLE "site_settings" (
+	"id" integer PRIMARY KEY DEFAULT 1 NOT NULL,
+	"tutor_name" text DEFAULT 'Your tutor' NOT NULL,
+	"whatsapp_number" text DEFAULT '+263774231904' NOT NULL,
+	"currency" text DEFAULT 'USD' NOT NULL,
+	"show_prices" boolean DEFAULT false NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "site_settings_singleton" CHECK ("site_settings"."id" = 1)
+);
+--> statement-breakpoint
+ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "session" ADD CONSTRAINT "session_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "two_factor" ADD CONSTRAINT "two_factor_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "profile" ADD CONSTRAINT "profile_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "account_userId_idx" ON "account" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "session_userId_idx" ON "session" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "twoFactor_secret_idx" ON "two_factor" USING btree ("secret");--> statement-breakpoint
+CREATE INDEX "twoFactor_userId_idx" ON "two_factor" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "verification_identifier_idx" ON "verification" USING btree ("identifier");

@@ -1,6 +1,6 @@
 # Tutora — Plan (for approval)
 
-Status: **proposal only. No app code yet.** Approve or change the plan below, then Phase 1 starts.
+Status: **Hosting approved. Phase 1 (foundation) built**, waiting for the Cloudflare/Neon/Resend accounts before the first deploy (see `docs/DEPLOY.md`).
 
 Figma (brand board + 390px home mock): https://www.figma.com/design/DxxUgk80UR8qcOo21dYc0m
 Screenshots: `docs/design/brand-board.png`, `docs/design/home-mobile.png`
@@ -9,22 +9,23 @@ Screenshots: `docs/design/brand-board.png`, `docs/design/home-mobile.png`
 
 ## 1. Hosting and stack (cost ≈ $0/month)
 
-| Need | Choice | Free tier (check again at sign-up) | Why |
-|---|---|---|---|
-| Code | Private GitHub repo (this one) | Free | Already in use |
-| Web app + API | **Cloudflare Workers** (static assets + server code) | 100k requests/day | Commercial use allowed on the free plan, unlike Vercel Hobby. Has a data centre in Johannesburg, close to users. |
-| Database | **Neon Postgres** | 0.5 GB, scales to zero | Real Postgres without Supabase. Tutora's data is tiny (text rows). |
-| Files (payment proof, homework, chat files) | **Cloudflare R2**, private bucket, signed URLs | 10 GB, no download fees | Private by default, cheap |
-| Call signalling + lesson room state | **Cloudflare Durable Objects** (WebSockets) | Included in Workers free | One small "room" object per lesson |
-| Call relay (TURN) and group calls (SFU) | **Cloudflare Realtime** | About 1,000 GB/month free | Only needed when a direct connection fails, or for groups |
-| Email (verification, reminders, receipts) | **Resend** (fallback: Brevo) | 3,000 emails/month | Simple API. Sends from the domain once it is bought. |
-| Reminders | Cloudflare Cron Triggers | Free | Hourly job sends emails |
-| Domain | `tutora.co.zw` | About US$5–15/year from a .co.zw registrar | Kept configurable (`PUBLIC_SITE_URL`). Until it is bought, the site runs on a free `*.workers.dev` address. |
+| Need                                        | Choice                                               | Free tier (check again at sign-up)         | Why                                                                                                              |
+| ------------------------------------------- | ---------------------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Code                                        | Private GitHub repo (this one)                       | Free                                       | Already in use                                                                                                   |
+| Web app + API                               | **Cloudflare Workers** (static assets + server code) | 100k requests/day                          | Commercial use allowed on the free plan, unlike Vercel Hobby. Has a data centre in Johannesburg, close to users. |
+| Database                                    | **Neon Postgres**                                    | 0.5 GB, scales to zero                     | Real Postgres without Supabase. Tutora's data is tiny (text rows).                                               |
+| Files (payment proof, homework, chat files) | **Cloudflare R2**, private bucket, signed URLs       | 10 GB, no download fees                    | Private by default, cheap                                                                                        |
+| Call signalling + lesson room state         | **Cloudflare Durable Objects** (WebSockets)          | Included in Workers free                   | One small "room" object per lesson                                                                               |
+| Call relay (TURN) and group calls (SFU)     | **Cloudflare Realtime**                              | About 1,000 GB/month free                  | Only needed when a direct connection fails, or for groups                                                        |
+| Email (verification, reminders, receipts)   | **Resend** (fallback: Brevo)                         | 3,000 emails/month                         | Simple API. Sends from the domain once it is bought.                                                             |
+| Reminders                                   | Cloudflare Cron Triggers                             | Free                                       | Hourly job sends emails                                                                                          |
+| Domain                                      | `tutora.co.zw`                                       | About US$5–15/year from a .co.zw registrar | Kept configurable (`PUBLIC_SITE_URL`). Until it is bought, the site runs on a free `*.workers.dev` address.      |
 
 **Expected cost: $0/month plus the domain.** If Tutora ever goes over the free limits, Workers Paid costs $5/month.
 Main trade-off: Neon sleeps when idle, so the first request after a quiet period takes about 0.5–1 s longer. Public pages are cached at the edge, so visitors will not notice.
 
 ### App stack
+
 - **SvelteKit** with the Cloudflare adapter. It sends very little JavaScript, and public pages need almost none.
 - **Better Auth**: email + password, email verification, **TOTP 2FA for the tutor**, rate limits, secure cookies. Sessions are stored in Postgres.
 - **Drizzle ORM** + Neon serverless driver. **Zod** validates every input on the server.
@@ -34,6 +35,7 @@ Main trade-off: Neon sleeps when idle, so the first request after a quiet period
 - PWA: a manifest and a small service worker that caches the app shell and the public pages.
 
 ### Data budget
+
 - Homepage target: **under 100 KB** (the brief allows 300 KB). Text uses the phone's own font, so fonts cost 0 KB. The wordmark is an inline SVG of about 2 KB. The tutor photo is a 96 px AVIF/WebP of about 6 KB. CSS is about 10 KB. JS is about 5 KB, only for the menu.
 - Uploaded images are resized and re-encoded in the browser before upload (this also strips EXIF data and saves the student's data). The server checks them again and rejects anything that is not a clean image.
 
@@ -48,11 +50,11 @@ Main trade-off: Neon sleeps when idle, so the first request after a quiet period
 - Tutor "lets in" each student. Only students booked on that lesson can get a room token.
 - Connection indicator (good / weak / reconnecting) uses WebRTC stats, with automatic ICE restart and reconnect.
 
-| Mode | Approx. data per hour, per person |
-|---|---|
-| Audio + whiteboard (default) | **about 15–25 MB** |
-| + video at 360p (optional) | about 150–250 MB extra |
-| + screen share (optional) | about 50–150 MB, depending on what is shown |
+| Mode                         | Approx. data per hour, per person           |
+| ---------------------------- | ------------------------------------------- |
+| Audio + whiteboard (default) | **about 15–25 MB**                          |
+| + video at 360p (optional)   | about 150–250 MB extra                      |
+| + screen share (optional)    | about 50–150 MB, depending on what is shown |
 
 For comparison, a Zoom or Meet video call uses roughly 500 MB–1 GB per hour.
 
@@ -66,7 +68,7 @@ For comparison, a Zoom or Meet video call uses roughly 500 MB–1 GB per hour.
 
 ## 4. Phases
 
-1. **Foundation:** SvelteKit + Cloudflare project, Neon schema and migrations, Better Auth (roles: `tutor`, `student`, `parent`; tutor 2FA), design tokens, i18n setup, security headers (CSP, HSTS), CI on GitHub Actions (lint, typecheck, tests), and a deploy to Cloudflare from `main`.
+1. ✅ **Foundation (built):** SvelteKit + Cloudflare project, Neon schema and migrations, Better Auth (roles: `tutor`, `student`, `parent`; tutor 2FA), design tokens, i18n setup, security headers (CSP, HSTS), CI on GitHub Actions (lint, typecheck, tests), and a deploy to Cloudflare from `main`.
 2. **Public site:** home, about, subjects, results (with consent), reviews (verified students only, tutor can hide but not edit), price setting, WhatsApp button, privacy and terms pages.
 3. **Bookings + calendar:** weekly availability, booking requests, accept / decline / propose a new time, group size, cancellation window, day and week calendar, the tutor's own events, `.ics` files, and email + WhatsApp-link reminders.
 4. **Payments:** proof upload, cash, confirm / reject, numbered receipts as PDF, packages with a balance that counts down, owed / paid view per student, monthly totals, CSV export. Amounts are stored as integer cents. USD by default, ZiG optional.
@@ -78,13 +80,14 @@ Each phase ends with a deploy to a preview URL for you to check.
 
 ## 5. Decisions so far
 
-| Item | Decision |
-|---|---|
-| Wordmark | Option A (approved) |
-| Figma design direction | Approved |
-| WhatsApp number | **+263 77 423 1904** → link `https://wa.me/263774231904`. This becomes the default value of the WhatsApp setting, which the tutor can change in Settings. It is not hard-coded anywhere else. |
+| Item                   | Decision                                                                                                                                                                                      |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wordmark               | Option A (approved)                                                                                                                                                                           |
+| Figma design direction | Approved                                                                                                                                                                                      |
+| WhatsApp number        | **+263 77 423 1904** → link `https://wa.me/263774231904`. This becomes the default value of the WhatsApp setting, which the tutor can change in Settings. It is not hard-coded anywhere else. |
 
 ## 6. Still open
 
-- Approval of the hosting and stack (§1). Phase 1 is blocked on this.
+- Creating the Cloudflare, Neon and Resend accounts (docs/DEPLOY.md). The first deploy is blocked on this.
+- The tutor's email address for `TUTOR_EMAIL`.
 - Subjects and levels; one-to-one, groups, or both; phone or laptop; prices and whether to show them; domain purchase; payment account details; photo and bio.
