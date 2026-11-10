@@ -76,6 +76,15 @@ For comparison, a Zoom or Meet video call uses roughly 500 MB–1 GB per hour.
 
 Each phase ends with a deploy to a preview URL for you to check.
 
-## 5. Things I need you to decide or provide
+## 5. Decisions so far
 
-See the open questions at the end of the chat message (also listed in §12 of the brief).
+| Item | Decision |
+|---|---|
+| Wordmark | Option A (approved) |
+| Figma design direction | Approved |
+| WhatsApp number | **+263 77 423 1904** → link `https://wa.me/263774231904`. This becomes the default value of the WhatsApp setting, which the tutor can change in Settings. It is not hard-coded anywhere else. |
+
+## 6. Still open
+
+- Approval of the hosting and stack (§1). Phase 1 is blocked on this.
+- Subjects and levels; one-to-one, groups, or both; phone or laptop; prices and whether to show them; domain purchase; payment account details; photo and bio.
