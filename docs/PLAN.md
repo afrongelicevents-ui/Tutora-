@@ -59,11 +59,8 @@ For comparison, a Zoom or Meet video call uses roughly 500 MB–1 GB per hour.
 ## 3. Design (proposal, see Figma)
 
 - **Palette:** Msasa green `#0E6B52` (primary), Deep green `#0A4F3D`, Clay `#B4531A` (accent text), Ochre `#E3A33B` (decoration only, never as small text on white), Ink `#1C2620`, Slate `#5B665F`, Paper `#FBF8F2`, Mint `#E3F1EA`. Every text pairing used meets WCAG AA.
-- **Wordmark:** two options to choose from:
-  - **A**: lowercase serif `tutora` with an ochre "o" ("a rising sun").
-  - **B**: a "t" app icon next to a sans-serif `Tutora`.
-
-  Both share the "t" icon for the PWA and the favicon.
+- **Wordmark: Option A — APPROVED.** Lowercase serif `tutora` with an ochre "o" ("a rising sun"). The "t" icon from option B is kept for the PWA and the favicon.
+  - Files: `brand/wordmark.svg` (for light backgrounds), `brand/wordmark-on-dark.svg`, `brand/icon.svg`. Text is outlined, so no font is downloaded. About 2.7 KB gzipped.
 - Type: system fonts for all UI text. The wordmark is an SVG.
 - Buttons are 48 px tall with a 12 px radius. Icons are simple line SVGs, no emoji.
 
