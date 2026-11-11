@@ -21,7 +21,12 @@ export interface RoomAccess {
 /** Who may use this room: the tutor, and students booked on this lesson. */
 export async function roomAccess(
 	db: DB,
-	me: { id: string; role: string; twoFactorEnabled?: boolean | null },
+	me: {
+		id: string;
+		role: string;
+		twoFactorEnabled?: boolean | null;
+		tutorStatus?: 'pending' | 'active' | 'suspended' | null;
+	},
 	lessonId: number,
 	now = new Date()
 ): Promise<RoomAccess | null> {
@@ -31,7 +36,12 @@ export async function roomAccess(
 	const close = new Date(l.endsAt.getTime() + CLOSE_AFTER_MIN * 60_000);
 	if (now < open || now > close) return null;
 	// the tutor must have two-step verification on, like everywhere else
-	if (me.role === 'tutor') return me.twoFactorEnabled ? { lesson: l, role: 'tutor' } : null;
+	// only THIS lesson's tutor, with two-step verification on (like everywhere else)
+	// (a suspended tutor can no longer teach)
+	if (me.role === 'tutor')
+		return me.twoFactorEnabled && l.tutorId === me.id && me.tutorStatus !== 'suspended'
+			? { lesson: l, role: 'tutor' }
+			: null;
 	if (await isAttendee(db, me.id, lessonId)) return { lesson: l, role: 'student' };
 	return null;
 }

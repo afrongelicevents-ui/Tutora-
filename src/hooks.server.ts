@@ -1,5 +1,8 @@
 import { building, dev } from '$app/env';
-import { DATABASE_URL } from '$app/env/private';
+import { DATABASE_URL, TEST_SITE } from '$app/env/private';
+import { eq } from 'drizzle-orm';
+import { tutorProfile } from '#lib/server/db/app.schema.ts';
+import { user } from '#lib/server/db/auth.schema.ts';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { type Handle, sequence } from '@sveltejs/kit/hooks';
 import { makeAuth } from '#lib/server/auth.ts';
@@ -56,15 +59,42 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 			email: data.user.email,
 			emailVerified: data.user.emailVerified,
 			role,
-			twoFactorEnabled: !!data.user.twoFactorEnabled
+			// the test site skips the authenticator step so shared test logins work
+			twoFactorEnabled: !!data.user.twoFactorEnabled || TEST_SITE === '1',
+			tutorStatus: null
 		};
+		if (role === 'tutor') {
+			const [p] = await event.locals.db
+				.select({ status: tutorProfile.status })
+				.from(tutorProfile)
+				.where(eq(tutorProfile.tutorId, data.user.id));
+			event.locals.user.tutorStatus = p?.status ?? null;
+		}
+		{
+			const [p] = await event.locals.db
+				.select({ must: user.mustChangePassword })
+				.from(user)
+				.where(eq(user.id, data.user.id));
+			// after a temporary password made by someone else: choose your own before anything else
+			const path = event.url.pathname;
+			if (p?.must && path !== '/account/password' && path !== '/logout') {
+				if (event.isDataRequest) return new Response('Forbidden', { status: 403 });
+				return new Response(null, { status: 303, headers: { location: '/account/password' } });
+			}
+		}
 	}
-	// Outer wall for /tutor and /student (also covers page-data requests).
+	// Outer wall for /owner, /tutor and /student (also covers page-data requests).
 	const gate = areaAccess(event.url.pathname, event.url.search, event.locals.user);
 	if (!gate.ok) {
-		return gate.status === 303
-			? new Response(null, { status: 303, headers: { location: gate.location } })
-			: new Response('You do not have access to this page.', { status: 403 });
+		if (gate.status === 303)
+			return new Response(null, { status: 303, headers: { location: gate.location } });
+		// page-data requests get a bare 403; people get a friendly page
+		if (event.isDataRequest || event.url.pathname.endsWith('/__data.json'))
+			return new Response('Forbidden', { status: 403 });
+		return new Response(null, {
+			status: 303,
+			headers: { location: `/no-access?for=${gate.area}` }
+		});
 	}
 	return svelteKitHandler({ event, resolve, auth, building });
 };

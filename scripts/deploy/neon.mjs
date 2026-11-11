@@ -1,12 +1,15 @@
 // Finds (or creates) the Neon database for Tutora and hands its address to the next steps,
 // without ever printing it. Optionally resets the database password first (for a leaked one).
-// Env: NEON_API_KEY (required), RESET_PASSWORD=true|false, NEON_PROJECT (optional id or name).
+// Env: NEON_API_KEY (required), RESET_PASSWORD=true|false, NEON_PROJECT (optional id or name),
+// BRANCH (optional): a named database branch, e.g. "test" for the test site. It is created on
+// first use (empty when Neon allows it) and gets its own password, separate from the live one.
 import { appendFileSync } from 'node:fs';
 
 const API = process.env.NEON_API_BASE ?? 'https://console.neon.tech/api/v2';
 const KEY = process.env.NEON_API_KEY?.trim();
 const RESET = process.env.RESET_PASSWORD === 'true';
 const WANT = process.env.NEON_PROJECT?.trim();
+const BRANCH = process.env.BRANCH?.trim();
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const mask = (v) => console.log(`::add-mask::${v}`);
 
@@ -104,7 +107,38 @@ async function main() {
 	console.log(`Using Neon project "${project.name}".`);
 
 	const { branches } = await neon(`/projects/${project.id}/branches`);
-	const branch = branches.find((b) => b.default) ?? branches.find((b) => b.primary) ?? branches[0];
+	const main = branches.find((b) => b.default) ?? branches.find((b) => b.primary) ?? branches[0];
+	let branch = main;
+	let fresh = false;
+	if (BRANCH) {
+		branch = branches.find((b) => b.name === BRANCH);
+		if (!branch) {
+			console.log(`Creating the separate "${BRANCH}" database branch.`);
+			const body = (extra) =>
+				JSON.stringify({
+					branch: { name: BRANCH, parent_id: main.id, ...extra },
+					endpoints: [{ type: 'read_write' }]
+				});
+			let created;
+			try {
+				// schema only: none of the live data is copied
+				created = await neon(`/projects/${project.id}/branches`, {
+					method: 'POST',
+					body: body({ init_source: 'schema-only' })
+				});
+			} catch {
+				// not available on every plan: a full copy. The deploy job then wipes it and loads
+				// the fake data BEFORE the test website goes live (TEST_BRANCH_NEW below).
+				created = await neon(`/projects/${project.id}/branches`, {
+					method: 'POST',
+					body: body({})
+				});
+			}
+			branch = created.branch;
+			await waitFor(project.id, created.operations);
+			fresh = true;
+		}
+	}
 	const { roles } = await neon(`/projects/${project.id}/branches/${branch.id}/roles`);
 	const { databases } = await neon(`/projects/${project.id}/branches/${branch.id}/databases`);
 	const db = databases.find((d) => d.name === 'neondb') ?? databases[0];
@@ -112,14 +146,19 @@ async function main() {
 		roles.find((r) => r.name === db?.owner_name) ?? roles.find((r) => !r.protected) ?? roles[0];
 	if (!db || !role) throw new Error('The Neon project has no database or role');
 
-	if (RESET) {
+	// a new test branch gets its own password, so the live password never works there
+	if (RESET || fresh) {
 		const r = await neon(
 			`/projects/${project.id}/branches/${branch.id}/roles/${encodeURIComponent(role.name)}/reset_password`,
 			{ method: 'POST' }
 		);
 		if (r.role?.password) mask(r.role.password);
 		await waitFor(project.id, r.operations);
-		console.log('Database password reset: the old one no longer works.');
+		console.log(
+			fresh
+				? 'The new branch got its own password.'
+				: 'Database password reset: the old one no longer works.'
+		);
 	}
 
 	const q = new URLSearchParams({
@@ -134,8 +173,10 @@ async function main() {
 	u.searchParams.delete('channel_binding');
 	if (!u.searchParams.has('sslmode')) u.searchParams.set('sslmode', 'require');
 	mask(u.toString());
-	if (process.env.GITHUB_ENV) appendFileSync(process.env.GITHUB_ENV, `DATABASE_URL=${u}\n`);
-	else console.log('(not in GitHub Actions: address not written anywhere)');
+	if (process.env.GITHUB_ENV) {
+		appendFileSync(process.env.GITHUB_ENV, `DATABASE_URL=${u}\n`);
+		if (fresh) appendFileSync(process.env.GITHUB_ENV, 'TEST_BRANCH_NEW=true\n');
+	} else console.log('(not in GitHub Actions: address not written anywhere)');
 	console.log('Database address ready (hidden).');
 }
 

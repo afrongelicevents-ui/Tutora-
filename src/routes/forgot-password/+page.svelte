@@ -1,7 +1,6 @@
 <script lang="ts">
 	import Field from '#lib/components/Field.svelte';
 	import { m, t } from '#lib/i18n.ts';
-	import { waLink } from '#lib/whatsapp.ts';
 	let { form, data } = $props();
 	const e = $derived((form && 'errors' in form ? form.errors : {}) as Record<string, string>);
 	const v = $derived((form && 'values' in form ? form.values : {}) as Record<string, string>);
@@ -13,9 +12,6 @@
 	<h1>{m.forgot_title()}</h1>
 	{#if !data.emailOn}
 		<p class="notice" role="status">{m.forgot_ask_tutor()}</p>
-		{#if data.whatsapp}
-			<a class="btn btn-block" href={waLink(data.whatsapp)}>{m.forgot_ask_tutor_wa()}</a>
-		{/if}
 	{:else if form && 'sent' in form}
 		<p class="notice" role="status">{m.forgot_sent()}</p>
 	{:else}

@@ -5,8 +5,9 @@ import { receiptPdf } from '#lib/server/pdf.ts';
 import { requireTutor } from '#lib/server/guards.ts';
 
 export const GET: RequestHandler = async ({ locals, url, params }) => {
-	requireTutor(locals.user, url);
-	const r = await receiptData(locals.db, Number(params.id) || 0);
+	const t = requireTutor(locals.user, url).id;
+	// only receipts of payments made to THIS tutor
+	const r = await receiptData(locals.db, Number(params.id) || 0, t);
 	if (!r) error(404, 'Not found');
 	const pdf = await receiptPdf(r);
 	return new Response(pdf as BodyInit, {

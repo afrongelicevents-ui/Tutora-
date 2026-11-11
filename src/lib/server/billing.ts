@@ -5,11 +5,12 @@ import {
 	lessonPackage,
 	payment,
 	paymentAllocation,
-	receiptSeq,
-	studentPackage
+	studentPackage,
+	tutorProfile
 } from './db/app.schema.ts';
 import { user } from './db/auth.schema.ts';
 import { getSettings } from './settings.ts';
+import { enroll, isEnrolled } from './people.ts';
 
 export type PaymentMethod = (typeof payment.$inferSelect)['method'];
 
@@ -20,16 +21,27 @@ export class BillingFail extends Error {
 }
 
 /** Student buys a package: credits are available straight away, the price is owed. */
-export async function buyPackage(db: DB, userId: string, packageId: number) {
+export async function buyPackage(db: DB, tutorId: string, userId: string, packageId: number) {
 	return db.transaction(async (tx) => {
 		const [p] = await tx
 			.select()
 			.from(lessonPackage)
-			.where(and(eq(lessonPackage.id, packageId), eq(lessonPackage.active, true)));
+			.innerJoin(tutorProfile, eq(tutorProfile.tutorId, lessonPackage.tutorId))
+			.where(
+				and(
+					eq(lessonPackage.id, packageId),
+					eq(lessonPackage.tutorId, tutorId),
+					eq(lessonPackage.active, true),
+					eq(tutorProfile.status, 'active')
+				)
+			)
+			.then((rows) => rows.map((r) => r.lesson_package));
 		if (!p) throw new BillingFail('err_package');
+		await enroll(tx, tutorId, userId);
 		const [sp] = await tx
 			.insert(studentPackage)
 			.values({
+				tutorId,
 				userId,
 				packageId: p.id,
 				name: p.name,
@@ -39,6 +51,7 @@ export async function buyPackage(db: DB, userId: string, packageId: number) {
 			.returning();
 		if (p.priceCents > 0) {
 			await tx.insert(charge).values({
+				tutorId,
 				userId,
 				kind: 'package',
 				studentPackageId: sp.id,
@@ -58,12 +71,23 @@ export interface NewPayment {
 	proofKey: string | null;
 }
 
-/** Student records a payment (into the account with proof, or cash). Waits for the tutor. */
-export async function submitPayment(db: DB, userId: string, p: NewPayment) {
-	const s = await getSettings(db);
+/**
+ * Student records a payment to one of their tutors (with proof, or cash). Waits for that tutor.
+ * Only possible for a tutor the student is enrolled with.
+ */
+export async function submitPayment(db: DB, tutorId: string, userId: string, p: NewPayment) {
+	if (!(await isEnrolled(db, tutorId, userId))) throw new BillingFail('err_not_found');
+	const s = await getSettings(db, tutorId);
 	const [row] = await db
 		.insert(payment)
-		.values({ userId, ...p, currency: s.currency, recordedBy: 'student', status: 'pending' })
+		.values({
+			tutorId,
+			userId,
+			...p,
+			currency: s.currency,
+			recordedBy: 'student',
+			status: 'pending'
+		})
 		.returning();
 	return row;
 }
@@ -72,15 +96,26 @@ export async function submitPayment(db: DB, userId: string, p: NewPayment) {
  * Tutor confirms: gives the next receipt number (never reused) and puts the money towards
  * the oldest unpaid lessons/packages first.
  */
-export async function confirmPayment(db: DB, paymentId: number, now = new Date()) {
+export async function confirmPayment(db: DB, tutorId: string, paymentId: number, now = new Date()) {
 	return db.transaction(async (tx) => {
-		const [p] = await tx.select().from(payment).where(eq(payment.id, paymentId)).for('update');
+		const [p] = await tx
+			.select()
+			.from(payment)
+			.where(and(eq(payment.id, paymentId), eq(payment.tutorId, tutorId)))
+			.for('update');
 		if (!p) throw new BillingFail('err_not_found');
 		if (p.status !== 'pending') throw new BillingFail('err_state');
-		const seq = (await tx.execute(
-			sql.raw(`select nextval('${receiptSeq.seqName}')::int as n`)
-		)) as unknown as { rows: { n: number }[] };
-		const n = Number(seq.rows[0].n);
+		// next receipt number of THIS tutor; the lock on their profile row makes two
+		// confirmations at the same moment take turns
+		await tx
+			.select({ id: tutorProfile.tutorId })
+			.from(tutorProfile)
+			.where(eq(tutorProfile.tutorId, tutorId))
+			.for('update');
+		const [{ n }] = await tx
+			.select({ n: sql<number>`coalesce(max(${payment.receiptNo}), 0)::int + 1` })
+			.from(payment)
+			.where(eq(payment.tutorId, tutorId));
 		await tx
 			.update(payment)
 			.set({ status: 'confirmed', receiptNo: n, decidedAt: now })
@@ -91,10 +126,10 @@ export async function confirmPayment(db: DB, paymentId: number, now = new Date()
 		await tx
 			.select({ id: charge.id })
 			.from(charge)
-			.where(eq(charge.userId, p.userId))
+			.where(and(eq(charge.tutorId, tutorId), eq(charge.userId, p.userId)))
 			.orderBy(asc(charge.id))
 			.for('update');
-		const open = await unpaidCharges(tx, p.userId);
+		const open = await unpaidCharges(tx, tutorId, p.userId);
 		let left = p.amountCents;
 		for (const c of open) {
 			if (left <= 0) break;
@@ -110,11 +145,15 @@ export async function confirmPayment(db: DB, paymentId: number, now = new Date()
 
 export async function rejectPayment(
 	db: DB,
+	tutorId: string,
 	paymentId: number,
 	reason: string | null,
 	now = new Date()
 ) {
-	const [p] = await db.select().from(payment).where(eq(payment.id, paymentId));
+	const [p] = await db
+		.select()
+		.from(payment)
+		.where(and(eq(payment.id, paymentId), eq(payment.tutorId, tutorId)));
 	if (!p) throw new BillingFail('err_not_found');
 	if (p.status !== 'pending') throw new BillingFail('err_state');
 	// only a payment that is still waiting can be rejected (never a confirmed one)
@@ -130,15 +169,18 @@ export async function rejectPayment(
 /** Tutor records cash they received: confirmed straight away, with a receipt. */
 export async function recordCash(
 	db: DB,
+	tutorId: string,
 	userId: string,
 	amountCents: number,
 	paidOn: string,
 	now = new Date()
 ) {
-	const s = await getSettings(db);
+	if (!(await isEnrolled(db, tutorId, userId))) throw new BillingFail('err_not_found');
+	const s = await getSettings(db, tutorId);
 	const [row] = await db
 		.insert(payment)
 		.values({
+			tutorId,
 			userId,
 			amountCents,
 			method: 'cash',
@@ -149,11 +191,11 @@ export async function recordCash(
 			recordedBy: 'tutor'
 		})
 		.returning();
-	return confirmPayment(db, row.id, now);
+	return confirmPayment(db, tutorId, row.id, now);
 }
 
 /** Charges with money still due, oldest first. */
-export async function unpaidCharges(db: DB, userId: string) {
+export async function unpaidCharges(db: DB, tutorId: string, userId: string) {
 	// a plain join: amounts already put towards each charge
 	const rows = await db
 		.select({
@@ -164,7 +206,7 @@ export async function unpaidCharges(db: DB, userId: string) {
 		})
 		.from(charge)
 		.leftJoin(paymentAllocation, eq(paymentAllocation.chargeId, charge.id))
-		.where(and(eq(charge.userId, userId), eq(charge.voided, false)))
+		.where(and(eq(charge.tutorId, tutorId), eq(charge.userId, userId), eq(charge.voided, false)))
 		.groupBy(charge.id)
 		.orderBy(asc(charge.createdAt), asc(charge.id));
 	return rows.map((r) => ({ ...r, due: r.amountCents - r.paid })).filter((r) => r.due > 0);
@@ -180,16 +222,26 @@ export interface Balance {
 	credit: number;
 }
 
-export async function balanceFor(db: DB, userId: string): Promise<Balance> {
-	const all = await balances(db, [userId]);
+export async function balanceFor(db: DB, tutorId: string, userId: string): Promise<Balance> {
+	const all = await balances(db, tutorId, [userId]);
 	return all.get(userId) ?? { charged: 0, paid: 0, waiting: 0, owed: 0, credit: 0 };
 }
 
-export async function balances(db: DB, userIds?: string[]): Promise<Map<string, Balance>> {
-	const whereC = userIds
-		? and(eq(charge.voided, false), inArray(charge.userId, userIds))
-		: eq(charge.voided, false);
-	const whereP = userIds ? inArray(payment.userId, userIds) : undefined;
+/** Money per student with ONE tutor (charges and payments of other tutors never mix in). */
+export async function balances(
+	db: DB,
+	tutorId: string,
+	userIds?: string[]
+): Promise<Map<string, Balance>> {
+	const whereC = and(
+		eq(charge.tutorId, tutorId),
+		eq(charge.voided, false),
+		userIds ? inArray(charge.userId, userIds) : undefined
+	);
+	const whereP = and(
+		eq(payment.tutorId, tutorId),
+		userIds ? inArray(payment.userId, userIds) : undefined
+	);
 	const [cs, ps] = await Promise.all([
 		db
 			.select({ userId: charge.userId, total: sql<number>`sum(${charge.amountCents})::int` })
@@ -220,6 +272,7 @@ export async function balances(db: DB, userIds?: string[]): Promise<Map<string, 
 
 const paymentFields = {
 	id: payment.id,
+	tutorId: payment.tutorId,
 	userId: payment.userId,
 	studentName: user.name,
 	amountCents: payment.amountCents,
@@ -236,48 +289,68 @@ const paymentFields = {
 	decidedAt: payment.decidedAt
 };
 
-export const paymentsForUser = (db: DB, userId: string) =>
+/** A student's payments; with tutorId, only those to that tutor. */
+export const paymentsForUser = (db: DB, userId: string, tutorId?: string) =>
 	db
-		.select(paymentFields)
+		.select({ ...paymentFields, tutorName: tutorProfile.tutorName })
 		.from(payment)
 		.innerJoin(user, eq(user.id, payment.userId))
-		.where(eq(payment.userId, userId))
+		.leftJoin(tutorProfile, eq(tutorProfile.tutorId, payment.tutorId))
+		.where(and(eq(payment.userId, userId), tutorId ? eq(payment.tutorId, tutorId) : undefined))
 		.orderBy(desc(payment.createdAt));
 
-export const pendingPayments = (db: DB) =>
+export const pendingPayments = (db: DB, tutorId: string) =>
 	db
 		.select(paymentFields)
 		.from(payment)
 		.innerJoin(user, eq(user.id, payment.userId))
-		.where(eq(payment.status, 'pending'))
+		.where(and(eq(payment.tutorId, tutorId), eq(payment.status, 'pending')))
 		.orderBy(asc(payment.createdAt));
 
-export const recentPayments = (db: DB, limit = 50) =>
+export const recentPayments = (db: DB, tutorId: string, limit = 50) =>
 	db
 		.select(paymentFields)
 		.from(payment)
 		.innerJoin(user, eq(user.id, payment.userId))
+		.where(eq(payment.tutorId, tutorId))
 		.orderBy(desc(payment.createdAt))
 		.limit(limit);
 
-export async function getPayment(db: DB, id: number) {
+/** One payment; with tutorId, only if it was made to that tutor. */
+export async function getPayment(db: DB, id: number, tutorId?: string) {
 	const [p] = await db
 		.select(paymentFields)
 		.from(payment)
 		.innerJoin(user, eq(user.id, payment.userId))
-		.where(eq(payment.id, id));
+		.where(and(eq(payment.id, id), tutorId ? eq(payment.tutorId, tutorId) : undefined));
 	return p ?? null;
 }
 
-export const packagesForUser = (db: DB, userId: string) =>
+/** A student's packages; with tutorId, only that tutor's. */
+export const packagesForUser = (db: DB, userId: string, tutorId?: string) =>
 	db
-		.select()
+		.select({
+			id: studentPackage.id,
+			tutorId: studentPackage.tutorId,
+			name: studentPackage.name,
+			lessonsTotal: studentPackage.lessonsTotal,
+			lessonsUsed: studentPackage.lessonsUsed,
+			priceCents: studentPackage.priceCents,
+			createdAt: studentPackage.createdAt,
+			tutorName: tutorProfile.tutorName
+		})
 		.from(studentPackage)
-		.where(eq(studentPackage.userId, userId))
+		.leftJoin(tutorProfile, eq(tutorProfile.tutorId, studentPackage.tutorId))
+		.where(
+			and(
+				eq(studentPackage.userId, userId),
+				tutorId ? eq(studentPackage.tutorId, tutorId) : undefined
+			)
+		)
 		.orderBy(desc(studentPackage.createdAt));
 
 /** Confirmed money per month (by the date the tutor confirmed). */
-export async function monthlyTotals(db: DB, from: Date) {
+export async function monthlyTotals(db: DB, tutorId: string, from: Date) {
 	return db
 		.select({
 			month: sql<string>`to_char(${payment.decidedAt} at time zone 'Africa/Harare', 'YYYY-MM')`,
@@ -286,7 +359,13 @@ export async function monthlyTotals(db: DB, from: Date) {
 			count: sql<number>`count(*)::int`
 		})
 		.from(payment)
-		.where(and(eq(payment.status, 'confirmed'), gte(payment.decidedAt, from)))
+		.where(
+			and(
+				eq(payment.tutorId, tutorId),
+				eq(payment.status, 'confirmed'),
+				gte(payment.decidedAt, from)
+			)
+		)
 		.groupBy(sql`1`, payment.currency)
 		.orderBy(sql`1 desc`);
 }
@@ -308,11 +387,16 @@ export interface ReceiptData {
 	tutorEmail: string | null;
 }
 
-export async function receiptData(db: DB, paymentId: number): Promise<ReceiptData | null> {
-	const p = await getPayment(db, paymentId);
+/** Receipt contents; with tutorId, only for a payment made to that tutor. */
+export async function receiptData(
+	db: DB,
+	paymentId: number,
+	tutorId?: string
+): Promise<ReceiptData | null> {
+	const p = await getPayment(db, paymentId, tutorId);
 	if (!p || p.status !== 'confirmed' || !p.receiptNo) return null;
 	const [s, covers] = await Promise.all([
-		getSettings(db),
+		getSettings(db, p.tutorId),
 		db
 			.select({ description: charge.description, amountCents: paymentAllocation.amountCents })
 			.from(paymentAllocation)
@@ -345,11 +429,13 @@ export function toCsv(rows: (string | number | null)[][]): string {
 	return rows.map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n';
 }
 
-export async function paymentsBetween(db: DB, from: Date, to: Date) {
+export async function paymentsBetween(db: DB, tutorId: string, from: Date, to: Date) {
 	return db
 		.select(paymentFields)
 		.from(payment)
 		.innerJoin(user, eq(user.id, payment.userId))
-		.where(and(gte(payment.createdAt, from), lt(payment.createdAt, to)))
+		.where(
+			and(eq(payment.tutorId, tutorId), gte(payment.createdAt, from), lt(payment.createdAt, to))
+		)
 		.orderBy(asc(payment.createdAt));
 }

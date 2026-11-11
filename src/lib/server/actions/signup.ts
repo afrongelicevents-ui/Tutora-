@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { APIError } from 'better-auth/api';
-import { USE_TUTOR_SETUP, type Auth } from '../auth-config.ts';
+import type { Auth } from '../auth-config.ts';
 import type { DB } from '../db/types.ts';
 import { profile, user } from '../db/schema.ts';
 import { signupSchema, fieldErrors } from '../../validation/auth.ts';
@@ -14,17 +14,13 @@ export type SignupResult =
  * stores the profile. Kept separate from the route so it can be tested against a real database.
  */
 export async function signUp(
-	deps: { auth: Auth; db: DB; tutorEmail?: string },
+	deps: { auth: Auth; db: DB },
 	input: Record<string, string>,
 	callbackURL = '/account'
 ): Promise<SignupResult> {
 	const parsed = signupSchema.safeParse(input);
 	if (!parsed.success) return { ok: false, errors: fieldErrors(parsed.error) };
 	const v = parsed.data;
-	// The tutor account is created only through /setup (proves control of the inbox).
-	if (deps.tutorEmail && v.email === deps.tutorEmail.trim().toLowerCase()) {
-		return { ok: false, errors: { email: 'err_use_tutor_setup' } };
-	}
 
 	let userId: string;
 	try {
@@ -35,7 +31,6 @@ export async function signUp(
 	} catch (e) {
 		if (e instanceof APIError) {
 			const code = String((e.body as { code?: string } | undefined)?.code ?? '');
-			if (code === USE_TUTOR_SETUP) return { ok: false, errors: { email: 'err_use_tutor_setup' } };
 			// (only reached if enumeration protection is off)
 			if (code.includes('EXISTS')) return { ok: false, errors: { email: 'err_email_taken' } };
 			if (code.includes('PASSWORD'))
@@ -50,8 +45,8 @@ export async function signUp(
 	const [created] = await deps.db.select({ role: user.role }).from(user).where(eq(user.id, userId));
 	if (!created) return { ok: true, email: v.email };
 
-	// Accounts made here are never the tutor (see /setup); only student or parent.
-	if (created.role !== 'tutor') {
+	// Accounts made here are only ever student or parent (tutors join through /join).
+	if (created.role === 'student') {
 		await deps.db.update(user).set({ role: v.accountType }).where(eq(user.id, userId));
 	}
 

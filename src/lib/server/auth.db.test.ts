@@ -5,7 +5,8 @@ import { base32 } from '@better-auth/utils/base32';
 import { cookieHeader, freshDb, hasTestDb, linkIn, testAuth, TUTOR_EMAIL } from './testing/db.ts';
 import { signUp } from './actions/signup.ts';
 import { logIn } from './actions/login.ts';
-import { requestTutorSetup, tutorIsSetUp } from './actions/setup.ts';
+import { signUpTutor } from './actions/setup.ts';
+import { tutorProfile } from './db/app.schema.ts';
 import { profile, user } from './db/schema.ts';
 import type { DB } from './db/types.ts';
 
@@ -40,7 +41,7 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 
 	it('creates a student, emails a verification link and stores consent', async () => {
 		const r = await signUp(
-			{ auth, db, tutorEmail: TUTOR_EMAIL },
+			{ auth, db },
 			{ ...base, name: 'Rudo', email: 'rudo@example.com', accountType: 'student' }
 		);
 		expect(r).toMatchObject({ ok: true, email: 'rudo@example.com' });
@@ -52,7 +53,7 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 
 	it('creates a parent account', async () => {
 		await signUp(
-			{ auth, db, tutorEmail: TUTOR_EMAIL },
+			{ auth, db },
 			{
 				...base,
 				name: 'Mai Rudo',
@@ -66,7 +67,7 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 
 	it('stores the parent contact for an under-18 student, and the database enforces it', async () => {
 		const r = await signUp(
-			{ auth, db, tutorEmail: TUTOR_EMAIL },
+			{ auth, db },
 			{
 				...base,
 				name: 'Kid',
@@ -93,24 +94,7 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 		).rejects.toThrow();
 	});
 
-	it('the tutor email cannot be used on the public sign-up form', async () => {
-		const r = await signUp(
-			{ auth, db, tutorEmail: TUTOR_EMAIL },
-			{
-				...base,
-				name: 'Impostor',
-				email: TUTOR_EMAIL.toUpperCase(),
-				accountType: 'parent',
-				childName: 'Kid'
-			}
-		);
-		expect(r).toEqual({ ok: false, errors: { email: 'err_use_tutor_setup' } });
-		expect(await roleOf(TUTOR_EMAIL)).toBeUndefined();
-		// the auth library refuses it too (backstop), whatever it answers
-		await auth.api
-			.signUpEmail({ body: { name: 'x', email: TUTOR_EMAIL, password: PASSWORD } })
-			.catch(() => {});
-		expect(await roleOf(TUTOR_EMAIL)).toBeUndefined();
+	it('nobody can make themselves a tutor or owner through sign-up', async () => {
 		// and the role field is not accepted from anyone calling the auth API
 		await auth.api
 			.signUpEmail({
@@ -125,34 +109,36 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 		expect(await roleOf('sneaky@example.com')).not.toBe('tutor');
 	});
 
-	it('tutor set-up only works through a link sent to the tutor inbox', async () => {
-		const sent = outbox.length;
-		expect(
-			await requestTutorSetup({ auth, db, tutorEmail: TUTOR_EMAIL }, 'someone@example.com')
-		).toEqual({ ok: true });
-		expect(outbox.length).toBe(sent);
-
-		await requestTutorSetup(
-			{ auth, db, tutorEmail: TUTOR_EMAIL },
-			` ${TUTOR_EMAIL.toUpperCase()} `
+	it("a tutor who joins can log in but waits for the owner's approval", async () => {
+		const bad = await signUpTutor(
+			{ auth, db },
+			{ name: 'T', email: 'x', password: 'short', confirm: 'other' }
 		);
+		expect(bad.ok).toBe(false);
+		const r = await signUpTutor(
+			{ auth, db },
+			{ name: 'Mr T. Moyo', email: TUTOR_EMAIL, password: PASSWORD, confirm: PASSWORD, terms: 'on' }
+		);
+		expect(r.ok).toBe(true);
 		expect(await roleOf(TUTOR_EMAIL)).toBe('tutor');
-		expect(await tutorIsSetUp(db)).toBe(false);
-		const mail = outbox.at(-1)!;
-		expect(mail.to).toBe(TUTOR_EMAIL);
-		const token = linkIn(mail).pathname.split('/').at(-1)!;
-		await auth.api.resetPassword({ body: { token, newPassword: PASSWORD } });
-		expect(await tutorIsSetUp(db)).toBe(true);
-
-		// once set up, asking again sends nothing
-		const after = outbox.length;
-		await requestTutorSetup({ auth, db, tutorEmail: TUTOR_EMAIL }, TUTOR_EMAIL);
-		expect(outbox.length).toBe(after);
+		const [p] = await db
+			.select()
+			.from(tutorProfile)
+			.where(eq(tutorProfile.tutorId, r.ok ? r.userId : ''));
+		expect(p).toMatchObject({ status: 'pending', slug: 'mr-t-moyo', tutorName: 'Mr T. Moyo' });
+		// the email is not confirmed yet; a confirmation link was sent
+		await verify(TUTOR_EMAIL);
+		// the same email cannot join twice
+		const again = await signUpTutor(
+			{ auth, db },
+			{ name: 'Copy', email: TUTOR_EMAIL, password: PASSWORD, confirm: PASSWORD, terms: 'on' }
+		);
+		expect(again).toEqual({ ok: false, errors: { email: 'err_email_taken' } });
 	});
 
 	it('the real owner can take back an email a stranger signed up with', async () => {
 		await signUp(
-			{ auth, db, tutorEmail: TUTOR_EMAIL },
+			{ auth, db },
 			{
 				...base,
 				name: 'Stranger',
@@ -164,7 +150,7 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 		);
 		// owner tries to sign up: nothing changes, but they get a heads-up email
 		await signUp(
-			{ auth, db, tutorEmail: TUTOR_EMAIL },
+			{ auth, db },
 			{ ...base, name: 'Owner', email: 'owner@example.com', accountType: 'student' }
 		);
 		expect(outbox.at(-1)).toMatchObject({
@@ -210,7 +196,7 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 	it('signing up again with a taken email reveals nothing and changes nothing', async () => {
 		const before = await db.select().from(user);
 		const r = await signUp(
-			{ auth, db, tutorEmail: TUTOR_EMAIL },
+			{ auth, db },
 			{
 				...base,
 				name: 'Attacker',

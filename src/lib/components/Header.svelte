@@ -25,19 +25,24 @@
 			<nav>
 				<a href="/">{m.nav_home()}</a>
 				{#if user}
-					{#if user.role === 'tutor'}
+					{#if user.role === 'owner'}
+						<a href="/owner">{m.nav_owner()}</a>
+					{:else if user.role === 'tutor'}
+						<a href="/tutor">{m.nav_tutor()}</a>
 						<a href="/tutor/calendar">{m.tnav_calendar()}</a>
 						<a href="/tutor/settings">{m.settings_title()}</a>
-						<a href="/tutor">{m.nav_tutor()}</a>
 					{:else}
 						<a href="/student">{m.nav_dashboard()}</a>
+						<a href="/student/payments">{m.payments_title()}</a>
+						<a href="/student/homework">{m.homework_h()}</a>
 					{/if}
 					<a href="/account">{m.nav_account()}</a>
 					<form method="POST" action="/logout">
 						<button class="btn-link" type="submit">{m.nav_logout()}</button>
 					</form>
 				{:else}
-					<a href="/about">{m.about_h()}</a>
+					<a href="/#find">{m.find_a_tutor()}</a>
+					<a href="/join">{m.nav_join()}</a>
 					<a href="/login">{m.nav_login()}</a>
 					<a href="/signup">{m.nav_signup()}</a>
 				{/if}

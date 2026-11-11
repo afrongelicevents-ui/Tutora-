@@ -12,12 +12,12 @@ function stepOf(param: string) {
 }
 
 export const load: PageServerLoad = async ({ locals, params, url }) => {
-	requireTutor(locals.user, url);
+	const t = requireTutor(locals.user, url).id;
 	const step = stepOf(params.step);
 	const section = step >= 1 && step <= WIZARD.length ? WIZARD[step - 1] : null;
 	const data = section
-		? await loadSection(locals.db, section)
-		: { settings: await getSettings(locals.db) };
+		? await loadSection(locals.db, t, section)
+		: { settings: await getSettings(locals.db, t) };
 	return { step, total: WIZARD.length, section, ...data, email: locals.user!.email };
 };
 
@@ -30,19 +30,19 @@ export const actions: Actions = {
 	}),
 	/** "Finish later": stop showing the wizard; remember where they were. */
 	later: async ({ locals, url, params }) => {
-		requireTutor(locals.user, url);
+		const t = requireTutor(locals.user, url).id;
 		const step = Number(params.step);
-		await updateSettings(locals.db, {
+		await updateSettings(locals.db, t, {
 			setupDoneAt: new Date(),
 			setupStep: Number.isInteger(step) ? step : 0
 		});
 		redirect(303, '/tutor');
 	},
 	finish: async ({ locals, url }) => {
-		requireTutor(locals.user, url);
-		const s = await getSettings(locals.db);
+		const t = requireTutor(locals.user, url).id;
+		const s = await getSettings(locals.db, t);
 		if (!s) return fail(500);
-		await updateSettings(locals.db, { setupDoneAt: new Date(), setupStep: WIZARD.length + 1 });
+		await updateSettings(locals.db, t, { setupDoneAt: new Date(), setupStep: WIZARD.length + 1 });
 		redirect(303, '/tutor');
 	}
 };

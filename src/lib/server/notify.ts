@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { user } from './db/auth.schema.ts';
 import { sendEmail } from './auth.ts';
@@ -22,14 +22,13 @@ export async function notifyUser(db: DB, userId: string, subject: string, body: 
 	}
 }
 
-/** Email the tutor (their contact email, or their login email). */
-export async function notifyTutor(db: DB, subject: string, body: string) {
+/** Email a tutor at their login email. */
+export async function notifyTutor(db: DB, tutorId: string, subject: string, body: string) {
 	try {
 		const [t] = await db
 			.select({ email: user.email })
 			.from(user)
-			.where(eq(user.role, 'tutor'))
-			.limit(1);
+			.where(and(eq(user.id, tutorId), eq(user.role, 'tutor')));
 		if (!t) return;
 		await sendEmail({ to: t.email, subject, text: `${body}\n\n${m.email_sign()}` });
 	} catch (e) {

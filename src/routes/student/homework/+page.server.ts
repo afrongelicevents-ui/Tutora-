@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { handIn, homeworkForUser } from '#lib/server/people.ts';
+import { getHomework, handIn, homeworkForUser } from '#lib/server/people.ts';
 import { requireRole } from '#lib/server/guards.ts';
 import { fileLink, getStore } from '#lib/server/storage.ts';
 import { DOC_KINDS, MB, newKey, readUpload } from '#lib/server/files.ts';
@@ -52,7 +52,9 @@ export const actions: Actions = {
 			fileName: file?.ok ? file.name : null
 		});
 		if (!row) return fail(404, { error: 'err_not_found' });
-		await notifyTutor(locals.db, m.email_hw_in_s(), m.email_hw_in_b({ name: u.name }));
+		const h = await getHomework(locals.db, row.homeworkId);
+		if (h)
+			await notifyTutor(locals.db, h.tutorId, m.email_hw_in_s(), m.email_hw_in_b({ name: u.name }));
 		return { done: true };
 	}
 };

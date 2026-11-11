@@ -23,9 +23,14 @@ export const variables = defineEnvVars({
 		description: 'Secret used to sign sessions. At least 32 random characters.',
 		schema: z.string().min(32, 'BETTER_AUTH_SECRET must be at least 32 characters')
 	},
-	TUTOR_EMAIL: {
+	TEST_SITE: {
 		description:
-			'Optional. If set, the tutor claims the site at /setup with a link sent to this address. If empty, the first person to complete /setup becomes the tutor (do it right after the first deploy).',
+			'Optional. "1" on the test site only: shows the "TEST SITE" bar, allows the owner to reset the fake data, and skips the authenticator step so test logins work.',
+		schema: optional
+	},
+	TEST_PASSWORD: {
+		description:
+			'Test site only: the shared password of all fake test logins (made by the deploy workflow).',
 		schema: optional
 	},
 	RESEND_API_KEY: {

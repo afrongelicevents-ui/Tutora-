@@ -1,15 +1,20 @@
 import { error } from '@sveltejs/kit';
 import { ORIGIN } from '$app/env/private';
 import type { RequestHandler } from './$types';
-import { isAttendee, lessonWithPeople } from '#lib/server/bookings.ts';
+import { isAttendee, lessonTutorId, lessonWithPeople } from '#lib/server/bookings.ts';
 import { lessonIcs } from '#lib/server/calendar.ts';
 import { requireUser } from '#lib/server/guards.ts';
 
-/** "Add to my phone's calendar": only for the tutor and students booked on this lesson. */
+/** "Add to my phone's calendar": only for this lesson's tutor and the students booked on it. */
 export const GET: RequestHandler = async ({ locals, url, params }) => {
 	const u = requireUser(locals.user, url);
 	const id = Number(params.id) || 0;
-	const isTutor = u.role === 'tutor' && u.twoFactorEnabled;
+	// the tutor of THIS lesson (not any tutor), or a student booked on it
+	const isTutor =
+		u.role === 'tutor' &&
+		u.twoFactorEnabled &&
+		u.tutorStatus === 'active' &&
+		(await lessonTutorId(locals.db, id)) === u.id;
 	if (!isTutor && !(await isAttendee(locals.db, u.id, id))) error(404, 'Not found');
 	const l = await lessonWithPeople(locals.db, id);
 	if (!l || l.status !== 'scheduled') error(404, 'Not found');

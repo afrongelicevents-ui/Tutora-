@@ -6,6 +6,15 @@ export interface GuardUser {
 	role?: string | null;
 	emailVerified: boolean;
 	twoFactorEnabled?: boolean | null;
+	tutorStatus?: 'pending' | 'active' | 'suspended' | null;
+}
+
+/** Which private area a path belongs to. */
+export type Area = 'owner' | 'tutor' | 'student';
+export function areaOf(pathname: string): Area | null {
+	for (const a of ['owner', 'tutor', 'student'] as const)
+		if (pathname === `/${a}` || pathname.startsWith(`/${a}/`)) return a;
+	return null;
 }
 
 /** Must be logged in. Sends visitors to the login page and back afterwards. */
@@ -25,14 +34,26 @@ export function requireRole<U extends GuardUser>(
 ): U & { role: Role } {
 	const u = requireUser(user, url);
 	if (!u.role || !(roles as readonly string[]).includes(u.role)) {
-		error(403, 'You do not have access to this page.');
+		error(403, 'no_access');
 	}
 	return u as U & { role: Role };
 }
 
-/** The tutor area also needs two-step verification switched on. */
+/**
+ * The tutor area: an approved tutor with two-step verification switched on.
+ * The returned id is the tutor's id: every query uses it, so a tutor only ever
+ * reaches their own students, lessons and money.
+ */
 export function requireTutor<U extends GuardUser>(user: U | undefined, url: URL) {
 	const u = requireRole(user, url, ['tutor']);
+	if (!u.twoFactorEnabled) redirect(303, '/account/2fa?required=1');
+	if (u.tutorStatus !== 'active') redirect(303, '/tutor-status');
+	return u;
+}
+
+/** The platform owner's area, also with two-step verification. */
+export function requireOwner<U extends GuardUser>(user: U | undefined, url: URL) {
+	const u = requireRole(user, url, ['owner']);
 	if (!u.twoFactorEnabled) redirect(303, '/account/2fa?required=1');
 	return u;
 }
@@ -58,7 +79,9 @@ export function safeNext(next: string | null | undefined, fallback: string): str
 }
 
 export type AreaDecision =
-	{ ok: true } | { ok: false; status: 303; location: string } | { ok: false; status: 403 };
+	| { ok: true }
+	| { ok: false; status: 303; location: string }
+	| { ok: false; status: 403; area: Area };
 
 /**
  * Central lock for the private areas, checked in hooks.server.ts for EVERY request,
@@ -70,25 +93,34 @@ export function areaAccess(
 	search: string,
 	user: GuardUser | undefined
 ): AreaDecision {
-	const area =
-		pathname === '/tutor' || pathname.startsWith('/tutor/')
-			? 'tutor'
-			: pathname === '/student' || pathname.startsWith('/student/')
-				? 'student'
-				: null;
+	// decide on the decoded path, like the router does ("/%74utor" is "/tutor")
+	let decoded: string;
+	try {
+		decoded = decodeURI(pathname);
+	} catch {
+		return { ok: false, status: 403, area: 'student' };
+	}
+	const area = areaOf(decoded) ?? areaOf(pathname);
 	if (!area) return { ok: true };
 	if (!user) {
 		const next =
 			pathname.replace(/\/__data\.json$/, '') + search.replace(/[?&]x-sveltekit-[^&]*/g, '');
 		return { ok: false, status: 303, location: `/login?next=${encodeURIComponent(next || '/')}` };
 	}
-	if (area === 'tutor') {
-		if (user.role !== 'tutor') return { ok: false, status: 403 };
+	if (area === 'owner') {
+		if (user.role !== 'owner') return { ok: false, status: 403, area };
 		if (!user.twoFactorEnabled)
 			return { ok: false, status: 303, location: '/account/2fa?required=1' };
 		return { ok: true };
 	}
+	if (area === 'tutor') {
+		if (user.role !== 'tutor') return { ok: false, status: 403, area };
+		if (!user.twoFactorEnabled)
+			return { ok: false, status: 303, location: '/account/2fa?required=1' };
+		if (user.tutorStatus !== 'active') return { ok: false, status: 303, location: '/tutor-status' };
+		return { ok: true };
+	}
 	return user.role === 'student' || user.role === 'parent'
 		? { ok: true }
-		: { ok: false, status: 403 };
+		: { ok: false, status: 403, area };
 }

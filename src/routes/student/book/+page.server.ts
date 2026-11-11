@@ -7,7 +7,8 @@ import {
 	openGroupLessons,
 	requestBooking
 } from '#lib/server/bookings.ts';
-import { publicSite } from '#lib/server/settings.ts';
+import { activeTutorBySlug, publicSite, type SiteSettings } from '#lib/server/settings.ts';
+import { myTutor } from '#lib/server/people.ts';
 import { requireRole } from '#lib/server/guards.ts';
 import { hitLimit } from '#lib/server/rate-limit.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
@@ -15,13 +16,33 @@ import { formObject } from '#lib/validation/auth.ts';
 import { fmtDayTime, localDate } from '#lib/tz.ts';
 import { m } from '#lib/paraglide/messages.js';
 
+/**
+ * Which tutor this booking is with: ?tutor=<page address> (any approved tutor), otherwise
+ * the student's own tutor. No tutor: send them to "Find a tutor".
+ */
+async function bookingTutor(locals: App.Locals, url: URL): Promise<SiteSettings> {
+	const slug = url.searchParams.get('tutor');
+	if (slug) {
+		const s = await activeTutorBySlug(locals.db, slug);
+		if (s) return s;
+	} else {
+		const mine = await myTutor(locals.db, locals.user!.id);
+		if (mine?.status === 'active') {
+			const s = await activeTutorBySlug(locals.db, mine.slug);
+			if (s) return s;
+		}
+	}
+	redirect(303, '/#find');
+}
+
 export const load: PageServerLoad = async ({ locals, url }) => {
 	requireRole(locals.user, url, ['student', 'parent']);
+	const tutor = await bookingTutor(locals, url);
 	const intro = url.searchParams.get('intro') === '1';
 	const [site, slots, groups] = await Promise.all([
-		publicSite(locals.db),
-		availableSlots(locals.db, intro ? 'intro' : 'lesson'),
-		intro ? [] : openGroupLessons(locals.db)
+		publicSite(locals.db, tutor),
+		availableSlots(locals.db, tutor.tutorId, intro ? 'intro' : 'lesson'),
+		intro ? [] : openGroupLessons(locals.db, tutor.tutorId)
 	]);
 	// group the free times by day for the form
 	const days: { date: string; slots: Date[] }[] = [];
@@ -31,7 +52,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		if (last?.date === d) last.slots.push(s);
 		else days.push({ date: d, slots: [s] });
 	}
-	return { intro, site, days, groups, subject: Number(url.searchParams.get('subject')) || null };
+	const { tutorId: _id, ...pub } = site;
+	return {
+		intro,
+		site: pub,
+		days,
+		groups,
+		subject: Number(url.searchParams.get('subject')) || null
+	};
 };
 
 const schema = z.object({
@@ -46,6 +74,7 @@ const schema = z.object({
 export const actions: Actions = {
 	default: async ({ locals, url, request }) => {
 		const u = requireRole(locals.user, url, ['student', 'parent']);
+		const tutor = await bookingTutor(locals, url);
 		const limit = await hitLimit(locals.db, 'booking', u.id);
 		if (!limit.ok)
 			return fail(429, {
@@ -60,7 +89,7 @@ export const actions: Actions = {
 		if (!v.join && (!startsAt || Number.isNaN(startsAt.getTime())))
 			return fail(400, { error: 'err_pick_time' });
 		try {
-			const b = await requestBooking(locals.db, u.id, {
+			const b = await requestBooking(locals.db, tutor.tutorId, u.id, {
 				kind: v.kind,
 				subjectId: v.subjectId ?? null,
 				mode: v.mode,
@@ -70,6 +99,7 @@ export const actions: Actions = {
 			});
 			await notifyTutor(
 				locals.db,
+				tutor.tutorId,
 				m.email_booking_new_s(),
 				m.email_booking_new_b({
 					name: u.name,

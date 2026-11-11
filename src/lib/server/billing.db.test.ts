@@ -24,6 +24,7 @@ import { payment, studentPackage } from './db/app.schema.ts';
 
 describe.skipIf(!hasTestDb)('payments, receipts and packages (real database)', () => {
 	let db: DB;
+	let tid: string;
 	let close: () => Promise<void>;
 	let maths: number;
 	const now = MONDAY_8AM;
@@ -37,7 +38,8 @@ describe.skipIf(!hasTestDb)('payments, receipts and packages (real database)', (
 
 	beforeAll(async () => {
 		({ db, close } = await freshDb());
-		await updateSettings(db, {
+		tid = (await makeUser(db, 'tutor', 'Tutor One')).id;
+		await updateSettings(db, tid, {
 			tutorName: 'Mr Test',
 			contactEmail: 'tutor@example.com',
 			lessonModes: 'both',
@@ -45,9 +47,10 @@ describe.skipIf(!hasTestDb)('payments, receipts and packages (real database)', (
 			lessonMinutes: 60,
 			cancelHours: 24
 		});
-		maths = (await addSubject(db, { name: 'Maths', levels: '', price: 800 })).id;
+		maths = (await addSubject(db, tid, { name: 'Maths', levels: '', price: 800 })).id;
 		await replaceAvailability(
 			db,
+			tid,
 			[1, 2, 3, 4, 5].map((weekday) => ({ weekday, startMinute: 15 * 60, endMinute: 18 * 60 }))
 		);
 	});
@@ -57,6 +60,7 @@ describe.skipIf(!hasTestDb)('payments, receipts and packages (real database)', (
 		for (const t of times) {
 			const b = await requestBooking(
 				db,
+				tid,
 				userId,
 				{
 					kind: 'lesson',
@@ -68,23 +72,23 @@ describe.skipIf(!hasTestDb)('payments, receipts and packages (real database)', (
 				},
 				now
 			);
-			await acceptBooking(db, b.id, now);
+			await acceptBooking(db, tid, b.id, now);
 		}
 	}
 
 	it('proof upload waits for the tutor, then confirm gives a receipt and reduces what is owed', async () => {
 		const u = await makeUser(db, 'student', 'Rudo Moyo');
 		await bookLessons(u.id, [zw(1, '15:00'), zw(2, '15:00')]);
-		expect(await balanceFor(db, u.id)).toMatchObject({ owed: 1600, paid: 0, waiting: 0 });
+		expect(await balanceFor(db, tid, u.id)).toMatchObject({ owed: 1600, paid: 0, waiting: 0 });
 
-		const p = await submitPayment(db, u.id, pay(800));
+		const p = await submitPayment(db, tid, u.id, pay(800));
 		expect(p.status).toBe('pending');
-		expect(await balanceFor(db, u.id)).toMatchObject({ owed: 1600, waiting: 800 });
-		expect((await pendingPayments(db)).map((x) => x.id)).toContain(p.id);
+		expect(await balanceFor(db, tid, u.id)).toMatchObject({ owed: 1600, waiting: 800 });
+		expect((await pendingPayments(db, tid)).map((x) => x.id)).toContain(p.id);
 
-		const c = await confirmPayment(db, p.id, now);
+		const c = await confirmPayment(db, tid, p.id, now);
 		expect(c.receiptNo).toBeGreaterThan(0);
-		expect(await balanceFor(db, u.id)).toMatchObject({ owed: 800, paid: 800, waiting: 0 });
+		expect(await balanceFor(db, tid, u.id)).toMatchObject({ owed: 800, paid: 800, waiting: 0 });
 
 		// receipt covers the OLDEST lesson first
 		const r = await receiptData(db, p.id);
@@ -107,16 +111,16 @@ describe.skipIf(!hasTestDb)('payments, receipts and packages (real database)', (
 
 	it('cannot confirm or reject twice', async () => {
 		const u = await makeUser(db, 'student');
-		const p = await submitPayment(db, u.id, pay(500));
-		await confirmPayment(db, p.id, now);
-		await expect(confirmPayment(db, p.id, now)).rejects.toBeInstanceOf(BillingFail);
-		await expect(rejectPayment(db, p.id, 'no', now)).rejects.toBeInstanceOf(BillingFail);
+		const p = await submitPayment(db, tid, u.id, pay(500));
+		await confirmPayment(db, tid, p.id, now);
+		await expect(confirmPayment(db, tid, p.id, now)).rejects.toBeInstanceOf(BillingFail);
+		await expect(rejectPayment(db, tid, p.id, 'no', now)).rejects.toBeInstanceOf(BillingFail);
 	});
 
 	it('reject keeps the reason and gives no receipt', async () => {
 		const u = await makeUser(db, 'student');
-		const p = await submitPayment(db, u.id, pay(800));
-		await rejectPayment(db, p.id, 'Reference not found', now);
+		const p = await submitPayment(db, tid, u.id, pay(800));
+		await rejectPayment(db, tid, p.id, 'Reference not found', now);
 		const [row] = await db.select().from(payment).where(eq(payment.id, p.id));
 		expect(row).toMatchObject({
 			status: 'rejected',
@@ -124,23 +128,23 @@ describe.skipIf(!hasTestDb)('payments, receipts and packages (real database)', (
 			receiptNo: null
 		});
 		expect(await receiptData(db, p.id)).toBeNull();
-		expect((await balanceFor(db, u.id)).waiting).toBe(0);
+		expect((await balanceFor(db, tid, u.id)).waiting).toBe(0);
 	});
 
 	it('receipt numbers go up and are never reused', async () => {
 		const u = await makeUser(db, 'student');
 		const ids = [];
-		for (let i = 0; i < 3; i++) ids.push((await submitPayment(db, u.id, pay(100 + i))).id);
-		await rejectPayment(db, ids[1], null, now);
-		const a = await confirmPayment(db, ids[0], now);
-		const c = await confirmPayment(db, ids[2], now);
+		for (let i = 0; i < 3; i++) ids.push((await submitPayment(db, tid, u.id, pay(100 + i))).id);
+		await rejectPayment(db, tid, ids[1], null, now);
+		const a = await confirmPayment(db, tid, ids[0], now);
+		const c = await confirmPayment(db, tid, ids[2], now);
 		expect(c.receiptNo).toBe(a.receiptNo + 1);
 		// parallel confirmations never get the same number
 		const more = await Promise.all(
-			[0, 1, 2, 3].map(async () => (await submitPayment(db, u.id, pay(100))).id)
+			[0, 1, 2, 3].map(async () => (await submitPayment(db, tid, u.id, pay(100))).id)
 		);
 		const nums = await Promise.all(
-			more.map((id) => confirmPayment(db, id, now).then((r) => r.receiptNo))
+			more.map((id) => confirmPayment(db, tid, id, now).then((r) => r.receiptNo))
 		);
 		expect(new Set(nums).size).toBe(4);
 	});
@@ -148,47 +152,47 @@ describe.skipIf(!hasTestDb)('payments, receipts and packages (real database)', (
 	it('student "I paid cash" waits; tutor-recorded cash is confirmed at once', async () => {
 		const u = await makeUser(db, 'parent');
 		await bookLessons(u.id, [zw(3, '15:00')]);
-		const mine = await submitPayment(db, u.id, pay(800, 'cash'));
+		const mine = await submitPayment(db, tid, u.id, pay(800, 'cash'));
 		expect(mine.status).toBe('pending');
-		await rejectPayment(db, mine.id, 'Did not receive it', now);
-		const r = await recordCash(db, u.id, 800, '2026-11-16', now);
+		await rejectPayment(db, tid, mine.id, 'Did not receive it', now);
+		const r = await recordCash(db, tid, u.id, 800, '2026-11-16', now);
 		expect(r.status).toBe('confirmed');
-		expect(await balanceFor(db, u.id)).toMatchObject({ owed: 0, paid: 800 });
+		expect(await balanceFor(db, tid, u.id)).toMatchObject({ owed: 0, paid: 800 });
 		const [row] = await db.select().from(payment).where(eq(payment.id, r.id));
 		expect(row.recordedBy).toBe('tutor');
 	});
 
 	it('packages: price is owed, lessons count down, balance shows the rest', async () => {
-		const pkg = await addPackage(db, { name: '4 lessons', lessonCount: 4, price: 2800 });
+		const pkg = await addPackage(db, tid, { name: '4 lessons', lessonCount: 4, price: 2800 });
 		const u = await makeUser(db, 'student');
-		await buyPackage(db, u.id, pkg.id);
+		await buyPackage(db, tid, u.id, pkg.id);
 		await bookLessons(u.id, [zw(7, '15:00'), zw(7, '16:00'), zw(7, '17:00')]);
 		const [sp] = await db.select().from(studentPackage).where(eq(studentPackage.userId, u.id));
 		expect(sp.lessonsTotal - sp.lessonsUsed).toBe(1);
-		expect((await balanceFor(db, u.id)).owed).toBe(2800);
-		const p = await submitPayment(db, u.id, pay(2800));
-		await confirmPayment(db, p.id, now);
-		expect((await balanceFor(db, u.id)).owed).toBe(0);
+		expect((await balanceFor(db, tid, u.id)).owed).toBe(2800);
+		const p = await submitPayment(db, tid, u.id, pay(2800));
+		await confirmPayment(db, tid, p.id, now);
+		expect((await balanceFor(db, tid, u.id)).owed).toBe(0);
 		expect((await receiptData(db, p.id))!.covers[0].description).toBe('Package: 4 lessons');
 		// 5th lesson after the package runs out is charged normally
 		await bookLessons(u.id, [zw(8, '15:00'), zw(8, '16:00')]);
-		expect((await balanceFor(db, u.id)).owed).toBe(800);
+		expect((await balanceFor(db, tid, u.id)).owed).toBe(800);
 	});
 
 	it('paying for a lesson that is later cancelled leaves a credit, not a debt', async () => {
 		const u = await makeUser(db, 'student');
 		await bookLessons(u.id, [zw(9, '15:00')]);
-		const p = await submitPayment(db, u.id, pay(800));
-		await confirmPayment(db, p.id, now);
+		const p = await submitPayment(db, tid, u.id, pay(800));
+		await confirmPayment(db, tid, p.id, now);
 		const ls = await lessonsForUser(db, u.id);
 		await cancelMyPlace(db, u.id, ls[0].id, now);
-		expect(await balanceFor(db, u.id)).toMatchObject({ owed: 0, credit: 800 });
+		expect(await balanceFor(db, tid, u.id)).toMatchObject({ owed: 0, credit: 800 });
 	});
 
 	it('per-student totals and monthly totals for the tutor', async () => {
-		const all = await balances(db);
+		const all = await balances(db, tid);
 		expect(all.size).toBeGreaterThan(3);
-		const months = await monthlyTotals(db, new Date('2026-01-01'));
+		const months = await monthlyTotals(db, tid, new Date('2026-01-01'));
 		expect(months[0].month).toBe('2026-11');
 		expect(months[0].total).toBeGreaterThan(0);
 	});
@@ -196,7 +200,7 @@ describe.skipIf(!hasTestDb)('payments, receipts and packages (real database)', (
 	it('students only see their own payments', async () => {
 		const a = await makeUser(db, 'student');
 		const b = await makeUser(db, 'student');
-		await submitPayment(db, a.id, pay(100));
+		await submitPayment(db, tid, a.id, pay(100));
 		expect((await paymentsForUser(db, a.id)).length).toBe(1);
 		expect(await paymentsForUser(db, b.id)).toEqual([]);
 	});

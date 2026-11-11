@@ -8,6 +8,7 @@
 
 <section class="wrap narrow">
 	<h1>{m.leave_review()}</h1>
+	{#if data.tutorName}<p class="muted">{m.with_tutor({ name: data.tutorName })}</p>{/if}
 	{#if page.url.searchParams.has('thanks')}<p class="notice" role="status">
 			{m.review_thanks()}
 		</p>{/if}

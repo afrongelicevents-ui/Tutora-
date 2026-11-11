@@ -1,6 +1,6 @@
 # Putting Tutora online (from a phone)
 
-Free plans only. You make two keys and paste them into GitHub. Everything else (database, tables, website address, deploy) is done by the **Deploy** workflow. No email service is needed: the tutor types their own details on the site.
+Free plans only. You make two keys and paste them into GitHub. Everything else (database, tables, website address, deploy, and the separate TEST site with fake data) is done by the **Deploy** workflow. No email service is needed: the tutor types their own details on the site.
 
 Tip: on GitHub in a phone browser, tap **⋮ → Desktop site** if a settings page doesn't react.
 
@@ -10,9 +10,13 @@ Tip: on GitHub in a phone browser, tap **⋮ → Desktop site** if a settings pa
 4. **Cloudflare key:** https://dash.cloudflare.com/profile/api-tokens → **Create Token** → next to **Edit Cloudflare Workers** tap **Use template** → Account Resources: _All accounts_ → Zone Resources: _All zones_ → **Continue to summary** → **Create Token** → **Copy**.
 5. **GitHub:** same page as step 2 → Name `CLOUDFLARE_API_TOKEN` → paste → **Add secret**.
 6. **Deploy:** https://github.com/afrongelicevents-ui/Tutora-/actions/workflows/deploy.yml → **Run workflow** → branch `main` → tick _Reset the database password_ the first time → **Run workflow**. When it's green, the run's summary shows the website address.
-7. **The tutor claims the site:** open the setup link with the one-time code (`<website address>/setup?code=…`, given by whoever ran the deploy) → type their own name, email and password → log in → set up the authenticator app → fill in the wizard. The code works once. Everything can be changed later in **Settings**. Need a new code? Run Deploy again with _Make a new tutor setup code_ ticked.
+7. **The owner sets up their account:** open the setup link with the one-time code (`<website address>/setup?code=…`, given by whoever ran the deploy) → name, email, password → log in → authenticator app. From **Tutora admin** you approve tutors who join at `/join`, or add tutors yourself.
 
 The workflow picks the Neon project called "tutora", or your only project, or creates one. If you have several projects, rename the right one to `tutora`.
+
+## The test site
+
+The same workflow also publishes `tutora-test` (its own address, its own database branch "test", fake data only). Tick _TEST site: wipe it and fill it with fresh fake data_ when running Deploy to start over, or use **Reset test data** in the test site's Tutora admin. The shared password of the test logins is made during the deploy and only shown encrypted in the logs.
 
 ## Optional, later
 

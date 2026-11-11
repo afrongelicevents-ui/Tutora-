@@ -7,10 +7,12 @@ import {
 	charge,
 	lesson,
 	studentPackage,
-	subject
+	subject,
+	tutorProfile
 } from './db/app.schema.ts';
 import { user } from './db/auth.schema.ts';
 import { getSettings, lessonPrice, listAvailability, type SiteSettings } from './settings.ts';
+import { enroll } from './people.ts';
 import { freeSlots, INTRO_MINUTES, type Busy } from './slots.ts';
 import { addMinutes, fmtDayTime } from '../tz.ts';
 
@@ -35,6 +37,7 @@ const MAX_OPEN_REQUESTS = 5;
 /** Everything that blocks a time: scheduled lessons, the tutor's events, pending requests. */
 export async function busyTimes(
 	db: DB,
+	tutorId: string,
 	from: Date,
 	to: Date,
 	exceptBookingId?: number
@@ -43,11 +46,24 @@ export async function busyTimes(
 		db
 			.select({ start: lesson.startsAt, end: lesson.endsAt })
 			.from(lesson)
-			.where(and(eq(lesson.status, 'scheduled'), lt(lesson.startsAt, to), gt(lesson.endsAt, from))),
+			.where(
+				and(
+					eq(lesson.tutorId, tutorId),
+					eq(lesson.status, 'scheduled'),
+					lt(lesson.startsAt, to),
+					gt(lesson.endsAt, from)
+				)
+			),
 		db
 			.select({ start: calendarEvent.startsAt, end: calendarEvent.endsAt })
 			.from(calendarEvent)
-			.where(and(lt(calendarEvent.startsAt, to), gt(calendarEvent.endsAt, from))),
+			.where(
+				and(
+					eq(calendarEvent.tutorId, tutorId),
+					lt(calendarEvent.startsAt, to),
+					gt(calendarEvent.endsAt, from)
+				)
+			),
 		db
 			.select({
 				id: booking.id,
@@ -57,7 +73,13 @@ export async function busyTimes(
 				status: booking.status
 			})
 			.from(booking)
-			.where(and(inArray(booking.status, ['requested', 'proposed']), lt(booking.startsAt, to)))
+			.where(
+				and(
+					eq(booking.tutorId, tutorId),
+					inArray(booking.status, ['requested', 'proposed']),
+					lt(booking.startsAt, to)
+				)
+			)
 	]);
 	const pending: Busy[] = [];
 	for (const r of reqs) {
@@ -72,17 +94,22 @@ export async function busyTimes(
 	return [...ls, ...evs, ...pending];
 }
 
-export async function availableSlots(db: DB, kind: 'lesson' | 'intro', now = new Date()) {
-	const s = await getSettings(db);
+export async function availableSlots(
+	db: DB,
+	tutorId: string,
+	kind: 'lesson' | 'intro',
+	now = new Date()
+) {
+	const s = await getSettings(db, tutorId);
 	const minutes = kind === 'intro' ? INTRO_MINUTES : s.lessonMinutes;
-	const windows = await listAvailability(db);
-	const busy = await busyTimes(db, now, addMinutes(now, 60 * 24 * 30));
+	const windows = await listAvailability(db, tutorId);
+	const busy = await busyTimes(db, tutorId, now, addMinutes(now, 60 * 24 * 30));
 	return freeSlots({ windows, minutes, busy, now });
 }
 
 /** Group lessons in the future with a free place, that students may ask to join. */
-export async function openGroupLessons(db: DB, now = new Date()) {
-	const s = await getSettings(db);
+export async function openGroupLessons(db: DB, tutorId: string, now = new Date()) {
+	const s = await getSettings(db, tutorId);
 	if (s.groupMode === 'one_to_one') return [];
 	const rows = await db
 		.select({
@@ -101,6 +128,7 @@ export async function openGroupLessons(db: DB, now = new Date()) {
 		.leftJoin(attendee, eq(attendee.lessonId, lesson.id))
 		.where(
 			and(
+				eq(lesson.tutorId, tutorId),
 				eq(lesson.status, 'scheduled'),
 				eq(lesson.kind, 'lesson'),
 				gt(lesson.startsAt, addMinutes(now, 60))
@@ -127,11 +155,14 @@ function modeAllowed(s: SiteSettings, mode: 'online' | 'in_person') {
 /** A student (or parent) asks for a lesson. Every rule is checked again here on the server. */
 export async function requestBooking(
 	db: DB,
+	tutorId: string,
 	userId: string,
 	input: BookingInput,
 	now = new Date()
 ) {
-	const s = await getSettings(db);
+	const s = await getSettings(db, tutorId);
+	// only approved tutors take bookings
+	if (s.status !== 'active') throw new BookingFail('err_not_found');
 	const open = await db
 		.select({ n: sql<number>`count(*)::int` })
 		.from(booking)
@@ -143,7 +174,13 @@ export async function requestBooking(
 		const [subj] = await db
 			.select()
 			.from(subject)
-			.where(and(eq(subject.id, input.subjectId ?? -1), eq(subject.active, true)));
+			.where(
+				and(
+					eq(subject.id, input.subjectId ?? -1),
+					eq(subject.tutorId, tutorId),
+					eq(subject.active, true)
+				)
+			);
 		if (!subj) throw new BookingFail('err_subject');
 		subjectId = subj.id;
 	}
@@ -152,7 +189,9 @@ export async function requestBooking(
 	let endsAt: Date;
 	let mode = input.mode;
 	if (input.joinLessonId) {
-		const target = (await openGroupLessons(db, now)).find((l) => l.id === input.joinLessonId);
+		const target = (await openGroupLessons(db, tutorId, now)).find(
+			(l) => l.id === input.joinLessonId
+		);
 		if (!target || target.subjectId !== subjectId) throw new BookingFail('err_group_full');
 		startsAt = target.startsAt;
 		endsAt = target.endsAt;
@@ -160,7 +199,7 @@ export async function requestBooking(
 	} else {
 		if (!modeAllowed(s, mode)) throw new BookingFail('err_mode');
 		if (!input.startsAt) throw new BookingFail('err_slot_taken');
-		const slots = await availableSlots(db, input.kind, now);
+		const slots = await availableSlots(db, tutorId, input.kind, now);
 		if (!slots.some((x) => x.getTime() === input.startsAt!.getTime()))
 			throw new BookingFail('err_slot_taken');
 		startsAt = input.startsAt;
@@ -170,6 +209,7 @@ export async function requestBooking(
 	const [row] = await db
 		.insert(booking)
 		.values({
+			tutorId,
 			userId,
 			kind: input.kind,
 			subjectId,
@@ -183,9 +223,13 @@ export async function requestBooking(
 	return row;
 }
 
-async function loadBooking(db: DB, id: number, lock = false) {
+/** A booking, only if it belongs to this tutor (when given). Another tutor's is "not found". */
+async function loadBooking(db: DB, id: number, lock = false, tutorId?: string) {
 	// inside a transaction, lock the row so two clicks can't both act on it
-	const q = db.select().from(booking).where(eq(booking.id, id));
+	const q = db
+		.select()
+		.from(booking)
+		.where(and(eq(booking.id, id), tutorId ? eq(booking.tutorId, tutorId) : undefined));
 	const [b] = lock ? await q.for('update') : await q;
 	if (!b) throw new BookingFail('err_not_found');
 	return b;
@@ -195,11 +239,11 @@ async function loadBooking(db: DB, id: number, lock = false) {
  * Tutor accepts: creates the lesson (or adds the student to the group lesson),
  * then either uses a package credit or adds a charge. All in one transaction.
  */
-export async function acceptBooking(db: DB, bookingId: number, now = new Date()) {
+export async function acceptBooking(db: DB, tutorId: string, bookingId: number, now = new Date()) {
 	return db.transaction(async (tx) => {
-		const b = await loadBooking(tx, bookingId, true);
+		const b = await loadBooking(tx, bookingId, true, tutorId);
 		if (b.status !== 'requested') throw new BookingFail('err_state');
-		const s = await getSettings(tx);
+		const s = await getSettings(tx, tutorId);
 		const [subj] = b.subjectId
 			? await tx.select().from(subject).where(eq(subject.id, b.subjectId))
 			: [null];
@@ -207,7 +251,12 @@ export async function acceptBooking(db: DB, bookingId: number, now = new Date())
 		let lessonId: number;
 		if (b.lessonId) {
 			// joining an existing group lesson
-			const [l] = await tx.select().from(lesson).where(eq(lesson.id, b.lessonId)).for('update');
+			const [l] = await tx
+				.select()
+				.from(lesson)
+				.where(and(eq(lesson.id, b.lessonId), eq(lesson.tutorId, tutorId)))
+				.for('update');
+			if (!l) throw new BookingFail('err_group_full');
 			const [{ n }] = await tx
 				.select({ n: sql<number>`count(*)::int` })
 				.from(attendee)
@@ -221,6 +270,7 @@ export async function acceptBooking(db: DB, bookingId: number, now = new Date())
 				.from(lesson)
 				.where(
 					and(
+						eq(lesson.tutorId, tutorId),
 						eq(lesson.status, 'scheduled'),
 						lt(lesson.startsAt, b.endsAt),
 						gt(lesson.endsAt, b.startsAt)
@@ -231,6 +281,7 @@ export async function acceptBooking(db: DB, bookingId: number, now = new Date())
 			const [l] = await tx
 				.insert(lesson)
 				.values({
+					tutorId,
 					kind: b.kind,
 					subjectId: b.subjectId,
 					mode: b.mode,
@@ -254,6 +305,7 @@ export async function acceptBooking(db: DB, bookingId: number, now = new Date())
 				.from(studentPackage)
 				.where(
 					and(
+						eq(studentPackage.tutorId, tutorId),
 						eq(studentPackage.userId, b.userId),
 						lt(studentPackage.lessonsUsed, studentPackage.lessonsTotal)
 					)
@@ -269,6 +321,7 @@ export async function acceptBooking(db: DB, bookingId: number, now = new Date())
 				await tx.update(attendee).set({ studentPackageId: credit.id }).where(eq(attendee.id, a.id));
 			} else {
 				await tx.insert(charge).values({
+					tutorId,
 					userId: b.userId,
 					kind: 'lesson',
 					attendeeId: a.id,
@@ -281,17 +334,20 @@ export async function acceptBooking(db: DB, bookingId: number, now = new Date())
 			.update(booking)
 			.set({ status: 'accepted', lessonId, decidedAt: now })
 			.where(eq(booking.id, b.id));
+		// only now, with an accepted lesson, the student joins this tutor's student list
+		await enroll(tx, tutorId, b.userId);
 		return { lessonId, userId: b.userId, startsAt: b.startsAt };
 	});
 }
 
 export async function declineBooking(
 	db: DB,
+	tutorId: string,
 	bookingId: number,
 	message: string | null,
 	now = new Date()
 ) {
-	const b = await loadBooking(db, bookingId);
+	const b = await loadBooking(db, bookingId, false, tutorId);
 	if (b.status !== 'requested') throw new BookingFail('err_state');
 	await db
 		.update(booking)
@@ -303,16 +359,17 @@ export async function declineBooking(
 /** Tutor suggests another time. The student accepts or says no. */
 export async function proposeTime(
 	db: DB,
+	tutorId: string,
 	bookingId: number,
 	newStart: Date,
 	message: string | null,
 	now = new Date()
 ) {
-	const b = await loadBooking(db, bookingId);
+	const b = await loadBooking(db, bookingId, false, tutorId);
 	if (b.status !== 'requested' || b.lessonId) throw new BookingFail('err_state');
 	if (newStart <= now) throw new BookingFail('err_slot_taken');
 	const len = b.endsAt.getTime() - b.startsAt.getTime();
-	const busy = await busyTimes(db, newStart, new Date(newStart.getTime() + len), b.id);
+	const busy = await busyTimes(db, tutorId, newStart, new Date(newStart.getTime() + len), b.id);
 	if (busy.some((x) => x.start < new Date(newStart.getTime() + len) && x.end > newStart))
 		throw new BookingFail('err_slot_taken');
 	await db
@@ -353,7 +410,7 @@ export async function respondToProposal(
 		.where(and(eq(booking.id, b.id), eq(booking.status, 'proposed')))
 		.returning({ id: booking.id });
 	if (!moved.length) throw new BookingFail('err_state');
-	return acceptBooking(db, b.id, now);
+	return acceptBooking(db, b.tutorId, b.id, now);
 }
 
 /** Student withdraws a request that hasn't been accepted yet. */
@@ -388,7 +445,6 @@ async function releaseAttendee(tx: DB, a: typeof attendee.$inferSelect) {
 /** Student cancels their place, only if it is at least `cancelHours` before the start. */
 export async function cancelMyPlace(db: DB, userId: string, lessonId: number, now = new Date()) {
 	return db.transaction(async (tx) => {
-		const s = await getSettings(tx);
 		const [row] = await tx
 			.select({ a: attendee, l: lesson })
 			.from(attendee)
@@ -401,6 +457,7 @@ export async function cancelMyPlace(db: DB, userId: string, lessonId: number, no
 				)
 			);
 		if (!row || row.l.status !== 'scheduled') throw new BookingFail('err_not_found');
+		const s = await getSettings(tx, row.l.tutorId);
 		if (row.l.startsAt.getTime() - now.getTime() < s.cancelHours * 3_600_000)
 			throw new BookingFail('err_cancel_late');
 		if (!(await releaseAttendee(tx, row.a))) throw new BookingFail('err_not_found');
@@ -415,9 +472,13 @@ export async function cancelMyPlace(db: DB, userId: string, lessonId: number, no
 }
 
 /** Tutor cancels a whole lesson: everyone's charge is removed / credit given back. */
-export async function cancelLesson(db: DB, lessonId: number) {
+export async function cancelLesson(db: DB, tutorId: string, lessonId: number) {
 	return db.transaction(async (tx) => {
-		const [l] = await tx.select().from(lesson).where(eq(lesson.id, lessonId)).for('update');
+		const [l] = await tx
+			.select()
+			.from(lesson)
+			.where(and(eq(lesson.id, lessonId), eq(lesson.tutorId, tutorId)))
+			.for('update');
 		if (!l || l.status !== 'scheduled') throw new BookingFail('err_not_found');
 		const as = await tx
 			.select()
@@ -440,7 +501,8 @@ const lessonFields = {
 	endsAt: lesson.endsAt,
 	status: lesson.status,
 	capacity: lesson.capacity,
-	subjectName: subject.name
+	subjectName: subject.name,
+	tutorId: lesson.tutorId
 };
 
 /** A student's own lessons only. */
@@ -449,11 +511,14 @@ export function lessonsForUser(db: DB, userId: string) {
 		.select({
 			...lessonFields,
 			attendeeStatus: attendee.status,
-			packageId: attendee.studentPackageId
+			packageId: attendee.studentPackageId,
+			tutorName: tutorProfile.tutorName,
+			tutorSlug: tutorProfile.slug
 		})
 		.from(attendee)
 		.innerJoin(lesson, eq(lesson.id, attendee.lessonId))
 		.leftJoin(subject, eq(subject.id, lesson.subjectId))
+		.leftJoin(tutorProfile, eq(tutorProfile.tutorId, lesson.tutorId))
 		.where(
 			and(
 				eq(attendee.userId, userId),
@@ -474,10 +539,12 @@ export function requestsForUser(db: DB, userId: string) {
 			status: booking.status,
 			proposedStartsAt: booking.proposedStartsAt,
 			tutorMessage: booking.tutorMessage,
-			subjectName: subject.name
+			subjectName: subject.name,
+			tutorName: tutorProfile.tutorName
 		})
 		.from(booking)
 		.leftJoin(subject, eq(subject.id, booking.subjectId))
+		.leftJoin(tutorProfile, eq(tutorProfile.tutorId, booking.tutorId))
 		.where(
 			and(
 				eq(booking.userId, userId),
@@ -487,7 +554,7 @@ export function requestsForUser(db: DB, userId: string) {
 		.orderBy(asc(booking.startsAt));
 }
 
-export function pendingRequests(db: DB) {
+export function pendingRequests(db: DB, tutorId: string) {
 	return db
 		.select({
 			id: booking.id,
@@ -504,17 +571,24 @@ export function pendingRequests(db: DB) {
 		.from(booking)
 		.innerJoin(user, eq(user.id, booking.userId))
 		.leftJoin(subject, eq(subject.id, booking.subjectId))
-		.where(eq(booking.status, 'requested'))
+		.where(and(eq(booking.tutorId, tutorId), eq(booking.status, 'requested')))
 		.orderBy(asc(booking.startsAt));
 }
 
 /** Lessons in a time range with who is booked (for the tutor's calendar and Today screen). */
-export async function lessonsBetween(db: DB, from: Date, to: Date) {
+export async function lessonsBetween(db: DB, tutorId: string, from: Date, to: Date) {
 	const ls = await db
 		.select(lessonFields)
 		.from(lesson)
 		.leftJoin(subject, eq(subject.id, lesson.subjectId))
-		.where(and(eq(lesson.status, 'scheduled'), gte(lesson.startsAt, from), lt(lesson.startsAt, to)))
+		.where(
+			and(
+				eq(lesson.tutorId, tutorId),
+				eq(lesson.status, 'scheduled'),
+				gte(lesson.startsAt, from),
+				lt(lesson.startsAt, to)
+			)
+		)
 		.orderBy(asc(lesson.startsAt));
 	if (!ls.length) return [];
 	const people = await db
@@ -533,12 +607,13 @@ export async function lessonsBetween(db: DB, from: Date, to: Date) {
 	return ls.map((l) => ({ ...l, people: people.filter((p) => p.lessonId === l.id) }));
 }
 
-export async function lessonWithPeople(db: DB, lessonId: number) {
+/** A lesson with who is booked. With a tutorId, only that tutor's lesson is returned. */
+export async function lessonWithPeople(db: DB, lessonId: number, tutorId?: string) {
 	const [l] = await db
 		.select(lessonFields)
 		.from(lesson)
 		.leftJoin(subject, eq(subject.id, lesson.subjectId))
-		.where(eq(lesson.id, lessonId));
+		.where(and(eq(lesson.id, lessonId), tutorId ? eq(lesson.tutorId, tutorId) : undefined));
 	if (!l) return null;
 	const people = await db
 		.select({
@@ -567,4 +642,19 @@ export async function isAttendee(db: DB, userId: string, lessonId: number) {
 			)
 		);
 	return r.length > 0;
+}
+
+/** Who teaches this lesson (lesson room, files). */
+export async function lessonTutorId(db: DB, lessonId: number): Promise<string | null> {
+	const [l] = await db.select({ t: lesson.tutorId }).from(lesson).where(eq(lesson.id, lessonId));
+	return l?.t ?? null;
+}
+
+/** The tutor of one of this user's own booking requests. */
+export async function bookingTutorId(db: DB, userId: string, bookingId: number) {
+	const [b] = await db
+		.select({ t: booking.tutorId })
+		.from(booking)
+		.where(and(eq(booking.id, bookingId), eq(booking.userId, userId)));
+	return b?.t ?? null;
 }

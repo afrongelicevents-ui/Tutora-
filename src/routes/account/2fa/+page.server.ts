@@ -73,12 +73,16 @@ export const actions: Actions = {
 				return fail(400, { setup: view, errors: { code: 'err_code_wrong' } });
 			throw e;
 		}
-		redirect(303, user.role === 'tutor' ? '/tutor' : '/account');
+		redirect(
+			303,
+			user.role === 'tutor' || user.role === 'owner' ? '/account?welcome=1' : '/account'
+		);
 	},
 	disable: async ({ request, locals, url }) => {
 		const user = requireUser(locals.user, url);
 		// The tutor account must keep 2FA on (checked on the server, not just hidden in the UI).
-		if (user.role === 'tutor') return fail(403, { errors: { form: 'twofa_disable_tutor_note' } });
+		if (user.role === 'tutor' || user.role === 'owner')
+			return fail(403, { errors: { form: 'twofa_disable_tutor_note' } });
 		const tooMany = await limited(locals.db, request, user.id);
 		if (tooMany) return tooMany;
 		const parsed = passwordSchema.safeParse(formObject(await request.formData()));

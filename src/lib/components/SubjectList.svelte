@@ -2,11 +2,11 @@
 	import { m } from '#lib/i18n.ts';
 	import { formatMoney } from '#lib/money.ts';
 	import type { PublicSite } from '#lib/server/settings.ts';
-	let { site }: { site: PublicSite } = $props();
+	let { site }: { site: Omit<PublicSite, 'tutorId'> } = $props();
 </script>
 
 {#each site.subjects as s (s.id)}
-	<a class="card subject" href="/student/book?subject={s.id}">
+	<a class="card subject" href="/student/book?tutor={site.slug}&subject={s.id}">
 		<span
 			><b>{s.name}</b>{#if s.levels}<span class="small muted block">{s.levels}</span>{/if}</span
 		>

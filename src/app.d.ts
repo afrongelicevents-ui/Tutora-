@@ -15,6 +15,8 @@ declare global {
 				emailVerified: boolean;
 				role: Role;
 				twoFactorEnabled: boolean;
+				/** for tutors: waiting for approval, approved, or suspended */
+				tutorStatus?: 'pending' | 'active' | 'suspended' | null;
 			};
 			session?: Session;
 		}

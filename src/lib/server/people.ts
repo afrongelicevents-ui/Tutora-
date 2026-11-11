@@ -2,18 +2,60 @@ import { and, asc, desc, eq, ilike, inArray, lt, ne, or, sql } from 'drizzle-orm
 import type { DB } from './db/types.ts';
 import {
 	attendee,
+	enrollment,
 	homework,
 	homeworkAnswer,
 	lesson,
 	profile,
 	review,
-	subject
+	subject,
+	tutorProfile
 } from './db/app.schema.ts';
 import { user } from './db/auth.schema.ts';
 
-/* ---------- students (tutor view) ---------- */
+/* ---------- which students belong to which tutor ---------- */
 
-export async function listStudents(db: DB, q?: string) {
+/** Link a student/parent account to a tutor (idempotent). */
+export async function enroll(db: DB, tutorId: string, userId: string) {
+	await db.insert(enrollment).values({ tutorId, userId }).onConflictDoNothing();
+}
+
+export async function isEnrolled(db: DB, tutorId: string, userId: string) {
+	const r = await db
+		.select({ u: enrollment.userId })
+		.from(enrollment)
+		.where(and(eq(enrollment.tutorId, tutorId), eq(enrollment.userId, userId)));
+	return r.length > 0;
+}
+
+/** The tutors a student or parent is linked to. */
+export function tutorsForUser(db: DB, userId: string) {
+	return db
+		.select({
+			tutorId: tutorProfile.tutorId,
+			slug: tutorProfile.slug,
+			name: tutorProfile.tutorName,
+			status: tutorProfile.status
+		})
+		.from(enrollment)
+		.innerJoin(tutorProfile, eq(tutorProfile.tutorId, enrollment.tutorId))
+		.where(eq(enrollment.userId, userId))
+		.orderBy(asc(enrollment.createdAt));
+}
+
+/**
+ * One of this user's tutors, by page address (or their first tutor when none is given).
+ * Null if they are not linked to that tutor: a student can never act on another tutor's data.
+ */
+export async function myTutor(db: DB, userId: string, slug?: string | null) {
+	const all = await tutorsForUser(db, userId);
+	if (slug) return all.find((t) => t.slug === slug) ?? null;
+	return all[0] ?? null;
+}
+
+/* ---------- students (tutor view: only their own) ---------- */
+
+export async function listStudents(db: DB, tutorId: string, q?: string) {
 	const search = q?.trim();
 	return db
 		.select({
@@ -22,15 +64,17 @@ export async function listStudents(db: DB, q?: string) {
 			email: user.email,
 			role: user.role,
 			phone: profile.phone,
-			level: profile.level,
+			level: enrollment.level,
 			isUnder18: profile.isUnder18,
 			parentName: profile.parentName,
 			childName: profile.childName
 		})
-		.from(user)
+		.from(enrollment)
+		.innerJoin(user, eq(user.id, enrollment.userId))
 		.leftJoin(profile, eq(profile.userId, user.id))
 		.where(
 			and(
+				eq(enrollment.tutorId, tutorId),
 				inArray(user.role, ['student', 'parent']),
 				search
 					? or(
@@ -45,7 +89,8 @@ export async function listStudents(db: DB, q?: string) {
 
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
 
-export async function getStudent(db: DB, id: string) {
+/** One of this tutor's students (null for anyone not enrolled with them). */
+export async function getStudent(db: DB, tutorId: string, id: string) {
 	const [s] = await db
 		.select({
 			id: user.id,
@@ -54,25 +99,35 @@ export async function getStudent(db: DB, id: string) {
 			role: user.role,
 			createdAt: user.createdAt,
 			phone: profile.phone,
-			level: profile.level,
+			level: enrollment.level,
 			isUnder18: profile.isUnder18,
 			parentName: profile.parentName,
 			parentPhone: profile.parentPhone,
 			parentEmail: profile.parentEmail,
 			childName: profile.childName
 		})
-		.from(user)
+		.from(enrollment)
+		.innerJoin(user, eq(user.id, enrollment.userId))
 		.leftJoin(profile, eq(profile.userId, user.id))
-		.where(and(eq(user.id, id), inArray(user.role, ['student', 'parent'])));
+		.where(
+			and(
+				eq(enrollment.tutorId, tutorId),
+				eq(user.id, id),
+				inArray(user.role, ['student', 'parent'])
+			)
+		);
 	return s ?? null;
 }
 
-export async function setLevel(db: DB, userId: string, level: string | null) {
-	await db.update(profile).set({ level }).where(eq(profile.userId, userId));
+export async function setLevel(db: DB, tutorId: string, userId: string, level: string | null) {
+	await db
+		.update(enrollment)
+		.set({ level })
+		.where(and(eq(enrollment.tutorId, tutorId), eq(enrollment.userId, userId)));
 }
 
-/** All of one student's lessons, newest first, with the tutor's private notes. */
-export function studentLessons(db: DB, userId: string) {
+/** One student's lessons with this tutor, newest first, with the tutor's private notes. */
+export function studentLessons(db: DB, tutorId: string, userId: string) {
 	return db
 		.select({
 			lessonId: lesson.id,
@@ -88,18 +143,33 @@ export function studentLessons(db: DB, userId: string) {
 		.from(attendee)
 		.innerJoin(lesson, eq(lesson.id, attendee.lessonId))
 		.leftJoin(subject, eq(subject.id, lesson.subjectId))
-		.where(eq(attendee.userId, userId))
+		.where(and(eq(attendee.userId, userId), eq(lesson.tutorId, tutorId)))
 		.orderBy(desc(lesson.startsAt));
 }
 
-export async function setPrivateNote(db: DB, attendeeId: number, note: string | null) {
-	await db.update(attendee).set({ privateNote: note }).where(eq(attendee.id, attendeeId));
+/** The tutor's private note on one place in one of THEIR lessons. */
+export async function setPrivateNote(
+	db: DB,
+	tutorId: string,
+	attendeeId: number,
+	note: string | null
+) {
+	await db
+		.update(attendee)
+		.set({ privateNote: note })
+		.where(
+			and(
+				eq(attendee.id, attendeeId),
+				sql`${attendee.lessonId} in (select ${lesson.id} from ${lesson} where ${lesson.tutorId} = ${tutorId})`
+			)
+		);
 }
 
 /* ---------- homework ---------- */
 
 export async function giveHomework(
 	db: DB,
+	tutorId: string,
 	v: {
 		userId: string;
 		title: string;
@@ -109,16 +179,22 @@ export async function giveHomework(
 		fileName: string | null;
 	}
 ) {
-	const [row] = await db.insert(homework).values(v).returning();
+	const [row] = await db
+		.insert(homework)
+		.values({ ...v, tutorId })
+		.returning();
 	return row;
 }
 
-export async function homeworkForUser(db: DB, userId: string) {
+/** A student's homework; with tutorId, only from that tutor. */
+export async function homeworkForUser(db: DB, userId: string, tutorId?: string) {
 	const items = await db
-		.select()
+		.select({ h: homework, tutorName: tutorProfile.tutorName })
 		.from(homework)
-		.where(eq(homework.userId, userId))
-		.orderBy(desc(homework.createdAt));
+		.leftJoin(tutorProfile, eq(tutorProfile.tutorId, homework.tutorId))
+		.where(and(eq(homework.userId, userId), tutorId ? eq(homework.tutorId, tutorId) : undefined))
+		.orderBy(desc(homework.createdAt))
+		.then((rows) => rows.map((r) => ({ ...r.h, tutorName: r.tutorName })));
 	if (!items.length) return [];
 	const answers = await db
 		.select()
@@ -140,7 +216,7 @@ export async function getHomework(db: DB, id: number) {
 
 export async function getAnswer(db: DB, id: number) {
 	const [a] = await db
-		.select({ a: homeworkAnswer, userId: homework.userId })
+		.select({ a: homeworkAnswer, userId: homework.userId, tutorId: homework.tutorId })
 		.from(homeworkAnswer)
 		.innerJoin(homework, eq(homework.id, homeworkAnswer.homeworkId))
 		.where(eq(homeworkAnswer.id, id));
@@ -163,14 +239,28 @@ export async function handIn(
 	return row;
 }
 
-export async function giveFeedback(db: DB, answerId: number, feedback: string | null) {
-	await db.update(homeworkAnswer).set({ feedback }).where(eq(homeworkAnswer.id, answerId));
+export async function giveFeedback(
+	db: DB,
+	tutorId: string,
+	answerId: number,
+	feedback: string | null
+) {
+	await db
+		.update(homeworkAnswer)
+		.set({ feedback })
+		.where(
+			and(
+				eq(homeworkAnswer.id, answerId),
+				sql`${homeworkAnswer.homeworkId} in (select ${homework.id} from ${homework} where ${homework.tutorId} = ${tutorId})`
+			)
+		);
 }
 
 /* ---------- reviews ---------- */
 
 /** Only people with at least one past lesson that wasn't cancelled can review. */
-export async function canReview(db: DB, userId: string, now = new Date()) {
+/** Only people with at least one past lesson with THIS tutor that wasn't cancelled can review. */
+export async function canReview(db: DB, tutorId: string, userId: string, now = new Date()) {
 	const r = await db
 		.select({ id: attendee.id })
 		.from(attendee)
@@ -178,6 +268,7 @@ export async function canReview(db: DB, userId: string, now = new Date()) {
 		.where(
 			and(
 				eq(attendee.userId, userId),
+				eq(lesson.tutorId, tutorId),
 				eq(attendee.status, 'booked'),
 				ne(lesson.status, 'cancelled'),
 				lt(lesson.endsAt, now)
@@ -187,8 +278,11 @@ export async function canReview(db: DB, userId: string, now = new Date()) {
 	return r.length > 0;
 }
 
-export async function myReview(db: DB, userId: string) {
-	const [r] = await db.select().from(review).where(eq(review.userId, userId));
+export async function myReview(db: DB, tutorId: string, userId: string) {
+	const [r] = await db
+		.select()
+		.from(review)
+		.where(and(eq(review.tutorId, tutorId), eq(review.userId, userId)));
 	return r ?? null;
 }
 
@@ -201,32 +295,40 @@ export function displayNameFor(fullName: string) {
 /** One review per person; posting again replaces the text (it is the author's own words). */
 export async function postReview(
 	db: DB,
+	tutorId: string,
 	userId: string,
 	fullName: string,
 	rating: number,
 	text: string,
 	now = new Date()
 ) {
-	if (!(await canReview(db, userId, now))) return null;
+	if (!(await canReview(db, tutorId, userId, now))) return null;
 	const [row] = await db
 		.insert(review)
-		.values({ userId, displayName: displayNameFor(fullName), rating, text })
-		.onConflictDoUpdate({ target: review.userId, set: { rating, text, createdAt: now } })
+		.values({ tutorId, userId, displayName: displayNameFor(fullName), rating, text })
+		.onConflictDoUpdate({
+			target: [review.tutorId, review.userId],
+			set: { rating, text, createdAt: now }
+		})
 		.returning();
 	return row;
 }
 
-export const allReviews = (db: DB) => db.select().from(review).orderBy(desc(review.createdAt));
+export const allReviews = (db: DB, tutorId: string) =>
+	db.select().from(review).where(eq(review.tutorId, tutorId)).orderBy(desc(review.createdAt));
 
-/** The tutor can hide or show a review, but never change its words. */
-export async function setReviewHidden(db: DB, id: number, hidden: boolean) {
-	await db.update(review).set({ hidden }).where(eq(review.id, id));
+/** The tutor can hide or show a review of THEM, but never change its words. */
+export async function setReviewHidden(db: DB, tutorId: string, id: number, hidden: boolean) {
+	await db
+		.update(review)
+		.set({ hidden })
+		.where(and(eq(review.id, id), eq(review.tutorId, tutorId)));
 }
 
-export async function countStudents(db: DB) {
+export async function countStudents(db: DB, tutorId: string) {
 	const [r] = await db
 		.select({ n: sql<number>`count(*)::int` })
-		.from(user)
-		.where(inArray(user.role, ['student', 'parent']));
+		.from(enrollment)
+		.where(eq(enrollment.tutorId, tutorId));
 	return r.n;
 }

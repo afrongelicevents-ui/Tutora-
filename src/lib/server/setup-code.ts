@@ -39,9 +39,10 @@ export async function checkSetupCode(db: DB, code: string): Promise<boolean> {
 	return !!row && sameText(row.codeHash, await sha256(plain));
 }
 
-/** The code has been used: remove it so it never works again. */
-export async function useUpSetupCode(db: DB) {
-	await db.delete(setupCode);
+/** The code has been used: remove it so it never works again. False if it was already gone. */
+export async function useUpSetupCode(db: DB): Promise<boolean> {
+	const gone = await db.delete(setupCode).returning({ id: setupCode.id });
+	return gone.length > 0;
 }
 
 /** Makes a fresh code (tests and local development; production codes come from the deploy). */

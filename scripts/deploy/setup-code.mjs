@@ -1,4 +1,4 @@
-// Makes the one-time code the owner needs to create the tutor account at /setup.
+// Makes the one-time code the platform owner needs to create their account at /setup.
 // Only its SHA-256 fingerprint goes into the database. The code itself is printed ENCRYPTED
 // with setup-code.pub.pem, so the public logs reveal nothing; only the holder of the private
 // key (the person deploying) can read it.
@@ -14,9 +14,9 @@ async function main() {
 	const client = new pg.Client({ connectionString: process.env.DATABASE_URL });
 	await client.connect();
 	try {
-		const tutor = await client.query(`select 1 from "user" where role = 'tutor' limit 1`);
+		const tutor = await client.query(`select 1 from "user" where role = 'owner' limit 1`);
 		if (tutor.rowCount) {
-			console.log('The tutor account already exists: no setup code needed.');
+			console.log('The owner account already exists: no setup code needed.');
 			return;
 		}
 		const existing = await client.query(
