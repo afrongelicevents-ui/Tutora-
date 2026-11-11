@@ -224,7 +224,9 @@ jobs:
           { echo "BETTER_AUTH_SECRET=$AUTH"; echo "CRON_SECRET=$CRON"; echo "TEST_PASSWORD=$TPW"; } >> "$GITHUB_ENV"
       - name: Prepare the database tables
         if: steps.check.outputs.ready == 'true'
-        run: pnpm db:migrate
+        run: |
+          TEST_SITE=1 node scripts/deploy/reset-test-schema.mjs
+          pnpm db:migrate
       # Fake data goes in BEFORE the test website goes live: a new branch (or anything that is
       # not our fake data) is always wiped first, so real data can never be served there.
       - name: Fill the test database with fake data
