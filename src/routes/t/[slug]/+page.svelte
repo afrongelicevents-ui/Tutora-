@@ -37,6 +37,7 @@
 </svelte:head>
 
 <section class="wrap narrow">
+	{#if data.preview}<p class="notice">{m.owner_preview_note()}</p>{/if}
 	{#if !site.has.anything}
 		<div class="card stack">
 			<h1>{m.coming_soon_title()}</h1>

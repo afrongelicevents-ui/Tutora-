@@ -1,5 +1,5 @@
 {
-  "id": "3ad4d260-dd8e-4a7f-bdb7-b922cec4355e",
+  "id": "0c64fab3-02e5-442e-9978-1688abb55f0e",
   "prevId": "4635d703-01ce-40e2-b4da-3db8517c6ccb",
   "version": "7",
   "dialect": "postgresql",
@@ -1660,6 +1660,12 @@
         "due_on": {
           "name": "due_on",
           "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reminded_at": {
+          "name": "reminded_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },

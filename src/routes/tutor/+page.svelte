@@ -36,6 +36,13 @@
 		</p>{/if}
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
 
+	{#if data.toCheck}
+		<a class="card row" href="/tutor/homework"
+			><span class="grow">{m.today_hw_check({ n: data.toCheck })}</span><span aria-hidden="true"
+				>›</span
+			></a
+		>
+	{/if}
 	{#if data.missing.length}
 		<a class="panel setup-banner" href="/tutor/setup/1">
 			<b>{m.today_setup_title()}</b>
@@ -194,4 +201,13 @@
 	{:else}
 		<p class="empty">{m.today_no_payments()}</p>
 	{/each}
+	{#if data.activity.length}
+		<h2>{m.today_activity()}</h2>
+		<ul class="list card">
+			{#each data.activity as a (a.id)}<li>
+					<span>{a.title}</span><span class="small muted">{fmtDay(a.createdAt)}</span>
+				</li>{/each}
+		</ul>
+		<a href="/notifications">{m.notif_title()}</a>
+	{/if}
 </section>

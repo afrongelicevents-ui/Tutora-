@@ -1,4 +1,6 @@
 import { fail } from '@sveltejs/kit';
+import { answersToCheck } from '#lib/server/people.ts';
+import { myNotifications } from '#lib/server/notify.ts';
 import { requireTutor } from '#lib/server/guards.ts';
 import { SubmitFail, submitForApproval } from '#lib/server/tutor.ts';
 import type { Actions, PageServerLoad } from './$types';
@@ -55,7 +57,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			}))
 		),
 		currency: s.currency,
-		missing
+		missing,
+		toCheck: (await answersToCheck(locals.db, t)).length,
+		activity: (await myNotifications(locals.db, t, 5)).map((n) => ({
+			id: n.id,
+			title: n.title,
+			createdAt: n.createdAt
+		}))
 	};
 };
 

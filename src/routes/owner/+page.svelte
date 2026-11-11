@@ -10,7 +10,13 @@
 		((form && 'values' in form ? form.values : {}) ?? {}) as Record<string, string>
 	);
 	const statusLabel = (s: string) =>
-		s === 'pending' ? m.owner_pending() : s === 'active' ? m.owner_active() : m.owner_suspended();
+		({
+			pending: m.owner_pending(),
+			active: m.owner_active(),
+			suspended: m.owner_suspended(),
+			draft: m.owner_draft(),
+			rejected: m.owner_rejected()
+		})[s] ?? s;
 	const pending = $derived(data.tutors.filter((x) => x.status === 'pending'));
 	const others = $derived(data.tutors.filter((x) => x.status !== 'pending'));
 </script>
@@ -42,14 +48,19 @@
 						value="active"
 					/><button class="btn btn-sm" type="submit">{m.owner_approve()}</button>
 				</form>
-				<form method="POST" action="?/status">
-					<input type="hidden" name="id" value={tu.tutorId} /><input
-						type="hidden"
-						name="status"
-						value="suspended"
-					/><button class="btn btn-warn btn-sm" type="submit">{m.owner_refuse()}</button>
-				</form>
+				<a class="btn btn-secondary btn-sm" href="/t/{tu.slug}?preview=1"
+					>{m.owner_view_profile()}</a
+				>
 			</div>
+			<details class="small">
+				<summary>{m.owner_refuse()}</summary>
+				<form method="POST" action="?/reject" class="stack">
+					<input type="hidden" name="id" value={tu.tutorId} />
+					<label for="why-{tu.tutorId}">{m.owner_reject_why()}</label>
+					<input id="why-{tu.tutorId}" name="reason" maxlength="500" required />
+					<button class="btn btn-warn btn-sm" type="submit">{m.owner_reject_send()}</button>
+				</form>
+			</details>
 		</div>
 	{:else}
 		<p class="empty">{m.owner_none_waiting()}</p>

@@ -69,6 +69,7 @@ ALTER TABLE "attendee" ADD COLUMN "attendance" text;--> statement-breakpoint
 ALTER TABLE "attendee" ADD COLUMN "child_id" integer;--> statement-breakpoint
 ALTER TABLE "booking" ADD COLUMN "child_id" integer;--> statement-breakpoint
 ALTER TABLE "calendar_event" ADD COLUMN "kind" text DEFAULT 'personal' NOT NULL;--> statement-breakpoint
+ALTER TABLE "homework" ADD COLUMN "reminded_at" timestamp with time zone;--> statement-breakpoint
 ALTER TABLE "homework_answer" ADD COLUMN "checked_at" timestamp with time zone;--> statement-breakpoint
 ALTER TABLE "review" ADD COLUMN "reply" text;--> statement-breakpoint
 ALTER TABLE "review" ADD COLUMN "replied_at" timestamp with time zone;--> statement-breakpoint

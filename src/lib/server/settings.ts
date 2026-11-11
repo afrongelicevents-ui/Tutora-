@@ -109,6 +109,13 @@ export async function activeTutorBySlug(db: DB, slug: string): Promise<SiteSetti
 	return row ?? null;
 }
 
+/** Any tutor's settings by page address, whatever their status (owner preview only). */
+export async function tutorBySlug(db: DB, slug: string): Promise<SiteSettings | null> {
+	if (!/^[a-z0-9-]{1,40}$/.test(slug)) return null;
+	const [row] = await db.select().from(tutorProfile).where(eq(tutorProfile.slug, slug));
+	return row ?? null;
+}
+
 export async function isActiveTutor(db: DB, tutorId: string): Promise<boolean> {
 	const [row] = await db
 		.select({ id: tutorProfile.tutorId })

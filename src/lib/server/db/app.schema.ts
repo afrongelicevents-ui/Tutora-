@@ -460,6 +460,8 @@ export const homework = pgTable('homework', {
 	fileKey: text('file_key'),
 	fileName: text('file_name'),
 	dueOn: date('due_on'),
+	/** the "due tomorrow" reminder was sent */
+	remindedAt: ts('reminded_at'),
 	createdAt: created()
 });
 

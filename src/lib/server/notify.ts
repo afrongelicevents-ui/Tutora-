@@ -2,20 +2,10 @@ import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { user } from './db/auth.schema.ts';
 import { notification, notificationPref } from './db/app.schema.ts';
+import { saveNotification, type NotifyOpts } from './notify-core.ts';
+export type { NotifyKind, NotifyOpts } from './notify-core.ts';
 import { sendEmail } from './auth.ts';
 import { m } from '../paraglide/messages.js';
-
-export type NotifyKind =
-	'booking' | 'lesson' | 'payment' | 'homework' | 'review' | 'account' | 'reminder';
-
-export interface NotifyOpts {
-	kind?: NotifyKind;
-	/** where the in-app notification leads */
-	link?: string;
-}
-
-/** Reminders and homework messages can be switched off; bookings, payments and account can't. */
-const optional = (kind: NotifyKind) => kind === 'reminder' || kind === 'homework';
 
 /**
  * Tell someone something: always in the app (bell), and by email when an email service is
@@ -28,27 +18,13 @@ export async function notifyUser(
 	body: string,
 	opts: NotifyOpts = {}
 ) {
-	const kind = opts.kind ?? 'booking';
 	try {
-		const [u] = await db
-			.select({ email: user.email, name: user.name })
-			.from(user)
-			.where(eq(user.id, userId));
-		if (!u) return;
-		const [pref] = await db
-			.select()
-			.from(notificationPref)
-			.where(eq(notificationPref.userId, userId));
-		if (pref && kind === 'reminder' && pref.remindersOff) return;
-		if (pref && kind === 'homework' && pref.homeworkOff) return;
-		await db
-			.insert(notification)
-			.values({ userId, kind, title: subject, body, link: opts.link ?? null });
-		if (pref?.emailOff && optional(kind)) return;
+		const r = await saveNotification(db, userId, subject, body, opts);
+		if (!r?.sendEmail) return;
 		await sendEmail({
-			to: u.email,
+			to: r.email,
 			subject,
-			text: `${m.email_hello({ name: u.name })}\n\n${body}\n\n${m.email_sign()}`
+			text: `${m.email_hello({ name: r.name })}\n\n${body}\n\n${m.email_sign()}`
 		});
 	} catch (e) {
 		console.error('notifyUser failed', e);

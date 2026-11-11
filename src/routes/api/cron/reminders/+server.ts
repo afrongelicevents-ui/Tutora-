@@ -2,7 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { CRON_SECRET, ORIGIN } from '$app/env/private';
 import type { RequestHandler } from './$types';
 import { sendDueReminders } from '#lib/server/reminders.ts';
-import { sendEmail } from '#lib/server/auth.ts';
+import { notifyUser } from '#lib/server/notify.ts';
 
 /** Constant-time comparison. */
 function sameText(a: string, b: string) {
@@ -17,6 +17,10 @@ export const POST: RequestHandler = async ({ locals, request, url }) => {
 	const given = request.headers.get('authorization') ?? '';
 	if (!CRON_SECRET || CRON_SECRET.length < 24 || !sameText(given, `Bearer ${CRON_SECRET}`))
 		error(404, 'Not found');
-	const sent = await sendDueReminders(locals.db, sendEmail, ORIGIN ?? url.origin);
+	const sent = await sendDueReminders(
+		locals.db,
+		(userId, subject, body, opts) => notifyUser(locals.db, userId, subject, body, opts),
+		ORIGIN ?? url.origin
+	);
 	return json({ sent });
 };

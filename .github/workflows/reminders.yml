@@ -1,8 +1,8 @@
 name: Lesson reminders
 
-# Every hour, ask the site to email lesson reminders (24 h and 1 h before).
-# Does nothing until the repository secrets SITE_URL and CRON_SECRET are set
-# (the same CRON_SECRET must be set on Cloudflare). See docs/DEPLOY.md.
+# Every hour: reminders 24 h and 1 h before each lesson (to students and the tutor) and
+# "homework due tomorrow", shown in Tutora's notifications. Needs only the NEON_API_KEY
+# secret already used for deploys (the job finds the live database itself).
 
 on:
   schedule:
@@ -12,17 +12,50 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: reminders
+  cancel-in-progress: false
+
 jobs:
   remind:
     runs-on: ubuntu-latest
     steps:
-      - name: Send due reminders
+      - name: Check secrets are set
+        id: check
         env:
-          SITE_URL: ${{ secrets.SITE_URL }}
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          NEON: ${{ secrets.NEON_API_KEY }}
+          CF: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          if [ -z "$SITE_URL" ] || [ -z "$CRON_SECRET" ]; then
-            echo "Reminders not set up yet (SITE_URL / CRON_SECRET missing). Skipping."
-            exit 0
+          if [ -z "$NEON" ] || [ -z "$CF" ]; then
+            echo "Reminders not set up yet (NEON_API_KEY / CLOUDFLARE_API_TOKEN missing). Skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
-          curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/cron/reminders"
+      - uses: actions/checkout@v5
+        if: steps.check.outputs.ready == 'true'
+        with:
+          ref: main
+      - uses: pnpm/action-setup@v4
+        if: steps.check.outputs.ready == 'true'
+      - uses: actions/setup-node@v5
+        if: steps.check.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: steps.check.outputs.ready == 'true'
+      - name: Find the database
+        if: steps.check.outputs.ready == 'true'
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+        run: node scripts/deploy/neon.mjs
+      - name: Find the website address
+        if: steps.check.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/deploy/cloudflare.mjs
+      - name: Send due reminders
+        if: steps.check.outputs.ready == 'true'
+        run: node_modules/.bin/tsx scripts/deploy/reminders.ts
