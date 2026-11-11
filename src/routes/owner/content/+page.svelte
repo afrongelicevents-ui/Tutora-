@@ -25,7 +25,7 @@
 			name="photo"
 			type="file"
 			accept="image/jpeg,image/png,image/webp"
-			use:shrink={{ max: 900, quality: 0.62 }}
+			use:shrink={{ max: 800, quality: 0.55 }}
 		/>
 		{#if data.c.heroPhoto}<label class="check"
 				><input type="checkbox" name="remove" /> <span>{m.oc_photo_remove()}</span></label

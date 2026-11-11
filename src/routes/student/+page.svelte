@@ -14,7 +14,7 @@
 	);
 	const status = (s: string) =>
 		({
-			requested: m.status_requested(),
+			requested: m.status_pending(),
 			proposed: m.status_proposed(),
 			declined: m.status_declined()
 		})[s] ?? s;

@@ -13,7 +13,7 @@ import { getStore } from '#lib/server/storage.ts';
 import { formObject } from '#lib/validation/auth.ts';
 
 /** The homepage photo must stay small for mobile data (it is shrunk on the phone first). */
-const HERO_MAX_BYTES = 90 * 1024;
+const HERO_MAX_BYTES = 60 * 1024;
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	requireOwner(locals.user, url);
