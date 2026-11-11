@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E6B52">
+<title>Tutora demo (sample data)</title>
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDcyIDcyIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHJvbGU9ImltZyIgYXJpYS1sYWJlbD0iVHV0b3JhIj48cmVjdCB3aWR0aD0iNzIiIGhlaWdodD0iNzIiIHJ4PSIxOCIgZmlsbD0iIzBFNkI1MiIvPjxwYXRoIGQ9Ik0yOS4xIDMzTDI3LjcgMzIuNkMyNy40IDMyLjUgMjcuMSAzMi4zIDI3IDMyLjJDMjYuOCAzMiAyNi44IDMxLjkgMjYuOCAzMS43QzI2LjggMzEuNCAyNi45IDMxLjIgMjcuMSAzMUMyNy4zIDMwLjkgMjcuNSAzMC44IDI3LjggMzAuOEgyOS42QzI5LjkgMzAuOCAzMC4yIDMwLjcgMzAuNCAzMC42QzMwLjYgMzAuNSAzMC45IDMwLjMgMzEuMSAyOS45TDM0LjUgMjUuN0MzNC44IDI1LjQgMzUuMSAyNS4xIDM1LjMgMjQuOUMzNS42IDI0LjcgMzUuOSAyNC43IDM2LjIgMjQuN0MzNi41IDI0LjcgMzYuNyAyNC44IDM2LjkgMjQuOUMzNyAyNS4xIDM3LjEgMjUuNCAzNy4xIDI1LjhWNDcuOUMzNy4xIDQ5LjIgMzcuNCA1MC4xIDM3LjkgNTAuOEMzOC4zIDUxLjQgMzkgNTEuOCAzOS45IDUxLjhDNDAuNSA1MS44IDQwLjkgNTEuNiA0MS4zIDUxLjRDNDEuNiA1MS4yIDQxLjkgNTEgNDIuMSA1MC43QzQyLjMgNTAuNCA0Mi41IDUwLjEgNDIuNyA0OS44QzQyLjkgNDkuNSA0My4yIDQ5LjMgNDMuNCA0OS4yQzQzLjcgNDkuMiA0My44IDQ5LjIgNDMuOSA0OS40QzQ0LjEgNDkuNSA0NC4xIDQ5LjcgNDQuMSA1MC4xQzQ0LjEgNTEuMSA0My43IDUyIDQzLjEgNTIuOEM0Mi41IDUzLjcgNDEuNyA1NC4zIDQwLjYgNTQuOEMzOS42IDU1LjMgMzguNCA1NS41IDM3IDU1LjVDMzQuOSA1NS41IDMzLjIgNTUgMzIgNTMuOUMzMC43IDUyLjggMzAuMSA1MS4yIDMwLjEgNDlWMzQuM0MzMC4xIDMzLjkgMzAuMSAzMy42IDI5LjkgMzMuNEMyOS44IDMzLjIgMjkuNSAzMy4xIDI5LjEgMzNaTTM0LjUgMzIuOUwzNC41IDMwLjhINDIuOUM0My4yIDMwLjggNDMuNSAzMC45IDQzLjcgMzFDNDMuOSAzMS4xIDQ0IDMxLjMgNDQgMzEuNkM0NCAzMiA0My44IDMyLjMgNDMuNCAzMi41QzQzIDMyLjggNDIuNCAzMi45IDQxLjYgMzIuOUgzNC41WiIgZmlsbD0iI0ZCRjhGMiIvPjxjaXJjbGUgY3g9IjU0IiBjeT0iMjAiIHI9IjYiIGZpbGw9IiNFM0EzM0IiLz48L3N2Zz4K">
+<style>
+:root{--g7:#0e6b52;--g9:#0a4f3d;--clay:#b4531a;--ochre:#e3a33b;--ink:#1c2620;--ink6:#5b665f;--paper:#fbf8f2;--mint:#e3f1ea;--line:#e6e0d6;--white:#fff;--red:#a3261b;--red0:#fbeae7;--amber0:#fdf3e1;--amber:#8a5a00;--r:12px;--tap:48px;--font:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;--serif:Georgia,"Times New Roman",serif}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;font:16px/1.5 var(--font);color:var(--ink);background:var(--paper)}
+a{color:var(--g7)}h1,h2,h3{font-family:var(--serif);line-height:1.2;margin:0 0 10px}h1{font-size:1.75rem}h2{font-size:1.35rem}h3{font-size:1.1rem}
+p{margin:0 0 12px}.muted{color:var(--ink6)}.small{font-size:.875rem}.tiny{font-size:.78rem}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--g7);outline-offset:2px}
+.demo-bar{position:sticky;top:0;z-index:50;background:var(--ink);color:#fff;padding:6px 10px 8px}
+.demo-bar .tag{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;font-weight:700;letter-spacing:.02em;margin-bottom:6px}
+.demo-bar .tag span:first-child{background:var(--ochre);color:var(--ink);padding:2px 8px;border-radius:99px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#2c3a32;border-radius:12px;padding:4px}
+.seg button{min-height:40px;border:0;border-radius:9px;background:transparent;color:#fff;font-weight:700;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--paper);color:var(--ink)}
+header.app{background:#fff;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;padding:8px 16px;min-height:58px}
+header.app img{height:24px;width:auto}
+.who{font-size:.85rem;color:var(--ink6);text-align:right}
+main{max-width:720px;margin:0 auto;padding:18px 16px 120px}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.panel{background:var(--mint);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.band{background:var(--g9);color:var(--paper);border-radius:var(--r);padding:16px;margin:0 0 14px}
+.band .lbl{color:var(--mint);font-size:.85rem;font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stats b{display:block;font-family:var(--serif);font-size:1.6rem}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:var(--tap);padding:0 18px;border-radius:var(--r);border:2px solid var(--g7);background:var(--g7);color:var(--paper);font-weight:700;text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--g9);border-color:var(--g9)}
+.btn.sec{background:#fff;color:var(--g7)}.btn.sec:hover{background:var(--mint)}
+.btn.warn{background:#fff;color:var(--red);border-color:var(--red)}
+.btn.block{width:100%}.btn.sm{min-height:44px;padding:0 14px;font-size:.92rem}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row.end{justify-content:flex-end}.grow{flex:1}
+.stack>*+*{margin-top:12px}
+.field{display:grid;gap:4px;margin-bottom:12px}.field label,.lab{font-weight:600}
+input[type=text],input[type=email],input[type=tel],input[type=number],input[type=date],input[type=time],input[type=password],select,textarea{min-height:var(--tap);padding:8px 12px;border:1.5px solid #8a948e;border-radius:10px;background:#fff;width:100%}
+textarea{min-height:90px}
+.hint{font-size:.85rem;color:var(--ink6)}
+.choice{display:grid;grid-template-columns:1fr 1fr;gap:8px}.choice.three{grid-template-columns:1fr 1fr 1fr}
+.choice label{display:flex;align-items:center;gap:8px;min-height:var(--tap);padding:6px 12px;border:1.5px solid #8a948e;border-radius:10px;background:#fff;font-weight:600;cursor:pointer}
+.choice label:has(input:checked){border-color:var(--g7);background:var(--mint)}
+.choice input{accent-color:var(--g7);width:20px;height:20px;margin:0}
+.check{display:flex;gap:10px;align-items:flex-start;min-height:var(--tap);padding-top:10px}.check input{width:22px;height:22px;accent-color:var(--g7);flex:none;margin:0}
+.list{list-style:none;margin:0;padding:0}.list li{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.list li:last-child{border-bottom:0}
+.pill{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.8rem;font-weight:700;white-space:nowrap}
+.p-wait{background:var(--amber0);color:var(--amber)}.p-ok{background:var(--mint);color:var(--g9)}.p-no{background:var(--red0);color:var(--red)}.p-info{background:#eef2f0;color:var(--ink6)}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.slots label{display:flex;justify-content:center;align-items:center;min-height:var(--tap);border:1.5px solid #8a948e;border-radius:10px;background:#fff;font-weight:600;cursor:pointer}
+.slots label:has(input:checked){border-color:var(--g7);background:var(--mint)}.slots input{position:absolute;opacity:0;pointer-events:none}
+.day-h{font-weight:700;margin:14px 0 6px}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}.tabs button{min-height:44px;padding:0 14px;border-radius:99px;border:1.5px solid var(--line);background:#fff;font-weight:600;cursor:pointer;white-space:nowrap}.tabs button[aria-pressed=true]{background:var(--g7);color:var(--paper);border-color:var(--g7)}
+nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:1px solid var(--line);display:grid;padding-bottom:env(safe-area-inset-bottom)}
+nav.bottom button{min-height:58px;border:0;background:none;font-size:.72rem;font-weight:600;color:var(--ink6);display:grid;place-items:center;gap:2px;cursor:pointer;padding:6px 2px}
+nav.bottom button svg{width:22px;height:22px}
+nav.bottom button[aria-current=page]{color:var(--g7)}
+.fab{position:fixed;right:14px;bottom:20px;z-index:30;display:inline-flex;gap:8px;align-items:center;min-height:52px;padding:0 18px 0 14px;border-radius:99px;background:var(--g7);color:var(--paper);font-weight:700;text-decoration:none;box-shadow:0 4px 12px rgb(0 0 0/.2)}
+.avatar{width:84px;height:84px;border-radius:50%;background:var(--mint);border:3px solid var(--ochre);display:grid;place-items:center;font-family:var(--serif);font-size:1.9rem;color:var(--g9);flex:none}
+.hero{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.subject{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.price{color:var(--clay);font-weight:700;white-space:nowrap}
+.review{background:var(--mint);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.stars{color:var(--clay);letter-spacing:2px}
+.toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;z-index:60;max-width:90vw;text-align:center}
+.cal-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal-day{background:#fff;border:1px solid var(--line);border-radius:10px;min-height:120px;padding:4px;font-size:.7rem;cursor:pointer}
+.cal-day.today{border-color:var(--g7);box-shadow:inset 0 0 0 1px var(--g7)}
+.cal-day .d{font-weight:700;font-size:.78rem;margin-bottom:4px;text-align:center}
+.ev{border-radius:6px;padding:3px 4px;margin-bottom:3px;line-height:1.25;overflow:hidden}
+.ev.on{background:var(--mint);color:var(--g9);border-left:3px solid var(--g7)}.ev.ip{background:var(--amber0);color:var(--amber);border-left:3px solid var(--ochre)}.ev.own{background:#eef2f0;color:var(--ink6);border-left:3px solid #8a948e}
+.agenda .ev{font-size:.9rem;padding:10px;margin-bottom:8px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.8rem;margin:8px 0}.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.legend .l1::before{background:var(--g7)}.legend .l2::before{background:var(--ochre)}.legend .l3::before{background:#8a948e}
+.steps{display:flex;gap:4px;margin-bottom:14px}.steps i{flex:1;height:6px;border-radius:9px;background:var(--line)}.steps i.on{background:var(--g7)}
+.big-opt{display:block;width:100%;text-align:left;min-height:64px;padding:12px 16px;border-radius:var(--r);border:1.5px solid #8a948e;background:#fff;margin-bottom:8px;font-weight:600;cursor:pointer}
+.big-opt small{display:block;font-weight:400;color:var(--ink6)}
+.big-opt[aria-pressed=true]{border-color:var(--g7);background:var(--mint)}
+.receipt{background:#fff;border:1px solid var(--line);border-radius:4px;padding:22px;font-size:.92rem}
+.receipt h2{font-family:var(--font);font-size:1.1rem}.receipt table{width:100%;border-collapse:collapse;margin:10px 0}.receipt td{padding:6px 0;border-bottom:1px solid var(--line)}.receipt td:last-child{text-align:right}
+.room{background:#14201a;color:#fff;border-radius:var(--r);overflow:hidden}
+.room-top{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;font-size:.85rem}
+.sig{display:inline-flex;gap:2px;align-items:flex-end;height:14px;margin-right:6px}.sig i{width:4px;background:#5fd4a8;border-radius:1px}.sig i.off{background:#3c4a43}
+canvas.board{display:block;width:100%;height:300px;background:#fff;touch-action:none;cursor:crosshair}
+.room-tools{display:flex;gap:6px;padding:8px;flex-wrap:wrap;background:#1d2b24}
+.room-tools button{min-height:44px;min-width:44px;padding:0 12px;border-radius:10px;border:0;background:#2e4037;color:#fff;font-weight:600;cursor:pointer}
+.room-tools button[aria-pressed=true]{background:var(--ochre);color:var(--ink)}
+.room-tools .end{background:#b3261e;margin-left:auto}
+.people{display:flex;gap:8px;padding:8px 12px;flex-wrap:wrap}
+.person{display:flex;align-items:center;gap:6px;background:#22322a;border-radius:99px;padding:4px 10px 4px 4px;font-size:.85rem}
+.person .dot{width:28px;height:28px;border-radius:50%;background:var(--g7);display:grid;place-items:center;font-weight:700;font-size:.8rem}
+.person.talk .dot{box-shadow:0 0 0 3px #5fd4a8}
+.video{background:#0b1310;height:150px;display:grid;place-items:center;color:#8fa79b;font-size:.85rem}
+.chat{background:#fff;color:var(--ink);padding:10px;max-height:200px;overflow:auto;font-size:.9rem}
+.chat p{margin:0 0 6px}.chat b{color:var(--g9)}
+.swatch{width:30px;height:30px;border-radius:50%;border:2px solid #fff}
+.knock{background:var(--amber0);color:var(--amber);padding:10px 12px;display:flex;gap:8px;align-items:center;justify-content:space-between}
+.empty{text-align:center;color:var(--ink6);padding:18px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.92rem}.kv dt{color:var(--ink6)}.kv dd{margin:0;font-weight:600}
+.money{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}.money div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 4px}.money b{display:block;font-size:1.15rem}
+table.t{width:100%;border-collapse:collapse;font-size:.9rem}table.t th,table.t td{text-align:left;padding:8px 4px;border-bottom:1px solid var(--line)}table.t td.n,table.t th.n{text-align:right}
+.preview{max-width:140px;border-radius:8px;border:1px solid var(--line)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+@media(min-width:760px){main{padding-top:28px}.cal-day{min-height:160px;font-size:.78rem}}
+@media print{.demo-bar,header.app,nav.bottom,.fab,.noprint{display:none!important}main{padding:0}.receipt{border:0}}
+</style>
+</head>
+<body>
+<div class="demo-bar noprint" role="region" aria-label="Demo controls">
+	<div class="tag"><span>Demo — sample data</span><span>Works offline · nothing is saved</span></div>
+	<div class="seg" role="group" aria-label="View as">
+		<button data-role="visitor" aria-pressed="true">Visitor</button>
+		<button data-role="student" aria-pressed="false">Student</button>
+		<button data-role="tutor" aria-pressed="false">Tutor</button>
+	</div>
+</div>
+<header class="app">
+	<a href="#" data-go="home" aria-label="Tutora home"><img src="data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIGFyaWEtbGFiZWw9IlR1dG9yYSIgd2lkdGg9IjE5MSIgaGVpZ2h0PSI0MyIgdmlld0JveD0iMCAwIDE5MSA0MyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMy4zIDEwLjdMMSAxMC4xQzAuNiAxMCAwLjQgOS45IDAuMiA5LjdDMC4xIDkuNiAwIDkuNCAwIDkuMUMwIDguOSAwLjEgOC42IDAuMyA4LjVDMC41IDguMyAwLjggOC4yIDEuMSA4LjJIMy43QzQuMSA4LjIgNC40IDguMSA0LjcgOEM0LjkgNy45IDUuMiA3LjYgNS41IDcuM0wxMC44IDEuMkMxMS4xIDAuOCAxMS40IDAuNSAxMS43IDAuM0MxMiAwLjEgMTIuNCAwIDEyLjcgMEMxMyAwIDEzLjMgMC4xIDEzLjQgMC4zQzEzLjYgMC41IDEzLjcgMC45IDEzLjcgMS4zVjMxLjhDMTMuNyAzMy42IDE0LjEgMzUgMTQuOCAzNS45QzE1LjUgMzYuOCAxNi40IDM3LjMgMTcuNiAzNy4zQzE4LjMgMzcuMyAxOC45IDM3LjEgMTkuNCAzNi45QzE5LjggMzYuNiAyMC4yIDM2LjMgMjAuNSAzNS45QzIwLjkgMzUuNSAyMS4yIDM1LjEgMjEuNCAzNC43QzIxLjcgMzQuMyAyMiAzNCAyMi4zIDMzLjZDMjIuNSAzMy42IDIyLjcgMzMuNiAyMi45IDMzLjdDMjMuMSAzMy45IDIzLjEgMzQuMSAyMy4xIDM0LjVDMjIuOSAzNiAyMi40IDM3LjIgMjEuNiAzOC4zQzIwLjggMzkuNCAxOS44IDQwLjMgMTguNCA0MC45QzE3LjEgNDEuNiAxNS42IDQxLjkgMTMuOCA0MS45QzEwLjggNDEuOSA4LjUgNDEuMSA2LjkgMzkuN0M1LjIgMzguMyA0LjQgMzYuMSA0LjQgMzMuMlYxMi4yQzQuNCAxMS43IDQuMyAxMS40IDQuMiAxMS4yQzQgMTEgMy44IDEwLjggMy4zIDEwLjdaTTEwLjMgMTAuNUwxMC41IDguMkgyMS44QzIyLjIgOC4yIDIyLjUgOC4zIDIyLjcgOC40QzIyLjkgOC42IDIzIDguOCAyMyA5LjFDMjMgOS41IDIyLjggOS44IDIyLjQgMTAuMUMyMS45IDEwLjQgMjEuMyAxMC41IDIwLjQgMTAuNUgxMC4zWk00OS44IDM3LjlWMzQuOEw0OS42IDM0LjZWMTRDNDkuNiAxMy42IDQ5LjUgMTMuMyA0OS40IDEzLjFDNDkuMyAxMi45IDQ5LjEgMTIuOCA0OC44IDEyLjhMNDYuNyAxMi43QzQ2LjQgMTIuNyA0Ni4yIDEyLjYgNDYgMTIuNEM0NS45IDEyLjMgNDUuOCAxMi4xIDQ1LjggMTEuOUM0NS44IDExLjYgNDUuOSAxMS40IDQ2LjEgMTEuM0M0Ni4yIDExLjEgNDYuNSAxMSA0Ni45IDEwLjhMNTUuMiA4LjJDNTUuOCA4IDU2LjMgNy44IDU2LjYgNy43QzU3IDcuNiA1Ny4zIDcuNiA1Ny42IDcuNkM1OC4xIDcuNiA1OC40IDcuNyA1OC43IDhDNTguOSA4LjMgNTkgOC42IDU5IDkuMVYzNy4xQzU5IDM3LjcgNTkuMSAzOC4xIDU5LjMgMzguNEM1OS41IDM4LjYgNTkuOCAzOC44IDYwLjIgMzlMNjEuOCAzOS4zQzYyLjEgMzkuNCA2Mi4zIDM5LjUgNjIuNSAzOS43QzYyLjYgMzkuOCA2Mi43IDQwIDYyLjcgNDAuMkM2Mi43IDQwLjUgNjIuNiA0MC44IDYyLjQgNDAuOUM2Mi4yIDQxLjEgNjEuOSA0MS4yIDYxLjUgNDEuMkg1Mi43QzUxLjkgNDEuMiA1MS4yIDQwLjkgNTAuNiA0MC4zQzUwLjEgMzkuNyA0OS44IDM4LjkgNDkuOCAzNy45Wk0yOCAzMS45VjE0QzI4IDEzLjYgMjcuOSAxMy4zIDI3LjggMTMuMUMyNy42IDEyLjkgMjcuNCAxMi44IDI3LjEgMTIuOEwyNSAxMi43QzI0LjcgMTIuNyAyNC41IDEyLjYgMjQuMyAxMi40QzI0LjIgMTIuMyAyNC4yIDEyLjEgMjQuMiAxMS45QzI0LjIgMTEuNiAyNC4yIDExLjQgMjQuNCAxMS4zQzI0LjUgMTEuMSAyNC44IDExIDI1LjIgMTAuOEwzMy42IDguMkMzNC4yIDggMzQuNyA3LjggMzUgNy43QzM1LjQgNy42IDM1LjcgNy42IDM1LjkgNy42QzM2LjQgNy42IDM2LjggNy43IDM3IDhDMzcuMyA4LjMgMzcuNCA4LjYgMzcuNCA5LjFWMzAuN0MzNy40IDMyLjggMzcuOSAzNC40IDM4LjkgMzUuNEMzOS45IDM2LjQgNDEuMiAzNi45IDQyLjggMzYuOUM0My45IDM2LjkgNDUgMzYuNyA0Ni4xIDM2LjJDNDcuMiAzNS43IDQ4LjQgMzUgNDkuNSAzMy45TDUwLjkgMzIuOEw1MiAzMy45TDUwLjYgMzUuMUM0Ny44IDM3LjYgNDUuMyAzOS40IDQzLjIgNDAuNEM0MS4xIDQxLjQgMzkuMSA0MS45IDM3LjIgNDEuOUMzNC41IDQxLjkgMzIuMyA0MS4xIDMwLjUgMzkuM0MyOC44IDM3LjYgMjggMzUuMSAyOCAzMS45Wk02Ny4zIDEwLjdMNjQuOSAxMC4xQzY0LjYgMTAgNjQuMyA5LjkgNjQuMSA5LjdDNjQgOS42IDYzLjkgOS40IDYzLjkgOS4xQzYzLjkgOC45IDY0IDguNiA2NC4yIDguNUM2NC40IDguMyA2NC43IDguMiA2NSA4LjJINjcuNkM2OCA4LjIgNjguMyA4LjEgNjguNiA4QzY4LjkgNy45IDY5LjEgNy42IDY5LjQgNy4zTDc0LjcgMS4yQzc1IDAuOCA3NS4zIDAuNSA3NS43IDAuM0M3NiAwLjEgNzYuMyAwIDc2LjYgMEM3Ni45IDAgNzcuMiAwLjEgNzcuMyAwLjNDNzcuNSAwLjUgNzcuNiAwLjkgNzcuNiAxLjNWMzEuOEM3Ny42IDMzLjYgNzggMzUgNzguNyAzNS45Qzc5LjQgMzYuOCA4MC4zIDM3LjMgODEuNiAzNy4zQzgyLjMgMzcuMyA4Mi44IDM3LjEgODMuMyAzNi45QzgzLjcgMzYuNiA4NC4xIDM2LjMgODQuNCAzNS45Qzg0LjggMzUuNSA4NS4xIDM1LjEgODUuMyAzNC43Qzg1LjYgMzQuMyA4NS45IDM0IDg2LjIgMzMuNkM4Ni41IDMzLjYgODYuNiAzMy42IDg2LjggMzMuN0M4NyAzMy45IDg3LjEgMzQuMSA4NyAzNC41Qzg2LjggMzYgODYuMyAzNy4yIDg1LjYgMzguM0M4NC44IDM5LjQgODMuNyA0MC4zIDgyLjMgNDAuOUM4MSA0MS42IDc5LjUgNDEuOSA3Ny43IDQxLjlDNzQuOCA0MS45IDcyLjQgNDEuMSA3MC44IDM5LjdDNjkuMiAzOC4zIDY4LjMgMzYuMSA2OC4zIDMzLjJWMTIuMkM2OC4zIDExLjcgNjguMyAxMS40IDY4LjEgMTEuMkM2Ny45IDExIDY3LjcgMTAuOCA2Ny4zIDEwLjdaTTc0LjIgMTAuNUw3NC40IDguMkg4NS43Qzg2LjEgOC4yIDg2LjQgOC4zIDg2LjYgOC40Qzg2LjggOC42IDg2LjkgOC44IDg2LjkgOS4xQzg2LjkgOS41IDg2LjcgOS44IDg2LjMgMTAuMUM4NS45IDEwLjQgODUuMiAxMC41IDg0LjMgMTAuNUg3NC4yWk0xMzkgMjIuNkMxMzkgMTkuMyAxMzkuNCAxNi41IDE0MC40IDE0LjJDMTQxLjMgMTIgMTQyLjYgMTAuMyAxNDQuMSA5LjFDMTQ1LjcgOCAxNDcuMyA3LjUgMTQ5IDcuNUMxNTEgNy41IDE1Mi42IDguMSAxNTMuNyA5LjNDMTU0LjkgMTAuNSAxNTUuNCAxMi4yIDE1NS40IDE0LjVDMTU1LjQgMTYuNSAxNTUgMTggMTU0LjEgMTguOUMxNTMuMyAxOS45IDE1Mi4yIDIwLjQgMTUwLjggMjAuNEMxNDkuNSAyMC40IDE0OC41IDIwIDE0Ny44IDE5LjNDMTQ3LjIgMTguNiAxNDYuOCAxNy42IDE0Ni44IDE2LjJWMTVDMTQ2LjggMTQuMyAxNDYuNiAxMy43IDE0Ni4zIDEzLjRDMTQ2IDEzIDE0NS40IDEyLjggMTQ0LjcgMTIuOEMxNDMuOSAxMi44IDE0My4xIDEzLjEgMTQyLjQgMTMuOUMxNDEuNiAxNC42IDE0MSAxNS42IDE0MC42IDE3LjFDMTQwLjEgMTguNSAxMzkuOSAyMC40IDEzOS45IDIyLjZIMTM5Wk0xMzkuNiA5LjFMMTM5LjkgMTlWMzdDMTM5LjkgMzcuNSAxNDAgMzcuOSAxNDAuMiAzOC4yQzE0MC40IDM4LjUgMTQwLjggMzguNiAxNDEuMyAzOC43TDE0NC42IDM5LjJDMTQ1IDM5LjMgMTQ1LjMgMzkuNCAxNDUuNCAzOS42QzE0NS42IDM5LjcgMTQ1LjcgNDAgMTQ1LjcgNDAuMkMxNDUuNyA0MC41IDE0NS42IDQwLjggMTQ1LjMgNDAuOUMxNDUuMSA0MS4xIDE0NC44IDQxLjIgMTQ0LjQgNDEuMkgxMjhDMTI3LjYgNDEuMiAxMjcuMyA0MS4xIDEyNy4xIDQwLjlDMTI2LjkgNDAuOCAxMjYuOCA0MC41IDEyNi44IDQwLjJDMTI2LjggNDAgMTI2LjggMzkuOCAxMjcgMzkuN0MxMjcuMSAzOS41IDEyNy40IDM5LjQgMTI3LjcgMzkuM0wxMjkuNCAzOUMxMjkuNyAzOC44IDEzMCAzOC42IDEzMC4yIDM4LjRDMTMwLjMgMzguMSAxMzAuNCAzNy43IDEzMC40IDM3LjJWMTMuOUMxMzAuNCAxMy41IDEzMC40IDEzLjIgMTMwLjIgMTNDMTMwLjEgMTIuOCAxMjkuOSAxMi43IDEyOS42IDEyLjdMMTI3LjQgMTIuNkMxMjcuMiAxMi42IDEyNyAxMi41IDEyNi44IDEyLjNDMTI2LjcgMTIuMiAxMjYuNiAxMiAxMjYuNiAxMS44QzEyNi42IDExLjUgMTI2LjcgMTEuMyAxMjYuOSAxMS4yQzEyNyAxMSAxMjcuMyAxMC45IDEyNy43IDEwLjdMMTM2IDguM0MxMzYuNyA4LjEgMTM3LjIgNy45IDEzNy42IDcuOEMxMzcuOSA3LjcgMTM4LjIgNy43IDEzOC40IDcuN0MxMzguOCA3LjcgMTM5IDcuOCAxMzkuMiA4QzEzOS40IDguMiAxMzkuNSA4LjYgMTM5LjYgOS4xWk0xNzcuNCAzNy4yVjM2LjZMMTc2LjggMzYuN1YxNC40QzE3Ni44IDEyLjcgMTc2LjUgMTEuNCAxNzUuNyAxMC41QzE3NC45IDkuNiAxNzMuNyA5LjEgMTcyLjMgOS4xQzE3MC44IDkuMSAxNjkuNyA5LjQgMTY4LjkgMTAuMUMxNjguMiAxMC44IDE2Ny44IDExLjYgMTY3LjggMTIuNVYxNS42QzE2Ny44IDE2LjkgMTY3LjQgMTcuOSAxNjYuNCAxOC44QzE2NS41IDE5LjUgMTY0LjMgMTkuOSAxNjIuOCAxOS45QzE2MS41IDE5LjkgMTYwLjYgMTkuNiAxNTkuOSAxOUMxNTkuMiAxOC4zIDE1OC44IDE3LjQgMTU4LjggMTYuMkMxNTguOCAxNC44IDE1OS40IDEzLjQgMTYwLjUgMTIuMUMxNjEuNyAxMC44IDE2My4zIDkuNiAxNjUuNSA4LjhDMTY3LjggNy45IDE3MC41IDcuNSAxNzMuOCA3LjVDMTc4IDcuNSAxODEuMSA4LjMgMTgzLjEgMTBDMTg1LjIgMTEuOCAxODYuMiAxNC4xIDE4Ni4yIDE3LjJWMzUuOUMxODYuMiAzNi42IDE4Ni40IDM3LjIgMTg2LjYgMzcuNUMxODYuOSAzNy45IDE4Ny4zIDM4LjEgMTg3LjggMzguMUMxODguMyAzOC4xIDE4OC43IDM3LjkgMTg4LjkgMzcuN0MxODkuMyAzNy40IDE4OS41IDM3LjEgMTg5LjYgMzYuNkMxODkuNyAzNi41IDE4OS44IDM2LjQgMTg5LjkgMzYuNEMxOTAgMzYuMyAxOTAuMSAzNi4zIDE5MC4yIDM2LjNDMTkwLjQgMzYuMyAxOTAuNSAzNi4zIDE5MC42IDM2LjVDMTkwLjcgMzYuNiAxOTAuOCAzNi44IDE5MC44IDM3QzE5MC44IDM3LjYgMTkwLjUgMzguMyAxOTAgMzkuMUMxODkuNSAzOS45IDE4OC44IDQwLjYgMTg3LjcgNDEuMUMxODYuNyA0MS43IDE4NS40IDQyIDE4My44IDQyQzE4MS43IDQyIDE4MC4xIDQxLjUgMTc5IDQwLjdDMTc3LjkgMzkuOCAxNzcuNCAzOC42IDE3Ny40IDM3LjJaTTE1Ny4yIDMzLjlDMTU3LjIgMzEuMSAxNTguNCAyOC44IDE2MC44IDI3LjFDMTYzLjMgMjUuMyAxNjYuOSAyNC41IDE3MS42IDI0LjVDMTczLjEgMjQuNSAxNzQuNCAyNC42IDE3NS42IDI0LjlDMTc2LjcgMjUuMiAxNzcuNyAyNS41IDE3OC41IDI2TDE3OCAyNy40QzE3Ny4yIDI3IDE3Ni4zIDI2LjcgMTc1LjUgMjYuNUMxNzQuNiAyNi4yIDE3My43IDI2LjEgMTcyLjcgMjYuMUMxNzAuOCAyNi4xIDE2OS4zIDI2LjcgMTY4LjMgMjcuOEMxNjcuMiAyOC45IDE2Ni43IDMwLjQgMTY2LjcgMzIuNEMxNjYuNyAzNC4zIDE2Ny4yIDM1LjggMTY4LjEgMzYuOUMxNjkuMSAzNy45IDE3MC4zIDM4LjQgMTcxLjggMzguNEMxNzIuOSAzOC40IDE3NC4xIDM4LjEgMTc1LjIgMzcuNkMxNzYuMyAzNyAxNzcuMiAzNi4zIDE3Ny45IDM1LjNMMTc4LjUgMzYuNUMxNzcuMyAzOC4zIDE3NS43IDM5LjYgMTczLjYgNDAuNkMxNzEuNiA0MS41IDE2OS40IDQyIDE2Ny4xIDQyQzE2NC4xIDQyIDE2MS43IDQxLjIgMTU5LjkgMzkuN0MxNTguMSAzOC4yIDE1Ny4yIDM2LjMgMTU3LjIgMzMuOVoiIGZpbGw9IiMwRTZCNTIiLz48cGF0aCBkPSJNMTA2LjQgNy41QzEwOS45IDcuNSAxMTMgOC4yIDExNS42IDkuNkMxMTguMiAxMS4xIDEyMC4zIDEzLjIgMTIxLjggMTUuOEMxMjMuMyAxOC40IDEyNC4xIDIxLjQgMTI0LjEgMjQuOEMxMjQuMSAyOC4xIDEyMy4zIDMxLjEgMTIxLjcgMzMuN0MxMjAuMiAzNi4zIDExOC4xIDM4LjMgMTE1LjQgMzkuOEMxMTIuNyA0MS4zIDEwOS42IDQyIDEwNi4xIDQyQzEwMi42IDQyIDk5LjUgNDEuMyA5Ni45IDM5LjhDOTQuMyAzOC40IDkyLjIgMzYuMyA5MC43IDMzLjdDODkuMiAzMS4xIDg4LjUgMjguMSA4OC41IDI0LjdDODguNSAyMS40IDg5LjIgMTguNCA5MC44IDE1LjhDOTIuMyAxMy4yIDk0LjQgMTEuMiA5Ny4xIDkuN0M5OS44IDguMiAxMDIuOSA3LjUgMTA2LjQgNy41Wk0xMDguNiAzOS43QzExMC4yIDM5LjUgMTExLjUgMzguNyAxMTIuNCAzNy40QzExMy40IDM2LjIgMTE0IDM0LjQgMTE0LjMgMzIuMUMxMTQuNiAyOS44IDExNC41IDI3IDExNCAyMy43QzExMy42IDIwLjQgMTEyLjggMTcuNyAxMTEuOCAxNS42QzExMC45IDEzLjQgMTA5LjcgMTEuOSAxMDguNCAxMC45QzEwNyA5LjkgMTA1LjUgOS42IDEwMy45IDkuOEMxMDIuMyAxMCAxMDEgMTAuOCAxMDAgMTIuMUM5OS4xIDEzLjMgOTguNSAxNS4xIDk4LjIgMTcuNEM5Ny45IDE5LjcgOTggMjIuNSA5OC41IDI1LjhDOTkgMjkgOTkuNyAzMS43IDEwMC43IDMzLjhDMTAxLjcgMzYgMTAyLjkgMzcuNSAxMDQuMiAzOC41QzEwNS42IDM5LjUgMTA3IDM5LjkgMTA4LjYgMzkuN1oiIGZpbGw9IiNFM0EzM0IiLz48L3N2Zz4K" alt="Tutora" width="107" height="24"></a>
+	<div class="who" id="who"></div>
+</header>
+<main id="main" tabindex="-1"></main>
+<nav class="bottom noprint" id="nav" aria-label="Main"></nav>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+'use strict';
+/* ---------- helpers ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const DAY = 864e5;
+const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+const at = (dayOffset, h, m = 0) => { const d = new Date(today0.getTime() + dayOffset * DAY); d.setHours(h, m, 0, 0); return d; };
+const fmtDay = (d) => d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+const fmtTime = (d) => d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+const fmtDate = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+const sameDay = (a, b) => a.toDateString() === b.toDateString();
+const money = (cents) => (S.settings.currency === 'ZWG' ? 'ZiG ' : '$') + (cents / 100).toFixed(2);
+const initials = (n) => n.split(/\s+/).map((x) => x[0]).slice(0, 2).join('').toUpperCase();
+let uid = 100; const nid = () => ++uid;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (t.hidden = true), 2600); }
+function download(name, type, text) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+const ICON = {
+	home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+	cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+	plus: '<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+	money: '<rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="3"/>',
+	book: '<path d="M4 4h10a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4z"/><path d="M8 8h6M8 12h6"/>',
+	users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>',
+	gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+	today: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+	user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+	info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+	chat: '<path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/>'
+};
+const svg = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
+
+/* ---------- sample data ---------- */
+const S = {
+	role: 'visitor',
+	screen: 'home',
+	settings: {
+		name: 'Mr T. Sample', headline: 'Clear, patient lessons that get results', town: 'Harare (Avondale)',
+		bio: 'I have taught Maths and Science for 12 years, in schools and privately. I explain step by step, check understanding often, and give short practice after each lesson.',
+		qualifications: 'BSc Mathematics & Physics; PGDE (sample)', years: 12, style: 'Short explanations, lots of worked examples, a quick quiz at the end of each lesson.',
+		modes: 'both', groups: 'both', maxGroup: 4, length: 60, cancelHours: 24, showPrices: true, currency: 'USD', defaultPrice: 800,
+		whatsapp: '+263 77 000 0000', phone: '+263 77 000 0000', email: 'tutor@example.com',
+		bank: { bank: 'Sample Bank', name: 'T. Sample', number: '0000 0000 0000', branch: 'Harare' }, ecocash: { number: '077 000 0000', name: 'T. Sample' }, innbucks: { number: '077 000 0000', name: 'T. Sample' },
+		weekly: [
+			{ day: 1, from: '15:00', to: '18:00' }, { day: 2, from: '15:00', to: '18:00' }, { day: 3, from: '15:00', to: '18:00' },
+			{ day: 4, from: '15:00', to: '18:00' }, { day: 6, from: '08:00', to: '12:00' }
+		]
+	},
+	subjects: [
+		{ id: 1, name: 'Mathematics', levels: 'Grade 7 · O Level · A Level', price: 800 },
+		{ id: 2, name: 'Physics', levels: 'O Level · A Level', price: 1000 },
+		{ id: 3, name: 'Combined Science', levels: 'O Level', price: 800 }
+	],
+	packages: [{ id: 1, name: '4 Maths lessons', count: 4, price: 2800 }, { id: 2, name: '8 lessons (any subject)', count: 8, price: 5600 }],
+	results: [{ value: '94%', label: 'O Level pass rate (2025)' }, { value: '31', label: 'A grades' }, { value: '120+', label: 'students taught' }],
+	reviews: [
+		{ id: 1, who: 'Tendai, Form 4', stars: 5, text: 'I went from a D to a B in Maths in one term. He explains until you get it.', hidden: false },
+		{ id: 2, who: 'Parent of R.M.', stars: 5, text: 'Very organised, sends homework after every lesson and the receipts are clear.', hidden: false },
+		{ id: 3, who: 'K., A Level', stars: 4, text: 'Physics finally makes sense. The whiteboard lessons work fine even on my data bundle.', hidden: false }
+	],
+	students: [
+		{ id: 1, name: 'Rudo Moyo', level: 'Form 4 · O Level', phone: '+263 77 000 0011', email: 'rudo@example.com', under18: true, parent: 'Mai Moyo', parentPhone: '+263 77 000 0012', package: { name: '4 Maths lessons', left: 2, total: 4 } },
+		{ id: 2, name: 'Tafadzwa Dube', level: 'Lower 6 · A Level', phone: '+263 77 000 0021', email: 'tafadzwa@example.com', under18: false },
+		{ id: 3, name: 'Kuda Ncube', level: 'Grade 7', phone: '+263 77 000 0031', email: 'kuda.parent@example.com', under18: true, parent: 'Mr Ncube', parentPhone: '+263 77 000 0032' },
+		{ id: 4, name: 'Chipo Banda', level: 'Form 3 · O Level', phone: '+263 77 000 0041', email: 'chipo@example.com', under18: true, parent: 'Mrs Banda', parentPhone: '+263 77 000 0042' }
+	],
+	me: 1, // the student we "are" in Student view
+	lessons: [], requests: [], events: [], payments: [], homework: [], notes: {},
+	room: null, wizard: 0, calView: 'week', calDay: new Date(today0), studentTab: 'upcoming', payTab: 'pay'
+};
+const L = (id, sid, subj, d, h, m, mode, extra = {}) => ({ id, students: Array.isArray(sid) ? sid : [sid], subject: subj, start: at(d, h, m), mins: 60, mode, status: 'scheduled', ...extra });
+S.lessons = [
+	L(1, 1, 'Mathematics', 0, 15, 0, 'online'),
+	L(2, [2, 4], 'Physics', 0, 16, 30, 'online', { group: true }),
+	L(3, 3, 'Mathematics', 0, 18, 0, 'in_person'),
+	L(4, 1, 'Mathematics', 2, 15, 0, 'online'),
+	L(5, 4, 'Combined Science', 1, 16, 0, 'in_person'),
+	L(6, 2, 'Physics', 3, 17, 0, 'online'),
+	L(7, 1, 'Mathematics', -5, 15, 0, 'online', { status: 'done' }),
+	L(8, 1, 'Mathematics', -3, 15, 0, 'online', { status: 'done' }),
+	L(9, 3, 'Mathematics', 4, 9, 0, 'in_person'),
+	L(10, 1, 'Physics', 6, 10, 0, 'online')
+];
+S.events = [{ id: 1, title: 'School staff meeting', start: at(1, 9), mins: 120 }, { id: 2, title: 'Mark mock exams', start: at(3, 9), mins: 180 }];
+S.requests = [
+	{ id: 1, student: 4, subject: 'Mathematics', start: at(2, 17), mode: 'online', note: 'Help with simultaneous equations before my test.', status: 'requested' },
+	{ id: 2, student: 2, subject: 'Physics', start: at(5, 8, 0), mode: 'in_person', note: '', status: 'requested' }
+];
+S.payments = [
+	{ id: 1, student: 1, amount: 2800, method: 'EcoCash', ref: 'MP2410.1532.A12345', date: at(-6, 9), status: 'confirmed', receipt: 'R-000014', covers: ['Package: 4 Maths lessons'] },
+	{ id: 2, student: 2, amount: 1000, method: 'Bank transfer', ref: 'FT24311ABC', date: at(-1, 11), status: 'waiting', proof: true, covers: [] },
+	{ id: 3, student: 3, amount: 800, method: 'Cash', ref: '', date: at(-2, 18), status: 'waiting', covers: [] },
+	{ id: 4, student: 4, amount: 1600, method: 'InnBucks', ref: 'IB-7781', date: at(-9, 12), status: 'confirmed', receipt: 'R-000013', covers: ['Combined Science, ' + fmtDay(at(-12)), 'Combined Science, ' + fmtDay(at(-10))] }
+];
+S.charges = { 1: 2800, 2: 3000, 3: 2400, 4: 3200 };
+S.homework = [
+	{ id: 1, student: 1, title: 'Quadratic equations – exercise 4B', note: 'Questions 1–10. Show working.', due: at(2, 0), file: 'Exercise-4B.pdf', answer: null },
+	{ id: 2, student: 1, title: 'Past paper 2023, Paper 1', note: 'Time yourself: 2 hours.', due: at(-1, 0), file: 'ZIMSEC-2023-P1.pdf', answer: { file: 'Rudo-answers.jpg', at: at(-1, 20) }, feedback: 'Good work. Revise Q7 (bearings).' }
+];
+S.notes = { 7: 'Struggles with factorising when a ≠ 1. Practise more.', 8: 'Much better. Ready for past papers.' };
+let receiptNo = 14;
+
+const student = (id) => S.students.find((s) => s.id === id);
+const studentNames = (l) => l.students.map((id) => student(id).name.split(' ')[0]).join(', ');
+const myLessons = () => S.lessons.filter((l) => l.students.includes(S.me) && l.status !== 'cancelled').sort((a, b) => a.start - b.start);
+const paidBy = (sid) => S.payments.filter((p) => p.student === sid && p.status === 'confirmed').reduce((a, p) => a + p.amount, 0);
+const waitingBy = (sid) => S.payments.filter((p) => p.student === sid && p.status === 'waiting').reduce((a, p) => a + p.amount, 0);
+const owedBy = (sid) => Math.max(0, (S.charges[sid] || 0) - paidBy(sid));
+
+/* ---------- navigation ---------- */
+const NAV = {
+	visitor: [['home', 'Home', 'home'], ['about', 'About', 'info'], ['book', 'Book', 'plus'], ['signup', 'Sign up', 'user']],
+	student: [['s-home', 'Lessons', 'home'], ['book', 'Book', 'plus'], ['s-pay', 'Payments', 'money'], ['s-hw', 'Homework', 'book'], ['room', 'Room', 'chat']],
+	tutor: [['t-today', 'Today', 'today'], ['t-cal', 'Calendar', 'cal'], ['t-students', 'Students', 'users'], ['t-money', 'Money', 'money'], ['t-more', 'More', 'gear']]
+};
+const HOME = { visitor: 'home', student: 's-home', tutor: 't-today' };
+function go(screen, opts = {}) { S.screen = screen; Object.assign(S, opts); render(); window.scrollTo(0, 0); $('#main').focus({ preventScroll: true }); }
+function setRole(r) { S.role = r; document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.role === r))); if (S.room) S.room = null; go(HOME[r]); }
+
+function render() {
+	const items = NAV[S.role];
+	const nav = $('#nav');
+	nav.style.gridTemplateColumns = `repeat(${items.length},1fr)`;
+	nav.innerHTML = items.map(([k, label, ic]) => `<button data-go="${k}" ${S.screen === k || (S.screen.startsWith(k + ':')) ? 'aria-current="page"' : ''}>${svg(ic)}<span>${label}</span></button>`).join('');
+	$('#who').innerHTML = S.role === 'visitor' ? 'Not logged in' : S.role === 'student' ? `Logged in as <b>${esc(student(S.me).name)}</b>` : 'Logged in as <b>Tutor</b>';
+	const [name, arg] = S.screen.split(':');
+	const fn = SCREENS[name] || SCREENS.home;
+	$('#main').innerHTML = fn(arg);
+	const fab = S.role === 'visitor' && ['home', 'about'].includes(name) && S.settings.whatsapp
+		? `<a class="fab" href="#" data-act="wa">${svg('chat')}<span>WhatsApp</span></a>` : '';
+	document.querySelectorAll('.fab').forEach((f) => f.remove());
+	if (fab) document.body.insertAdjacentHTML('beforeend', fab);
+	if (name === 'room') initRoom();
+}
+
+/* ---------- screens ---------- */
+const SCREENS = {};
+const priceOf = (s) => (S.settings.showPrices ? `<span class="price">${money(s.price)} / lesson</span>` : '<span class="price">Ask for price</span>');
+
+SCREENS.home = () => {
+	const st = S.settings;
+	return `
+	<div class="hero"><div class="avatar" aria-hidden="true">${initials(st.name)}</div>
+	<div><h2 style="margin:0">${esc(st.name)}</h2><div class="muted small">Maths &amp; Science tutor · ${esc(st.town)}</div><span class="pill p-ok">${st.years} years teaching</span></div></div>
+	<h1>${esc(st.headline)}</h1>
+	<p class="muted">ZIMSEC and Cambridge, Grade 7 to A Level. Online from anywhere, or in person.</p>
+	<div class="stack"><button class="btn block" data-go="book">Book a lesson</button><button class="btn sec block" data-go="book" data-intro="1">Free 15-minute intro chat</button></div>
+	<div class="band" style="margin-top:18px"><div class="lbl">Results</div><div class="stats">${S.results.map((r) => `<div><b>${esc(r.value)}</b><span class="small">${esc(r.label)}</span></div>`).join('')}</div></div>
+	<h2>Subjects</h2>
+	${S.subjects.map((s) => `<div class="card subject"><div><b>${esc(s.name)}</b><div class="muted small">${esc(s.levels)}</div></div>${priceOf(s)}</div>`).join('')}
+	<h2 style="margin-top:18px">What students say</h2>
+	${S.reviews.filter((r) => !r.hidden).map((r) => `<div class="review"><div class="stars" aria-label="${r.stars} out of 5">${'★'.repeat(r.stars)}${'☆'.repeat(5 - r.stars)}</div><p style="margin:4px 0">“${esc(r.text)}”</p><div class="small muted">— ${esc(r.who)} · verified student</div></div>`).join('')}
+	<p class="tiny muted" style="margin-top:16px">Sections the tutor has not filled in yet are hidden automatically. Results are shown only with permission, with first names or initials.</p>`;
+};
+SCREENS.about = () => {
+	const st = S.settings;
+	return `<h1>About ${esc(st.name)}</h1>
+	<div class="card"><p>${esc(st.bio)}</p>
+	<dl class="kv"><dt>Qualifications</dt><dd>${esc(st.qualifications)}</dd><dt>Teaching</dt><dd>${st.years} years</dd><dt>Lessons</dt><dd>Online and in person (${esc(st.town)})</dd><dt>Groups</dt><dd>One-to-one, or small groups up to ${st.maxGroup}</dd></dl></div>
+	<h3>How I teach</h3><p>${esc(st.style)}</p>
+	<h3>Packages</h3>${S.packages.map((p) => `<div class="card subject"><b>${esc(p.name)}</b>${S.settings.showPrices ? `<span class="price">${money(p.price)}</span>` : ''}</div>`).join('')}
+	<button class="btn block" data-go="book">Book a lesson</button>`;
+};
+SCREENS.signup = () => `<h1>Create your account</h1><p class="muted">It takes one minute. We email you a link to confirm your address.</p>
+	<form data-form="signup"><fieldset style="border:0;padding:0;margin:0 0 12px"><legend class="lab">I am a</legend><div class="choice"><label><input type="radio" name="t" checked> Student</label><label><input type="radio" name="t"> Parent or guardian</label></div></fieldset>
+	<div class="field"><label for="su-n">Full name</label><input id="su-n" type="text" autocomplete="name"></div>
+	<div class="field"><label for="su-e">Email</label><input id="su-e" type="email"></div>
+	<div class="field"><label for="su-p">Password</label><span class="hint">At least 10 characters.</span><input id="su-p" type="password"></div>
+	<label class="check"><input type="checkbox" id="su-u18"> <span>I am under 18</span></label>
+	<div class="panel" id="su-par" hidden><b>Parent or guardian contact</b><p class="small muted">Required for students under 18.</p><div class="field"><label for="su-pn">Parent name</label><input id="su-pn" type="text"></div><div class="field"><label for="su-pp">Parent phone</label><input id="su-pp" type="tel"></div></div>
+	<label class="check"><input type="checkbox"> <span>I agree to the Terms and the Privacy notice.</span></label>
+	<button class="btn block" type="submit">Create account</button></form>`;
+
+/* booking */
+function freeSlots() {
+	const out = []; const len = S.settings.length;
+	for (let d = 1; d <= 14; d++) {
+		const day = at(d, 0); const w = S.settings.weekly.filter((x) => x.day === day.getDay());
+		for (const win of w) {
+			const [fh, fm] = win.from.split(':').map(Number); const [th, tm] = win.to.split(':').map(Number);
+			for (let t = fh * 60 + fm; t + len <= th * 60 + tm; t += len) {
+				const s = at(d, Math.floor(t / 60), t % 60); const e = new Date(s.getTime() + len * 6e4);
+				const clash = S.lessons.some((l) => l.status !== 'cancelled' && l.start < e && new Date(l.start.getTime() + l.mins * 6e4) > s)
+					|| S.events.some((ev) => ev.start < e && new Date(ev.start.getTime() + ev.mins * 6e4) > s)
+					|| S.requests.some((r) => r.status === 'requested' && +r.start === +s);
+				if (!clash) out.push(s);
+			}
+		}
+	}
+	return out;
+}
+SCREENS.book = (step) => {
+	const b = (S.booking ||= { subject: '', mode: 'online', slot: '', note: '', intro: false });
+	if (S.role === 'visitor' && step !== 'login') {
+		return `<h1>${b.intro ? 'Free intro chat' : 'Book a lesson'}</h1><div class="card"><p>To book, please create a free account or log in. We need a contact (and a parent's contact for under-18s).</p><div class="stack"><button class="btn block" data-go="signup">Create account</button><button class="btn sec block" data-act="as-student">Log in (demo: switch to Student)</button></div></div>`;
+	}
+	if (step === 'sent') return `<h1>Request sent</h1><div class="panel"><p><b>${esc(b.intro ? 'Intro chat' : b.subject)}</b> · ${fmtDay(new Date(b.slot))} ${fmtTime(new Date(b.slot))} · ${b.mode === 'online' ? 'Online' : 'In person'}</p><p class="small">The tutor will accept, decline or suggest another time. You'll get an email, and you can also check <b>Lessons</b>.</p></div>
+		<div class="stack"><button class="btn block" data-act="see-tutor">See it as the tutor →</button><button class="btn sec block" data-go="s-home">Back to my lessons</button></div>`;
+	const slots = freeSlots(); let lastDay = '';
+	return `<h1>${b.intro ? 'Free 15-minute intro chat' : 'Book a lesson'}</h1>
+	<form data-form="book">
+	${b.intro ? '' : `<fieldset style="border:0;padding:0;margin:0 0 12px"><legend class="lab">1. Subject</legend>${S.subjects.map((s) => `<label class="big-opt" style="display:flex;justify-content:space-between;align-items:center"><span><input type="radio" name="subject" value="${esc(s.name)}" ${b.subject === s.name ? 'checked' : ''} required style="accent-color:var(--g7);width:20px;height:20px;vertical-align:-4px;margin-right:8px">${esc(s.name)}<small>${esc(s.levels)}</small></span>${priceOf(s)}</label>`).join('')}</fieldset>`}
+	<fieldset style="border:0;padding:0;margin:0 0 12px"><legend class="lab">${b.intro ? '1' : '2'}. Where</legend><div class="choice"><label><input type="radio" name="mode" value="online" ${b.mode === 'online' ? 'checked' : ''}> Online</label><label><input type="radio" name="mode" value="in_person" ${b.mode === 'in_person' ? 'checked' : ''}> In person</label></div></fieldset>
+	<fieldset style="border:0;padding:0;margin:0 0 12px"><legend class="lab">${b.intro ? '2' : '3'}. Time <span class="muted small">(${S.settings.length} min, Zimbabwe time)</span></legend>
+	${slots.slice(0, 18).map((s) => { const d = fmtDay(s); const h = d !== lastDay ? `${lastDay ? '</div>' : ''}<div class="day-h">${d}</div><div class="slots">` : ''; lastDay = d; return `${h}<label><input type="radio" name="slot" value="${s.toISOString()}" required>${fmtTime(s)}</label>`; }).join('')}${lastDay ? '</div>' : ''}
+	</fieldset>
+	<div class="field"><label for="bk-note">${b.intro ? '3' : '4'}. Anything the tutor should know? <span class="muted small">(optional)</span></label><textarea id="bk-note" name="note" maxlength="500"></textarea></div>
+	<button class="btn block" type="submit">Send request</button>
+	<p class="tiny muted">You can cancel up to ${S.settings.cancelHours} hours before the lesson.</p></form>`;
+};
+
+/* student */
+SCREENS['s-home'] = () => {
+	const ls = myLessons(); const up = ls.filter((l) => l.start >= today0 && l.status === 'scheduled'); const past = ls.filter((l) => l.status === 'done');
+	const me = student(S.me); const reqs = S.requests.filter((r) => r.student === S.me && r.status !== 'accepted');
+	const next = up[0];
+	return `<h1>Hello, ${esc(me.name.split(' ')[0])}</h1>
+	${next ? `<div class="band"><div class="lbl">Next lesson</div><div style="font-size:1.15rem;font-weight:700;margin:4px 0">${esc(next.subject)} · ${sameDay(next.start, new Date()) ? 'Today' : fmtDay(next.start)} ${fmtTime(next.start)}</div><div class="small">${next.mode === 'online' ? 'Online lesson room' : 'In person · ' + esc(S.settings.town)}</div>
+	${next.mode === 'online' ? `<button class="btn sec" style="margin-top:10px" data-go="room">Join lesson room</button>` : ''}</div>` : ''}
+	${me.package ? `<div class="card row"><div class="grow"><b>${esc(me.package.name)}</b><div class="small muted">Package balance</div></div><span class="pill p-ok">${me.package.left} of ${me.package.total} left</span></div>` : ''}
+	<div class="tabs" role="group" aria-label="Show"><button data-act="stab" data-v="upcoming" aria-pressed="${S.studentTab === 'upcoming'}">Upcoming</button><button data-act="stab" data-v="past" aria-pressed="${S.studentTab === 'past'}">Past</button></div>
+	${S.studentTab === 'upcoming' ? `
+	${reqs.map((r) => `<div class="card"><div class="row"><b class="grow">${esc(r.subject)} · ${fmtDay(r.start)} ${fmtTime(r.start)}</b><span class="pill ${r.status === 'declined' ? 'p-no' : r.status === 'proposed' ? 'p-info' : 'p-wait'}">${r.status === 'requested' ? 'Waiting for tutor' : r.status === 'proposed' ? 'New time suggested' : esc(r.status)}</span></div>
+		${r.status === 'proposed' ? `<p class="small" style="margin-top:8px">Tutor suggests <b>${fmtDay(r.proposed)} ${fmtTime(r.proposed)}</b>.</p><div class="row"><button class="btn sm" data-act="accept-prop" data-id="${r.id}">Accept new time</button><button class="btn sec sm" data-act="decline-prop" data-id="${r.id}">No thanks</button></div>` : ''}</div>`).join('')}
+	${up.map((l) => { const hrs = (l.start - Date.now()) / 36e5; const canCancel = hrs > S.settings.cancelHours; return `<div class="card"><div class="row"><b class="grow">${esc(l.subject)}${l.group ? ' (group)' : ''}</b><span class="pill p-ok">Booked</span></div><div class="muted small">${sameDay(l.start, new Date()) ? 'Today' : fmtDay(l.start)} · ${fmtTime(l.start)}–${fmtTime(new Date(l.start.getTime() + l.mins * 6e4))} · ${l.mode === 'online' ? 'Online' : 'In person'}</div>
+		<div class="row" style="margin-top:10px">${l.mode === 'online' ? `<button class="btn sm" data-go="room">Join room</button>` : ''}<button class="btn sec sm" data-act="ics" data-id="${l.id}">Add to phone calendar</button>${canCancel ? `<button class="btn warn sm" data-act="cancel" data-id="${l.id}">Cancel</button>` : `<span class="tiny muted">Less than ${S.settings.cancelHours}h left: message the tutor to cancel</span>`}</div></div>`; }).join('') || '<div class="empty">No lessons booked yet.</div>'}
+	<button class="btn block" data-go="book">Book another lesson</button>` : `
+	${past.map((l) => `<div class="card row"><div class="grow"><b>${esc(l.subject)}</b><div class="small muted">${fmtDay(l.start)}</div></div><span class="pill p-info">Done</span></div>`).join('')}
+	<div class="card"><h3>Leave a review</h3><p class="small muted">Only students with a past lesson can review. The tutor can hide abusive reviews but cannot change them.</p>
+	<form data-form="review"><fieldset style="border:0;padding:0;margin:0 0 10px"><legend class="lab">Stars</legend><div class="choice three">${[5, 4, 3].map((n) => `<label><input type="radio" name="stars" value="${n}" ${n === 5 ? 'checked' : ''}> ${n} ★</label>`).join('')}</div></fieldset>
+	<div class="field"><label for="rv-t">Your review</label><textarea id="rv-t" name="text" maxlength="400" required></textarea></div><button class="btn block">Post review</button></form></div>`}`;
+};
+SCREENS['s-pay'] = (sub) => {
+	const me = student(S.me); const st = S.settings; const mine = S.payments.filter((p) => p.student === S.me).sort((a, b) => b.date - a.date);
+	if (sub && sub.startsWith('r')) return receiptView(+sub.slice(1));
+	return `<h1>Payments</h1>
+	<div class="money"><div><b>${money(paidBy(S.me))}</b><span class="tiny">Paid</span></div><div><b>${money(waitingBy(S.me))}</b><span class="tiny">Waiting</span></div><div><b>${money(owedBy(S.me))}</b><span class="tiny">Owed</span></div></div>
+	<div class="tabs" role="group" style="margin-top:14px"><button data-act="ptab" data-v="pay" aria-pressed="${S.payTab === 'pay'}">Paid to account</button><button data-act="ptab" data-v="cash" aria-pressed="${S.payTab === 'cash'}">Paid cash</button><button data-act="ptab" data-v="history" aria-pressed="${S.payTab === 'history'}">Receipts</button></div>
+	${S.payTab === 'pay' ? `
+	<details class="card"><summary style="min-height:44px;display:flex;align-items:center;font-weight:700;cursor:pointer">Where to pay (account details)</summary>
+	<dl class="kv"><dt>Bank</dt><dd>${esc(st.bank.bank)}, ${esc(st.bank.branch)}<br>${esc(st.bank.name)} · ${esc(st.bank.number)}</dd><dt>EcoCash</dt><dd>${esc(st.ecocash.number)} (${esc(st.ecocash.name)})</dd><dt>InnBucks</dt><dd>${esc(st.innbucks.number)} (${esc(st.innbucks.name)})</dd></dl>
+	<p class="tiny muted" style="margin-top:8px">Only shown to logged-in students and parents.</p></details>
+	<form data-form="pay" class="card">
+	<div class="field"><label for="py-a">Amount (${st.currency === 'ZWG' ? 'ZiG' : 'USD'})</label><input id="py-a" name="amount" type="number" inputmode="decimal" min="1" step="0.01" value="${(owedBy(S.me) / 100 || 8).toFixed(2)}" required></div>
+	<fieldset style="border:0;padding:0;margin:0 0 12px"><legend class="lab">Paid with</legend><div class="choice">${['Bank transfer', 'EcoCash', 'InnBucks', 'Other'].map((m, i) => `<label><input type="radio" name="method" value="${m}" ${i === 1 ? 'checked' : ''}> ${m}</label>`).join('')}</div></fieldset>
+	<div class="field"><label for="py-r">Reference number</label><span class="hint">From the SMS or bank slip.</span><input id="py-r" name="ref" type="text" required maxlength="60"></div>
+	<div class="field"><label for="py-d">Date paid</label><input id="py-d" name="date" type="date" value="${new Date().toISOString().slice(0, 10)}"></div>
+	<div class="field"><label for="py-f">Screenshot or photo of the proof</label><span class="hint">JPG, PNG or PDF, up to 3 MB. Photos are made smaller and location data is removed.</span><input id="py-f" name="proof" type="file" accept="image/*,application/pdf"><img id="py-prev" class="preview" alt="" hidden></div>
+	<button class="btn block">Send for checking</button></form>` : ''}
+	${S.payTab === 'cash' ? `<form data-form="cash" class="card"><p class="small muted">Tap this after handing cash to the tutor. They will confirm it.</p>
+	<div class="field"><label for="ca-a">Amount (${st.currency === 'ZWG' ? 'ZiG' : 'USD'})</label><input id="ca-a" name="amount" type="number" min="1" step="0.01" value="8.00" required></div>
+	<div class="field"><label for="ca-d">Date</label><input id="ca-d" name="date" type="date" value="${new Date().toISOString().slice(0, 10)}"></div><button class="btn block">I paid cash</button></form>` : ''}
+	${S.payTab === 'history' ? `${me.package ? `<div class="card row"><div class="grow"><b>${esc(me.package.name)}</b><div class="small muted">Counts down after each lesson</div></div><span class="pill p-ok">${me.package.left} of ${me.package.total} left</span></div>` : ''}
+	<ul class="list card">${mine.map((p) => `<li><div><b>${money(p.amount)}</b> · ${esc(p.method)}<div class="tiny muted">${fmtDay(p.date)}${p.ref ? ' · ' + esc(p.ref) : ''}</div></div>
+	${p.status === 'confirmed' ? `<button class="btn sec sm" data-go="s-pay:r${p.id}">Receipt</button>` : `<span class="pill ${p.status === 'rejected' ? 'p-no' : 'p-wait'}">${p.status === 'rejected' ? 'Not accepted' : 'Waiting for tutor'}</span>`}</li>`).join('') || '<li class="empty">No payments yet.</li>'}</ul>` : ''}`;
+};
+function receiptView(pid) {
+	const p = S.payments.find((x) => x.id === pid); const s = student(p.student);
+	const back = S.role === 'tutor' ? 't-money' : 's-pay';
+	return `<div class="row noprint" style="margin-bottom:10px"><button class="btn sec sm" data-go="${back}">← Back</button><button class="btn sm" data-act="print">Download PDF</button></div>
+	<div class="receipt"><div class="row" style="justify-content:space-between;align-items:flex-start"><img src="data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIGFyaWEtbGFiZWw9IlR1dG9yYSIgd2lkdGg9IjE5MSIgaGVpZ2h0PSI0MyIgdmlld0JveD0iMCAwIDE5MSA0MyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMy4zIDEwLjdMMSAxMC4xQzAuNiAxMCAwLjQgOS45IDAuMiA5LjdDMC4xIDkuNiAwIDkuNCAwIDkuMUMwIDguOSAwLjEgOC42IDAuMyA4LjVDMC41IDguMyAwLjggOC4yIDEuMSA4LjJIMy43QzQuMSA4LjIgNC40IDguMSA0LjcgOEM0LjkgNy45IDUuMiA3LjYgNS41IDcuM0wxMC44IDEuMkMxMS4xIDAuOCAxMS40IDAuNSAxMS43IDAuM0MxMiAwLjEgMTIuNCAwIDEyLjcgMEMxMyAwIDEzLjMgMC4xIDEzLjQgMC4zQzEzLjYgMC41IDEzLjcgMC45IDEzLjcgMS4zVjMxLjhDMTMuNyAzMy42IDE0LjEgMzUgMTQuOCAzNS45QzE1LjUgMzYuOCAxNi40IDM3LjMgMTcuNiAzNy4zQzE4LjMgMzcuMyAxOC45IDM3LjEgMTkuNCAzNi45QzE5LjggMzYuNiAyMC4yIDM2LjMgMjAuNSAzNS45QzIwLjkgMzUuNSAyMS4yIDM1LjEgMjEuNCAzNC43QzIxLjcgMzQuMyAyMiAzNCAyMi4zIDMzLjZDMjIuNSAzMy42IDIyLjcgMzMuNiAyMi45IDMzLjdDMjMuMSAzMy45IDIzLjEgMzQuMSAyMy4xIDM0LjVDMjIuOSAzNiAyMi40IDM3LjIgMjEuNiAzOC4zQzIwLjggMzkuNCAxOS44IDQwLjMgMTguNCA0MC45QzE3LjEgNDEuNiAxNS42IDQxLjkgMTMuOCA0MS45QzEwLjggNDEuOSA4LjUgNDEuMSA2LjkgMzkuN0M1LjIgMzguMyA0LjQgMzYuMSA0LjQgMzMuMlYxMi4yQzQuNCAxMS43IDQuMyAxMS40IDQuMiAxMS4yQzQgMTEgMy44IDEwLjggMy4zIDEwLjdaTTEwLjMgMTAuNUwxMC41IDguMkgyMS44QzIyLjIgOC4yIDIyLjUgOC4zIDIyLjcgOC40QzIyLjkgOC42IDIzIDguOCAyMyA5LjFDMjMgOS41IDIyLjggOS44IDIyLjQgMTAuMUMyMS45IDEwLjQgMjEuMyAxMC41IDIwLjQgMTAuNUgxMC4zWk00OS44IDM3LjlWMzQuOEw0OS42IDM0LjZWMTRDNDkuNiAxMy42IDQ5LjUgMTMuMyA0OS40IDEzLjFDNDkuMyAxMi45IDQ5LjEgMTIuOCA0OC44IDEyLjhMNDYuNyAxMi43QzQ2LjQgMTIuNyA0Ni4yIDEyLjYgNDYgMTIuNEM0NS45IDEyLjMgNDUuOCAxMi4xIDQ1LjggMTEuOUM0NS44IDExLjYgNDUuOSAxMS40IDQ2LjEgMTEuM0M0Ni4yIDExLjEgNDYuNSAxMSA0Ni45IDEwLjhMNTUuMiA4LjJDNTUuOCA4IDU2LjMgNy44IDU2LjYgNy43QzU3IDcuNiA1Ny4zIDcuNiA1Ny42IDcuNkM1OC4xIDcuNiA1OC40IDcuNyA1OC43IDhDNTguOSA4LjMgNTkgOC42IDU5IDkuMVYzNy4xQzU5IDM3LjcgNTkuMSAzOC4xIDU5LjMgMzguNEM1OS41IDM4LjYgNTkuOCAzOC44IDYwLjIgMzlMNjEuOCAzOS4zQzYyLjEgMzkuNCA2Mi4zIDM5LjUgNjIuNSAzOS43QzYyLjYgMzkuOCA2Mi43IDQwIDYyLjcgNDAuMkM2Mi43IDQwLjUgNjIuNiA0MC44IDYyLjQgNDAuOUM2Mi4yIDQxLjEgNjEuOSA0MS4yIDYxLjUgNDEuMkg1Mi43QzUxLjkgNDEuMiA1MS4yIDQwLjkgNTAuNiA0MC4zQzUwLjEgMzkuNyA0OS44IDM4LjkgNDkuOCAzNy45Wk0yOCAzMS45VjE0QzI4IDEzLjYgMjcuOSAxMy4zIDI3LjggMTMuMUMyNy42IDEyLjkgMjcuNCAxMi44IDI3LjEgMTIuOEwyNSAxMi43QzI0LjcgMTIuNyAyNC41IDEyLjYgMjQuMyAxMi40QzI0LjIgMTIuMyAyNC4yIDEyLjEgMjQuMiAxMS45QzI0LjIgMTEuNiAyNC4yIDExLjQgMjQuNCAxMS4zQzI0LjUgMTEuMSAyNC44IDExIDI1LjIgMTAuOEwzMy42IDguMkMzNC4yIDggMzQuNyA3LjggMzUgNy43QzM1LjQgNy42IDM1LjcgNy42IDM1LjkgNy42QzM2LjQgNy42IDM2LjggNy43IDM3IDhDMzcuMyA4LjMgMzcuNCA4LjYgMzcuNCA5LjFWMzAuN0MzNy40IDMyLjggMzcuOSAzNC40IDM4LjkgMzUuNEMzOS45IDM2LjQgNDEuMiAzNi45IDQyLjggMzYuOUM0My45IDM2LjkgNDUgMzYuNyA0Ni4xIDM2LjJDNDcuMiAzNS43IDQ4LjQgMzUgNDkuNSAzMy45TDUwLjkgMzIuOEw1MiAzMy45TDUwLjYgMzUuMUM0Ny44IDM3LjYgNDUuMyAzOS40IDQzLjIgNDAuNEM0MS4xIDQxLjQgMzkuMSA0MS45IDM3LjIgNDEuOUMzNC41IDQxLjkgMzIuMyA0MS4xIDMwLjUgMzkuM0MyOC44IDM3LjYgMjggMzUuMSAyOCAzMS45Wk02Ny4zIDEwLjdMNjQuOSAxMC4xQzY0LjYgMTAgNjQuMyA5LjkgNjQuMSA5LjdDNjQgOS42IDYzLjkgOS40IDYzLjkgOS4xQzYzLjkgOC45IDY0IDguNiA2NC4yIDguNUM2NC40IDguMyA2NC43IDguMiA2NSA4LjJINjcuNkM2OCA4LjIgNjguMyA4LjEgNjguNiA4QzY4LjkgNy45IDY5LjEgNy42IDY5LjQgNy4zTDc0LjcgMS4yQzc1IDAuOCA3NS4zIDAuNSA3NS43IDAuM0M3NiAwLjEgNzYuMyAwIDc2LjYgMEM3Ni45IDAgNzcuMiAwLjEgNzcuMyAwLjNDNzcuNSAwLjUgNzcuNiAwLjkgNzcuNiAxLjNWMzEuOEM3Ny42IDMzLjYgNzggMzUgNzguNyAzNS45Qzc5LjQgMzYuOCA4MC4zIDM3LjMgODEuNiAzNy4zQzgyLjMgMzcuMyA4Mi44IDM3LjEgODMuMyAzNi45QzgzLjcgMzYuNiA4NC4xIDM2LjMgODQuNCAzNS45Qzg0LjggMzUuNSA4NS4xIDM1LjEgODUuMyAzNC43Qzg1LjYgMzQuMyA4NS45IDM0IDg2LjIgMzMuNkM4Ni41IDMzLjYgODYuNiAzMy42IDg2LjggMzMuN0M4NyAzMy45IDg3LjEgMzQuMSA4NyAzNC41Qzg2LjggMzYgODYuMyAzNy4yIDg1LjYgMzguM0M4NC44IDM5LjQgODMuNyA0MC4zIDgyLjMgNDAuOUM4MSA0MS42IDc5LjUgNDEuOSA3Ny43IDQxLjlDNzQuOCA0MS45IDcyLjQgNDEuMSA3MC44IDM5LjdDNjkuMiAzOC4zIDY4LjMgMzYuMSA2OC4zIDMzLjJWMTIuMkM2OC4zIDExLjcgNjguMyAxMS40IDY4LjEgMTEuMkM2Ny45IDExIDY3LjcgMTAuOCA2Ny4zIDEwLjdaTTc0LjIgMTAuNUw3NC40IDguMkg4NS43Qzg2LjEgOC4yIDg2LjQgOC4zIDg2LjYgOC40Qzg2LjggOC42IDg2LjkgOC44IDg2LjkgOS4xQzg2LjkgOS41IDg2LjcgOS44IDg2LjMgMTAuMUM4NS45IDEwLjQgODUuMiAxMC41IDg0LjMgMTAuNUg3NC4yWk0xMzkgMjIuNkMxMzkgMTkuMyAxMzkuNCAxNi41IDE0MC40IDE0LjJDMTQxLjMgMTIgMTQyLjYgMTAuMyAxNDQuMSA5LjFDMTQ1LjcgOCAxNDcuMyA3LjUgMTQ5IDcuNUMxNTEgNy41IDE1Mi42IDguMSAxNTMuNyA5LjNDMTU0LjkgMTAuNSAxNTUuNCAxMi4yIDE1NS40IDE0LjVDMTU1LjQgMTYuNSAxNTUgMTggMTU0LjEgMTguOUMxNTMuMyAxOS45IDE1Mi4yIDIwLjQgMTUwLjggMjAuNEMxNDkuNSAyMC40IDE0OC41IDIwIDE0Ny44IDE5LjNDMTQ3LjIgMTguNiAxNDYuOCAxNy42IDE0Ni44IDE2LjJWMTVDMTQ2LjggMTQuMyAxNDYuNiAxMy43IDE0Ni4zIDEzLjRDMTQ2IDEzIDE0NS40IDEyLjggMTQ0LjcgMTIuOEMxNDMuOSAxMi44IDE0My4xIDEzLjEgMTQyLjQgMTMuOUMxNDEuNiAxNC42IDE0MSAxNS42IDE0MC42IDE3LjFDMTQwLjEgMTguNSAxMzkuOSAyMC40IDEzOS45IDIyLjZIMTM5Wk0xMzkuNiA5LjFMMTM5LjkgMTlWMzdDMTM5LjkgMzcuNSAxNDAgMzcuOSAxNDAuMiAzOC4yQzE0MC40IDM4LjUgMTQwLjggMzguNiAxNDEuMyAzOC43TDE0NC42IDM5LjJDMTQ1IDM5LjMgMTQ1LjMgMzkuNCAxNDUuNCAzOS42QzE0NS42IDM5LjcgMTQ1LjcgNDAgMTQ1LjcgNDAuMkMxNDUuNyA0MC41IDE0NS42IDQwLjggMTQ1LjMgNDAuOUMxNDUuMSA0MS4xIDE0NC44IDQxLjIgMTQ0LjQgNDEuMkgxMjhDMTI3LjYgNDEuMiAxMjcuMyA0MS4xIDEyNy4xIDQwLjlDMTI2LjkgNDAuOCAxMjYuOCA0MC41IDEyNi44IDQwLjJDMTI2LjggNDAgMTI2LjggMzkuOCAxMjcgMzkuN0MxMjcuMSAzOS41IDEyNy40IDM5LjQgMTI3LjcgMzkuM0wxMjkuNCAzOUMxMjkuNyAzOC44IDEzMCAzOC42IDEzMC4yIDM4LjRDMTMwLjMgMzguMSAxMzAuNCAzNy43IDEzMC40IDM3LjJWMTMuOUMxMzAuNCAxMy41IDEzMC40IDEzLjIgMTMwLjIgMTNDMTMwLjEgMTIuOCAxMjkuOSAxMi43IDEyOS42IDEyLjdMMTI3LjQgMTIuNkMxMjcuMiAxMi42IDEyNyAxMi41IDEyNi44IDEyLjNDMTI2LjcgMTIuMiAxMjYuNiAxMiAxMjYuNiAxMS44QzEyNi42IDExLjUgMTI2LjcgMTEuMyAxMjYuOSAxMS4yQzEyNyAxMSAxMjcuMyAxMC45IDEyNy43IDEwLjdMMTM2IDguM0MxMzYuNyA4LjEgMTM3LjIgNy45IDEzNy42IDcuOEMxMzcuOSA3LjcgMTM4LjIgNy43IDEzOC40IDcuN0MxMzguOCA3LjcgMTM5IDcuOCAxMzkuMiA4QzEzOS40IDguMiAxMzkuNSA4LjYgMTM5LjYgOS4xWk0xNzcuNCAzNy4yVjM2LjZMMTc2LjggMzYuN1YxNC40QzE3Ni44IDEyLjcgMTc2LjUgMTEuNCAxNzUuNyAxMC41QzE3NC45IDkuNiAxNzMuNyA5LjEgMTcyLjMgOS4xQzE3MC44IDkuMSAxNjkuNyA5LjQgMTY4LjkgMTAuMUMxNjguMiAxMC44IDE2Ny44IDExLjYgMTY3LjggMTIuNVYxNS42QzE2Ny44IDE2LjkgMTY3LjQgMTcuOSAxNjYuNCAxOC44QzE2NS41IDE5LjUgMTY0LjMgMTkuOSAxNjIuOCAxOS45QzE2MS41IDE5LjkgMTYwLjYgMTkuNiAxNTkuOSAxOUMxNTkuMiAxOC4zIDE1OC44IDE3LjQgMTU4LjggMTYuMkMxNTguOCAxNC44IDE1OS40IDEzLjQgMTYwLjUgMTIuMUMxNjEuNyAxMC44IDE2My4zIDkuNiAxNjUuNSA4LjhDMTY3LjggNy45IDE3MC41IDcuNSAxNzMuOCA3LjVDMTc4IDcuNSAxODEuMSA4LjMgMTgzLjEgMTBDMTg1LjIgMTEuOCAxODYuMiAxNC4xIDE4Ni4yIDE3LjJWMzUuOUMxODYuMiAzNi42IDE4Ni40IDM3LjIgMTg2LjYgMzcuNUMxODYuOSAzNy45IDE4Ny4zIDM4LjEgMTg3LjggMzguMUMxODguMyAzOC4xIDE4OC43IDM3LjkgMTg4LjkgMzcuN0MxODkuMyAzNy40IDE4OS41IDM3LjEgMTg5LjYgMzYuNkMxODkuNyAzNi41IDE4OS44IDM2LjQgMTg5LjkgMzYuNEMxOTAgMzYuMyAxOTAuMSAzNi4zIDE5MC4yIDM2LjNDMTkwLjQgMzYuMyAxOTAuNSAzNi4zIDE5MC42IDM2LjVDMTkwLjcgMzYuNiAxOTAuOCAzNi44IDE5MC44IDM3QzE5MC44IDM3LjYgMTkwLjUgMzguMyAxOTAgMzkuMUMxODkuNSAzOS45IDE4OC44IDQwLjYgMTg3LjcgNDEuMUMxODYuNyA0MS43IDE4NS40IDQyIDE4My44IDQyQzE4MS43IDQyIDE4MC4xIDQxLjUgMTc5IDQwLjdDMTc3LjkgMzkuOCAxNzcuNCAzOC42IDE3Ny40IDM3LjJaTTE1Ny4yIDMzLjlDMTU3LjIgMzEuMSAxNTguNCAyOC44IDE2MC44IDI3LjFDMTYzLjMgMjUuMyAxNjYuOSAyNC41IDE3MS42IDI0LjVDMTczLjEgMjQuNSAxNzQuNCAyNC42IDE3NS42IDI0LjlDMTc2LjcgMjUuMiAxNzcuNyAyNS41IDE3OC41IDI2TDE3OCAyNy40QzE3Ny4yIDI3IDE3Ni4zIDI2LjcgMTc1LjUgMjYuNUMxNzQuNiAyNi4yIDE3My43IDI2LjEgMTcyLjcgMjYuMUMxNzAuOCAyNi4xIDE2OS4zIDI2LjcgMTY4LjMgMjcuOEMxNjcuMiAyOC45IDE2Ni43IDMwLjQgMTY2LjcgMzIuNEMxNjYuNyAzNC4zIDE2Ny4yIDM1LjggMTY4LjEgMzYuOUMxNjkuMSAzNy45IDE3MC4zIDM4LjQgMTcxLjggMzguNEMxNzIuOSAzOC40IDE3NC4xIDM4LjEgMTc1LjIgMzcuNkMxNzYuMyAzNyAxNzcuMiAzNi4zIDE3Ny45IDM1LjNMMTc4LjUgMzYuNUMxNzcuMyAzOC4zIDE3NS43IDM5LjYgMTczLjYgNDAuNkMxNzEuNiA0MS41IDE2OS40IDQyIDE2Ny4xIDQyQzE2NC4xIDQyIDE2MS43IDQxLjIgMTU5LjkgMzkuN0MxNTguMSAzOC4yIDE1Ny4yIDM2LjMgMTU3LjIgMzMuOVoiIGZpbGw9IiMwRTZCNTIiLz48cGF0aCBkPSJNMTA2LjQgNy41QzEwOS45IDcuNSAxMTMgOC4yIDExNS42IDkuNkMxMTguMiAxMS4xIDEyMC4zIDEzLjIgMTIxLjggMTUuOEMxMjMuMyAxOC40IDEyNC4xIDIxLjQgMTI0LjEgMjQuOEMxMjQuMSAyOC4xIDEyMy4zIDMxLjEgMTIxLjcgMzMuN0MxMjAuMiAzNi4zIDExOC4xIDM4LjMgMTE1LjQgMzkuOEMxMTIuNyA0MS4zIDEwOS42IDQyIDEwNi4xIDQyQzEwMi42IDQyIDk5LjUgNDEuMyA5Ni45IDM5LjhDOTQuMyAzOC40IDkyLjIgMzYuMyA5MC43IDMzLjdDODkuMiAzMS4xIDg4LjUgMjguMSA4OC41IDI0LjdDODguNSAyMS40IDg5LjIgMTguNCA5MC44IDE1LjhDOTIuMyAxMy4yIDk0LjQgMTEuMiA5Ny4xIDkuN0M5OS44IDguMiAxMDIuOSA3LjUgMTA2LjQgNy41Wk0xMDguNiAzOS43QzExMC4yIDM5LjUgMTExLjUgMzguNyAxMTIuNCAzNy40QzExMy40IDM2LjIgMTE0IDM0LjQgMTE0LjMgMzIuMUMxMTQuNiAyOS44IDExNC41IDI3IDExNCAyMy43QzExMy42IDIwLjQgMTEyLjggMTcuNyAxMTEuOCAxNS42QzExMC45IDEzLjQgMTA5LjcgMTEuOSAxMDguNCAxMC45QzEwNyA5LjkgMTA1LjUgOS42IDEwMy45IDkuOEMxMDIuMyAxMCAxMDEgMTAuOCAxMDAgMTIuMUM5OS4xIDEzLjMgOTguNSAxNS4xIDk4LjIgMTcuNEM5Ny45IDE5LjcgOTggMjIuNSA5OC41IDI1LjhDOTkgMjkgOTkuNyAzMS43IDEwMC43IDMzLjhDMTAxLjcgMzYgMTAyLjkgMzcuNSAxMDQuMiAzOC41QzEwNS42IDM5LjUgMTA3IDM5LjkgMTA4LjYgMzkuN1oiIGZpbGw9IiNFM0EzM0IiLz48L3N2Zz4K" alt="Tutora" style="height:22px;width:auto"><div style="text-align:right"><b>RECEIPT</b><br>${esc(p.receipt)}</div></div>
+	<p class="small muted" style="margin-top:10px">${esc(S.settings.name)} · ${esc(S.settings.email)}</p>
+	<table><tr><td>Date</td><td>${fmtDate(p.confirmedAt || p.date)}</td></tr><tr><td>Received from</td><td>${esc(s.name)}</td></tr><tr><td>Method</td><td>${esc(p.method)}${p.ref ? ' · ' + esc(p.ref) : ''}</td></tr>
+	<tr><td>For</td><td>${p.covers.map(esc).join('<br>') || 'Lessons'}</td></tr><tr><td><b>Amount</b></td><td><b>${money(p.amount)}</b></td></tr></table>
+	<p class="tiny muted">Confirmed by the tutor. Thank you!</p></div>
+	<p class="tiny muted noprint">In the real app this downloads a PDF file. In the demo it opens the phone's print / save as PDF screen.</p>`;
+}
+SCREENS['s-hw'] = () => {
+	const hw = S.homework.filter((h) => h.student === S.me);
+	return `<h1>Homework</h1>${hw.map((h) => `<div class="card"><div class="row"><b class="grow">${esc(h.title)}</b>${h.answer ? '<span class="pill p-ok">Handed in</span>' : `<span class="pill p-wait">Due ${fmtDay(h.due)}</span>`}</div>
+	<p class="small" style="margin:6px 0">${esc(h.note)}</p>${h.file ? `<button class="btn sec sm" data-act="fake-file" data-name="${esc(h.file)}">Open ${esc(h.file)}</button>` : ''}
+	${h.answer ? `<p class="small" style="margin-top:8px">Your answer: <b>${esc(h.answer.file)}</b></p>${h.feedback ? `<div class="panel small"><b>Tutor:</b> ${esc(h.feedback)}</div>` : ''}` : `<form data-form="hw" data-id="${h.id}" style="margin-top:10px"><div class="field"><label for="hw-${h.id}">Upload your answer</label><input id="hw-${h.id}" type="file" accept="image/*,application/pdf" required></div><button class="btn block sm">Hand in</button></form>`}</div>`).join('') || '<div class="empty">No homework right now.</div>'}`;
+};
+
+/* tutor */
+SCREENS['t-today'] = () => {
+	const now = new Date(); const todays = S.lessons.filter((l) => sameDay(l.start, now) && l.status !== 'cancelled').sort((a, b) => a.start - b.start);
+	const reqs = S.requests.filter((r) => r.status === 'requested'); const pays = S.payments.filter((p) => p.status === 'waiting');
+	return `<h1>Today</h1><p class="muted">${fmtDate(now)}</p>
+	<div class="money" style="margin-bottom:14px"><div><b>${todays.length}</b><span class="tiny">Lessons</span></div><div><b>${reqs.length}</b><span class="tiny">To answer</span></div><div><b>${pays.length}</b><span class="tiny">To confirm</span></div></div>
+	<h2>Lessons today</h2>${todays.map((l) => `<div class="card"><div class="row"><b class="grow">${fmtTime(l.start)} · ${esc(l.subject)}${l.group ? ' (group)' : ''}</b><span class="pill ${l.mode === 'online' ? 'p-ok' : 'p-wait'}">${l.mode === 'online' ? 'Online' : 'In person'}</span></div><div class="small muted">${esc(studentNames(l))}</div>
+	<div class="row" style="margin-top:8px">${l.mode === 'online' ? `<button class="btn sm" data-go="room">Start lesson room</button>` : ''}<button class="btn sec sm" data-act="wa-remind" data-id="${l.id}">WhatsApp reminder</button></div></div>`).join('') || '<div class="empty">No lessons today.</div>'}
+	<h2 style="margin-top:18px">Booking requests</h2>${reqs.map((r) => `<div class="card"><b>${esc(student(r.student).name)}</b> · ${esc(r.subject)}<div class="small muted">${fmtDay(r.start)} ${fmtTime(r.start)} · ${r.mode === 'online' ? 'Online' : 'In person'}</div>${r.note ? `<p class="small" style="margin:6px 0">“${esc(r.note)}”</p>` : ''}
+	<div class="row" style="margin-top:8px"><button class="btn sm" data-act="req-accept" data-id="${r.id}">Accept</button><button class="btn sec sm" data-act="req-propose" data-id="${r.id}">Suggest other time</button><button class="btn warn sm" data-act="req-decline" data-id="${r.id}">Decline</button></div></div>`).join('') || '<div class="empty">All answered.</div>'}
+	<h2 style="margin-top:18px">Payments to confirm</h2>${pays.map((p) => `<div class="card"><div class="row"><b class="grow">${esc(student(p.student).name)}</b><b>${money(p.amount)}</b></div><div class="small muted">${esc(p.method)}${p.ref ? ' · ref ' + esc(p.ref) : ''} · ${fmtDay(p.date)}</div>
+	${p.proof ? `<div class="row" style="margin:8px 0"><span class="pill p-info">Proof: ${p.proofImg ? 'photo attached' : 'screenshot.jpg'}</span>${p.proofImg ? `<img src="${p.proofImg}" class="preview" alt="Payment proof">` : ''}</div>` : p.method === 'Cash' ? '<p class="small" style="margin:6px 0">Student says they paid cash.</p>' : ''}
+	<div class="row"><button class="btn sm" data-act="pay-ok" data-id="${p.id}">Confirm</button><button class="btn warn sm" data-act="pay-no" data-id="${p.id}">Reject</button></div></div>`).join('') || '<div class="empty">Nothing waiting.</div>'}`;
+};
+SCREENS['t-cal'] = () => {
+	const view = S.calView; const base = new Date(S.calDay);
+	const lessonsOn = (d) => S.lessons.filter((l) => sameDay(l.start, d) && l.status !== 'cancelled');
+	const eventsOn = (d) => S.events.filter((e) => sameDay(e.start, d));
+	const evHtml = (d, long) => [...lessonsOn(d).map((l) => ({ t: l.start, h: `<div class="ev ${l.mode === 'online' ? 'on' : 'ip'}"><b>${fmtTime(l.start)}</b> ${esc(long ? l.subject + ' · ' + studentNames(l) : studentNames(l))}${long && l.mode === 'online' ? ' · <a href="#" data-go="room">Open room</a>' : ''}</div>` })),
+		...eventsOn(d).map((e) => ({ t: e.start, h: `<div class="ev own"><b>${fmtTime(e.start)}</b> ${esc(e.title)}</div>` }))].sort((a, b) => a.t - b.t).map((x) => x.h).join('');
+	let body;
+	if (view === 'week') {
+		const mon = new Date(base); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7));
+		body = `<div class="cal-week">${[...Array(7)].map((_, i) => { const d = new Date(mon.getTime() + i * DAY); return `<div class="cal-day ${sameDay(d, new Date()) ? 'today' : ''}" data-act="cal-pick" data-d="${d.toISOString()}"><div class="d">${d.toLocaleDateString('en-GB', { weekday: 'narrow' })}<br>${d.getDate()}</div>${evHtml(d)}</div>`; }).join('')}</div>`;
+	} else body = `<div class="agenda"><h3>${fmtDate(base)}</h3>${evHtml(base, true) || '<div class="empty">Nothing on this day.</div>'}</div>`;
+	return `<h1>Calendar</h1><div class="row" style="margin-bottom:10px"><div class="tabs" style="margin:0" role="group"><button data-act="cal-view" data-v="day" aria-pressed="${view === 'day'}">Day</button><button data-act="cal-view" data-v="week" aria-pressed="${view === 'week'}">Week</button></div><span class="grow"></span><button class="btn sec sm" data-act="cal-move" data-v="-1" aria-label="Previous">‹</button><button class="btn sec sm" data-act="cal-today">Today</button><button class="btn sec sm" data-act="cal-move" data-v="1" aria-label="Next">›</button></div>
+	<div class="legend"><span class="l1">Online lesson</span><span class="l2">In person</span><span class="l3">My own event</span></div>${body}
+	<form data-form="event" class="card" style="margin-top:14px"><h3>Add my own event</h3><div class="field"><label for="ev-t">What</label><input id="ev-t" name="title" type="text" required maxlength="80" placeholder="e.g. Church, school meeting"></div><div class="row"><div class="field grow"><label for="ev-d">Date</label><input id="ev-d" name="date" type="date" value="${base.toISOString().slice(0, 10)}" required></div><div class="field grow"><label for="ev-h">Time</label><input id="ev-h" name="time" type="time" value="10:00" required></div></div><button class="btn block">Add to calendar</button></form>`;
+};
+SCREENS['t-students'] = (id) => {
+	if (id) {
+		const s = student(+id); const ls = S.lessons.filter((l) => l.students.includes(s.id)).sort((a, b) => b.start - a.start);
+		return `<button class="btn sec sm" data-go="t-students">← All students</button><h1 style="margin-top:12px">${esc(s.name)}</h1><p class="muted">${esc(s.level)}</p>
+		<div class="card"><dl class="kv"><dt>Phone</dt><dd>${esc(s.phone)}</dd><dt>Email</dt><dd>${esc(s.email)}</dd>${s.under18 ? `<dt>Parent</dt><dd>${esc(s.parent)} · ${esc(s.parentPhone)}</dd>` : '<dt>Age</dt><dd>18 or over</dd>'}</dl>
+		<div class="row" style="margin-top:10px"><button class="btn sm" data-act="wa">WhatsApp</button>${s.under18 ? '<button class="btn sec sm" data-act="wa">WhatsApp parent</button>' : ''}</div></div>
+		<div class="money"><div><b>${money(paidBy(s.id))}</b><span class="tiny">Paid</span></div><div><b>${money(waitingBy(s.id))}</b><span class="tiny">Waiting</span></div><div><b>${money(owedBy(s.id))}</b><span class="tiny">Owed</span></div></div>
+		${s.package ? `<p class="small" style="margin-top:8px">Package: <b>${esc(s.package.name)}</b>, ${s.package.left} of ${s.package.total} left</p>` : ''}
+		<h2 style="margin-top:16px">Lessons &amp; private notes</h2>${ls.map((l) => `<div class="card"><div class="row"><b class="grow">${fmtDay(l.start)} · ${esc(l.subject)}</b><span class="pill ${l.status === 'done' ? 'p-info' : 'p-ok'}">${l.status === 'done' ? 'Done' : 'Booked'}</span></div>
+		<form data-form="note" data-id="${l.id}" style="margin-top:8px"><label class="sr" for="n-${l.id}">Private note</label><textarea id="n-${l.id}" name="note" placeholder="Private note (only you can see this)">${esc(S.notes[l.id] || '')}</textarea><button class="btn sec sm" style="margin-top:6px">Save note</button></form></div>`).join('')}
+		<h2 style="margin-top:16px">Give homework</h2><form data-form="give-hw" data-id="${s.id}" class="card"><div class="field"><label for="ghw-t">Title</label><input id="ghw-t" name="title" type="text" required></div><div class="field"><label for="ghw-n">Instructions</label><textarea id="ghw-n" name="note"></textarea></div><div class="field"><label for="ghw-f">File (optional)</label><input id="ghw-f" type="file" accept="image/*,application/pdf"></div><button class="btn block">Send to ${esc(s.name.split(' ')[0])}</button></form>`;
+	}
+	return `<h1>Students</h1><div class="field"><label class="sr" for="st-q">Search</label><input id="st-q" type="text" placeholder="Search by name" data-act="search"></div>
+	<ul class="list card" id="st-list">${S.students.map((s) => `<li data-name="${esc(s.name.toLowerCase())}"><div><b>${esc(s.name)}</b><div class="tiny muted">${esc(s.level)}${s.under18 ? ' · parent: ' + esc(s.parent) : ''}</div></div><div class="row">${owedBy(s.id) ? `<span class="pill p-no">Owes ${money(owedBy(s.id))}</span>` : '<span class="pill p-ok">Paid up</span>'}<button class="btn sec sm" data-go="t-students:${s.id}">Open</button></div></li>`).join('')}</ul>`;
+};
+SCREENS['t-money'] = (sub) => {
+	if (sub && sub.startsWith('r')) return receiptView(+sub.slice(1));
+	const month = S.payments.filter((p) => p.status === 'confirmed').reduce((a, p) => a + p.amount, 0);
+	return `<h1>Money</h1><div class="band"><div class="lbl">${new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</div><div class="stats"><div><b>${money(month)}</b><span class="small">Received</span></div><div><b>${money(S.payments.filter((p) => p.status === 'waiting').reduce((a, p) => a + p.amount, 0))}</b><span class="small">Waiting</span></div><div><b>${money(S.students.reduce((a, s) => a + owedBy(s.id), 0))}</b><span class="small">Owed</span></div></div></div>
+	<h2>Per student</h2><div class="card" style="overflow-x:auto"><table class="t"><thead><tr><th>Student</th><th class="n">Paid</th><th class="n">Waiting</th><th class="n">Owed</th></tr></thead><tbody>${S.students.map((s) => `<tr><td><a href="#" data-go="t-students:${s.id}">${esc(s.name)}</a></td><td class="n">${money(paidBy(s.id))}</td><td class="n">${money(waitingBy(s.id))}</td><td class="n">${owedBy(s.id) ? `<b style="color:var(--red)">${money(owedBy(s.id))}</b>` : money(0)}</td></tr>`).join('')}</tbody></table></div>
+	<div class="row"><button class="btn sec" data-act="csv">Download CSV</button><button class="btn sec" data-act="record-cash">Record a cash payment</button></div>
+	<h2 style="margin-top:16px">Receipts</h2><ul class="list card">${S.payments.filter((p) => p.status === 'confirmed').map((p) => `<li><div><b>${esc(p.receipt)}</b> · ${esc(student(p.student).name)}<div class="tiny muted">${money(p.amount)} · ${esc(p.method)}</div></div><button class="btn sec sm" data-go="t-money:r${p.id}">View</button></li>`).join('')}</ul>`;
+};
+SCREENS['t-more'] = () => `<h1>More</h1><div class="stack">
+	<button class="big-opt" data-go="t-wizard">Setup wizard<small>Step-by-step: profile, subjects, prices, free times, contacts, payments</small></button>
+	<button class="big-opt" data-go="t-settings">Settings<small>Change anything later, including your login email</small></button>
+	<button class="big-opt" data-go="t-reviews">Reviews<small>Hide abusive reviews (you cannot edit them)</small></button>
+	<button class="big-opt" data-go="room">Lesson room (demo)<small>Audio + whiteboard, chat, files</small></button>
+	<button class="big-opt" data-go="home" data-act="as-visitor">See my public website</button></div>`;
+SCREENS['t-reviews'] = () => `<h1>Reviews</h1>${S.reviews.map((r) => `<div class="card"><div class="row"><span class="stars grow">${'★'.repeat(r.stars)}</span>${r.hidden ? '<span class="pill p-no">Hidden</span>' : '<span class="pill p-ok">Shown</span>'}</div><p style="margin:6px 0">“${esc(r.text)}”</p><div class="row"><span class="small muted grow">${esc(r.who)}</span><button class="btn sec sm" data-act="rev-toggle" data-id="${r.id}">${r.hidden ? 'Show' : 'Hide'}</button></div></div>`).join('')}`;
+
+const WIZ = [
+	['Welcome', () => `<p>Let's set up your page and bookings. It takes about 10 minutes. You can <b>skip any step</b> and finish later in Settings.</p><p class="muted small">Anything you leave empty is hidden from your public page.</p>`],
+	['Your profile', () => `<div class="field"><label>Your name as students see it</label><input type="text" value="${esc(S.settings.name)}" data-set="name"></div><div class="field"><label>Photo</label><span class="hint">A clear face photo. We make it small (about 20 KB) so it loads fast.</span><input type="file" accept="image/*"></div><div class="field"><label>One-line headline</label><input type="text" value="${esc(S.settings.headline)}" data-set="headline"></div><div class="field"><label>About you</label><textarea data-set="bio">${esc(S.settings.bio)}</textarea></div><div class="field"><label>Qualifications</label><input type="text" value="${esc(S.settings.qualifications)}" data-set="qualifications"></div>`],
+	['Subjects & levels', () => `${S.subjects.map((s) => `<div class="card subject"><div><b>${esc(s.name)}</b><div class="small muted">${esc(s.levels)}</div></div><button class="btn sec sm" data-act="toast" data-msg="In the real app you can edit or remove this subject.">Edit</button></div>`).join('')}<button class="btn sec block" data-act="toast" data-msg="In the real app: add a subject, tick its levels (Grade 7, O Level, A Level…) and exam boards.">+ Add a subject</button>`],
+	['How you teach', () => `<p class="lab">Lesson type</p>${[['one', 'One-to-one only'], ['groups', 'Small groups only'], ['both', 'Both']].map(([v, l]) => `<button class="big-opt" data-act="wiz-set" data-k="groups" data-v="${v}" aria-pressed="${S.settings.groups === v}">${l}</button>`).join('')}
+	<div class="field"><label>Biggest group</label><input type="number" min="2" max="10" value="${S.settings.maxGroup}" data-set="maxGroup"></div>
+	<p class="lab">Where</p><div class="choice three">${[['online', 'Online'], ['in_person', 'In person'], ['both', 'Both']].map(([v, l]) => `<label><input type="radio" name="wm" ${S.settings.modes === v ? 'checked' : ''}> ${l}</label>`).join('')}</div>`],
+	['Prices', () => `${S.subjects.map((s) => `<div class="field"><label>${esc(s.name)} (per lesson, USD)</label><input type="number" min="0" step="0.5" value="${(s.price / 100).toFixed(2)}"></div>`).join('')}
+	<p class="lab">On your public page</p><button class="big-opt" data-act="wiz-set" data-k="showPrices" data-v="1" aria-pressed="${S.settings.showPrices}">Show prices</button><button class="big-opt" data-act="wiz-set" data-k="showPrices" data-v="0" aria-pressed="${!S.settings.showPrices}">Show “Ask for price”</button>`],
+	['Free times', () => `<p class="small muted">Students can only book inside these times.</p>${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => { const w = S.settings.weekly.find((x) => x.day === i); return `<div class="row" style="margin-bottom:8px"><label class="check" style="padding:0;min-width:80px"><input type="checkbox" ${w ? 'checked' : ''}> <b>${d}</b></label><input type="time" value="${w ? w.from : '15:00'}" style="width:auto;flex:1" aria-label="${d} from"><span>to</span><input type="time" value="${w ? w.to : '18:00'}" style="width:auto;flex:1" aria-label="${d} to"></div>`; }).join('')}
+	<div class="row"><div class="field grow"><label>Lesson length</label><select><option>45 min</option><option selected>60 min</option><option>90 min</option></select></div><div class="field grow"><label>Cancel up to</label><select><option>12 hours before</option><option selected>24 hours before</option><option>48 hours before</option></select></div></div>`],
+	['Contact', () => `<div class="field"><label>WhatsApp number</label><span class="hint">Shown as a green button on your page.</span><input type="tel" value="${esc(S.settings.whatsapp)}" data-set="whatsapp"></div><div class="field"><label>Phone for calls (optional)</label><input type="tel" value="${esc(S.settings.phone)}"></div><div class="field"><label>Contact email</label><input type="email" value="${esc(S.settings.email)}"></div>`],
+	['Payment details', () => `<p class="small muted">Only logged-in students and parents see these.</p><div class="card"><b>Bank</b><div class="field"><label>Bank name</label><input type="text" value="${esc(S.settings.bank.bank)}"></div><div class="field"><label>Account name</label><input type="text" value="${esc(S.settings.bank.name)}"></div><div class="field"><label>Account number</label><input type="text" value="${esc(S.settings.bank.number)}"></div></div>
+	<div class="card"><b>EcoCash</b><div class="field"><label>Number</label><input type="tel" value="${esc(S.settings.ecocash.number)}"></div></div><div class="card"><b>InnBucks</b><div class="field"><label>Number</label><input type="tel" value="${esc(S.settings.innbucks.number)}"></div></div>
+	<p class="lab">Currency</p><div class="choice"><label><input type="radio" name="cur" ${S.settings.currency === 'USD' ? 'checked' : ''} data-act="cur" data-v="USD"> USD</label><label><input type="radio" name="cur" ${S.settings.currency === 'ZWG' ? 'checked' : ''} data-act="cur" data-v="ZWG"> ZiG</label></div>`],
+	['All done', () => `<div class="panel"><b>Your page is ready.</b><p class="small" style="margin:6px 0 0">You can change anything later in <b>Settings</b>.</p></div><button class="btn block" data-act="as-visitor" data-go="home">See my public page</button>`]
+];
+SCREENS['t-wizard'] = () => {
+	const i = S.wizard; const [title, body] = WIZ[i];
+	return `<div class="steps" aria-label="Step ${i + 1} of ${WIZ.length}">${WIZ.map((_, j) => `<i class="${j <= i ? 'on' : ''}"></i>`).join('')}</div><p class="small muted">Step ${i + 1} of ${WIZ.length}</p><h1>${esc(title)}</h1>${body()}
+	<div class="row" style="margin-top:16px">${i > 0 ? '<button class="btn sec" data-act="wiz" data-v="-1">Back</button>' : ''}<span class="grow"></span>${i < WIZ.length - 1 ? `${i > 0 ? '<button class="btn sec" data-act="wiz" data-v="1">Skip</button>' : ''}<button class="btn" data-act="wiz" data-v="1">${i === 0 ? 'Start' : 'Save & next'}</button>` : ''}</div>`;
+};
+SCREENS['t-settings'] = () => {
+	const sec = (t, inner, open) => `<details class="card" ${open ? 'open' : ''}><summary style="min-height:44px;display:flex;align-items:center;font-weight:700;cursor:pointer">${t}</summary><div style="margin-top:10px">${inner}</div></details>`;
+	return `<h1>Settings</h1>
+	${sec('Profile', `<div class="field"><label>Name</label><input type="text" value="${esc(S.settings.name)}" data-set="name"></div><div class="field"><label>About you</label><textarea data-set="bio">${esc(S.settings.bio)}</textarea></div><div class="field"><label>Photo</label><input type="file" accept="image/*"></div>`, true)}
+	${sec('Subjects, levels &amp; prices', S.subjects.map((s) => `<div class="row" style="margin-bottom:8px"><b class="grow">${esc(s.name)}</b><input type="number" value="${(s.price / 100).toFixed(2)}" style="width:110px" aria-label="${esc(s.name)} price"></div>`).join('') + `<label class="check"><input type="checkbox" ${S.settings.showPrices ? 'checked' : ''} data-act="show-prices"> <span>Show prices on my public page</span></label>`)}
+	${sec('Packages', S.packages.map((p) => `<div class="row" style="margin-bottom:8px"><span class="grow">${esc(p.name)}</span><b>${money(p.price)}</b></div>`).join('') + '<button class="btn sec sm" data-act="toast" data-msg="In the real app you add packages here, e.g. 4 lessons for $28.">+ Add package</button>')}
+	${sec('Free times, lesson length, cancellations', `<p class="small">Lesson length: <b>${S.settings.length} min</b> · Cancel up to <b>${S.settings.cancelHours} h</b> before</p><button class="btn sec sm" data-act="wiz-jump" data-v="5">Edit free times</button>`)}
+	${sec('Contact &amp; WhatsApp', `<div class="field"><label>WhatsApp</label><input type="tel" value="${esc(S.settings.whatsapp)}" data-set="whatsapp"></div><div class="field"><label>Contact email</label><input type="email" value="${esc(S.settings.email)}"></div>`)}
+	${sec('Payment details &amp; currency', `<p class="small">Bank, EcoCash and InnBucks details · Currency <b>${S.settings.currency === 'ZWG' ? 'ZiG' : 'USD'}</b></p><button class="btn sec sm" data-act="wiz-jump" data-v="7">Edit payment details</button>`)}
+	${sec('Results to show', S.results.map((r) => `<div class="row" style="margin-bottom:6px"><b>${esc(r.value)}</b><span class="grow">${esc(r.label)}</span></div>`).join('') + '<label class="check"><input type="checkbox" checked> <span>I have permission to show these (first names or initials only)</span></label>')}
+	${sec('Login email &amp; password', `<div class="field"><label>New login email</label><input type="email" placeholder="new@example.com"></div><button class="btn sec sm" data-act="toast" data-msg="A confirmation link is sent to the NEW address. The change happens only after it's clicked.">Change email</button><p class="small" style="margin-top:10px">Two-step verification: <span class="pill p-ok">On</span></p>`)}
+	<button class="btn block" data-act="toast" data-msg="Saved (demo).">Save</button>`;
+};
+
+/* ---------- lesson room (simulated) ---------- */
+SCREENS.room = () => {
+	const isTutor = S.role === 'tutor';
+	const r = (S.room ||= { video: false, mic: true, share: false, admitted: !isTutor ? false : true, knocking: isTutor, chat: [{ who: 'Tutor', text: 'Hello! Open your book at page 42 please.' }], files: ['Exercise-4B.pdf'], q: 3, mb: 0, start: Date.now(), color: '#1c2620' });
+	const waitingRoom = !isTutor && !r.admitted;
+	return `<h1>Lesson room</h1><p class="small muted">Mathematics · ${isTutor ? 'with Rudo' : 'with ' + esc(S.settings.name)} · <b>Simulated</b>: no real call in the demo.</p>
+	${waitingRoom ? `<div class="card"><p><b>Waiting for the tutor to let you in…</b></p><p class="small muted">Only students booked on this lesson can knock. The tutor admits each one.</p><button class="btn block" data-act="room-admit-me">Demo: pretend the tutor let me in</button></div>` : `
+	<div class="room">
+		<div class="room-top"><span><span class="sig" aria-hidden="true">${[4, 7, 10, 13].map((h, i) => `<i style="height:${h}px" class="${i < r.q ? '' : 'off'}"></i>`).join('')}</span><span id="rq">${['', 'Weak connection', 'OK connection', 'Good connection'][r.q]}</span></span><span><span id="rmb">0.0</span> MB used · <span id="rtime">00:00</span></span></div>
+		${isTutor && r.knocking ? `<div class="knock"><span><b>Rudo</b> is waiting to join</span><button class="btn sm" data-act="room-admit">Let in</button></div>` : ''}
+		<div class="people"><div class="person talk"><span class="dot">${isTutor ? 'T' : 'T'}</span>${isTutor ? 'You' : 'Tutor'}</div>${!isTutor || !r.knocking ? `<div class="person"><span class="dot">R</span>${isTutor ? 'Rudo' : 'You'}</div>` : ''}</div>
+		${r.video ? '<div class="video">Video on (360p, low data). Simulated in the demo.</div>' : ''}
+		${r.share ? '<div class="video">Sharing screen. Simulated in the demo.</div>' : ''}
+		<canvas class="board" id="board" aria-label="Shared whiteboard. Draw with your finger."></canvas>
+		<div class="room-tools" role="toolbar" aria-label="Whiteboard and call">
+			${['#1c2620', '#0e6b52', '#b4531a'].map((c) => `<button data-act="pen" data-v="${c}" aria-pressed="${r.color === c}" aria-label="Pen colour"><span class="swatch" style="background:${c};display:inline-block;vertical-align:middle"></span></button>`).join('')}
+			<button data-act="pen" data-v="erase" aria-pressed="${r.color === 'erase'}">Eraser</button><button data-act="board-clear">Clear</button>
+		</div>
+		<div class="room-tools" role="toolbar" aria-label="Call">
+			<button data-act="mic" aria-pressed="${!r.mic}">${r.mic ? 'Mute' : 'Unmute'}</button>
+			<button data-act="video" aria-pressed="${r.video}">${r.video ? 'Video off' : 'Video'}</button>
+			<button data-act="share" aria-pressed="${r.share}">${r.share ? 'Stop share' : 'Share screen'}</button>
+			<button class="end" data-act="leave">Leave</button>
+		</div>
+		<div class="chat" id="chat" aria-live="polite">${r.chat.map((c) => `<p><b>${esc(c.who)}:</b> ${esc(c.text)}</p>`).join('')}</div>
+	</div>
+	<form data-form="chat" class="row" style="margin-top:8px"><label class="sr" for="chat-in">Message</label><input id="chat-in" name="text" type="text" class="grow" style="flex:1" placeholder="Type a message" maxlength="300" autocomplete="off"><button class="btn sm">Send</button></form>
+	<div class="card" style="margin-top:10px"><b>Files in this lesson</b><ul class="list">${r.files.map((f) => `<li><span>${esc(f)}</span><button class="btn sec sm" data-act="fake-file" data-name="${esc(f)}">Open</button></li>`).join('')}</ul>
+	<form data-form="room-file"><label class="lab" for="rf">Share a PDF or photo (max 5 MB)</label><input id="rf" type="file" accept="image/*,application/pdf" style="margin:6px 0"><button class="btn sec sm">Share file</button></form></div>
+	<p class="tiny muted">Real app: audio + whiteboard use about 15–25 MB per hour. Video is off by default and capped at 360p. If the signal drops, the room reconnects by itself.</p>`}`;
+};
+let roomTimer = null;
+function initRoom() {
+	const c = $('#board'); if (!c) return;
+	const ctx = c.getContext('2d'); const dpr = window.devicePixelRatio || 1;
+	const resize = () => { const w = c.clientWidth, h = c.clientHeight; c.width = w * dpr; c.height = h * dpr; ctx.scale(dpr, dpr); redraw(); };
+	S.room.strokes ||= [{ c: '#0e6b52', w: 3, p: [[30, 60], [80, 60]] }];
+	function redraw() { ctx.clearRect(0, 0, c.width, c.height); ctx.font = '18px Georgia'; ctx.fillStyle = '#1c2620'; ctx.fillText('x² + 5x + 6 = 0', 30, 40); for (const s of S.room.strokes) drawStroke(s); }
+	function drawStroke(s) { ctx.strokeStyle = s.c === 'erase' ? '#fff' : s.c; ctx.lineWidth = s.c === 'erase' ? 18 : s.w; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath(); s.p.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y))); ctx.stroke(); }
+	let cur = null;
+	const pt = (e) => { const r = c.getBoundingClientRect(); return [Math.round(e.clientX - r.left), Math.round(e.clientY - r.top)]; };
+	c.addEventListener('pointerdown', (e) => { c.setPointerCapture(e.pointerId); cur = { c: S.room.color, w: 3, p: [pt(e)] }; S.room.strokes.push(cur); });
+	c.addEventListener('pointermove', (e) => { if (!cur) return; cur.p.push(pt(e)); drawStroke(cur); S.room.mb += 0.00004; });
+	c.addEventListener('pointerup', () => (cur = null));
+	resize();
+	clearInterval(roomTimer);
+	roomTimer = setInterval(() => {
+		if (!document.body.contains(c)) return clearInterval(roomTimer);
+		const r = S.room; const secs = Math.floor((Date.now() - r.start) / 1000);
+		r.mb += (r.mic ? 0.0035 : 0.0008) + (r.video ? 0.04 : 0);
+		if (Math.random() < 0.08) r.q = Math.max(1, Math.min(3, r.q + (Math.random() < 0.5 ? -1 : 1)));
+		$('#rtime').textContent = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`;
+		$('#rmb').textContent = r.mb.toFixed(1); $('#rq').textContent = ['', 'Weak connection', 'OK connection', 'Good connection'][r.q];
+		document.querySelectorAll('.sig i').forEach((el, i) => el.classList.toggle('off', i >= r.q));
+	}, 1000);
+}
+
+/* ---------- actions ---------- */
+function makeICS(l) {
+	const f = (d) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+	return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Tutora//Demo//EN', 'BEGIN:VEVENT', `UID:lesson-${l.id}@tutora.demo`, `DTSTAMP:${f(new Date())}`, `DTSTART:${f(l.start)}`, `DTEND:${f(new Date(l.start.getTime() + l.mins * 6e4))}`, `SUMMARY:${l.subject} lesson (Tutora)`, `DESCRIPTION:${l.mode === 'online' ? 'Online: open Tutora and tap Join room.' : 'In person.'}`, 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+}
+function confirmPayment(p) {
+	p.status = 'confirmed'; p.confirmedAt = new Date(); p.receipt = 'R-' + String(++receiptNo).padStart(6, '0');
+	if (!p.covers.length) p.covers = S.lessons.filter((l) => l.students.includes(p.student)).slice(0, Math.max(1, Math.round(p.amount / 800))).map((l) => `${l.subject}, ${fmtDay(l.start)}`);
+}
+document.addEventListener('click', (e) => {
+	const t = e.target.closest('[data-go],[data-act],[data-role]'); if (!t) return;
+	if (t.dataset.role) return setRole(t.dataset.role);
+	const a = t.dataset.act; const id = +t.dataset.id;
+	if (t.tagName === 'A' || t.dataset.go) e.preventDefault();
+	if (t.dataset.intro) S.booking = { subject: 'Intro chat', mode: 'online', intro: true };
+	else if (t.dataset.go === 'book') S.booking = { subject: '', mode: 'online', intro: false };
+	if (a) {
+		const r = S.room;
+		switch (a) {
+			case 'as-student': return setRole('student'), go('book');
+			case 'as-visitor': S.role = 'visitor'; document.querySelectorAll('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.role === 'visitor'))); return go('home');
+			case 'see-tutor': setRole('tutor'); return go('t-today');
+			case 'wa': return toast(`Opens WhatsApp chat with ${S.settings.whatsapp || 'the tutor'} (needs internet).`);
+			case 'wa-remind': { const l = S.lessons.find((x) => x.id === id); return toast(`WhatsApp opens with: “Reminder: ${l.subject} lesson today at ${fmtTime(l.start)}.”`); }
+			case 'stab': S.studentTab = t.dataset.v; return render();
+			case 'ptab': S.payTab = t.dataset.v; return render();
+			case 'ics': return download('tutora-lesson.ics', 'text/calendar', makeICS(S.lessons.find((l) => l.id === id))), toast('Calendar file downloaded. Open it to add the lesson.');
+			case 'cancel': if (confirm('Cancel this lesson?')) { S.lessons.find((l) => l.id === id).status = 'cancelled'; toast('Lesson cancelled. The tutor has been told.'); render(); } return;
+			case 'accept-prop': { const q = S.requests.find((x) => x.id === id); q.status = 'accepted'; S.lessons.push({ id: nid(), students: [q.student], subject: q.subject, start: q.proposed, mins: 60, mode: q.mode, status: 'scheduled' }); toast('Booked!'); return render(); }
+			case 'decline-prop': S.requests.find((x) => x.id === id).status = 'declined'; return render();
+			case 'req-accept': { const q = S.requests.find((x) => x.id === id); q.status = 'accepted'; S.lessons.push({ id: nid(), students: [q.student], subject: q.subject, start: q.start, mins: 60, mode: q.mode, status: 'scheduled' }); S.charges[q.student] = (S.charges[q.student] || 0) + 800; toast('Accepted. The student gets an email, and it’s in your calendar.'); return render(); }
+			case 'req-decline': S.requests.find((x) => x.id === id).status = 'declined'; toast('Declined. The student has been told.'); return render();
+			case 'req-propose': { const q = S.requests.find((x) => x.id === id); q.status = 'proposed'; q.proposed = new Date(q.start.getTime() + DAY); toast(`Suggested ${fmtDay(q.proposed)} ${fmtTime(q.proposed)} instead.`); return render(); }
+			case 'pay-ok': { const p = S.payments.find((x) => x.id === id); confirmPayment(p); toast(`Confirmed. Receipt ${p.receipt} sent to both of you.`); return render(); }
+			case 'pay-no': { const p = S.payments.find((x) => x.id === id); const why = prompt('Reason (the student will see this):', 'Reference not found'); if (why === null) return; p.status = 'rejected'; p.reason = why; toast('Rejected. The student has been told why.'); return render(); }
+			case 'cal-view': S.calView = t.dataset.v; return render();
+			case 'cal-move': S.calDay = new Date(S.calDay.getTime() + (+t.dataset.v) * (S.calView === 'week' ? 7 : 1) * DAY); return render();
+			case 'cal-today': S.calDay = new Date(today0); return render();
+			case 'cal-pick': S.calDay = new Date(t.dataset.d); S.calView = 'day'; return render();
+			case 'csv': { const rows = [['Student', 'Paid', 'Waiting', 'Owed'], ...S.students.map((s) => [s.name, paidBy(s.id) / 100, waitingBy(s.id) / 100, owedBy(s.id) / 100])]; download('tutora-payments.csv', 'text/csv', rows.map((r) => r.join(',')).join('\n')); return toast('CSV downloaded.'); }
+			case 'record-cash': { const sid = S.students[2].id; const p = { id: nid(), student: sid, amount: 800, method: 'Cash', ref: '', date: new Date(), status: 'waiting', covers: [] }; S.payments.push(p); confirmPayment(p); toast(`Cash recorded for ${student(sid).name}. Receipt ${p.receipt}.`); return render(); }
+			case 'rev-toggle': { const rv = S.reviews.find((x) => x.id === id); rv.hidden = !rv.hidden; return render(); }
+			case 'wiz': S.wizard = Math.max(0, Math.min(WIZ.length - 1, S.wizard + +t.dataset.v)); return render(), window.scrollTo(0, 0);
+			case 'wiz-jump': S.wizard = +t.dataset.v; return go('t-wizard');
+			case 'wiz-set': S.settings[t.dataset.k] = t.dataset.k === 'showPrices' ? t.dataset.v === '1' : t.dataset.v; return render();
+			case 'cur': S.settings.currency = t.dataset.v; return;
+			case 'show-prices': S.settings.showPrices = t.checked; return;
+			case 'toast': return toast(t.dataset.msg);
+			case 'fake-file': return toast(`${t.dataset.name} would open here (private link that expires in 10 minutes).`);
+			case 'print': return window.print();
+			case 'room-admit': r.knocking = false; r.chat.push({ who: 'Tutora', text: 'Rudo joined.' }); return render();
+			case 'room-admit-me': r.admitted = true; r.chat.push({ who: 'Tutora', text: 'You joined. Audio only (saves data).' }); return render();
+			case 'pen': r.color = t.dataset.v; return document.querySelectorAll('[data-act=pen]').forEach((b) => b.setAttribute('aria-pressed', String(b === t)));
+			case 'board-clear': r.strokes = []; return initRoom();
+			case 'mic': r.mic = !r.mic; return render();
+			case 'video': r.video = !r.video; return render();
+			case 'share': r.share = !r.share; return render();
+			case 'leave': clearInterval(roomTimer); S.room = null; toast('You left the lesson.'); return go(HOME[S.role]);
+		}
+	}
+	if (t.dataset.go) go(t.dataset.go);
+});
+document.addEventListener('submit', (e) => {
+	const f = e.target; const kind = f.dataset.form; if (!kind) return; e.preventDefault();
+	const fd = new FormData(f);
+	switch (kind) {
+		case 'signup': toast('Demo: account created. Check your email for the link.'); return setRole('student');
+		case 'book': { const b = S.booking; b.subject = b.intro ? 'Intro chat' : fd.get('subject'); b.mode = fd.get('mode'); b.slot = fd.get('slot'); S.requests.push({ id: nid(), student: S.me, subject: b.subject, start: new Date(b.slot), mode: b.mode, note: fd.get('note') || '', status: 'requested' }); return go('book:sent'); }
+		case 'pay': { const img = $('#py-prev'); const p = { id: nid(), student: S.me, amount: Math.round(parseFloat(fd.get('amount')) * 100), method: fd.get('method'), ref: fd.get('ref'), date: new Date(fd.get('date')), status: 'waiting', proof: true, proofImg: img && !img.hidden ? img.src : null, covers: [] }; S.payments.push(p); S.payTab = 'history'; toast('Sent. Status: waiting for tutor. Switch to Tutor to confirm it.'); return render(); }
+		case 'cash': S.payments.push({ id: nid(), student: S.me, amount: Math.round(parseFloat(fd.get('amount')) * 100), method: 'Cash', ref: '', date: new Date(fd.get('date')), status: 'waiting', covers: [] }); S.payTab = 'history'; toast('Thanks. The tutor will confirm your cash payment.'); return render();
+		case 'review': S.reviews.unshift({ id: nid(), who: student(S.me).name.split(' ')[0] + ', Form 4', stars: +fd.get('stars'), text: fd.get('text'), hidden: false }); toast('Thank you! Your review is on the public page.'); return render();
+		case 'hw': { const h = S.homework.find((x) => x.id === +f.dataset.id); const file = f.querySelector('input[type=file]').files[0]; h.answer = { file: file ? file.name : 'answer.jpg', at: new Date() }; toast('Handed in. The tutor can see it now.'); return render(); }
+		case 'event': { const [y, mo, d] = fd.get('date').split('-').map(Number); const [h, mi] = fd.get('time').split(':').map(Number); S.events.push({ id: nid(), title: fd.get('title'), start: new Date(y, mo - 1, d, h, mi), mins: 60 }); toast('Added to your calendar.'); return render(); }
+		case 'note': S.notes[+f.dataset.id] = fd.get('note'); return toast('Note saved. Only you can see it.');
+		case 'give-hw': S.homework.push({ id: nid(), student: +f.dataset.id, title: fd.get('title'), note: fd.get('note') || '', due: at(3, 0), file: null, answer: null }); toast('Homework sent. The student gets an email.'); return render();
+		case 'chat': { const v = String(fd.get('text') || '').trim(); if (!v) return; S.room.chat.push({ who: S.role === 'tutor' ? 'You' : 'You', text: v }); render(); setTimeout(() => { if (!S.room) return; S.room.chat.push({ who: S.role === 'tutor' ? 'Rudo' : 'Tutor', text: S.role === 'tutor' ? 'Okay, thank you!' : 'Good. Now try question 3 on the board.' }); if ($('#chat')) { render(); $('#chat').scrollTop = 1e6; } }, 1200); return; }
+		case 'room-file': { const file = f.querySelector('input[type=file]').files[0]; S.room.files.push(file ? file.name : 'photo.jpg'); toast('Shared with everyone in the lesson.'); return render(); }
+	}
+});
+document.addEventListener('change', (e) => {
+	const t = e.target;
+	if (t.id === 'py-f' && t.files[0] && t.files[0].type.startsWith('image/')) {
+		// same idea as the real app: shrink on the phone and drop hidden photo data before upload
+		const img = new Image(); img.onload = () => { const s = Math.min(1, 1200 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = img.width * s; c.height = img.height * s; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); const out = c.toDataURL('image/jpeg', 0.7); const p = $('#py-prev'); p.src = out; p.hidden = false; const before = t.files[0].size, after = Math.round(out.length * 0.75); if (after < before) toast(`Photo made smaller: ${Math.round(before / 1024)} KB → ${Math.round(after / 1024)} KB, location data removed`); URL.revokeObjectURL(img.src); }; img.src = URL.createObjectURL(t.files[0]);
+	}
+	if (t.id === 'su-u18') $('#su-par').hidden = !t.checked;
+	if (t.dataset.set) { S.settings[t.dataset.set] = t.type === 'number' ? +t.value : t.value; }
+});
+document.addEventListener('input', (e) => {
+	if (e.target.dataset.act === 'search') { const q = e.target.value.toLowerCase(); document.querySelectorAll('#st-list li').forEach((li) => (li.hidden = !li.dataset.name.includes(q))); }
+});
+render();
+</script>
+</body>
+</html>

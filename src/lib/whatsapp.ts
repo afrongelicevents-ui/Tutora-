@@ -1,4 +1,4 @@
-/** Digits only, as wa.me expects: "+263 77 423 1904" -> "263774231904". */
+/** Digits only, as wa.me expects: "+263 77 000 0001" -> "263770000001". */
 export function waDigits(phone: string): string {
 	return phone.replace(/\D/g, '');
 }
@@ -9,7 +9,7 @@ export function waLink(phone: string, text?: string): string {
 	return text ? `${base}?text=${encodeURIComponent(text)}` : base;
 }
 
-/** "+263774231904" -> "+263 77 423 1904" for display. */
+/** "+263770000001" -> "+263 77 000 0001" for display. */
 export function formatZwPhone(phone: string): string {
 	const d = waDigits(phone);
 	if (d.startsWith('263') && d.length === 12) {

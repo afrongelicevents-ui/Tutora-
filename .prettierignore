@@ -12,3 +12,6 @@ bun.lockb
 # Generated
 worker-configuration.d.ts
 src/lib/paraglide/
+
+# Demo build output and source are hand-formatted
+docs/demo/

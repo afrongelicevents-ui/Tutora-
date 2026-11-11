@@ -84,7 +84,7 @@ Each phase ends with a deploy to a preview URL for you to check.
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Wordmark               | Option A (approved)                                                                                                                                                                           |
 | Figma design direction | Approved                                                                                                                                                                                      |
-| WhatsApp number        | **+263 77 423 1904** → link `https://wa.me/263774231904`. This becomes the default value of the WhatsApp setting, which the tutor can change in Settings. It is not hard-coded anywhere else. |
+| WhatsApp number        | Set by the tutor in the setup wizard / Settings (no number in the code). |
 
 ## 6. Still open
 
