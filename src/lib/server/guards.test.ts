@@ -51,8 +51,12 @@ describe('role guards (server-side permissions)', () => {
 		expect(ok.role).toBe('tutor');
 	});
 
-	it('keeps tutors waiting for approval (or suspended) out of the tutor area', () => {
-		for (const tutorStatus of ['pending', 'suspended', null] as const) {
+	it('lets tutors fill in their profile before approval, but keeps suspended tutors out', () => {
+		for (const tutorStatus of ['draft', 'pending', 'rejected'] as const)
+			expect(
+				requireTutor({ ...base, role: 'tutor', twoFactorEnabled: true, tutorStatus }, url).role
+			).toBe('tutor');
+		for (const tutorStatus of ['suspended', null] as const) {
 			const e = thrown(() =>
 				requireTutor({ ...base, role: 'tutor', twoFactorEnabled: true, tutorStatus }, url)
 			);
@@ -115,6 +119,9 @@ describe('central lock for private areas (also page-data requests)', () => {
 		});
 		expect(areaAccess('/tutor', '', owner)).toMatchObject({ ok: false, status: 403 });
 		expect(areaAccess('/tutor', '', { ...tutor, tutorStatus: 'pending' as const })).toEqual({
+			ok: true
+		});
+		expect(areaAccess('/tutor', '', { ...tutor, tutorStatus: 'suspended' as const })).toEqual({
 			ok: false,
 			status: 303,
 			location: '/tutor-status'

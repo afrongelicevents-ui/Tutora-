@@ -27,7 +27,11 @@ import {
 	review,
 	studentPackage,
 	subject,
-	tutorProfile
+	tutorProfile,
+	child,
+	favourite,
+	notification,
+	supportRequest
 } from './db/app.schema.ts';
 import { account, user } from './db/auth.schema.ts';
 import { confirmPayment, recordCash, rejectPayment } from './billing.ts';
@@ -242,7 +246,16 @@ export async function seedTestData(
 		tutorId: pendingId,
 		slug: 'rumbi-chikwanha',
 		status: 'pending',
-		tutorName: 'Rumbi Chikwanha'
+		submittedAt: new Date(),
+		tutorName: 'Rumbi Chikwanha',
+		headline: 'Chemistry and Biology made simple',
+		bio: 'Science teacher for 4 years. Clear notes and lots of past-paper practice.',
+		town: 'Gweru',
+		lessonModes: 'both',
+		defaultPriceCents: 900,
+		showPrices: true,
+		ecocashNumber: '+263770000209',
+		ecocashName: 'Rumbi Chikwanha'
 	});
 
 	const studentDefs: {
@@ -331,9 +344,26 @@ export async function seedTestData(
 			});
 		students.push({ id, name: s.name, tutors: s.tutors });
 	}
+	// parents' children (Mrs Zulu books for two)
+	const kids = new Map<string, number>();
+	for (const s of students) {
+		const def = studentDefs.find((d) => d.name === s.name)!;
+		if (def.role !== 'parent' || !def.child) continue;
+		const [c] = await db
+			.insert(child)
+			.values({ parentId: s.id, name: def.child, level: 'O Level', schoolYear: 'Form 3' })
+			.returning();
+		kids.set(s.id, c.id);
+		if (s.name === 'Mrs Grace Zulu')
+			await db
+				.insert(child)
+				.values({ parentId: s.id, name: 'Tafara Zulu', level: 'Grade 7', schoolYear: 'Grade 7' });
+	}
+	const kidOf = (userId: string) => kids.get(userId) ?? null;
 	const of = (t: number) => students.filter((s) => s.tutors.includes(t));
 
 	// 3. Lessons: past and upcoming, one-to-one and groups, each with its charge
+	let absentOnce = 4;
 	async function addLesson(
 		t: number,
 		start: Date,
@@ -374,13 +404,22 @@ export async function seedTestData(
 					startsAt: l.startsAt,
 					endsAt: l.endsAt,
 					status: 'accepted',
+					childId: kidOf(p.id),
 					lessonId: l.id,
 					decidedAt: addDays(start, -2)
 				})
 				.returning();
 			const [a] = await db
 				.insert(attendee)
-				.values({ lessonId: l.id, userId: p.id, bookingId: b.id, priceCents: price })
+				.values({
+					lessonId: l.id,
+					userId: p.id,
+					bookingId: b.id,
+					priceCents: price,
+					childId: kidOf(p.id),
+					// past lessons are marked by the tutor (one student was absent)
+					attendance: start < new Date() ? (absentOnce-- === 0 ? 'absent' : 'completed') : null
+				})
 				.returning();
 			if (price > 0)
 				await db.insert(charge).values({
@@ -565,12 +604,13 @@ export async function seedTestData(
 				note: 'Done, see my photo.',
 				fileKey: await proof(`answers/${s[1].id}/test-${t}.png`),
 				fileName: 'answer.png',
-				feedback: 'Well done! Check question 4 again.'
+				feedback: 'Well done! Check question 4 again.',
+				checkedAt: new Date()
 			}
 		]);
 	}
 
-	// 8. Reviews (one hidden, to show the tutor can hide reviews)
+	// 8. Reviews (one hidden by Tutora, one reported by the tutor, some with a reply)
 	const texts = [
 		[5, 'Very patient and explains everything clearly. My marks went up a lot.'],
 		[4, 'Good lessons and useful homework. Sometimes the connection was slow.'],
@@ -584,10 +624,71 @@ export async function seedTestData(
 				displayName: st.name.replace(/^(Mrs|Mr) /, '').split(' ')[0],
 				rating: texts[k][0],
 				text: texts[k][1],
-				hidden: t === 1 && k === 2
+				hidden: t === 1 && k === 2,
+				reply: k === 0 ? 'Thank you! It was a pleasure to teach you.' : null,
+				repliedAt: k === 0 ? new Date() : null,
+				reportedAt: t === 2 && k === 1 ? new Date() : null,
+				reportReason:
+					t === 2 && k === 1 ? 'This person never had a lesson with me (test report).' : null
 			});
 		}
 	}
+
+	// 9. Saved tutors, blocked days, checked homework, help requests, notifications
+	const rudo = students.find((s) => s.name === 'Rudo Banda')!;
+	await db.insert(favourite).values([
+		{ userId: rudo.id, tutorId: tutors[0].id },
+		{ userId: rudo.id, tutorId: tutors[2].id }
+	]);
+	await db.insert(calendarEvent).values({
+		tutorId: tutors[0].id,
+		kind: 'blocked',
+		title: 'School holiday',
+		startsAt: fromLocal(day(10), 0),
+		endsAt: fromLocal(day(12), 24 * 60)
+	});
+	await db.insert(supportRequest).values([
+		{
+			name: 'Vimbai Hove',
+			email: 'vimbai@example.com',
+			topic: 'help',
+			message: 'How do I book a lesson for next week? (test message)'
+		},
+		{
+			name: 'A parent',
+			email: 'parent@example.com',
+			topic: 'report',
+			message: 'A tutor did not come to the lesson (test report).',
+			status: 'done'
+		}
+	]);
+	for (const s of students.slice(0, 6)) {
+		await db.insert(notification).values([
+			{
+				userId: s.id,
+				kind: 'booking',
+				title: 'Lesson booked',
+				body: 'Your tutor accepted your lesson.',
+				link: '/student'
+			},
+			{
+				userId: s.id,
+				kind: 'payment',
+				title: 'Payment confirmed',
+				body: 'Your tutor confirmed your payment. Your receipt is ready.',
+				link: '/student/payments?tab=history',
+				readAt: new Date()
+			}
+		]);
+	}
+	for (const t of tutors)
+		await db.insert(notification).values({
+			userId: t.id,
+			kind: 'booking',
+			title: 'New booking request',
+			body: 'A student asked for a lesson. Please accept, decline or suggest another time.',
+			link: '/tutor'
+		});
 
 	return logins;
 }

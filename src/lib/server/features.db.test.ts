@@ -12,7 +12,14 @@ import {
 	replaceAvailability,
 	updateSettings
 } from './settings.ts';
-import { attendee, lesson, roomParticipant } from './db/app.schema.ts';
+import {
+	attendee,
+	charge,
+	lesson,
+	payment,
+	paymentAllocation,
+	roomParticipant
+} from './db/app.schema.ts';
 import {
 	allReviews,
 	canReview,
@@ -178,14 +185,49 @@ describe.skipIf(!hasTestDb)(
 		});
 
 		describe('reviews', () => {
-			it('only after a past lesson; first name only; tutor can hide but not edit', async () => {
+			it('only after a completed, paid lesson; first name only; only Tutora can hide', async () => {
 				const u = await makeUser(db, 'student', 'Rudo Chipo Moyo');
 				expect(await canReview(db, tid, u.id, MONDAY_8AM)).toBe(false);
 				expect(await postReview(db, tid, u.id, u.name, 5, 'Great', MONDAY_8AM)).toBeNull();
-				await lessonFor([u.id], zw(-2, '15:00'));
+				const l = await lessonFor([u.id], zw(-2, '15:00'));
+				// a past lesson that is not paid yet: no review
+				const [a] = await db.select().from(attendee).where(eq(attendee.lessonId, l.id));
+				const [c] = await db
+					.insert(charge)
+					.values({
+						tutorId: tid,
+						userId: u.id,
+						kind: 'lesson',
+						attendeeId: a.id,
+						description: 'x',
+						amountCents: 1000
+					})
+					.returning();
+				expect(await canReview(db, tid, u.id, MONDAY_8AM)).toBe(false);
+				const [p] = await db
+					.insert(payment)
+					.values({
+						tutorId: tid,
+						userId: u.id,
+						amountCents: 1000,
+						currency: 'USD',
+						method: 'cash',
+						paidOn: '2026-11-14',
+						status: 'confirmed',
+						recordedBy: 'tutor'
+					})
+					.returning();
+				await db
+					.insert(paymentAllocation)
+					.values({ paymentId: p.id, chargeId: c.id, amountCents: 1000 });
+				// marked absent: no review either
+				await db.update(attendee).set({ attendance: 'absent' }).where(eq(attendee.id, a.id));
+				expect(await canReview(db, tid, u.id, MONDAY_8AM)).toBe(false);
+				await db.update(attendee).set({ attendance: 'completed' }).where(eq(attendee.id, a.id));
+				expect(await canReview(db, tid, u.id, MONDAY_8AM)).toBe(true);
 				const r = await postReview(db, tid, u.id, u.name, 5, 'Great teacher', MONDAY_8AM);
 				expect(r!.displayName).toBe('Rudo');
-				await setReviewHidden(db, tid, r!.id, true);
+				await setReviewHidden(db, r!.id, true);
 				expect((await site()).reviews.some((x) => x.text === 'Great teacher')).toBe(false);
 				// re-posting does not un-hide a hidden review
 				await postReview(db, tid, u.id, u.name, 4, 'Changed my words', MONDAY_8AM);
@@ -265,8 +307,8 @@ describe.skipIf(!hasTestDb)(
 				const start = zw(3, '15:00');
 				await lessonFor([u.id], start);
 				const sent: string[] = [];
-				const mail = async (m: { to: string; subject: string }) => {
-					sent.push(m.subject);
+				const mail = async (userId: string, subject: string) => {
+					if (userId === u.id) sent.push(subject);
 				};
 				const dayBefore = new Date(start.getTime() - 23 * 3_600_000);
 				await sendDueReminders(db, mail, 'https://example.test', dayBefore);

@@ -6,7 +6,8 @@ const ok = {
 	email: ' Tendai@Example.com ',
 	password: 'longenough1',
 	accountType: 'student',
-	consent: 'on'
+	consent: 'on',
+	phone: '077 123 4567'
 };
 
 describe('signup validation', () => {
