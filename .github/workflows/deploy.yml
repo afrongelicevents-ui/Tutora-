@@ -19,7 +19,11 @@ on:
         type: boolean
         default: false
       new_setup_code:
-        description: 'Make a new tutor setup code (replaces an unused one)'
+        description: 'Make a new owner setup code (replaces an unused one)'
+        type: boolean
+        default: false
+      reset_test_data:
+        description: 'TEST site: wipe it and fill it with fresh fake data'
         type: boolean
         default: false
 
@@ -114,7 +118,7 @@ jobs:
         if: steps.check.outputs.ready == 'true'
         run: pnpm db:migrate
 
-      - name: Make the one-time tutor setup code
+      - name: Make the one-time owner setup code
         if: steps.check.outputs.ready == 'true'
         env:
           NEW_SETUP_CODE: ${{ inputs.new_setup_code && 'true' || 'false' }}
@@ -155,9 +159,113 @@ jobs:
             echo ""
             echo "Website: $SITE_URL"
             echo ""
-            echo "The tutor claims it at $SITE_URL/setup with the one-time setup code."
+            echo "The owner sets up their account at $SITE_URL/setup with the one-time setup code."
             echo ""
             echo "Home page answered HTTP $code."
           } >> "$GITHUB_STEP_SUMMARY"
           echo "SITE: $SITE_URL"
           [ "$code" = "200" ] || { echo "::warning::The site did not answer 200 yet (got $code). It may need another minute."; }
+
+  # The TEST site: same code, its own database branch ("test") and Worker ("tutora-test"),
+  # full of fake data. Never touches the live database.
+  deploy-test:
+    needs: deploy
+    runs-on: ubuntu-latest
+    environment: test
+    steps:
+      - name: Check secrets are set
+        id: check
+        env:
+          CF: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          NEON: ${{ secrets.NEON_API_KEY }}
+        run: |
+          if [ -z "$CF" ] || [ -z "$NEON" ]; then
+            echo "::notice::Test site skipped: it needs NEON_API_KEY and CLOUDFLARE_API_TOKEN."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v5
+        if: steps.check.outputs.ready == 'true'
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: pnpm/action-setup@v4
+        if: steps.check.outputs.ready == 'true'
+      - uses: actions/setup-node@v5
+        if: steps.check.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: steps.check.outputs.ready == 'true'
+      - name: Find (or make) the test database branch
+        if: steps.check.outputs.ready == 'true'
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          BRANCH: test
+        run: node scripts/deploy/neon.mjs
+      - name: Prepare Cloudflare
+        if: steps.check.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WORKER_NAME: tutora-test
+        run: node scripts/deploy/cloudflare.mjs
+      - name: Prepare app secrets
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          AUTH=$(printf 'tutora-test-auth:%s' "$DATABASE_URL" | sha256sum | cut -d' ' -f1)
+          CRON=$(printf 'tutora-test-cron:%s' "$DATABASE_URL" | sha256sum | cut -d' ' -f1)
+          echo "::add-mask::$AUTH"
+          echo "::add-mask::$CRON"
+          { echo "BETTER_AUTH_SECRET=$AUTH"; echo "CRON_SECRET=$CRON"; } >> "$GITHUB_ENV"
+      - name: Prepare the database tables
+        if: steps.check.outputs.ready == 'true'
+        run: pnpm db:migrate
+      - run: pnpm build
+        if: steps.check.outputs.ready == 'true'
+      - uses: cloudflare/wrangler-action@v3
+        if: steps.check.outputs.ready == 'true'
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
+          environment: test
+          command: deploy --env test
+          secrets: |
+            DATABASE_URL
+            BETTER_AUTH_SECRET
+            CRON_SECRET
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          BETTER_AUTH_SECRET: ${{ env.BETTER_AUTH_SECRET }}
+          CRON_SECRET: ${{ env.CRON_SECRET }}
+      - name: Fill the test site with fake data
+        if: steps.check.outputs.ready == 'true'
+        env:
+          RESET: ${{ inputs.reset_test_data && 'true' || 'false' }}
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE_URL/" || true)
+            if [ "$code" = "200" ]; then break; fi
+            sleep 10
+          done
+          q='?ifEmpty=1'; [ "$RESET" = "true" ] && q=''
+          out=$(curl -sS -w ' HTTP %{http_code}' -X POST -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/test/seed$q" || true)
+          echo "Seed through the website: $out"
+          case "$out" in
+            *'HTTP 200') ;;
+            *)
+              echo "Filling the test database directly instead."
+              IF_EMPTY=$([ "$RESET" = "true" ] && echo 0 || echo 1) TEST_SITE=1 \
+                node_modules/.bin/tsx scripts/deploy/seed-test.ts
+              out="$out (then filled directly)"
+              ;;
+          esac
+          {
+            echo "## Test site (fake data)"
+            echo ""
+            echo "Website: $SITE_URL"
+            echo ""
+            echo "Home page answered HTTP $code. Seed: $out"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "TEST SITE: $SITE_URL"

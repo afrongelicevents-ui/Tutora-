@@ -76,7 +76,7 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 		if (gate.status === 303)
 			return new Response(null, { status: 303, headers: { location: gate.location } });
 		// page-data requests get a bare 403; people get a friendly page
-		if (event.url.pathname.endsWith('/__data.json'))
+		if (event.isDataRequest || event.url.pathname.endsWith('/__data.json'))
 			return new Response('Forbidden', { status: 403 });
 		return new Response(null, {
 			status: 303,

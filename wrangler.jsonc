@@ -11,5 +11,18 @@
 	// The free *.workers.dev address is the site's only address until tutora.co.zw is bought.
 	// Set this to false once the custom domain is live.
 	"workers_dev": true,
-	"preview_urls": false
+	"preview_urls": false,
+	// The TEST site: same code, its own Worker, address and database branch, full of fake data.
+	"env": {
+		"test": {
+			"name": "tutora-test",
+			"workers_dev": true,
+			"preview_urls": false,
+			"assets": {
+				"binding": "ASSETS",
+				"directory": ".svelte-kit/cloudflare"
+			},
+			"vars": { "TEST_SITE": "1" }
+		}
+	}
 }
