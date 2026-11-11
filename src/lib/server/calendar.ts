@@ -18,7 +18,13 @@ export const eventsBetween = (db: DB, tutorId: string, from: Date, to: Date) =>
 export async function addEvent(
 	db: DB,
 	tutorId: string,
-	v: { title: string; startsAt: Date; endsAt: Date; note: string | null }
+	v: {
+		title: string;
+		startsAt: Date;
+		endsAt: Date;
+		note: string | null;
+		kind?: 'personal' | 'blocked';
+	}
 ) {
 	const [row] = await db
 		.insert(calendarEvent)

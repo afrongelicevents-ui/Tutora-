@@ -911,5 +911,20 @@
 	"notif_open": "Open",
 	"notif_none": "Nothing yet.",
 	"notif_settings": "Notification settings",
-	"notif_unread": "Notifications: {n} new"
+	"notif_unread": "Notifications: {n} new",
+	"cal_month": "Month",
+	"cal_all_day": "All day",
+	"cal_blocked": "Not available: {title}",
+	"cal_pending": "Waiting: {text}",
+	"cal_pending_legend": "Request waiting",
+	"cal_blocked_legend": "Not available",
+	"cal_free": "Free times: {times}",
+	"cal_block_h": "Holiday or time off",
+	"cal_block_lead": "Students can't book these days.",
+	"cal_from": "From",
+	"cal_to": "To (including)",
+	"cal_why": "Note (only you see it)",
+	"cal_why_hint": "e.g. School holiday",
+	"cal_block_add": "Block these days",
+	"by_year": "Confirmed per year"
 }
