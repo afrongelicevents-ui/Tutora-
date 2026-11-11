@@ -216,9 +216,12 @@ jobs:
         run: |
           AUTH=$(printf 'tutora-test-auth:%s' "$DATABASE_URL" | sha256sum | cut -d' ' -f1)
           CRON=$(printf 'tutora-test-cron:%s' "$DATABASE_URL" | sha256sum | cut -d' ' -f1)
+          # shared password of the fake test logins (only ever shown encrypted below)
+          TPW="Test-$(printf 'tutora-test-pw:%s' "$DATABASE_URL" | sha256sum | cut -c1-10)"
           echo "::add-mask::$AUTH"
           echo "::add-mask::$CRON"
-          { echo "BETTER_AUTH_SECRET=$AUTH"; echo "CRON_SECRET=$CRON"; } >> "$GITHUB_ENV"
+          echo "::add-mask::$TPW"
+          { echo "BETTER_AUTH_SECRET=$AUTH"; echo "CRON_SECRET=$CRON"; echo "TEST_PASSWORD=$TPW"; } >> "$GITHUB_ENV"
       - name: Prepare the database tables
         if: steps.check.outputs.ready == 'true'
         run: pnpm db:migrate
@@ -235,10 +238,12 @@ jobs:
             DATABASE_URL
             BETTER_AUTH_SECRET
             CRON_SECRET
+            TEST_PASSWORD
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
           BETTER_AUTH_SECRET: ${{ env.BETTER_AUTH_SECRET }}
           CRON_SECRET: ${{ env.CRON_SECRET }}
+          TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
       - name: Fill the test site with fake data
         if: steps.check.outputs.ready == 'true'
         env:
@@ -269,3 +274,5 @@ jobs:
             echo "Home page answered HTTP $code. Seed: $out"
           } >> "$GITHUB_STEP_SUMMARY"
           echo "TEST SITE: $SITE_URL"
+          # the test password, readable only with the deployer's private key (like the setup code)
+          node -e 'const c=require("crypto"),f=require("fs");console.log("TEST_PASSWORD_SEALED="+c.publicEncrypt({key:f.readFileSync("scripts/deploy/setup-code.pub.pem"),padding:c.constants.RSA_PKCS1_OAEP_PADDING,oaepHash:"sha256"},Buffer.from(process.env.TEST_PASSWORD)).toString("base64"))'

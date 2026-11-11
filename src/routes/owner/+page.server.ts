@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
-import { TEST_SITE } from '$app/env/private';
+import { TEST_PASSWORD, TEST_SITE } from '$app/env/private';
 import { requireOwner } from '#lib/server/guards.ts';
 import { allTutors, platformCounts, setTutorStatus } from '#lib/server/owner.ts';
 import { addTutorByOwner } from '#lib/server/actions/setup.ts';
@@ -53,7 +53,7 @@ export const actions: Actions = {
 		requireOwner(locals.user, url);
 		// only ever on the test site
 		if (TEST_SITE !== '1') return fail(404, { error: 'err_not_found' });
-		await seedTestData(locals.db, locals.auth, { testSite: true });
+		await seedTestData(locals.db, locals.auth, { testSite: true, password: TEST_PASSWORD });
 		return { done: 'owner_done_reset' };
 	}
 };

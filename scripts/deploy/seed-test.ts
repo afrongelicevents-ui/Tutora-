@@ -1,6 +1,6 @@
 // Fills the TEST database with fake data from the deploy job (fallback when the test website
 // itself cannot do it). Refuses to run unless TEST_SITE=1 is set explicitly.
-// Env: DATABASE_URL (the TEST branch), BETTER_AUTH_SECRET, TEST_SITE=1, IF_EMPTY=1 (optional).
+// Env: DATABASE_URL (the TEST branch), BETTER_AUTH_SECRET, TEST_PASSWORD, TEST_SITE=1, IF_EMPTY=1.
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { eq } from 'drizzle-orm';
 import pg from 'pg';
@@ -31,7 +31,10 @@ async function main() {
 			emailEnabled: false,
 			transactions: true
 		});
-		const logins = await seedTestData(db, auth, { testSite: true });
+		const logins = await seedTestData(db, auth, {
+			testSite: true,
+			password: process.env.TEST_PASSWORD
+		});
 		console.log(`Test data made: ${logins.length} logins.`);
 	} finally {
 		await pool.end();

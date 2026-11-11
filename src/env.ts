@@ -28,6 +28,11 @@ export const variables = defineEnvVars({
 			'Optional. "1" on the test site only: shows the "TEST SITE" bar, allows the owner to reset the fake data, and skips the authenticator step so test logins work.',
 		schema: optional
 	},
+	TEST_PASSWORD: {
+		description:
+			'Test site only: the shared password of all fake test logins (made by the deploy workflow).',
+		schema: optional
+	},
 	RESEND_API_KEY: {
 		description:
 			'Optional. Resend API key for sending emails. Without it the site works without emails: no email confirmation, no reminder or receipt emails.',

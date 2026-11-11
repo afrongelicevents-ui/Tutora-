@@ -33,9 +33,6 @@ import { account, user } from './db/auth.schema.ts';
 import { confirmPayment, recordCash, rejectPayment } from './billing.ts';
 import { addDays, fromLocal, localDate } from '../tz.ts';
 
-/** One shared password for every test login (the test site shows it on purpose). */
-export const TEST_PASSWORD = 'TutoraTest2026';
-
 export interface TestLogin {
 	role: string;
 	name: string;
@@ -60,9 +57,11 @@ const plus = (d: Date, min: number) => new Date(d.getTime() + min * 60_000);
 export async function seedTestData(
 	db: DB,
 	auth: Auth,
-	opts: { testSite: boolean }
+	opts: { testSite: boolean; password: string | undefined }
 ): Promise<TestLogin[]> {
 	if (!opts.testSite) throw new Error('seedTestData only runs on the test site');
+	// one shared password for every test login, made by the deploy (never written in the code)
+	if (!opts.password || opts.password.length < 10) throw new Error('TEST_PASSWORD is not set');
 
 	// 1. Wipe everything (users cascade to all their data).
 	await db.execute(
@@ -71,7 +70,7 @@ export async function seedTestData(
 	await db.execute(sql`alter sequence receipt_no_seq restart with 1`);
 
 	const ctx = await auth.$context;
-	const hash = await ctx.password.hash(TEST_PASSWORD);
+	const hash = await ctx.password.hash(opts.password);
 	const logins: TestLogin[] = [];
 
 	async function person(

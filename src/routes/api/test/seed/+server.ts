@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
-import { CRON_SECRET, TEST_SITE } from '$app/env/private';
+import { CRON_SECRET, TEST_PASSWORD, TEST_SITE } from '$app/env/private';
 import type { RequestHandler } from './$types';
 import { seedTestData } from '#lib/server/seed.ts';
 import { user } from '#lib/server/db/auth.schema.ts';
@@ -29,6 +29,9 @@ export const POST: RequestHandler = async ({ locals, request, url }) => {
 			.where(eq(user.role, 'owner'));
 		if (owner) return json({ seeded: false });
 	}
-	const logins = await seedTestData(locals.db, locals.auth, { testSite: true });
+	const logins = await seedTestData(locals.db, locals.auth, {
+		testSite: true,
+		password: TEST_PASSWORD
+	});
 	return json({ seeded: true, logins: logins.length });
 };
