@@ -1,7 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { auth } from '#lib/server/auth.ts';
-import { db } from '#lib/server/db/index.ts';
 import { logIn } from '#lib/server/actions/login.ts';
 import { hitLimit, clientIp } from '#lib/server/rate-limit.ts';
 import { safeNext } from '#lib/server/guards.ts';
@@ -13,15 +11,15 @@ export const load: PageServerLoad = ({ locals, url }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, url }) => {
+	default: async ({ request, url, locals }) => {
 		const input = formObject(await request.formData());
 		const values = { email: input.email ?? '' };
 		// Key the limits on the cleaned-up email, so "a@b.com " and "A@B.com" share one bucket.
 		const email = emailField.safeParse(input.email ?? '');
 		const who = email.success ? email.data : 'invalid';
 		const ip = clientIp(request);
-		const byIp = await hitLimit(db, 'login', `${ip}:${who}`);
-		const byAccount = await hitLimit(db, 'loginAccount', who);
+		const byIp = await hitLimit(locals.db, 'login', `${ip}:${who}`);
+		const byAccount = await hitLimit(locals.db, 'loginAccount', who);
 		const limit = !byIp.ok ? byIp : byAccount;
 		if (!limit.ok) {
 			return fail(429, {
@@ -31,7 +29,7 @@ export const actions: Actions = {
 			});
 		}
 
-		const result = await logIn({ auth }, input, request.headers);
+		const result = await logIn({ auth: locals.auth }, input, request.headers);
 		if (!result.ok) return fail(400, { values, errors: result.errors });
 
 		const next = url.searchParams.get('next');

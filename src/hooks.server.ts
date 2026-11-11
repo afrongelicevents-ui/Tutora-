@@ -1,7 +1,9 @@
 import { building, dev } from '$app/env';
+import { DATABASE_URL } from '$app/env/private';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { type Handle, sequence } from '@sveltejs/kit/hooks';
-import { auth } from '#lib/server/auth.ts';
+import { makeAuth } from '#lib/server/auth.ts';
+import { openDb } from '#lib/server/db/index.ts';
 import { getTextDirection } from '#lib/paraglide/runtime.js';
 import { paraglideMiddleware } from '#lib/paraglide/server.js';
 import { isAllowedAuthPath, securityHeaders } from '#lib/server/security.ts';
@@ -20,6 +22,20 @@ const handleParaglide: Handle = ({ event, resolve }) =>
 		);
 	});
 
+/** Opens this request's database connection and closes it when the response is ready. */
+const handleDb: Handle = async ({ event, resolve }) => {
+	if (building) return resolve(event);
+	const { db, close } = await openDb(DATABASE_URL);
+	event.locals.db = db;
+	event.locals.auth = makeAuth(db);
+	try {
+		return await resolve(event);
+	} finally {
+		const done = close().catch(() => {});
+		event.platform?.ctx?.waitUntil(done);
+	}
+};
+
 const handleAuth: Handle = async ({ event, resolve }) => {
 	const { pathname } = event.url;
 	if (pathname === '/api/auth' || pathname.startsWith('/api/auth/')) {
@@ -27,13 +43,20 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 			return new Response('Not found', { status: 404 });
 		}
 	}
-	if (!building) {
-		const data = await auth.api.getSession({ headers: event.request.headers });
-		if (data) {
-			const role = isRole(data.user.role) ? data.user.role : 'student';
-			event.locals.session = data.session;
-			event.locals.user = { ...data.user, role, twoFactorEnabled: !!data.user.twoFactorEnabled };
-		}
+	if (building) return resolve(event);
+	const auth = event.locals.auth;
+	const data = await auth.api.getSession({ headers: event.request.headers });
+	if (data) {
+		const role = isRole(data.user.role) ? data.user.role : 'student';
+		event.locals.session = data.session;
+		event.locals.user = {
+			id: data.user.id,
+			name: data.user.name,
+			email: data.user.email,
+			emailVerified: data.user.emailVerified,
+			role,
+			twoFactorEnabled: !!data.user.twoFactorEnabled
+		};
 	}
 	return svelteKitHandler({ event, resolve, auth, building });
 };
@@ -50,4 +73,4 @@ const handleHeaders: Handle = async ({ event, resolve }) => {
 	return response;
 };
 
-export const handle: Handle = sequence(handleHeaders, handleParaglide, handleAuth);
+export const handle: Handle = sequence(handleHeaders, handleDb, handleParaglide, handleAuth);

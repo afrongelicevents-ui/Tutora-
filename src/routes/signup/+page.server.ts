@@ -1,8 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { TUTOR_EMAIL } from '$app/env/private';
-import { auth } from '#lib/server/auth.ts';
-import { db } from '#lib/server/db/index.ts';
 import { signUp } from '#lib/server/actions/signup.ts';
 import { hitLimit, clientIp } from '#lib/server/rate-limit.ts';
 import { formObject } from '#lib/validation/auth.ts';
@@ -13,11 +11,11 @@ export const load: PageServerLoad = ({ locals }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request }) => {
+	default: async ({ request, locals }) => {
 		const input = formObject(await request.formData());
 		const values = { ...input, password: '' };
 
-		const limit = await hitLimit(db, 'signup', clientIp(request));
+		const limit = await hitLimit(locals.db, 'signup', clientIp(request));
 		if (!limit.ok) {
 			return fail(429, {
 				values,
@@ -26,7 +24,10 @@ export const actions: Actions = {
 			});
 		}
 
-		const result = await signUp({ auth, db, tutorEmail: TUTOR_EMAIL }, input);
+		const result = await signUp(
+			{ auth: locals.auth, db: locals.db, tutorEmail: TUTOR_EMAIL },
+			input
+		);
 		if (!result.ok) return fail(400, { values, errors: result.errors });
 
 		redirect(303, `/verify-email?email=${encodeURIComponent(result.email)}`);
