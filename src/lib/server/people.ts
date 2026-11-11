@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, inArray, lt, ne, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import {
 	attendee,

@@ -12,11 +12,14 @@
 			.toUpperCase();
 	const modes = (x: string) =>
 		x === 'online' ? m.mode_online() : x === 'in_person' ? m.mode_in_person() : m.mode_both_short();
-	const moreHref = $derived.by(() => {
-		const q = new URLSearchParams(page.url.search);
-		q.set('n', String(data.shown + 10));
-		return `?${q}`;
-	});
+	const moreHref = $derived(
+		'?' +
+			[...page.url.searchParams]
+				.filter(([k]) => k !== 'n')
+				.concat([['n', String(data.shown + 10)]])
+				.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+				.join('&')
+	);
 </script>
 
 <svelte:head>

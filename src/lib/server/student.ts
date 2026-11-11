@@ -186,7 +186,7 @@ export async function myLesson(db: DB, userId: string, lessonId: number) {
 		.leftJoin(child, eq(child.id, attendee.childId))
 		.where(and(eq(attendee.lessonId, lessonId), eq(attendee.userId, userId)));
 	if (!row) return null;
-	let payState: 'free' | 'package' | 'paid' | 'reported' | 'due' = 'due';
+	let payState: 'free' | 'package' | 'paid' | 'reported' | 'due';
 	if (row.kind === 'intro' || row.priceCents === 0) payState = 'free';
 	else if (row.packageId) payState = 'package';
 	else {
