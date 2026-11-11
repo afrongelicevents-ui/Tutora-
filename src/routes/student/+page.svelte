@@ -171,6 +171,6 @@
 	{:else}
 		<p class="empty">{m.no_tutors_yet()}</p>
 	{/each}
-	<a class="btn btn-secondary btn-block" href="/#find">{m.find_a_tutor()}</a>
+	<a class="btn btn-secondary btn-block" href="/tutors">{m.find_a_tutor()}</a>
 	<p style="margin-top:16px"><a href="/account">{m.nav_account()}</a></p>
 </section>

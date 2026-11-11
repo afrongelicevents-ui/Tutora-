@@ -6,13 +6,7 @@ import { sendEmail } from './auth.ts';
 import { m } from '../paraglide/messages.js';
 
 export type NotifyKind =
-	| 'booking'
-	| 'lesson'
-	| 'payment'
-	| 'homework'
-	| 'review'
-	| 'account'
-	| 'reminder';
+	'booking' | 'lesson' | 'payment' | 'homework' | 'review' | 'account' | 'reminder';
 
 export interface NotifyOpts {
 	kind?: NotifyKind;
@@ -41,7 +35,10 @@ export async function notifyUser(
 			.from(user)
 			.where(eq(user.id, userId));
 		if (!u) return;
-		const [pref] = await db.select().from(notificationPref).where(eq(notificationPref.userId, userId));
+		const [pref] = await db
+			.select()
+			.from(notificationPref)
+			.where(eq(notificationPref.userId, userId));
 		if (pref && kind === 'reminder' && pref.remindersOff) return;
 		if (pref && kind === 'homework' && pref.homeworkOff) return;
 		await db
@@ -102,10 +99,7 @@ export async function markRead(db: DB, userId: string, ids?: number[]) {
 		.update(notification)
 		.set({ readAt: new Date() })
 		.where(
-			and(
-				eq(notification.userId, userId),
-				ids?.length ? inArray(notification.id, ids) : undefined
-			)
+			and(eq(notification.userId, userId), ids?.length ? inArray(notification.id, ids) : undefined)
 		);
 }
 

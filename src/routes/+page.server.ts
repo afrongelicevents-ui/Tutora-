@@ -1,17 +1,18 @@
 import type { PageServerLoad } from './$types';
-import { allSubjectNames, listTutors } from '#lib/server/settings.ts';
+import { popularTutors } from '#lib/server/settings.ts';
+import { getContent } from '#lib/server/content.ts';
 
-/** Tutora's homepage: what Tutora is, and "Find a tutor" with a subject filter. */
-export const load: PageServerLoad = async ({ locals, url }) => {
-	const subject = (url.searchParams.get('subject') ?? '').trim().slice(0, 60);
-	const [tutors, subjects] = await Promise.all([
-		listTutors(locals.db, subject),
-		allSubjectNames(locals.db)
-	]);
+/** Tutora's homepage: what Tutora is, popular (real, approved) tutors, and "Are you a tutor?". */
+export const load: PageServerLoad = async ({ locals }) => {
+	const [tutors, content] = await Promise.all([popularTutors(locals.db), getContent(locals.db)]);
 	return {
-		subject,
-		subjects,
+		content: {
+			heroTitle: content.heroTitle,
+			heroLead: content.heroLead,
+			joinLead: content.joinLead,
+			heroPhotoV: content.heroPhoto ? content.heroPhotoV : null
+		},
 		// only what a card needs (no internal ids)
-		tutors: tutors.map(({ tutorId: _id, ...t }) => t)
+		tutors: tutors.map(({ tutorId: _id, bio: _b, ...t }) => t)
 	};
 };

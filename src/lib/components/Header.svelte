@@ -9,7 +9,7 @@
 <header>
 	<div class="wrap bar">
 		<a href="/" class="logo">
-			<img src={wordmark} alt={m.site_name()} width="96" height="22" />
+			<img src={wordmark} alt={m.site_name()} width="124" height="28" />
 		</a>
 		<details class="menu">
 			<summary aria-label={m.nav_menu()}>
@@ -41,10 +41,9 @@
 						<button class="btn-link" type="submit">{m.nav_logout()}</button>
 					</form>
 				{:else}
-					<a href="/#find">{m.find_a_tutor()}</a>
-					<a href="/join">{m.nav_join()}</a>
+					<a href="/tutors">{m.find_a_tutor()}</a>
+					<a href="/#how">{m.nav_how()}</a>
 					<a href="/login">{m.nav_login()}</a>
-					<a href="/signup">{m.nav_signup()}</a>
 				{/if}
 			</nav>
 		</details>
@@ -53,8 +52,7 @@
 
 <style>
 	header {
-		background: var(--white);
-		border-bottom: 1px solid var(--line);
+		background: var(--paper-50);
 	}
 	.bar {
 		display: flex;
@@ -68,7 +66,7 @@
 		min-height: 44px;
 	}
 	.logo img {
-		width: 96px;
+		width: 124px;
 		height: auto;
 	}
 	.menu {

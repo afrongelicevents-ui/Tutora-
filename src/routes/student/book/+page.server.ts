@@ -32,7 +32,7 @@ async function bookingTutor(locals: App.Locals, url: URL): Promise<SiteSettings>
 			if (s) return s;
 		}
 	}
-	redirect(303, '/#find');
+	redirect(303, '/tutors');
 }
 
 export const load: PageServerLoad = async ({ locals, url }) => {
