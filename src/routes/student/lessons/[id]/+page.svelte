@@ -69,7 +69,7 @@
 			<a class="btn-link" href="/student/book?tutor={l.tutorSlug}">{m.ld_book_other()}</a>
 		{:else}
 			<p class="small muted">
-				{m.cancel_too_late({ hours: l.cancelHours })}{#if l.whatsapp}{' '}
+				{m.cancel_too_late({ hours: l.cancelHours })}{#if l.whatsapp}&nbsp;
 					<a
 						href={waLink(l.whatsapp, m.wa_lesson_change({ when: fmtDayTime(l.startsAt) }))}
 						target="_blank"
