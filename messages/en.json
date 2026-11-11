@@ -990,5 +990,7 @@
 	"err_try_again": "Something went wrong. Please wait a moment and try again.",
 	"owner_support_s": "New help request",
 	"owner_support_b": "{name} sent a message through the contact form.",
-	"room_weak_tip": "Weak connection: switch your video off and keep audio only. The lesson then works on very little data."
+	"room_weak_tip": "Weak connection: switch your video off and keep audio only. The lesson then works on very little data.",
+	"pdf_tutor": "Tutor",
+	"pdf_recorded": "Recorded on Tutora. The tutor confirmed receiving this payment; Tutora does not handle money."
 }
