@@ -13,6 +13,8 @@ export const user = pgTable('user', {
 		.$onUpdate(() => /* @__PURE__ */ new Date())
 		.notNull(),
 	twoFactorEnabled: boolean('two_factor_enabled').default(false),
+	/** set when someone else made a temporary password: choose your own at next login */
+	mustChangePassword: boolean('must_change_password').default(false).notNull(),
 	role: text('role', { enum: ['owner', 'tutor', 'student', 'parent'] }).default('student')
 });
 

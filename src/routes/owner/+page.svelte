@@ -33,7 +33,7 @@
 		<div class="card">
 			<b>{tu.name ?? '—'}</b>
 			<p class="small muted">{tu.email} · {m.owner_joined({ date: fmtDay(tu.createdAt) })}</p>
-			<p class="small">{m.owner_check_email()}</p>
+			{#if !tu.emailConfirmed}<p class="small">{m.owner_check_email()}</p>{/if}
 			<div class="row">
 				<form method="POST" action="?/status">
 					<input type="hidden" name="id" value={tu.tutorId} /><input

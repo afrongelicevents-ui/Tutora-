@@ -7,6 +7,8 @@ import { allTutors, platformCounts, setTutorStatus } from '#lib/server/owner.ts'
 import { addTutorByOwner } from '#lib/server/actions/setup.ts';
 import { setPasswordFor, studentByEmail, tempPassword } from '#lib/server/account.ts';
 import { emailField } from '#lib/validation/auth.ts';
+import { notifyUser } from '#lib/server/notify.ts';
+import { m } from '#lib/paraglide/messages.js';
 import { formObject } from '#lib/validation/auth.ts';
 import { seedTestData } from '#lib/server/seed.ts';
 
@@ -59,6 +61,9 @@ export const actions: Actions = {
 		const password = tempPassword();
 		if (!(await setPasswordFor({ auth: locals.auth, db: locals.db }, s.id, password)))
 			return fail(400, { error: 'owner_reset_none' });
+		// tell the account holder (by email, when email is switched on)
+		await notifyUser(locals.db, s.id, m.email_pw_reset_s(), m.email_pw_reset_b());
+		console.log(`owner ${locals.user!.id} reset the password of ${s.id}`);
 		// shown once to the owner; the student must change it at their next login
 		return { reset: { name: s.name, password } };
 	},

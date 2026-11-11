@@ -33,16 +33,14 @@ export const actions: Actions = {
 			}
 		);
 		if (!r.ok) return fail(400, { values, errors: r.errors });
-		// log the new tutor in, then show "waiting for approval"
-		await locals.auth.api
-			.signInEmail({
-				body: {
-					email: values.email.trim().toLowerCase(),
-					password: f.password ?? '',
-					rememberMe: true
-				}
-			})
-			.catch(() => {});
+		// log the new tutor in, then show "waiting for approval" (with an email service on,
+		// they first confirm their email address)
+		const email = values.email.trim().toLowerCase();
+		const loggedIn = await locals.auth.api
+			.signInEmail({ body: { email, password: f.password ?? '', rememberMe: true } })
+			.then(() => true)
+			.catch(() => false);
+		if (!loggedIn) redirect(303, `/verify-email?email=${encodeURIComponent(email)}`);
 		redirect(303, '/tutor-status');
 	}
 };

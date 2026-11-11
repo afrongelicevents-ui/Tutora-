@@ -102,9 +102,13 @@ export async function signUpTutor(
 	if (Object.keys(v.errors).length) return { ok: false, errors: v.errors };
 	const id = await createLogin(deps.auth, deps.db, v.name, v.email, input.password);
 	if (!id) return { ok: false, errors: { email: 'err_email_taken' } };
-	// no email confirmation step: the owner approves every tutor by hand
-	await deps.db.update(user).set({ role: 'tutor', emailVerified: true }).where(eq(user.id, id));
+	// The email is not confirmed: the owner sees that before approving. When an email service is
+	// on, a confirmation link is sent (without one, sending quietly does nothing).
+	await deps.db.update(user).set({ role: 'tutor' }).where(eq(user.id, id));
 	await createTutorProfile(deps.db, id, v.name, 'pending');
+	await deps.auth.api
+		.sendVerificationEmail({ body: { email: v.email, callbackURL: '/login' } })
+		.catch(() => {});
 	return { ok: true, userId: id };
 }
 
@@ -117,7 +121,11 @@ export async function addTutorByOwner(
 	if (Object.keys(v.errors).length) return { ok: false, errors: v.errors };
 	const id = await createLogin(deps.auth, deps.db, v.name, v.email, input.password);
 	if (!id) return { ok: false, errors: { email: 'err_email_taken' } };
-	await deps.db.update(user).set({ role: 'tutor', emailVerified: true }).where(eq(user.id, id));
+	// the owner knows this temporary password: the tutor must choose their own at first login
+	await deps.db
+		.update(user)
+		.set({ role: 'tutor', emailVerified: true, mustChangePassword: true })
+		.where(eq(user.id, id));
 	await createTutorProfile(deps.db, id, v.name, 'active');
 	return { ok: true, userId: id };
 }

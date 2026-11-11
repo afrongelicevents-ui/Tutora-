@@ -67,7 +67,6 @@ export async function seedTestData(
 	await db.execute(
 		sql`truncate table "user", "verification", "rate_limit", "action_limit", "file_blob", "setup_code" restart identity cascade`
 	);
-	await db.execute(sql`alter sequence receipt_no_seq restart with 1`);
 
 	const ctx = await auth.$context;
 	const hash = await ctx.password.hash(opts.password);

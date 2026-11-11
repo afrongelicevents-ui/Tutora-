@@ -57,6 +57,13 @@
       "when": 1794402000609,
       "tag": "0007_receipts_per_tutor",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794402359752,
+      "tag": "0008_password_flag_cleanup",
+      "breakpoints": true
     }
   ]
 }

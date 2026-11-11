@@ -50,6 +50,7 @@ import {
 import { addEvent, eventsBetween, removeEvent } from './calendar.ts';
 import { setTutorStatus } from './owner.ts';
 import { attendee, homeworkAnswer, review } from './db/app.schema.ts';
+import { user } from './db/auth.schema.ts';
 
 /**
  * Two tutors on one platform. Everything one tutor (or their student) does must never
@@ -258,7 +259,6 @@ describe.skipIf(!hasTestDb)('many tutors: every tutor only sees their own data',
 	it('the admin resets a password; the student must choose a new one at next login', async () => {
 		const { setPasswordFor, clearMustChange } = await import('./account.ts');
 		const { createAuth } = await import('./auth-config.ts');
-		const { profile } = await import('./db/app.schema.ts');
 		const auth = createAuth({
 			db,
 			secret: 'x'.repeat(40),
@@ -275,7 +275,7 @@ describe.skipIf(!hasTestDb)('many tutors: every tutor only sees their own data',
 		});
 		expect(await setPasswordFor({ auth, db }, s.id, 'temp-pass-123')).toBe(true);
 		const must = async () =>
-			(await db.select().from(profile).where(eq(profile.userId, s.id)))[0].mustChangePassword;
+			(await db.select().from(user).where(eq(user.id, s.id)))[0].mustChangePassword;
 		expect(await must()).toBe(true);
 		await clearMustChange(db, s.id);
 		expect(await must()).toBe(false);

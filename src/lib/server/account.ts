@@ -1,7 +1,7 @@
 import { and, eq, ne, sql } from 'drizzle-orm';
 import type { Auth } from './auth-config.ts';
 import type { DB } from './db/types.ts';
-import { account, profile, session, user } from './db/schema.ts';
+import { account, session, user } from './db/schema.ts';
 
 export type EmailChange = 'ok' | 'same' | 'taken';
 
@@ -26,7 +26,8 @@ export async function changeEmailNow(
 	try {
 		await db
 			.update(user)
-			.set({ email, emailVerified: true, updatedAt: new Date() })
+			// not confirmed: nobody checked this inbox
+			.set({ email, emailVerified: false, updatedAt: new Date() })
 			.where(eq(user.id, userId));
 	} catch {
 		return 'taken'; // unique index: someone took it at the same moment
@@ -53,7 +54,7 @@ export async function setPasswordFor(
 		.returning({ id: account.id });
 	if (updated.length === 0) return false;
 	await deps.db.delete(session).where(eq(session.userId, userId));
-	await deps.db.update(profile).set({ mustChangePassword: true }).where(eq(profile.userId, userId));
+	await deps.db.update(user).set({ mustChangePassword: true }).where(eq(user.id, userId));
 	return true;
 }
 
@@ -75,5 +76,5 @@ export async function studentByEmail(db: DB, email: string) {
 }
 
 export async function clearMustChange(db: DB, userId: string) {
-	await db.update(profile).set({ mustChangePassword: false }).where(eq(profile.userId, userId));
+	await db.update(user).set({ mustChangePassword: false }).where(eq(user.id, userId));
 }

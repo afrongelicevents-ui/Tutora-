@@ -18,7 +18,8 @@ export async function allTutors(db: DB) {
 			setupDone: sql<boolean>`${tutorProfile.setupDoneAt} is not null`,
 			createdAt: tutorProfile.createdAt,
 			approvedAt: tutorProfile.approvedAt,
-			email: user.email
+			email: user.email,
+			emailConfirmed: user.emailVerified
 		})
 		.from(tutorProfile)
 		.innerJoin(user, eq(user.id, tutorProfile.tutorId))

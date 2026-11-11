@@ -126,6 +126,8 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 			.from(tutorProfile)
 			.where(eq(tutorProfile.tutorId, r.ok ? r.userId : ''));
 		expect(p).toMatchObject({ status: 'pending', slug: 'mr-t-moyo', tutorName: 'Mr T. Moyo' });
+		// the email is not confirmed yet; a confirmation link was sent
+		await verify(TUTOR_EMAIL);
 		// the same email cannot join twice
 		const again = await signUpTutor(
 			{ auth, db },

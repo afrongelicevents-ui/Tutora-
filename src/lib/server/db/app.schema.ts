@@ -6,7 +6,6 @@ import {
 	date,
 	index,
 	integer,
-	pgSequence,
 	pgTable,
 	serial,
 	text,
@@ -44,8 +43,6 @@ export const profile = pgTable(
 		parentEmail: text('parent_email'),
 		childName: text('child_name'),
 		level: text('level'),
-		/** set when the Tutora admin made a temporary password: choose a new one at next login */
-		mustChangePassword: boolean('must_change_password').notNull().default(false),
 		consentAt: ts('consent_at').notNull(),
 		createdAt: created(),
 		updatedAt: ts('updated_at')
@@ -385,8 +382,6 @@ export const charge = pgTable(
 		check('charge_amount', sql`${t.amountCents} >= 0`)
 	]
 );
-
-export const receiptSeq = pgSequence('receipt_no_seq', { startWith: 1 });
 
 export const PAYMENT_METHODS = ['bank', 'ecocash', 'innbucks', 'cash', 'other'] as const;
 export const PAYMENT_STATUS = ['pending', 'confirmed', 'rejected'] as const;

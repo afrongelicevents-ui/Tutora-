@@ -1,7 +1,8 @@
 import { building, dev } from '$app/env';
 import { DATABASE_URL, TEST_SITE } from '$app/env/private';
 import { eq } from 'drizzle-orm';
-import { profile, tutorProfile } from '#lib/server/db/app.schema.ts';
+import { tutorProfile } from '#lib/server/db/app.schema.ts';
+import { user } from '#lib/server/db/auth.schema.ts';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { type Handle, sequence } from '@sveltejs/kit/hooks';
 import { makeAuth } from '#lib/server/auth.ts';
@@ -69,12 +70,12 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 				.where(eq(tutorProfile.tutorId, data.user.id));
 			event.locals.user.tutorStatus = p?.status ?? null;
 		}
-		if (role === 'student' || role === 'parent') {
+		{
 			const [p] = await event.locals.db
-				.select({ must: profile.mustChangePassword })
-				.from(profile)
-				.where(eq(profile.userId, data.user.id));
-			// after a temporary password from the admin: choose your own before anything else
+				.select({ must: user.mustChangePassword })
+				.from(user)
+				.where(eq(user.id, data.user.id));
+			// after a temporary password made by someone else: choose your own before anything else
 			const path = event.url.pathname;
 			if (p?.must && path !== '/account/password' && path !== '/logout') {
 				if (event.isDataRequest) return new Response('Forbidden', { status: 403 });

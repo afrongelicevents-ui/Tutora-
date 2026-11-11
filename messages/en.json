@@ -755,5 +755,7 @@
 	"owner_reset_done": "Temporary password for {name}: {password}",
 	"owner_reset_none": "No student or parent account has that email.",
 	"owner_check_email": "Email not confirmed: check it really belongs to this tutor before approving.",
-	"nav_password": "Change password"
+	"nav_password": "Change password",
+	"email_pw_reset_s": "Your Tutora password was reset",
+	"email_pw_reset_b": "The Tutora team made a temporary password for your account because you asked for help. You will choose your own new password when you log in. If you did not ask for this, please contact Tutora straight away."
 }
