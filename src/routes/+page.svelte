@@ -14,47 +14,45 @@
 <svelte:head>
 	<title>Tutora · {m.home2_title()}</title>
 	<meta name="description" content={m.home2_meta()} />
-	{#if c.heroPhotoV}<link
-			rel="preload"
-			as="image"
-			href="/hero-photo?v={c.heroPhotoV}"
-			fetchpriority="high"
-		/>{/if}
+	<link
+		rel="preload"
+		as="image"
+		href={c.heroPhotoV ? `/hero-photo?v=${c.heroPhotoV}` : '/hero.webp'}
+		fetchpriority="high"
+	/>
 </svelte:head>
 
-<section class="hero" class:has-photo={!!c.heroPhotoV}>
-	{#if c.heroPhotoV}
-		<img
-			class="hero-img"
-			src="/hero-photo?v={c.heroPhotoV}"
-			alt=""
-			width="480"
-			height="600"
-			fetchpriority="high"
-		/>
-	{/if}
+<section class="hero">
+	<img
+		class="hero-img"
+		src={c.heroPhotoV ? `/hero-photo?v=${c.heroPhotoV}` : '/hero.webp'}
+		alt=""
+		width="900"
+		height="571"
+		fetchpriority="high"
+	/>
 	<div class="wrap hero-text">
 		<h1>{c.heroTitle || m.home2_title()}</h1>
 		<p class="lead">{c.heroLead || m.home3_lead()}</p>
-		<a class="btn pill" href="/tutors">{m.find_a_tutor()} <span aria-hidden="true">→</span></a>
+		<a class="btn hero-btn" href="/tutors">{m.find_a_tutor()} <span aria-hidden="true">→</span></a>
 	</div>
 </section>
 
 <section class="wrap" id="how">
-	<h2 class="big">{m.home2_how()}</h2>
+	<h2 class="sec">{m.home2_how()}</h2>
 	<ol class="steps">
 		<li>
-			<span class="num">01</span><b>{m.home2_step1_t()}</b><span class="small muted"
+			<span class="num">01</span><b>{m.home2_step1_t()}</b><span class="desc"
 				>{m.home3_step1()}</span
 			>
 		</li>
 		<li>
-			<span class="num">02</span><b>{m.home3_step2_t()}</b><span class="small muted"
+			<span class="num">02</span><b>{m.home3_step2_t()}</b><span class="desc"
 				>{m.home3_step2()}</span
 			>
 		</li>
 		<li>
-			<span class="num">03</span><b>{m.home3_step3_t()}</b><span class="small muted"
+			<span class="num">03</span><b>{m.home3_step3_t()}</b><span class="desc"
 				>{m.home3_step3()}</span
 			>
 		</li>
@@ -63,8 +61,8 @@
 
 {#if data.tutors.length}
 	<section class="wrap">
-		<div class="row head">
-			<h2 class="big grow">{m.home3_popular()}</h2>
+		<div class="head">
+			<h2 class="sec">{m.home3_popular()}</h2>
 			<a class="more" href="/tutors">{m.home3_view_all()} <span aria-hidden="true">→</span></a>
 		</div>
 		<div class="cards">
@@ -74,16 +72,16 @@
 							src="/t/{tu.slug}/photo?v={tu.photoVersion}"
 							alt=""
 							width="240"
-							height="200"
+							height="170"
 							loading="lazy"
 						/>{:else}<span class="ph" aria-hidden="true">{initials(tu.name)}</span>{/if}
 					<span class="tbody">
-						<b>{tu.name}</b>
-						<span class="small muted"
+						<b class="tname">{tu.name}</b>
+						<span class="tsub"
 							>{[tu.subjects[0], tu.town?.split('(')[0].trim()].filter(Boolean).join(' · ')}</span
 						>
 						{#if tu.rating}
-							<span class="small"
+							<span class="trate"
 								><span class="star" aria-hidden="true">★</span>
 								<b>{tu.rating.toFixed(1)}</b>
 								{#if tu.lessonCount}<span class="muted"
@@ -100,61 +98,59 @@
 
 <section class="wrap">
 	<div class="join">
-		<h2 class="big">{m.home2_are_you_tutor()}</h2>
+		<h2>{m.home2_are_you_tutor()}</h2>
 		<p>{c.joinLead || m.home3_join_lead()}</p>
-		<a class="btn pill light" href="/join">{m.join_cta()} <span aria-hidden="true">→</span></a>
+		<a class="btn light" href="/join">{m.join_cta()} <span aria-hidden="true">→</span></a>
 	</div>
 </section>
 
 <style>
+	/* Measured from the approved 390 px design. */
 	.hero {
 		position: relative;
 		overflow: hidden;
-		padding: 28px 0 32px;
-		margin-bottom: 8px;
-		border-radius: 0 0 40% 0 / 0 0 24px 0;
-	}
-	.hero.has-photo {
-		min-height: 520px;
+		min-height: 268px;
+		padding: 58px 0 24px;
+		/* soft curved bottom edge */
+		clip-path: ellipse(150% 100% at 60% 0);
 	}
 	.hero-img {
 		position: absolute;
 		top: 0;
 		right: 0;
-		width: 62%;
+		width: 64%;
 		height: 100%;
 		object-fit: cover;
-		object-position: 60% 30%;
-		-webkit-mask-image: linear-gradient(to right, transparent 0, #000 35%);
-		mask-image: linear-gradient(to right, transparent 0, #000 35%);
+		object-position: 72% 30%;
+		/* fades softly into the cream behind the text */
+		-webkit-mask-image: linear-gradient(to right, transparent 0, rgb(0 0 0 / 0.55) 22%, #000 48%);
+		mask-image: linear-gradient(to right, transparent 0, rgb(0 0 0 / 0.55) 22%, #000 48%);
 	}
 	.hero-text {
 		position: relative;
 	}
-	.has-photo .hero-text h1,
-	.has-photo .hero-text .lead {
-		max-width: 62%;
-	}
 	h1 {
-		font-size: clamp(2.4rem, 11vw, 3.6rem);
-		line-height: 1.05;
-		margin: 24px 0 16px;
+		max-width: 205px;
+		font-size: 2.1rem;
+		line-height: 0.96;
+		margin: 0 0 10px;
 	}
 	.lead {
-		font-size: 1.15rem;
-		margin: 0 0 24px;
+		max-width: 165px;
+		font-size: 0.8rem;
+		line-height: 1.35;
+		margin: 0 0 12px;
+		color: var(--ink-900);
 	}
-	.pill {
-		border-radius: 999px;
-		padding: 0 28px;
-		min-height: 56px;
-		font-size: 1.1rem;
-		line-height: 1.2;
-		padding-top: 2px;
+	.hero-btn {
+		min-height: 44px;
+		padding: 0 18px;
+		font-size: 0.85rem;
+		box-shadow: 0 4px 12px rgb(18 61 46 / 0.18);
 	}
-	.big {
-		font-size: clamp(1.9rem, 8vw, 2.4rem);
-		margin-top: 28px;
+	.sec {
+		font-size: 1.55rem;
+		margin: 14px 0 8px;
 	}
 	.steps {
 		list-style: none;
@@ -165,11 +161,13 @@
 	}
 	.steps li {
 		display: grid;
-		gap: 6px;
+		gap: 4px;
 		align-content: start;
-		padding: 0 10px;
+		padding: 0 8px;
 		border-left: 1px solid var(--line);
 		overflow-wrap: anywhere;
+		font-size: 0.66rem;
+		line-height: 1.35;
 	}
 	.steps li:first-child {
 		padding-left: 0;
@@ -177,18 +175,36 @@
 	}
 	.num {
 		font-family: var(--font-display);
-		font-size: 1.9rem;
+		font-size: 1.3rem;
 		color: var(--green-700);
-		line-height: 1;
+		line-height: 1.1;
+	}
+	.steps b {
+		font-size: 0.75rem;
+		white-space: nowrap;
+		color: var(--green-900);
+	}
+	.desc {
+		color: var(--ink-600);
 	}
 	.head {
+		display: flex;
 		align-items: baseline;
+		justify-content: space-between;
+		gap: 8px;
+		margin-top: 22px;
+		margin-bottom: 8px;
+	}
+	.head .sec {
+		margin-top: 0;
 	}
 	.more {
 		font-weight: 700;
+		font-size: 0.75rem;
 		text-decoration: none;
 		white-space: nowrap;
 	}
+	/* three small cards across; with fewer tutors they keep their size, aligned left */
 	.cards {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -198,58 +214,92 @@
 		display: grid;
 		grid-template-rows: auto 1fr;
 		background: var(--card);
-		border-radius: 16px;
+		border-radius: 12px;
 		overflow: hidden;
 		text-decoration: none;
 		color: inherit;
-		box-shadow: 0 2px 10px rgb(28 38 32 / 0.06);
+		box-shadow: 0 2px 10px rgb(28 38 32 / 0.07);
 	}
 	.tcard img,
 	.ph {
 		width: 100%;
-		aspect-ratio: 6 / 5;
+		aspect-ratio: 7 / 5;
 		object-fit: cover;
-		background: var(--mint-50);
+		object-position: 50% 25%;
+		background: #e9e6df;
 	}
 	.ph {
 		display: grid;
 		place-items: center;
 		font-family: var(--font-display);
-		font-size: 2rem;
+		font-size: 1.6rem;
 		color: var(--green-700);
 	}
 	.tbody {
 		display: grid;
-		gap: 4px;
+		gap: 2px;
 		align-content: start;
-		padding: 10px 10px 12px;
-		font-size: 0.95rem;
+		padding: 7px 8px 9px;
 		min-width: 0;
-		overflow-wrap: anywhere;
+	}
+	.tname {
+		font-size: 0.72rem;
+		color: var(--ink-900);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.tsub {
+		font-size: 0.62rem;
+		color: var(--ink-600);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.trate {
+		font-size: 0.64rem;
+		white-space: nowrap;
 	}
 	.star {
 		color: var(--ochre-400);
 	}
 	.join {
-		margin: 32px 0 8px;
+		position: relative;
+		overflow: hidden;
+		margin: 20px 0 16px;
 		background: var(--green-900);
 		color: var(--paper-50);
-		border-radius: 20px;
-		padding: 28px 24px;
-		background-image: radial-gradient(
-			circle at 110% 120%,
-			rgb(255 255 255 / 0.07) 0 45%,
-			transparent 46%
-		);
+		border-radius: 12px;
+		padding: 12px 18px 13px;
+	}
+	.join::after {
+		content: '';
+		position: absolute;
+		right: -70px;
+		bottom: -110px;
+		width: 230px;
+		height: 230px;
+		border-radius: 50%;
+		background: rgb(255 255 255 / 0.06);
 	}
 	.join h2 {
 		color: var(--paper-50);
-		margin-top: 0;
+		font-size: 1.45rem;
+		margin: 0 0 2px;
 	}
 	.join p {
-		font-size: 1.1rem;
+		position: relative;
+		font-size: 0.72rem;
+		line-height: 1.4;
+		margin: 0 0 9px;
+		max-width: 255px;
 	}
 	.light {
+		position: relative;
+		z-index: 1;
+		min-height: 40px;
+		padding: 0 26px;
+		font-size: 0.85rem;
 		background: var(--paper-50);
 		color: var(--green-900);
 		border-color: var(--paper-50);

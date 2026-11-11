@@ -38,14 +38,18 @@
 
 <a class="sr-only skip" href="#main">{m.skip_to_content()}</a>
 {#if data.testSite}<div class="testbar" role="note">{m.test_site_bar()}</div>{/if}
-<Header user={data.user} unread={data.unread} />
+<Header user={data.user} unread={data.unread} overlay={page.url.pathname === '/'} />
 <main id="main">
 	{@render children()}
 </main>
 <Footer {whatsapp} />
-{#if showWhatsApp && whatsapp}<WhatsAppButton phone={whatsapp} />{/if}
+{#if showWhatsApp && whatsapp}<div class="fab-space" aria-hidden="true"></div>
+	<WhatsAppButton phone={whatsapp} />{/if}
 
 <style>
+	.fab-space {
+		height: 72px;
+	}
 	.testbar {
 		background: #b45309;
 		color: #fff;

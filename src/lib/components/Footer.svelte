@@ -19,7 +19,7 @@
 <style>
 	footer {
 		border-top: 1px solid var(--line);
-		padding: 24px 0 96px;
+		padding: 20px 0 24px;
 	}
 	footer a {
 		display: inline-block;

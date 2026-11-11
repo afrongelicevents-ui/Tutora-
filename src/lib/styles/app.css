@@ -144,13 +144,16 @@ p {
 	justify-content: center;
 	gap: var(--space-2);
 	min-height: var(--tap);
-	padding: 0 var(--space-5);
-	border-radius: var(--radius);
+	padding: 0 22px;
+	/* pill buttons, text centred both ways (approved design) */
+	border-radius: 999px;
 	border: 2px solid var(--green-700);
 	background: var(--green-700);
 	color: var(--paper-50);
 	font: inherit;
 	font-weight: 700;
+	line-height: 1.2;
+	text-align: center;
 	text-decoration: none;
 	cursor: pointer;
 }
@@ -277,7 +280,16 @@ legend {
 	margin-bottom: var(--space-2);
 }
 main {
-	padding: var(--space-6) 0 112px;
+	padding: var(--space-6) 0 40px;
+}
+/* room for the bottom app bar in the student and tutor areas */
+main:has(.appnav) {
+	padding-bottom: 112px;
+}
+/* the homepage hero starts at the very top, under the logo and menu */
+main:has(> .hero:first-child) {
+	padding-top: 0;
+	padding-bottom: 0;
 }
 
 /* ---------- shared pieces for app screens ---------- */
@@ -341,7 +353,14 @@ select,
 textarea,
 input[type='date'],
 input[type='time'],
-input[type='search'] {
+input[type='search'],
+input:not([type]),
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='tel'],
+input[type='number'],
+input[type='url'] {
 	min-height: var(--tap);
 	padding: 8px 12px;
 	border: 1.5px solid #8a948e;
