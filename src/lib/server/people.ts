@@ -161,7 +161,7 @@ export async function setAttendance(
 		.where(
 			and(
 				eq(attendee.id, attendeeId),
-				sql`${attendee.lessonId} in (select ${lesson.id} from ${lesson} where ${lesson.tutorId} = ${tutorId} and ${lesson.startsAt} < now())`
+				sql`${attendee.lessonId} in (select ${lesson.id} from ${lesson} where ${lesson.tutorId} = ${tutorId} and ${lesson.startsAt} < now() and ${lesson.endsAt} > now() - interval '7 days')`
 			)
 		);
 }
@@ -372,7 +372,8 @@ export async function postReview(
 		.values({ tutorId, userId, displayName: displayNameFor(fullName), rating, text })
 		.onConflictDoUpdate({
 			target: [review.tutorId, review.userId],
-			set: { rating, text, createdAt: now }
+			// new words: the tutor's old reply no longer fits; a hidden review stays hidden
+			set: { rating, text, createdAt: now, reply: null, repliedAt: null }
 		})
 		.returning();
 	return row;

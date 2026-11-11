@@ -72,6 +72,9 @@ export async function allTutors(db: DB) {
  * bookings and logs them out everywhere.
  */
 export async function setTutorStatus(db: DB, tutorId: string, status: TutorStatus) {
+	// a deleted account can never be made active again
+	const [u] = await db.select({ email: user.email }).from(user).where(eq(user.id, tutorId));
+	if (!u || (status === 'active' && u.email.endsWith('@deleted.invalid'))) return false;
 	const done = await db
 		.update(tutorProfile)
 		.set({
@@ -132,7 +135,7 @@ export async function rejectTutor(db: DB, tutorId: string, reason: string) {
 	const done = await db
 		.update(tutorProfile)
 		.set({ status: 'rejected', rejectReason: reason })
-		.where(eq(tutorProfile.tutorId, tutorId))
+		.where(and(eq(tutorProfile.tutorId, tutorId), eq(tutorProfile.status, 'pending')))
 		.returning({ id: tutorProfile.tutorId });
 	return done.length > 0;
 }

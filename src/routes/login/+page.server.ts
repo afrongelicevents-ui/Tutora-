@@ -7,13 +7,14 @@ import { emailField, formObject } from '#lib/validation/auth.ts';
 import { homeFor } from '#lib/roles.ts';
 import { eq } from 'drizzle-orm';
 import { user } from '#lib/server/db/auth.schema.ts';
+import { endLogin } from '#lib/server/auth-cookies.ts';
 
 export const load: PageServerLoad = ({ locals, url }) => {
 	if (locals.user) redirect(303, safeNext(url.searchParams.get('next'), homeFor(locals.user.role)));
 };
 
 export const actions: Actions = {
-	default: async ({ request, url, locals }) => {
+	default: async ({ request, url, locals, cookies }) => {
 		const input = formObject(await request.formData());
 		const values = { email: input.email ?? '' };
 		// Key the limits on the cleaned-up email, so "a@b.com " and "A@B.com" share one bucket.
@@ -32,16 +33,20 @@ export const actions: Actions = {
 			});
 		}
 
-		// accounts suspended by the Tutora team cannot log in
-		if (email.success) {
-			const [acc] = await locals.db
-				.select({ s: user.suspendedAt })
-				.from(user)
-				.where(eq(user.email, email.data));
-			if (acc?.s) return fail(403, { values, errors: { form: 'err_suspended' } });
-		}
 		const result = await logIn({ auth: locals.auth }, input, request.headers);
 		if (!result.ok) return fail(400, { values, errors: result.errors });
+		// accounts suspended by the Tutora team cannot log in (checked only after the right
+		// password, so this does not tell strangers which accounts exist)
+		if (email.success) {
+			const [acc] = await locals.db
+				.select({ id: user.id, s: user.suspendedAt })
+				.from(user)
+				.where(eq(user.email, email.data));
+			if (acc?.s) {
+				await endLogin(locals.db, cookies, acc.id);
+				return fail(403, { values, errors: { form: 'err_suspended' } });
+			}
+		}
 
 		const next = url.searchParams.get('next');
 		if (result.twoFactor) {

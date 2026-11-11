@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { requireUser } from '#lib/server/guards.ts';
+import { requireUser, safeNext } from '#lib/server/guards.ts';
 import { markRead, myNotifications } from '#lib/server/notify.ts';
 
 /** My notifications (the bell). Opening the list marks them as read. */
@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			title: n.title,
 			body: n.body,
 			// only links inside Tutora
-			link: n.link?.startsWith('/') && !n.link.startsWith('//') ? n.link : null,
+			link: n.link ? safeNext(n.link, '') || null : null,
 			unread: !n.readAt,
 			createdAt: n.createdAt
 		}))

@@ -14,7 +14,9 @@ export const GET: RequestHandler = async ({ locals, platform, params }) => {
 	return new Response(f.body as BodyInit, {
 		headers: {
 			'content-type': f.contentType,
-			'cache-control': 'public, max-age=31536000, immutable',
+			// a profile that is not public yet (owner preview) must not be stored by shared caches
+			'cache-control':
+				s.status === 'active' ? 'public, max-age=31536000, immutable' : 'private, no-store',
 			'x-content-type-options': 'nosniff'
 		}
 	});

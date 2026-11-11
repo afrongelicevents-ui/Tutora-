@@ -7,6 +7,7 @@ import {
 	child,
 	enrollment,
 	favourite,
+	fileBlob,
 	homework,
 	homeworkAnswer,
 	lesson,
@@ -16,6 +17,7 @@ import {
 	profile,
 	review,
 	subject,
+	supportRequest,
 	tutorProfile
 } from './db/app.schema.ts';
 import { account, session, twoFactor, user } from './db/auth.schema.ts';
@@ -272,7 +274,36 @@ export async function exportMyData(db: DB, userId: string) {
  * "Deleted user" (money records are never deleted).
  */
 export async function deleteMyAccount(db: DB, userId: string) {
+	// files that are only this person's: their tutor photo and their homework answers
+	// (payment proofs stay with the payment records)
+	const [tp] = await db
+		.select({ photoKey: tutorProfile.photoKey })
+		.from(tutorProfile)
+		.where(eq(tutorProfile.tutorId, userId));
+	const answerFiles = await db
+		.select({ key: homeworkAnswer.fileKey })
+		.from(homeworkAnswer)
+		.innerJoin(homework, eq(homework.id, homeworkAnswer.homeworkId))
+		.where(eq(homework.userId, userId));
+	const keys = [tp?.photoKey, ...answerFiles.map((a) => a.key)].filter((k): k is string => !!k);
 	await db.transaction(async (tx) => {
+		if (keys.length) await tx.delete(fileBlob).where(inArray(fileBlob.key, keys));
+		await tx
+			.update(homeworkAnswer)
+			.set({ note: null, fileKey: null, fileName: null })
+			.where(
+				sql`${homeworkAnswer.homeworkId} in (select ${homework.id} from ${homework} where ${homework.userId} = ${userId})`
+			);
+		await tx.update(booking).set({ note: null }).where(eq(booking.userId, userId));
+		await tx
+			.update(supportRequest)
+			.set({
+				name: 'Deleted user',
+				email: 'deleted@deleted.invalid',
+				message: '(deleted)',
+				userId: null
+			})
+			.where(eq(supportRequest.userId, userId));
 		await tx.delete(session).where(eq(session.userId, userId));
 		await tx.delete(account).where(eq(account.userId, userId));
 		await tx.delete(twoFactor).where(eq(twoFactor.userId, userId));
@@ -282,7 +313,14 @@ export async function deleteMyAccount(db: DB, userId: string) {
 		await tx.delete(review).where(eq(review.userId, userId));
 		await tx
 			.update(profile)
-			.set({ phone: null, parentName: null, parentPhone: null, parentEmail: null, childName: null })
+			.set({
+				phone: null,
+				parentName: null,
+				parentPhone: null,
+				parentEmail: null,
+				childName: null,
+				isUnder18: false
+			})
 			.where(eq(profile.userId, userId));
 		await tx
 			.update(user)
@@ -299,10 +337,25 @@ export async function deleteMyAccount(db: DB, userId: string) {
 			.update(tutorProfile)
 			.set({
 				status: 'suspended',
+				tutorName: 'Deleted tutor',
+				headline: null,
+				bio: null,
+				qualifications: null,
+				teachingStyle: null,
+				town: null,
 				whatsappNumber: null,
 				phone: null,
 				contactEmail: null,
-				photoKey: null
+				photoKey: null,
+				bankName: null,
+				bankAccountName: null,
+				bankAccountNumber: null,
+				bankBranch: null,
+				ecocashNumber: null,
+				ecocashName: null,
+				innbucksNumber: null,
+				innbucksName: null,
+				paymentNote: null
 			})
 			.where(eq(tutorProfile.tutorId, userId));
 	});

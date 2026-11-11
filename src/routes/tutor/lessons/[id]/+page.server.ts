@@ -38,8 +38,22 @@ export const actions: Actions = {
 		const a = l?.people.find((p) => p.attendeeId === Number(f.attendeeId));
 		if (!l || !a) return fail(404, { error: 'err_not_found' });
 		if (l.startsAt.getTime() > Date.now()) return fail(400, { error: 'err_not_started' });
+		if (l.endsAt.getTime() < Date.now() - 7 * 86_400_000)
+			return fail(400, { error: 'err_too_late_mark' });
 		const v = f.value === 'completed' || f.value === 'absent' ? f.value : null;
 		await setAttendance(locals.db, t, a.attendeeId, v);
+		// the student is told when they are marked absent
+		if (v === 'absent' && a.attendance !== 'absent')
+			await notifyUser(
+				locals.db,
+				a.userId,
+				m.absent_s(),
+				m.absent_b({ when: fmtDayTime(l.startsAt) }),
+				{
+					kind: 'lesson',
+					link: `/student/lessons/${l.id}`
+				}
+			);
 		return { saved: true };
 	},
 	cancel: async ({ locals, url, request, params }) => {

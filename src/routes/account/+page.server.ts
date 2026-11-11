@@ -8,6 +8,7 @@ import { user as userTable } from '#lib/server/db/auth.schema.ts';
 import { getPrefs, setPrefs } from '#lib/server/notify.ts';
 import { deleteMyAccount } from '#lib/server/student.ts';
 import { endLogin } from '#lib/server/auth-cookies.ts';
+import { hitLimit } from '#lib/server/rate-limit.ts';
 import { fieldErrors, formObject, phone } from '#lib/validation/auth.ts';
 import { requireUser } from '#lib/server/guards.ts';
 import { homeFor } from '#lib/roles.ts';
@@ -74,6 +75,8 @@ export const actions: Actions = {
 		if (u.role === 'owner') return fail(403, { deleteError: 'err_generic' });
 		const f = formObject(await request.formData());
 		if (f.confirm !== 'DELETE') return fail(400, { deleteError: 'err_delete_confirm' });
+		const limit = await hitLimit(locals.db, 'passwordReset', `delete:${u.id}`);
+		if (!limit.ok) return fail(429, { deleteError: 'err_rate_limited' });
 		const ok = await locals.auth.api
 			.verifyPassword({ body: { password: f.password ?? '' }, headers: request.headers })
 			.then(() => true)

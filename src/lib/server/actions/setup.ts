@@ -115,7 +115,6 @@ export async function signUpTutor(
 		.update(tutorProfile)
 		.set({
 			phone: ph.success ? ph.data : null,
-			whatsappNumber: ph.success ? ph.data : null,
 			town: town || null
 		})
 		.where(eq(tutorProfile.tutorId, id));

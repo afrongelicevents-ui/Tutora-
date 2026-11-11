@@ -992,5 +992,8 @@
 	"owner_support_b": "{name} sent a message through the contact form.",
 	"room_weak_tip": "Weak connection: switch your video off and keep audio only. The lesson then works on very little data.",
 	"pdf_tutor": "Tutor",
-	"pdf_recorded": "Recorded on Tutora. The tutor confirmed receiving this payment; Tutora does not handle money."
+	"pdf_recorded": "Recorded on Tutora. The tutor confirmed receiving this payment; Tutora does not handle money.",
+	"err_too_late_mark": "Lessons can be marked up to 7 days after they end.",
+	"absent_s": "You were marked absent",
+	"absent_b": "Your tutor marked you absent for the lesson on {when}. If this is wrong, please message your tutor or contact Tutora."
 }
