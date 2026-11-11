@@ -34,6 +34,8 @@ import { readUpload, IMAGE_KINDS, newKey } from './files.ts';
 import { getStore } from './storage.ts';
 import { requireTutor } from './guards.ts';
 import { hitLimit, clientIp } from './rate-limit.ts';
+import { emailEnabled } from './auth.ts';
+import { changeEmailNow } from './account.ts';
 
 export const SECTIONS = [
 	'profile',
@@ -248,9 +250,27 @@ export function sectionActions(after: (ev: Ev) => string | null): Actions {
 			if (!limit.ok)
 				return fail(429, { errors: { newEmail: 'err_rate_limited' }, retryMinutes: 60 });
 			const parsed = z
-				.object({ newEmail: z.string().trim().toLowerCase().pipe(z.email('err_email')) })
+				.object({
+					newEmail: z.string().trim().toLowerCase().pipe(z.email('err_email')),
+					password: z.string().max(128).optional()
+				})
 				.safeParse(await form(ev));
 			if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
+			if (!emailEnabled) {
+				// No email service: no link can be sent, so the current password proves it's you.
+				const okPw = await ev.locals.auth.api
+					.verifyPassword({
+						body: { password: parsed.data.password ?? '' },
+						headers: ev.request.headers
+					})
+					.then(() => true)
+					.catch(() => false);
+				if (!okPw) return fail(400, { errors: { password: 'err_password_wrong' } });
+				const r = await changeEmailNow(ev.locals.db, u.id, parsed.data.newEmail);
+				if (r === 'same') return fail(400, { errors: { newEmail: 'err_email_same' } });
+				if (r === 'taken') return fail(400, { errors: { newEmail: 'err_email_taken' } });
+				return { emailChanged: parsed.data.newEmail };
+			}
 			try {
 				await ev.locals.auth.api.changeEmail({
 					body: {
@@ -264,6 +284,34 @@ export function sectionActions(after: (ev: Ev) => string | null): Actions {
 				throw e;
 			}
 			return { emailSent: parsed.data.newEmail };
+		},
+		changePassword: async (ev) => {
+			const u = guard(ev);
+			const limit = await hitLimit(
+				ev.locals.db,
+				'passwordReset',
+				`${clientIp(ev.request)}:${u.id}:pw`
+			);
+			if (!limit.ok)
+				return fail(429, { errors: { currentPassword: 'err_rate_limited' }, retryMinutes: 60 });
+			const parsed = z
+				.object({
+					currentPassword: z.string().min(1, 'err_password_wrong').max(128),
+					newPassword: z.string().min(10, 'err_password_short').max(128, 'err_too_long')
+				})
+				.safeParse(await form(ev));
+			if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
+			try {
+				await ev.locals.auth.api.changePassword({
+					body: { ...parsed.data, revokeOtherSessions: true },
+					headers: ev.request.headers
+				});
+			} catch (e) {
+				if (e instanceof APIError)
+					return fail(400, { errors: { currentPassword: 'err_password_wrong' } });
+				throw e;
+			}
+			return { passwordChanged: true };
 		}
 	};
 }

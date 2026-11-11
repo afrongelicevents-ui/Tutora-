@@ -17,10 +17,17 @@ export type SendEmail = (msg: { to: string; subject: string; text: string }) => 
 
 export interface AuthDeps {
 	db: DB;
-	baseURL: string;
+	/** Public address; if missing, the address the site is opened on is used. */
+	baseURL?: string;
 	secret: string;
-	tutorEmail: string;
+	/** Optional: if set, only /setup can create the account for this email. */
+	tutorEmail?: string;
 	sendEmail: SendEmail;
+	/**
+	 * Whether emails can be sent. Without an email service the site still works:
+	 * accounts don't need email confirmation and no notification emails are sent.
+	 */
+	emailEnabled?: boolean;
 	/** neon-http cannot run transactions; node-postgres can. */
 	transactions?: boolean;
 	/** Extra plugins, e.g. the SvelteKit cookie plugin. Must stay last. */
@@ -32,8 +39,9 @@ export interface AuthDeps {
 export const USE_TUTOR_SETUP = 'USE_TUTOR_SETUP';
 
 export function createAuth(deps: AuthDeps) {
-	const tutorEmail = deps.tutorEmail.trim().toLowerCase();
-	const origin = deps.baseURL.replace(/\/$/, '');
+	const tutorEmail = deps.tutorEmail?.trim().toLowerCase() || null;
+	const origin = (deps.baseURL ?? '').replace(/\/$/, '');
+	const emailOn = deps.emailEnabled ?? true;
 	return betterAuth({
 		appName: 'Tutora',
 		baseURL: deps.baseURL,
@@ -44,7 +52,7 @@ export function createAuth(deps: AuthDeps) {
 		}),
 		emailAndPassword: {
 			enabled: true,
-			requireEmailVerification: true,
+			requireEmailVerification: emailOn,
 			minPasswordLength: 10,
 			maxPasswordLength: 128,
 			revokeSessionsOnPasswordReset: true,
@@ -73,7 +81,7 @@ export function createAuth(deps: AuthDeps) {
 			}
 		},
 		emailVerification: {
-			sendOnSignUp: true,
+			sendOnSignUp: emailOn,
 			// Don't send fresh links when someone tries to log in to an unconfirmed account:
 			// a stranger could use that to send real-looking emails to the owner.
 			sendOnSignIn: false,
@@ -113,7 +121,7 @@ export function createAuth(deps: AuthDeps) {
 					// Everyone created through Better Auth is a student. The tutor account is only
 					// created by the /setup flow, which proves control of the TUTOR_EMAIL inbox.
 					before: async (user) => {
-						if (user.email.trim().toLowerCase() === tutorEmail) {
+						if (tutorEmail && user.email.trim().toLowerCase() === tutorEmail) {
 							throw new APIError('FORBIDDEN', { code: USE_TUTOR_SETUP, message: USE_TUTOR_SETUP });
 						}
 						return { data: { ...user, role: 'student' } };

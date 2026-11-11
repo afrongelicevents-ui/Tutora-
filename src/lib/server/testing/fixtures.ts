@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm';
 import { user } from '../db/auth.schema.ts';
 import { profile } from '../db/app.schema.ts';
 import type { DB } from '../db/types.ts';
@@ -11,6 +12,11 @@ export async function makeUser(
 	role: 'tutor' | 'student' | 'parent',
 	name = `Person ${++n}`
 ) {
+	if (role === 'tutor') {
+		// The database allows only one tutor: reuse it if a test already made one.
+		const [t] = await db.select().from(user).where(eq(user.role, 'tutor'));
+		if (t) return { id: t.id, name: t.name, role, twoFactorEnabled: true };
+	}
 	const id = `u_${role}_${++n}_${Math.random().toString(36).slice(2, 7)}`;
 	await db.insert(user).values({
 		id,

@@ -4,9 +4,6 @@
 	"compatibility_date": "2026-11-10",
 	"compatibility_flags": ["nodejs_als"],
 	"main": ".svelte-kit/cloudflare/_worker.js",
-	// Private file storage (payment proofs, homework, lesson files, the tutor's photo).
-	// Create the bucket once: pnpm exec wrangler r2 bucket create tutora-files
-	"r2_buckets": [{ "binding": "FILES", "bucket_name": "tutora-files" }],
 	"assets": {
 		"binding": "ASSETS",
 		"directory": ".svelte-kit/cloudflare"

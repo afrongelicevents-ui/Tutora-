@@ -13,8 +13,9 @@ export const GET: RequestHandler = async ({ locals, url, params }) => {
 	if (!isTutor && !(await isAttendee(locals.db, u.id, id))) error(404, 'Not found');
 	const l = await lessonWithPeople(locals.db, id);
 	if (!l || l.status !== 'scheduled') error(404, 'Not found');
+	const origin = (ORIGIN ?? url.origin).replace(/\/$/, '');
 	const title = `${l.subjectName ?? 'Intro chat'} lesson (Tutora)`;
-	const link = `${ORIGIN}${isTutor ? `/tutor/lessons/${l.id}` : '/student'}`;
+	const link = `${origin}${isTutor ? `/tutor/lessons/${l.id}` : '/student'}`;
 	const ics = lessonIcs(
 		{
 			id: l.id,
@@ -27,7 +28,7 @@ export const GET: RequestHandler = async ({ locals, url, params }) => {
 					: 'In-person lesson.',
 			url: link
 		},
-		new URL(ORIGIN).host
+		new URL(origin).host
 	);
 	return new Response(ics, {
 		headers: {

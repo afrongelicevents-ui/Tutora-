@@ -215,4 +215,15 @@
 			>{m.send_homework({ name: s.name.split(' ')[0] })}</button
 		>
 	</form>
+
+	<h2>{m.stu_temp_title()}</h2>
+	<form method="POST" action="?/tempPassword" class="card stack">
+		<p class="small">{m.stu_temp_lead()}</p>
+		{#if form?.tempPassword}
+			<p class="notice" role="status">
+				{m.stu_temp_done({ name: String(form.tempFor), password: String(form.tempPassword) })}
+			</p>
+		{/if}
+		<button class="btn btn-secondary btn-block" type="submit">{m.stu_temp_btn()}</button>
+	</form>
 </section>

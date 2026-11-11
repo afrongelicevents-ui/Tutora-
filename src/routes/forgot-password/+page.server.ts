@@ -1,10 +1,14 @@
 import { fail } from '@sveltejs/kit';
-import type { Actions } from './$types';
+import type { Actions, PageServerLoad } from './$types';
+import { emailEnabled } from '#lib/server/auth.ts';
+
+export const load: PageServerLoad = () => ({ emailOn: emailEnabled });
 import { hitLimit, clientIp } from '#lib/server/rate-limit.ts';
 import { fieldErrors, forgotSchema, formObject } from '#lib/validation/auth.ts';
 
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
+		if (!emailEnabled) return { askTutor: true };
 		const input = formObject(await request.formData());
 		const parsed = forgotSchema.safeParse(input);
 		if (!parsed.success) return fail(400, { values: input, errors: fieldErrors(parsed.error) });

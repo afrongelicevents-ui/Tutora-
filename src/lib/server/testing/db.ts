@@ -45,13 +45,14 @@ export interface SentEmail {
 
 export const TUTOR_EMAIL = 'tutor@example.com';
 
-export function testAuth(db: DB) {
+export function testAuth(db: DB, opts: { emailEnabled?: boolean; tutorEmail?: string } = {}) {
 	const outbox: SentEmail[] = [];
 	const auth = createAuth({
 		db,
 		baseURL: 'http://localhost:5173',
 		secret: 'test-secret-test-secret-test-secret-123',
-		tutorEmail: TUTOR_EMAIL,
+		tutorEmail: 'tutorEmail' in opts ? opts.tutorEmail : TUTOR_EMAIL,
+		emailEnabled: opts.emailEnabled ?? true,
 		transactions: true,
 		sendEmail: async (msg) => {
 			outbox.push(msg);

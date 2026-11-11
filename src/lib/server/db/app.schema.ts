@@ -1,4 +1,5 @@
 import {
+	customType,
 	bigserial,
 	boolean,
 	check,
@@ -441,4 +442,21 @@ export const actionLimit = pgTable('action_limit', {
 	count: integer('count').notNull(),
 	/** epoch ms when the window resets */
 	resetAt: bigint('reset_at', { mode: 'number' }).notNull()
+});
+
+const bytea = customType<{ data: Uint8Array; driverData: Buffer | Uint8Array }>({
+	dataType: () => 'bytea',
+	toDriver: (v) => v,
+	fromDriver: (v) => new Uint8Array(v)
+});
+
+/**
+ * Uploaded files (payment proofs, homework, lesson files, the tutor's photo) kept in the
+ * database, so no separate file-storage account is needed. Files are small (max 5 MB).
+ */
+export const fileBlob = pgTable('file_blob', {
+	key: text('key').primaryKey(),
+	contentType: text('content_type').notNull(),
+	data: bytea('data').notNull(),
+	createdAt: created()
 });

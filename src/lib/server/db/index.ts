@@ -9,6 +9,17 @@ export interface RequestDb {
 	close: () => Promise<void>;
 }
 
+/** Neon's copy button adds `channel_binding=require`, which the serverless driver can't use. */
+export function cleanUrl(url: string): string {
+	try {
+		const u = new URL(url);
+		u.searchParams.delete('channel_binding');
+		return u.toString();
+	} catch {
+		return url;
+	}
+}
+
 const isLocal = (url: string) => /@(localhost|127\.0\.0\.1)[:/]/.test(url);
 let localPool: Promise<DB> | null = null;
 
@@ -26,7 +37,8 @@ async function localDb(url: string): Promise<DB> {
  * shared between requests, so each request opens a small Neon pool (over WebSocket,
  * which supports transactions) and closes it when the response is done.
  */
-export async function openDb(url: string): Promise<RequestDb> {
+export async function openDb(rawUrl: string): Promise<RequestDb> {
+	const url = cleanUrl(rawUrl);
 	if (dev && isLocal(url)) {
 		localPool ??= localDb(url);
 		return { db: await localPool, close: async () => {} };
