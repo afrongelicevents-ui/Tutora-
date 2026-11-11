@@ -9,7 +9,7 @@ export const load: PageServerLoad = ({ locals, url }) => {
 	// owner admin. Tutors waiting for approval see their status; tutors and the owner switch on
 	// the authenticator app first.
 	if (url.searchParams.has('welcome')) {
-		if (user.role === 'tutor' && user.tutorStatus !== 'active') redirect(303, '/tutor-status');
+		if (user.role === 'tutor' && user.tutorStatus === 'suspended') redirect(303, '/tutor-status');
 		if ((user.role === 'tutor' || user.role === 'owner') && !user.twoFactorEnabled)
 			redirect(303, '/account/2fa?required=1');
 		redirect(303, homeFor(user.role));

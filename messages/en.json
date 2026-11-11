@@ -757,5 +757,6 @@
 	"owner_check_email": "Email not confirmed: check it really belongs to this tutor before approving.",
 	"nav_password": "Change password",
 	"email_pw_reset_s": "Your Tutora password was reset",
-	"email_pw_reset_b": "The Tutora team made a temporary password for your account because you asked for help. You will choose your own new password when you log in. If you did not ask for this, please contact Tutora straight away."
+	"email_pw_reset_b": "The Tutora team made a temporary password for your account because you asked for help. You will choose your own new password when you log in. If you did not ask for this, please contact Tutora straight away.",
+	"err_suspended": "This account is paused. Please contact the Tutora team."
 }

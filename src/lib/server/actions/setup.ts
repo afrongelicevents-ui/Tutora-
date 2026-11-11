@@ -105,7 +105,8 @@ export async function signUpTutor(
 	// The email is not confirmed: the owner sees that before approving. When an email service is
 	// on, a confirmation link is sent (without one, sending quietly does nothing).
 	await deps.db.update(user).set({ role: 'tutor' }).where(eq(user.id, id));
-	await createTutorProfile(deps.db, id, v.name, 'pending');
+	// starts as a draft: the tutor fills in their profile, then submits it for approval
+	await createTutorProfile(deps.db, id, v.name, 'draft');
 	await deps.auth.api
 		.sendVerificationEmail({ body: { email: v.email, callbackURL: '/login' } })
 		.catch(() => {});

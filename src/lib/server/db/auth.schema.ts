@@ -15,6 +15,8 @@ export const user = pgTable('user', {
 	twoFactorEnabled: boolean('two_factor_enabled').default(false),
 	/** set when someone else made a temporary password: choose your own at next login */
 	mustChangePassword: boolean('must_change_password').default(false).notNull(),
+	/** set by the platform owner: the account cannot log in or be used */
+	suspendedAt: timestamp('suspended_at'),
 	role: text('role', { enum: ['owner', 'tutor', 'student', 'parent'] }).default('student')
 });
 

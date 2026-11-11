@@ -6,7 +6,7 @@ export interface GuardUser {
 	role?: string | null;
 	emailVerified: boolean;
 	twoFactorEnabled?: boolean | null;
-	tutorStatus?: 'pending' | 'active' | 'suspended' | null;
+	tutorStatus?: 'draft' | 'pending' | 'active' | 'rejected' | 'suspended' | null;
 }
 
 /** Which private area a path belongs to. */
@@ -47,7 +47,8 @@ export function requireRole<U extends GuardUser>(
 export function requireTutor<U extends GuardUser>(user: U | undefined, url: URL) {
 	const u = requireRole(user, url, ['tutor']);
 	if (!u.twoFactorEnabled) redirect(303, '/account/2fa?required=1');
-	if (u.tutorStatus !== 'active') redirect(303, '/tutor-status');
+	// tutors fill in their profile before approval; only suspended tutors are kept out
+	if (!u.tutorStatus || u.tutorStatus === 'suspended') redirect(303, '/tutor-status');
 	return u;
 }
 
@@ -117,7 +118,8 @@ export function areaAccess(
 		if (user.role !== 'tutor') return { ok: false, status: 403, area };
 		if (!user.twoFactorEnabled)
 			return { ok: false, status: 303, location: '/account/2fa?required=1' };
-		if (user.tutorStatus !== 'active') return { ok: false, status: 303, location: '/tutor-status' };
+		if (!user.tutorStatus || user.tutorStatus === 'suspended')
+			return { ok: false, status: 303, location: '/tutor-status' };
 		return { ok: true };
 	}
 	return user.role === 'student' || user.role === 'parent'

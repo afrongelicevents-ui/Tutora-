@@ -25,7 +25,7 @@ export async function roomAccess(
 		id: string;
 		role: string;
 		twoFactorEnabled?: boolean | null;
-		tutorStatus?: 'pending' | 'active' | 'suspended' | null;
+		tutorStatus?: 'draft' | 'pending' | 'active' | 'rejected' | 'suspended' | null;
 	},
 	lessonId: number,
 	now = new Date()

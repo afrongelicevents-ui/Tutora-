@@ -62,7 +62,8 @@ export const CURRENCIES = ['USD', 'ZWG'] as const;
 export const LESSON_MODES = ['online', 'in_person', 'both'] as const;
 export const GROUP_MODES = ['one_to_one', 'groups', 'both'] as const;
 
-export const TUTOR_STATUS = ['pending', 'active', 'suspended'] as const;
+/** draft: filling in the profile; pending: submitted for approval; rejected: needs changes */
+export const TUTOR_STATUS = ['draft', 'pending', 'active', 'rejected', 'suspended'] as const;
 
 /**
  * Everything one tutor sets up: their public page, how lessons work, prices, contact and
@@ -80,6 +81,9 @@ export const tutorProfile = pgTable(
 		slug: text('slug').notNull(),
 		status: text('status', { enum: TUTOR_STATUS }).notNull().default('pending'),
 		approvedAt: ts('approved_at'),
+		submittedAt: ts('submitted_at'),
+		/** why the owner did not approve (shown to the tutor) */
+		rejectReason: text('reject_reason'),
 		plan: text('plan').notNull().default('free'),
 		planUntil: ts('plan_until'),
 		// profile
@@ -118,6 +122,10 @@ export const tutorProfile = pgTable(
 		paymentNote: text('payment_note'),
 		// results may only be shown with permission
 		resultsConsent: boolean('results_consent').notNull().default(false),
+		/** offers the free 15-minute intro chat */
+		offersIntro: boolean('offers_intro').notNull().default(true),
+		/** takes cash (in person) */
+		acceptsCash: boolean('accepts_cash').notNull().default(true),
 		// setup wizard
 		setupStep: integer('setup_step').notNull().default(0),
 		setupDoneAt: ts('setup_done_at'),
@@ -226,7 +234,12 @@ export const review = pgTable(
 		displayName: text('display_name').notNull(),
 		rating: integer('rating').notNull(),
 		text: text('text').notNull(),
+		/** hidden by the platform owner (e.g. abusive) */
 		hidden: boolean('hidden').notNull().default(false),
+		reply: text('reply'),
+		repliedAt: ts('replied_at'),
+		reportedAt: ts('reported_at'),
+		reportReason: text('report_reason'),
 		createdAt: created()
 	},
 	(t) => [
@@ -284,6 +297,7 @@ export const booking = pgTable(
 		mode: text('mode', { enum: PLACE }).notNull(),
 		startsAt: ts('starts_at').notNull(),
 		endsAt: ts('ends_at').notNull(),
+		childId: integer('child_id'),
 		note: text('note'),
 		status: text('status', { enum: BOOKING_STATUS }).notNull().default('requested'),
 		proposedStartsAt: ts('proposed_starts_at'),
@@ -336,6 +350,10 @@ export const attendee = pgTable(
 			.default('booked'),
 		/** tutor's private note for this student in this lesson */
 		privateNote: text('private_note'),
+		/** set by the tutor after the lesson */
+		attendance: text('attendance', { enum: ['completed', 'absent'] }),
+		/** for a parent account: which child this place is for */
+		childId: integer('child_id'),
 		createdAt: created()
 	},
 	(t) => [
@@ -350,6 +368,10 @@ export const calendarEvent = pgTable(
 	{
 		id: serial('id').primaryKey(),
 		tutorId: tutorRef(),
+		/** personal: the tutor's own event; blocked: holiday / not available */
+		kind: text('kind', { enum: ['personal', 'blocked'] })
+			.notNull()
+			.default('personal'),
 		title: text('title').notNull(),
 		startsAt: ts('starts_at').notNull(),
 		endsAt: ts('ends_at').notNull(),
@@ -450,6 +472,7 @@ export const homeworkAnswer = pgTable('homework_answer', {
 	fileKey: text('file_key'),
 	fileName: text('file_name'),
 	feedback: text('feedback'),
+	checkedAt: ts('checked_at'),
 	createdAt: created()
 });
 
@@ -537,4 +560,108 @@ export const setupCode = pgTable(
 		createdAt: created()
 	},
 	(t) => [check('setup_code_singleton', sql`${t.id} = 1`)]
+);
+
+/** A parent's children (a parent can book for several). Never shown publicly. */
+export const child = pgTable(
+	'child',
+	{
+		id: serial('id').primaryKey(),
+		parentId: text('parent_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		name: text('name').notNull(),
+		level: text('level'),
+		schoolYear: text('school_year'),
+		createdAt: created()
+	},
+	(t) => [index('child_parent_idx').on(t.parentId)]
+);
+
+/** Tutors a student saved. */
+export const favourite = pgTable(
+	'favourite',
+	{
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		tutorId: tutorRef(),
+		createdAt: created()
+	},
+	(t) => [primaryKey({ columns: [t.userId, t.tutorId] })]
+);
+
+/** In-app notifications (also sent by email when an email service is on). */
+export const notification = pgTable(
+	'notification',
+	{
+		id: serial('id').primaryKey(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		/** booking | lesson | payment | homework | review | account | reminder */
+		kind: text('kind').notNull(),
+		title: text('title').notNull(),
+		body: text('body').notNull(),
+		link: text('link'),
+		readAt: ts('read_at'),
+		createdAt: created()
+	},
+	(t) => [index('notification_user_idx').on(t.userId, t.createdAt)]
+);
+
+/** What a person does not want to be told (only non-essential messages can be switched off). */
+export const notificationPref = pgTable('notification_pref', {
+	userId: text('user_id')
+		.primaryKey()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	emailOff: boolean('email_off').notNull().default(false),
+	remindersOff: boolean('reminders_off').notNull().default(false),
+	homeworkOff: boolean('homework_off').notNull().default(false)
+});
+
+/** Contact form and reports to the Tutora team. */
+export const supportRequest = pgTable('support_request', {
+	id: serial('id').primaryKey(),
+	userId: text('user_id').references(() => user.id, { onDelete: 'set null' }),
+	name: text('name').notNull(),
+	email: text('email').notNull(),
+	topic: text('topic').notNull().default('help'),
+	message: text('message').notNull(),
+	status: text('status', { enum: ['open', 'done'] })
+		.notNull()
+		.default('open'),
+	createdAt: created()
+});
+
+/** Every action the platform owner takes (who, what, on what). */
+export const auditLog = pgTable(
+	'audit_log',
+	{
+		id: serial('id').primaryKey(),
+		actorId: text('actor_id'),
+		action: text('action').notNull(),
+		target: text('target'),
+		detail: text('detail'),
+		createdAt: created()
+	},
+	(t) => [index('audit_log_created_idx').on(t.createdAt)]
+);
+
+/** Editable homepage texts and photo (owner admin). */
+export const siteContent = pgTable('site_content', {
+	key: text('key').primaryKey(),
+	value: text('value').notNull(),
+	updatedAt: created()
+});
+
+/** The platform's standard subjects (suggestions for tutors, filters for students). */
+export const platformSubject = pgTable(
+	'platform_subject',
+	{
+		id: serial('id').primaryKey(),
+		name: text('name').notNull(),
+		sortOrder: integer('sort_order').notNull().default(0)
+	},
+	(t) => [uniqueIndex('platform_subject_name').on(t.name)]
 );

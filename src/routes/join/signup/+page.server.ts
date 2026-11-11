@@ -41,6 +41,7 @@ export const actions: Actions = {
 			.then(() => true)
 			.catch(() => false);
 		if (!loggedIn) redirect(303, `/verify-email?email=${encodeURIComponent(email)}`);
-		redirect(303, '/tutor-status');
+		// next: the authenticator app, then the profile wizard
+		redirect(303, '/account?welcome=1');
 	}
 };

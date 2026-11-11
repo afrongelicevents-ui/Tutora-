@@ -5,6 +5,8 @@ import { hitLimit, clientIp } from '#lib/server/rate-limit.ts';
 import { safeNext } from '#lib/server/guards.ts';
 import { emailField, formObject } from '#lib/validation/auth.ts';
 import { homeFor } from '#lib/roles.ts';
+import { eq } from 'drizzle-orm';
+import { user } from '#lib/server/db/auth.schema.ts';
 
 export const load: PageServerLoad = ({ locals, url }) => {
 	if (locals.user) redirect(303, safeNext(url.searchParams.get('next'), homeFor(locals.user.role)));
@@ -30,6 +32,14 @@ export const actions: Actions = {
 			});
 		}
 
+		// accounts suspended by the Tutora team cannot log in
+		if (email.success) {
+			const [acc] = await locals.db
+				.select({ s: user.suspendedAt })
+				.from(user)
+				.where(eq(user.email, email.data));
+			if (acc?.s) return fail(403, { values, errors: { form: 'err_suspended' } });
+		}
 		const result = await logIn({ auth: locals.auth }, input, request.headers);
 		if (!result.ok) return fail(400, { values, errors: result.errors });
 
