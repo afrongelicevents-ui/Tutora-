@@ -4,6 +4,18 @@ Everything here uses free plans. Follow the steps in order; it takes about an ho
 
 > **Nothing here has been done yet.** No accounts were created and nothing was deployed.
 
+## Quick links
+
+| Step                   | Link                                                                                                                                                                  |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Make `main`         | https://github.com/afrongelicevents-ui/Tutora-/branches · then https://github.com/afrongelicevents-ui/Tutora-/settings                                                |
+| 2. Neon                | https://console.neon.tech/signup                                                                                                                                      |
+| 3. Resend              | https://resend.com/signup · keys: https://resend.com/api-keys                                                                                                         |
+| 4. Cloudflare          | https://dash.cloudflare.com/sign-up · R2: https://dash.cloudflare.com/?to=/:account/r2/overview · tokens: https://dash.cloudflare.com/profile/api-tokens              |
+| 5. GitHub secrets      | https://github.com/afrongelicevents-ui/Tutora-/settings/secrets/actions/new · run deploy: https://github.com/afrongelicevents-ui/Tutora-/actions/workflows/deploy.yml |
+| 6. Cloudflare settings | https://dash.cloudflare.com/?to=/:account/workers-and-pages                                                                                                           |
+| 8. Authenticator app   | Android: https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2 · iPhone: https://apps.apple.com/app/google-authenticator/id388497605   |
+
 ## Step 1. Make a `main` branch on GitHub (2 minutes)
 
 The work is on the branch `ccr-767e9d9a-el14qg`. Automatic deploys run from `main`.
