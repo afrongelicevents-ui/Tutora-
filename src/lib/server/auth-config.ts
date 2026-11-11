@@ -105,8 +105,8 @@ export function createAuth(deps: AuthDeps) {
 		session: {
 			expiresIn: 60 * 60 * 24 * 30, // 30 days: fewer logins on shared phones costs less data
 			updateAge: 60 * 60 * 24,
-			// short signed cookie cache: fewer database reads per page view
-			cookieCache: { enabled: true, maxAge: 5 * 60 }
+			// no cookie cache: a logout, suspension or password reset takes effect at once
+			cookieCache: { enabled: false }
 		},
 		databaseHooks: {
 			user: {

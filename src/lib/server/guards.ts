@@ -93,7 +93,14 @@ export function areaAccess(
 	search: string,
 	user: GuardUser | undefined
 ): AreaDecision {
-	const area = areaOf(pathname);
+	// decide on the decoded path, like the router does ("/%74utor" is "/tutor")
+	let decoded: string;
+	try {
+		decoded = decodeURI(pathname);
+	} catch {
+		return { ok: false, status: 403, area: 'student' };
+	}
+	const area = areaOf(decoded) ?? areaOf(pathname);
 	if (!area) return { ok: true };
 	if (!user) {
 		const next =

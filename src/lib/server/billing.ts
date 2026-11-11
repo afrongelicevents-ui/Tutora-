@@ -5,7 +5,6 @@ import {
 	lessonPackage,
 	payment,
 	paymentAllocation,
-	receiptSeq,
 	studentPackage,
 	tutorProfile
 } from './db/app.schema.ts';
@@ -106,10 +105,17 @@ export async function confirmPayment(db: DB, tutorId: string, paymentId: number,
 			.for('update');
 		if (!p) throw new BillingFail('err_not_found');
 		if (p.status !== 'pending') throw new BillingFail('err_state');
-		const seq = (await tx.execute(
-			sql.raw(`select nextval('${receiptSeq.seqName}')::int as n`)
-		)) as unknown as { rows: { n: number }[] };
-		const n = Number(seq.rows[0].n);
+		// next receipt number of THIS tutor; the lock on their profile row makes two
+		// confirmations at the same moment take turns
+		await tx
+			.select({ id: tutorProfile.tutorId })
+			.from(tutorProfile)
+			.where(eq(tutorProfile.tutorId, tutorId))
+			.for('update');
+		const [{ n }] = await tx
+			.select({ n: sql<number>`coalesce(max(${payment.receiptNo}), 0)::int + 1` })
+			.from(payment)
+			.where(eq(payment.tutorId, tutorId));
 		await tx
 			.update(payment)
 			.set({ status: 'confirmed', receiptNo: n, decidedAt: now })

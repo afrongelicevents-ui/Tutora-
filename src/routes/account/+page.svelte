@@ -21,6 +21,7 @@
 			{m.account_2fa()}:
 			<strong>{data.account.twoFactorEnabled ? m.account_2fa_on() : m.account_2fa_off()}</strong>
 		</p>
+		<a class="btn btn-secondary" href="/account/password">{m.nav_password()}</a>
 		<a class="btn btn-secondary" href="/account/2fa">{m.account_2fa_manage()}</a>
 	</div>
 </section>

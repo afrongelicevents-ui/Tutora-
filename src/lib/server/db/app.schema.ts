@@ -44,6 +44,8 @@ export const profile = pgTable(
 		parentEmail: text('parent_email'),
 		childName: text('child_name'),
 		level: text('level'),
+		/** set when the Tutora admin made a temporary password: choose a new one at next login */
+		mustChangePassword: boolean('must_change_password').notNull().default(false),
 		consentAt: ts('consent_at').notNull(),
 		createdAt: created(),
 		updatedAt: ts('updated_at')
@@ -411,7 +413,8 @@ export const payment = pgTable(
 		decidedAt: ts('decided_at')
 	},
 	(t) => [
-		uniqueIndex('payment_receipt_no').on(t.receiptNo),
+		// receipt numbers are counted per tutor
+		uniqueIndex('payment_tutor_receipt_no').on(t.tutorId, t.receiptNo),
 		index('payment_user_idx').on(t.userId),
 		index('payment_tutor_idx').on(t.tutorId, t.status),
 		check('payment_amount', sql`${t.amountCents} > 0`)

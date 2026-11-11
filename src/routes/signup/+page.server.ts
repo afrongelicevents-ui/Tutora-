@@ -30,14 +30,7 @@ export const actions: Actions = {
 			});
 		}
 
-		const result = await signUp(
-			{
-				auth: locals.auth,
-				db: locals.db,
-				tutorId: (await activeTutorBySlug(locals.db, url.searchParams.get('tutor') ?? ''))?.tutorId
-			},
-			input
-		);
+		const result = await signUp({ auth: locals.auth, db: locals.db }, input);
 		if (!result.ok) return fail(400, { values, errors: result.errors });
 
 		// Without an email service there is nothing to confirm: the new account is already logged in.

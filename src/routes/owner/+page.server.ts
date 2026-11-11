@@ -5,7 +5,8 @@ import { TEST_PASSWORD, TEST_SITE } from '$app/env/private';
 import { requireOwner } from '#lib/server/guards.ts';
 import { allTutors, platformCounts, setTutorStatus } from '#lib/server/owner.ts';
 import { addTutorByOwner } from '#lib/server/actions/setup.ts';
-import { tempPassword } from '#lib/server/account.ts';
+import { setPasswordFor, studentByEmail, tempPassword } from '#lib/server/account.ts';
+import { emailField } from '#lib/validation/auth.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { seedTestData } from '#lib/server/seed.ts';
 
@@ -48,6 +49,18 @@ export const actions: Actions = {
 			});
 		// shown once to the owner, to pass on to the tutor; never stored in plain text
 		return { added: { name: (f.name ?? '').trim(), email: (f.email ?? '').trim(), password } };
+	},
+	resetStudent: async ({ locals, url, request }) => {
+		requireOwner(locals.user, url);
+		const f = formObject(await request.formData());
+		const email = emailField.safeParse(f.email ?? '');
+		const s = email.success ? await studentByEmail(locals.db, email.data) : null;
+		if (!s) return fail(404, { error: 'owner_reset_none' });
+		const password = tempPassword();
+		if (!(await setPasswordFor({ auth: locals.auth, db: locals.db }, s.id, password)))
+			return fail(400, { error: 'owner_reset_none' });
+		// shown once to the owner; the student must change it at their next login
+		return { reset: { name: s.name, password } };
 	},
 	resetTest: async ({ locals, url }) => {
 		requireOwner(locals.user, url);

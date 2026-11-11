@@ -220,8 +220,6 @@ export async function requestBooking(
 			lessonId: input.joinLessonId ?? null
 		})
 		.returning();
-	// the student now appears in this tutor's student list
-	await enroll(db, tutorId, userId);
 	return row;
 }
 
@@ -336,6 +334,8 @@ export async function acceptBooking(db: DB, tutorId: string, bookingId: number, 
 			.update(booking)
 			.set({ status: 'accepted', lessonId, decidedAt: now })
 			.where(eq(booking.id, b.id));
+		// only now, with an accepted lesson, the student joins this tutor's student list
+		await enroll(tx, tutorId, b.userId);
 		return { lessonId, userId: b.userId, startsAt: b.startsAt };
 	});
 }
@@ -512,7 +512,8 @@ export function lessonsForUser(db: DB, userId: string) {
 			...lessonFields,
 			attendeeStatus: attendee.status,
 			packageId: attendee.studentPackageId,
-			tutorName: tutorProfile.tutorName
+			tutorName: tutorProfile.tutorName,
+			tutorSlug: tutorProfile.slug
 		})
 		.from(attendee)
 		.innerJoin(lesson, eq(lesson.id, attendee.lessonId))

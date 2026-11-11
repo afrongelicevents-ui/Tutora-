@@ -114,14 +114,16 @@ describe.skipIf(!hasTestDb)('many tutors: every tutor only sees their own data',
 			requestBooking(db, B, s.id, req(aMaths, zw(1, '15:00')), now)
 		).rejects.toMatchObject({ code: 'err_subject' });
 		const b = await requestBooking(db, A, s.id, req(aMaths, zw(1, '15:00')), now);
-		// booking enrolled the student with A only
-		expect((await tutorsForUser(db, s.id)).map((t) => t.tutorId)).toEqual([A]);
+		// a request alone does not link the student to the tutor (no payment details etc.)
+		expect(await tutorsForUser(db, s.id)).toEqual([]);
 		expect((await pendingRequests(db, A)).map((r) => r.id)).toContain(b.id);
 		expect(await pendingRequests(db, B)).toEqual([]);
 		await notFound(acceptBooking(db, B, b.id, now));
 		await notFound(declineBooking(db, B, b.id, null, now));
 		await notFound(proposeTime(db, B, b.id, zw(2, '15:00'), null, now));
 		const { lessonId } = await acceptBooking(db, A, b.id, now);
+		// accepted: now linked to A only
+		expect((await tutorsForUser(db, s.id)).map((t) => t.tutorId)).toEqual([A]);
 		expect(await lessonWithPeople(db, lessonId, B)).toBeNull();
 		expect((await lessonWithPeople(db, lessonId, A))?.people).toHaveLength(1);
 		await notFound(cancelLesson(db, B, lessonId));
@@ -157,9 +159,14 @@ describe.skipIf(!hasTestDb)('many tutors: every tutor only sees their own data',
 		await expect(rejectPayment(db, B, pa.id, null)).rejects.toMatchObject({
 			code: 'err_not_found'
 		});
-		await confirmPayment(db, A, pa.id);
-		await recordCash(db, B, s.id, 500, '2026-11-15');
+		const ra = await confirmPayment(db, A, pa.id);
+		const rb = await recordCash(db, B, s.id, 500, '2026-11-15');
+		// each tutor counts their own receipts
+		const first = await recordCash(db, A, s.id, 100, '2026-11-15');
+		expect(first.receiptNo).toBe(ra.receiptNo + 1);
+		expect(rb.receiptNo).toBe(1);
 		const ba = (await balances(db, A, [s.id])).get(s.id)!;
+		ba.paid -= 100; // the extra cash above
 		const bb = (await balances(db, B, [s.id])).get(s.id)!;
 		expect(ba.paid).toBe(1000);
 		expect(bb.paid).toBe(500);
@@ -247,5 +254,30 @@ describe.skipIf(!hasTestDb)('many tutors: every tutor only sees their own data',
 		await expect(
 			requestBooking(db, A, s.id, req(bEnglish, zw(3, '15:00')), now)
 		).rejects.toMatchObject({ code: 'err_subject' });
+	});
+	it('the admin resets a password; the student must choose a new one at next login', async () => {
+		const { setPasswordFor, clearMustChange } = await import('./account.ts');
+		const { createAuth } = await import('./auth-config.ts');
+		const { profile } = await import('./db/app.schema.ts');
+		const auth = createAuth({
+			db,
+			secret: 'x'.repeat(40),
+			sendEmail: async () => {},
+			transactions: true
+		});
+		const s = await makeUser(db, 'student', 'Forgetful', A);
+		await db.insert((await import('./db/auth.schema.ts')).account).values({
+			id: 'acc_forget',
+			userId: s.id,
+			accountId: s.id,
+			providerId: 'credential',
+			password: 'x'
+		});
+		expect(await setPasswordFor({ auth, db }, s.id, 'temp-pass-123')).toBe(true);
+		const must = async () =>
+			(await db.select().from(profile).where(eq(profile.userId, s.id)))[0].mustChangePassword;
+		expect(await must()).toBe(true);
+		await clearMustChange(db, s.id);
+		expect(await must()).toBe(false);
 	});
 });

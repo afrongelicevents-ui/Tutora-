@@ -3,7 +3,6 @@ import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
 import {
 	getStudent,
-	tutorsForUser,
 	giveFeedback,
 	giveHomework,
 	homeworkForUser,
@@ -29,7 +28,6 @@ import { isIsoDate, localDate } from '#lib/tz.ts';
 import { attendee } from '#lib/server/db/app.schema.ts';
 import { and, eq } from 'drizzle-orm';
 import { m } from '#lib/paraglide/messages.js';
-import { setPasswordFor, tempPassword } from '#lib/server/account.ts';
 
 async function student(db: App.Locals['db'], tutorId: string, id: string) {
 	// only this tutor's own students; anyone else is "not found"
@@ -157,18 +155,5 @@ export const actions: Actions = {
 		if (!answer) return fail(404, { error: 'err_not_found' });
 		await giveFeedback(locals.db, t, answer.id, f.feedback?.trim().slice(0, 1000) || null);
 		return { saved: true };
-	},
-	tempPassword: async ({ locals, url, params }) => {
-		const t = requireTutor(locals.user, url).id;
-		const s = await student(locals.db, t, params.id);
-		// A student with more than one tutor: one tutor must not be able to take over the
-		// account (it would show them the other tutor's lessons). Then only Tutora support can.
-		const tutors = await tutorsForUser(locals.db, s.id);
-		if (tutors.some((x) => x.tutorId !== t)) return fail(400, { error: 'stu_temp_shared' });
-		const password = tempPassword();
-		const ok = await setPasswordFor({ auth: locals.auth, db: locals.db }, s.id, password);
-		if (!ok) return fail(400, { error: 'stu_temp_none' });
-		// Shown once to the tutor only; never stored in plain text.
-		return { tempPassword: password, tempFor: s.name };
 	}
 };

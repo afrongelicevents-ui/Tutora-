@@ -33,6 +33,7 @@
 		<div class="card">
 			<b>{tu.name ?? '—'}</b>
 			<p class="small muted">{tu.email} · {m.owner_joined({ date: fmtDay(tu.createdAt) })}</p>
+			<p class="small">{m.owner_check_email()}</p>
 			<div class="row">
 				<form method="POST" action="?/status">
 					<input type="hidden" name="id" value={tu.tutorId} /><input
@@ -109,6 +110,18 @@
 			required
 		/>
 		<button class="btn btn-block" type="submit">{m.owner_add_tutor()}</button>
+	</form>
+
+	<h2>{m.owner_reset_h()}</h2>
+	{#if form && 'reset' in form && form.reset}
+		<p class="notice" role="status">
+			{m.owner_reset_done({ name: form.reset.name, password: form.reset.password })}
+		</p>
+	{/if}
+	<form method="POST" action="?/resetStudent" class="card stack" novalidate>
+		<p class="small muted">{m.owner_reset_lead()}</p>
+		<Field name="email" type="email" label={m.field_email()} required />
+		<button class="btn btn-secondary btn-block" type="submit">{m.owner_reset_btn()}</button>
 	</form>
 
 	{#if data.testSite}

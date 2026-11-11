@@ -151,5 +151,9 @@ describe('central lock for private areas (also page-data requests)', () => {
 		});
 		expect(areaAccess('/owner', '', undefined)).toMatchObject({ status: 303 });
 		expect(areaAccess('/ownership-faq', '', undefined)).toEqual({ ok: true });
+		// encoded paths are decoded first, like the router does
+		expect(areaAccess('/%74utor/students', '', student)).toMatchObject({ ok: false, status: 403 });
+		expect(areaAccess('/%6Fwner', '', tutor)).toMatchObject({ ok: false, status: 403 });
+		expect(areaAccess('/%E0%A4%A', '', undefined)).toMatchObject({ ok: false });
 	});
 });

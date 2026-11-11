@@ -225,6 +225,16 @@ jobs:
       - name: Prepare the database tables
         if: steps.check.outputs.ready == 'true'
         run: pnpm db:migrate
+      # Fake data goes in BEFORE the test website goes live: a new branch (or anything that is
+      # not our fake data) is always wiped first, so real data can never be served there.
+      - name: Fill the test database with fake data
+        if: steps.check.outputs.ready == 'true'
+        env:
+          RESET: ${{ inputs.reset_test_data && 'true' || 'false' }}
+        run: |
+          IF_EMPTY=1
+          if [ "$RESET" = "true" ] || [ "$TEST_BRANCH_NEW" = "true" ]; then IF_EMPTY=0; fi
+          IF_EMPTY=$IF_EMPTY TEST_SITE=1 node_modules/.bin/tsx scripts/deploy/seed-test.ts
       - run: pnpm build
         if: steps.check.outputs.ready == 'true'
       - uses: cloudflare/wrangler-action@v3
@@ -244,34 +254,20 @@ jobs:
           BETTER_AUTH_SECRET: ${{ env.BETTER_AUTH_SECRET }}
           CRON_SECRET: ${{ env.CRON_SECRET }}
           TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
-      - name: Fill the test site with fake data
+      - name: Check the test site answers
         if: steps.check.outputs.ready == 'true'
-        env:
-          RESET: ${{ inputs.reset_test_data && 'true' || 'false' }}
         run: |
           for i in $(seq 1 30); do
             code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE_URL/" || true)
             if [ "$code" = "200" ]; then break; fi
             sleep 10
           done
-          q='?ifEmpty=1'; [ "$RESET" = "true" ] && q=''
-          out=$(curl -sS -w ' HTTP %{http_code}' -X POST -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/test/seed$q" || true)
-          echo "Seed through the website: $out"
-          case "$out" in
-            *'HTTP 200') ;;
-            *)
-              echo "Filling the test database directly instead."
-              IF_EMPTY=$([ "$RESET" = "true" ] && echo 0 || echo 1) TEST_SITE=1 \
-                node_modules/.bin/tsx scripts/deploy/seed-test.ts
-              out="$out (then filled directly)"
-              ;;
-          esac
           {
             echo "## Test site (fake data)"
             echo ""
             echo "Website: $SITE_URL"
             echo ""
-            echo "Home page answered HTTP $code. Seed: $out"
+            echo "Home page answered HTTP $code."
           } >> "$GITHUB_STEP_SUMMARY"
           echo "TEST SITE: $SITE_URL"
           # the test password, readable only with the deployer's private key (like the setup code)

@@ -52,7 +52,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		if (last?.date === d) last.slots.push(s);
 		else days.push({ date: d, slots: [s] });
 	}
-	return { intro, site, days, groups, subject: Number(url.searchParams.get('subject')) || null };
+	const { tutorId: _id, ...pub } = site;
+	return {
+		intro,
+		site: pub,
+		days,
+		groups,
+		subject: Number(url.searchParams.get('subject')) || null
+	};
 };
 
 const schema = z.object({

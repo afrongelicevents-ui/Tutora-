@@ -127,7 +127,8 @@ async function main() {
 					body: body({ init_source: 'schema-only' })
 				});
 			} catch {
-				// not available on every plan: copy, then the test seed wipes it
+				// not available on every plan: a full copy. The deploy job then wipes it and loads
+				// the fake data BEFORE the test website goes live (TEST_BRANCH_NEW below).
 				created = await neon(`/projects/${project.id}/branches`, {
 					method: 'POST',
 					body: body({})
@@ -172,8 +173,10 @@ async function main() {
 	u.searchParams.delete('channel_binding');
 	if (!u.searchParams.has('sslmode')) u.searchParams.set('sslmode', 'require');
 	mask(u.toString());
-	if (process.env.GITHUB_ENV) appendFileSync(process.env.GITHUB_ENV, `DATABASE_URL=${u}\n`);
-	else console.log('(not in GitHub Actions: address not written anywhere)');
+	if (process.env.GITHUB_ENV) {
+		appendFileSync(process.env.GITHUB_ENV, `DATABASE_URL=${u}\n`);
+		if (fresh) appendFileSync(process.env.GITHUB_ENV, 'TEST_BRANCH_NEW=true\n');
+	} else console.log('(not in GitHub Actions: address not written anywhere)');
 	console.log('Database address ready (hidden).');
 }
 

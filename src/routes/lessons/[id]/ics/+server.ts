@@ -11,7 +11,10 @@ export const GET: RequestHandler = async ({ locals, url, params }) => {
 	const id = Number(params.id) || 0;
 	// the tutor of THIS lesson (not any tutor), or a student booked on it
 	const isTutor =
-		u.role === 'tutor' && u.twoFactorEnabled && (await lessonTutorId(locals.db, id)) === u.id;
+		u.role === 'tutor' &&
+		u.twoFactorEnabled &&
+		u.tutorStatus === 'active' &&
+		(await lessonTutorId(locals.db, id)) === u.id;
 	if (!isTutor && !(await isAttendee(locals.db, u.id, id))) error(404, 'Not found');
 	const l = await lessonWithPeople(locals.db, id);
 	if (!l || l.status !== 'scheduled') error(404, 'Not found');

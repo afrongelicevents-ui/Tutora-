@@ -3,7 +3,6 @@ import { APIError } from 'better-auth/api';
 import type { Auth } from '../auth-config.ts';
 import type { DB } from '../db/types.ts';
 import { profile, user } from '../db/schema.ts';
-import { enroll } from '../people.ts';
 import { signupSchema, fieldErrors } from '../../validation/auth.ts';
 
 export type SignupResult =
@@ -15,7 +14,7 @@ export type SignupResult =
  * stores the profile. Kept separate from the route so it can be tested against a real database.
  */
 export async function signUp(
-	deps: { auth: Auth; db: DB; tutorId?: string | null },
+	deps: { auth: Auth; db: DB },
 	input: Record<string, string>,
 	callbackURL = '/account'
 ): Promise<SignupResult> {
@@ -64,9 +63,6 @@ export async function signUp(
 			consentAt: new Date()
 		})
 		.onConflictDoNothing();
-
-	// signed up from a tutor's page: they appear in that tutor's student list
-	if (deps.tutorId) await enroll(deps.db, deps.tutorId, userId);
 
 	return { ok: true, email: v.email, userId, role: v.accountType };
 }

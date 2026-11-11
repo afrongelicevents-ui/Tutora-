@@ -5,7 +5,7 @@
 	let { data, form } = $props();
 	const isToday = (d: Date) => localDate(d) === localDate(data.now);
 	const next = $derived(data.upcoming[0]);
-	const waOf = (name: string | null) => data.tutors.find((t) => t.name === name)?.whatsapp ?? null;
+	const waOf = (slug: string | null) => data.tutors.find((t) => t.slug === slug)?.whatsapp ?? null;
 	const bookHref = $derived(
 		data.tutors.filter((t) => t.active).length === 1
 			? `/student/book?tutor=${data.tutors.find((t) => t.active)!.slug}`
@@ -133,8 +133,8 @@
 					</form>
 				{:else}
 					<span class="small muted"
-						>{m.cancel_too_late({ hours: l.cancelHours })}{#if waOf(l.tutorName)}
-							<a href={waLink(waOf(l.tutorName)!)} target="_blank" rel="noopener noreferrer"
+						>{m.cancel_too_late({ hours: l.cancelHours })}{#if waOf(l.tutorSlug)}
+							<a href={waLink(waOf(l.tutorSlug)!)} target="_blank" rel="noopener noreferrer"
 								>WhatsApp</a
 							>{/if}</span
 					>

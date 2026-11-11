@@ -44,7 +44,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			? url.searchParams.get('tab')!
 			: 'pay',
 		currency: s.currency,
-		details: paymentDetails(s),
+		// a tutor's payment details only while they are approved
+		details:
+			tutor.status === 'active'
+				? paymentDetails(s)
+				: { bank: null, ecocash: null, innbucks: null, note: null },
 		balance,
 		today: localDate(new Date()),
 		payments: payments.map((p) => ({
