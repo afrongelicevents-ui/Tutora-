@@ -98,33 +98,39 @@
 
 	async function start() {
 		started = true;
-		client = new RoomClient(data.lessonId, data.me, data.ice, {
-			people: (p) => (people = p),
-			admitted: (v) => (admitted = v),
-			files: (f) => {
-				if (f.length !== files.length) files = f;
+		client = new RoomClient(
+			data.lessonId,
+			data.me,
+			data.ice,
+			{
+				people: (p) => (people = p),
+				admitted: (v) => (admitted = v),
+				files: (f) => {
+					if (f.length !== files.length) files = f;
+				},
+				message: (msg: BoardMsg, from: string) => {
+					// the name comes from the server's list of people, not from the message itself
+					const who = people.find((p) => p.userId === from)?.name ?? '?';
+					if (msg.t === 'chat') chat = [...chat, { who, text: String(msg.text).slice(0, 500) }];
+					else redraw();
+				},
+				remoteStream: (id, s) => (remotes = { ...remotes, [id]: s }),
+				remoteGone: (id) => {
+					const { [id]: _gone, ...rest } = remotes;
+					void _gone;
+					remotes = rest;
+				},
+				quality: (q, used) => {
+					quality = q;
+					mb = used;
+				},
+				state: (s, detail) => {
+					if (s === 'error' && detail === 'mic') micError = true;
+					else status = s;
+				}
 			},
-			message: (msg: BoardMsg, from: string) => {
-				// the name comes from the server's list of people, not from the message itself
-				const who = people.find((p) => p.userId === from)?.name ?? '?';
-				if (msg.t === 'chat') chat = [...chat, { who, text: String(msg.text).slice(0, 500) }];
-				else redraw();
-			},
-			remoteStream: (id, s) => (remotes = { ...remotes, [id]: s }),
-			remoteGone: (id) => {
-				const { [id]: _gone, ...rest } = remotes;
-				void _gone;
-				remotes = rest;
-			},
-			quality: (q, used) => {
-				quality = q;
-				mb = used;
-			},
-			state: (s, detail) => {
-				if (s === 'error' && detail === 'mic') micError = true;
-				else status = s;
-			}
-		});
+			data.group
+		);
 		await client.start();
 		resize();
 	}
@@ -223,6 +229,7 @@
 				</span>
 				<span>{m.room_mb({ mb: mb.toFixed(1) })}</span>
 			</div>
+			{#if quality === 1}<p class="small tip" role="status">{m.room_weak_tip()}</p>{/if}
 			{#if data.me.isTutor}
 				{#each waiting as p (p.userId)}
 					<div class="knock">

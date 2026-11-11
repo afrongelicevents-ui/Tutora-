@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { signUpTutor } from '#lib/server/actions/setup.ts';
 import { hitLimit, clientIp } from '#lib/server/rate-limit.ts';
 import { formObject } from '#lib/validation/auth.ts';
+import { looksLikeBot } from '#lib/server/bot.ts';
 import { homeFor } from '#lib/roles.ts';
 
 export const load: PageServerLoad = ({ locals }) => {
@@ -20,6 +21,8 @@ export const actions: Actions = {
 			phone: f.phone ?? '',
 			town: f.town ?? ''
 		};
+		if (looksLikeBot(f))
+			return fail(400, { values, errors: { form: 'err_try_again' } as Record<string, string> });
 		const limit = await hitLimit(locals.db, 'signup', clientIp(request));
 		if (!limit.ok)
 			return fail(429, {
