@@ -8,7 +8,8 @@ import {
 	lesson,
 	studentPackage,
 	subject,
-	tutorProfile
+	tutorProfile,
+	child
 } from './db/app.schema.ts';
 import { user } from './db/auth.schema.ts';
 import { getSettings, lessonPrice, listAvailability, type SiteSettings } from './settings.ts';
@@ -24,7 +25,8 @@ export type BookingError =
 	| 'err_not_found'
 	| 'err_state'
 	| 'err_cancel_late'
-	| 'err_group_full';
+	| 'err_group_full'
+	| 'err_child';
 
 export class BookingFail extends Error {
 	constructor(public code: BookingError) {
@@ -146,6 +148,8 @@ export interface BookingInput {
 	startsAt: Date | null;
 	joinLessonId: number | null;
 	note: string | null;
+	/** a parent's child this lesson is for */
+	childId?: number | null;
 }
 
 function modeAllowed(s: SiteSettings, mode: 'online' | 'in_person') {
@@ -161,8 +165,9 @@ export async function requestBooking(
 	now = new Date()
 ) {
 	const s = await getSettings(db, tutorId);
-	// only approved tutors take bookings
+	// only approved tutors take bookings; the free intro chat only if they offer it
 	if (s.status !== 'active') throw new BookingFail('err_not_found');
+	if (input.kind === 'intro' && !s.offersIntro) throw new BookingFail('err_not_found');
 	const open = await db
 		.select({ n: sql<number>`count(*)::int` })
 		.from(booking)
@@ -206,11 +211,22 @@ export async function requestBooking(
 		endsAt = addMinutes(startsAt, input.kind === 'intro' ? INTRO_MINUTES : s.lessonMinutes);
 	}
 
+	let childId: number | null = null;
+	if (input.childId) {
+		const [c] = await db
+			.select({ id: child.id })
+			.from(child)
+			.where(and(eq(child.id, input.childId), eq(child.parentId, userId)));
+		if (!c) throw new BookingFail('err_child');
+		childId = c.id;
+	}
+
 	const [row] = await db
 		.insert(booking)
 		.values({
 			tutorId,
 			userId,
+			childId,
 			kind: input.kind,
 			subjectId,
 			mode,
@@ -296,7 +312,13 @@ export async function acceptBooking(db: DB, tutorId: string, bookingId: number, 
 		const price = lessonPrice(s, subj, b.kind);
 		const [a] = await tx
 			.insert(attendee)
-			.values({ lessonId, userId: b.userId, bookingId: b.id, priceCents: price })
+			.values({
+				lessonId,
+				userId: b.userId,
+				bookingId: b.id,
+				priceCents: price,
+				childId: b.childId
+			})
 			.returning();
 
 		if (price > 0) {
@@ -566,10 +588,12 @@ export function pendingRequests(db: DB, tutorId: string) {
 			joinLessonId: booking.lessonId,
 			userId: booking.userId,
 			studentName: user.name,
+			childName: child.name,
 			subjectName: subject.name
 		})
 		.from(booking)
 		.innerJoin(user, eq(user.id, booking.userId))
+		.leftJoin(child, eq(child.id, booking.childId))
 		.leftJoin(subject, eq(subject.id, booking.subjectId))
 		.where(and(eq(booking.tutorId, tutorId), eq(booking.status, 'requested')))
 		.orderBy(asc(booking.startsAt));
@@ -621,10 +645,13 @@ export async function lessonWithPeople(db: DB, lessonId: number, tutorId?: strin
 			userId: attendee.userId,
 			name: user.name,
 			email: user.email,
-			note: attendee.privateNote
+			note: attendee.privateNote,
+			attendance: attendee.attendance,
+			childName: child.name
 		})
 		.from(attendee)
 		.innerJoin(user, eq(user.id, attendee.userId))
+		.leftJoin(child, eq(child.id, attendee.childId))
 		.where(and(eq(attendee.lessonId, lessonId), ne(attendee.status, 'cancelled')));
 	return { ...l, people };
 }

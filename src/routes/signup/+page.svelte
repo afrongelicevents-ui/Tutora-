@@ -81,6 +81,7 @@
 			autocomplete="tel"
 			value={v.phone ?? ''}
 			error={e.phone}
+			required
 		/>
 
 		<div class="child">

@@ -1,9 +1,18 @@
 import { redirect } from '@sveltejs/kit';
-import type { PageServerLoad } from './$types';
+import { fail } from '@sveltejs/kit';
+import { eq } from 'drizzle-orm';
+import { z } from 'zod';
+import type { Actions, PageServerLoad } from './$types';
+import { profile } from '#lib/server/db/app.schema.ts';
+import { user as userTable } from '#lib/server/db/auth.schema.ts';
+import { getPrefs, setPrefs } from '#lib/server/notify.ts';
+import { deleteMyAccount } from '#lib/server/student.ts';
+import { endLogin } from '#lib/server/auth-cookies.ts';
+import { fieldErrors, formObject, phone } from '#lib/validation/auth.ts';
 import { requireUser } from '#lib/server/guards.ts';
 import { homeFor } from '#lib/roles.ts';
 
-export const load: PageServerLoad = ({ locals, url }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const user = requireUser(locals.user, url);
 	// After logging in, send each person to their own area: tutor dashboard, student area or
 	// owner admin. Tutors waiting for approval see their status; tutors and the owner switch on
@@ -14,12 +23,64 @@ export const load: PageServerLoad = ({ locals, url }) => {
 			redirect(303, '/account/2fa?required=1');
 		redirect(303, homeFor(user.role));
 	}
+	const [prof] = await locals.db
+		.select({ phone: profile.phone })
+		.from(profile)
+		.where(eq(profile.userId, user.id));
 	return {
 		account: {
 			name: user.name,
 			email: user.email,
 			role: user.role,
-			twoFactorEnabled: user.twoFactorEnabled
-		}
+			twoFactorEnabled: user.twoFactorEnabled,
+			phone: prof?.phone ?? null
+		},
+		prefs: await getPrefs(locals.db, user.id)
 	};
+};
+
+const detailsSchema = z.object({
+	name: z.string().trim().min(2, 'err_name').max(80, 'err_too_long'),
+	phone: z.union([phone, z.literal('')]).optional()
+});
+
+export const actions: Actions = {
+	details: async ({ locals, url, request }) => {
+		const u = requireUser(locals.user, url);
+		const p = detailsSchema.safeParse(formObject(await request.formData()));
+		if (!p.success) return fail(400, { errors: fieldErrors(p.error) });
+		await locals.db.update(userTable).set({ name: p.data.name }).where(eq(userTable.id, u.id));
+		if (u.role === 'student' || u.role === 'parent')
+			await locals.db
+				.update(profile)
+				.set({ phone: p.data.phone || null })
+				.where(eq(profile.userId, u.id));
+		return { saved: 'details' };
+	},
+	prefs: async ({ locals, url, request }) => {
+		const u = requireUser(locals.user, url);
+		const f = formObject(await request.formData());
+		// unticked = "don't tell me"
+		await setPrefs(locals.db, u.id, {
+			emailOff: f.email !== 'on',
+			remindersOff: f.reminders !== 'on',
+			homeworkOff: f.homework !== 'on'
+		});
+		return { saved: 'prefs' };
+	},
+	delete: async ({ locals, url, request, cookies }) => {
+		const u = requireUser(locals.user, url);
+		// the platform owner's account is not deleted from here
+		if (u.role === 'owner') return fail(403, { deleteError: 'err_generic' });
+		const f = formObject(await request.formData());
+		if (f.confirm !== 'DELETE') return fail(400, { deleteError: 'err_delete_confirm' });
+		const ok = await locals.auth.api
+			.verifyPassword({ body: { password: f.password ?? '' }, headers: request.headers })
+			.then(() => true)
+			.catch(() => false);
+		if (!ok) return fail(400, { deleteError: 'err_password_wrong' });
+		await deleteMyAccount(locals.db, u.id);
+		await endLogin(locals.db, cookies, u.id);
+		redirect(303, '/?deleted=1');
+	}
 };

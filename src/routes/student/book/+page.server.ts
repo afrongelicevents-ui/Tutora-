@@ -9,6 +9,7 @@ import {
 } from '#lib/server/bookings.ts';
 import { activeTutorBySlug, publicSite, type SiteSettings } from '#lib/server/settings.ts';
 import { myTutor } from '#lib/server/people.ts';
+import { myChildren } from '#lib/server/student.ts';
 import { requireRole } from '#lib/server/guards.ts';
 import { hitLimit } from '#lib/server/rate-limit.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
@@ -38,7 +39,8 @@ async function bookingTutor(locals: App.Locals, url: URL): Promise<SiteSettings>
 export const load: PageServerLoad = async ({ locals, url }) => {
 	requireRole(locals.user, url, ['student', 'parent']);
 	const tutor = await bookingTutor(locals, url);
-	const intro = url.searchParams.get('intro') === '1';
+	// the free intro chat only when this tutor offers it
+	const intro = url.searchParams.get('intro') === '1' && tutor.offersIntro;
 	const [site, slots, groups] = await Promise.all([
 		publicSite(locals.db, tutor),
 		availableSlots(locals.db, tutor.tutorId, intro ? 'intro' : 'lesson'),
@@ -56,6 +58,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	return {
 		intro,
 		site: pub,
+		children:
+			locals.user!.role === 'parent'
+				? (await myChildren(locals.db, locals.user!.id)).map((c) => ({ id: c.id, name: c.name }))
+				: [],
 		days,
 		groups,
 		subject: Number(url.searchParams.get('subject')) || null
@@ -68,6 +74,7 @@ const schema = z.object({
 	mode: z.enum(['online', 'in_person']).default('online'),
 	slot: z.string().optional(),
 	join: z.coerce.number().int().positive().optional(),
+	childId: z.coerce.number().int().positive().optional(),
 	note: z.string().trim().max(500, 'err_too_long').optional()
 });
 
@@ -95,6 +102,7 @@ export const actions: Actions = {
 				mode: v.mode,
 				startsAt: v.join ? null : startsAt,
 				joinLessonId: v.join ?? null,
+				childId: v.childId ?? null,
 				note: v.note || null
 			});
 			await notifyTutor(

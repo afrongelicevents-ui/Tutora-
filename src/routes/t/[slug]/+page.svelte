@@ -114,7 +114,7 @@
 
 		{#if site.times.length}
 			<h2>{m.prof_times()}</h2>
-			<ul class="list card">
+			<ul class="list card times">
 				{#each [1, 2, 3, 4, 5, 6, 0] as d (d)}
 					{@const w = site.times.filter((x) => x.weekday === d)}
 					{#if w.length}<li>
@@ -158,3 +158,12 @@
 		{/if}
 	{/if}
 </section>
+
+<style>
+	.times {
+		padding: 4px 16px;
+	}
+	.star {
+		color: var(--ochre-400);
+	}
+</style>

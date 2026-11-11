@@ -5,10 +5,22 @@ import { SIGNUP_ROLES } from '../roles';
  * Error messages are i18n message keys (see messages/en.json), not English text,
  * so the UI can show them in any language.
  */
-const phone = z
+/**
+ * A phone number stored with its country code (+263...). Local Zimbabwe numbers starting
+ * with 0 get +263 added.
+ */
+export const phone = z
 	.string()
 	.trim()
-	.regex(/^\+?[0-9 ()-]{9,20}$/, 'err_phone');
+	.regex(/^\+?[0-9 ()-]{9,20}$/, 'err_phone')
+	.transform((v) => {
+		const d = v.replace(/[^\d+]/g, '');
+		if (d.startsWith('+')) return d;
+		if (d.startsWith('00')) return `+${d.slice(2)}`;
+		if (d.startsWith('0')) return `+263${d.slice(1)}`;
+		return `+${d}`;
+	})
+	.pipe(z.string().regex(/^\+[1-9]\d{8,14}$/, 'err_phone'));
 const optionalText = (max: number) =>
 	z
 		.string()
@@ -35,7 +47,7 @@ export const signupSchema = z
 		email: emailField,
 		password: passwordField,
 		accountType: z.enum(SIGNUP_ROLES, 'err_account_type'),
-		phone: phone.optional().or(z.literal('').transform(() => undefined)),
+		phone,
 		isUnder18: checkbox,
 		parentName: optionalText(80),
 		parentPhone: phone.optional().or(z.literal('').transform(() => undefined)),

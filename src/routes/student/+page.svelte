@@ -2,6 +2,7 @@
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay, fmtDayTime, fmtTime, localDate } from '#lib/tz.ts';
 	import { waLink } from '#lib/whatsapp.ts';
+	import { formatMoney } from '#lib/money.ts';
 	let { data, form } = $props();
 	const isToday = (d: Date) => localDate(d) === localDate(data.now);
 	const next = $derived(data.upcoming[0]);
@@ -25,6 +26,29 @@
 	<h1>{m.hello({ name: data.name.split(' ')[0] })}</h1>
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
 	{#if form?.done}<p class="notice" role="status">{t(`sdone_${form.done}`)}</p>{/if}
+
+	{#if data.attention.length}
+		<div class="card attention">
+			<h2 class="h3">{m.att_title()}</h2>
+			<ul class="plain">
+				{#each data.attention as a, i (i)}
+					<li>
+						<a href={a.link}
+							>{a.kind === 'owe'
+								? m.att_owe({
+										amount: formatMoney(
+											Number(a.text.values.amount),
+											String(a.text.values.currency) as 'USD'
+										),
+										name: String(a.text.values.name)
+									})
+								: t(a.text.key, a.text.values)}</a
+						>
+					</li>
+				{/each}
+			</ul>
+		</div>
+	{/if}
 
 	{#if next}
 		<div class="band">
@@ -58,7 +82,7 @@
 	{/each}
 
 	{#if data.requests.length}
-		<h2>{m.my_requests()}</h2>
+		<h2 id="requests">{m.my_requests()}</h2>
 		{#each data.requests as r (r.id)}
 			<div class="card">
 				<div class="row">
@@ -109,8 +133,9 @@
 	{#each data.upcoming as l (l.id)}
 		<div class="card">
 			<div class="row">
-				<b class="grow">{l.subjectName ?? m.intro_chat()}</b><span class="pill p-ok"
-					>{m.booked()}</span
+				<a class="grow" href="/student/lessons/{l.id}"><b>{l.subjectName ?? m.intro_chat()}</b></a
+				><span class="pill {l.kind === 'intro' ? 'p-info' : 'p-ok'}"
+					>{l.kind === 'intro' ? m.tag_intro() : m.status_confirmed()}</span
 				>
 			</div>
 			<p class="small muted">
@@ -172,5 +197,15 @@
 		<p class="empty">{m.no_tutors_yet()}</p>
 	{/each}
 	<a class="btn btn-secondary btn-block" href="/tutors">{m.find_a_tutor()}</a>
+
+	{#if data.favourites.length}
+		<h2>{m.fav_title()}</h2>
+		<ul class="list card">
+			{#each data.favourites as f (f.slug)}<li><a href="/t/{f.slug}">{f.name}</a></li>{/each}
+		</ul>
+	{/if}
+	{#if data.isParent}
+		<p><a href="/student/children">{m.children_manage({ n: data.children.length })}</a></p>
+	{/if}
 	<p style="margin-top:16px"><a href="/account">{m.nav_account()}</a></p>
 </section>

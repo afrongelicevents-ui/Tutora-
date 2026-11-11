@@ -149,6 +149,8 @@
 		padding: 0 28px;
 		min-height: 56px;
 		font-size: 1.1rem;
+		line-height: 1.2;
+		padding-top: 2px;
 	}
 	.big {
 		font-size: clamp(1.9rem, 8vw, 2.4rem);
@@ -189,15 +191,10 @@
 	}
 	.cards {
 		display: grid;
-		grid-auto-flow: column;
-		grid-auto-columns: minmax(150px, 1fr);
-		gap: 10px;
-		overflow-x: auto;
-		scroll-snap-type: x mandatory;
-		padding-bottom: 4px;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 8px;
 	}
 	.tcard {
-		scroll-snap-align: start;
 		display: grid;
 		grid-template-rows: auto 1fr;
 		background: var(--card);
@@ -224,7 +221,9 @@
 	.tbody {
 		display: grid;
 		gap: 4px;
-		padding: 10px 12px 14px;
+		align-content: start;
+		padding: 10px 10px 12px;
+		font-size: 0.95rem;
 		min-width: 0;
 		overflow-wrap: anywhere;
 	}
