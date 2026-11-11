@@ -1,9 +1,11 @@
 name: Deploy
 
-# Deploys to Cloudflare Workers when CI passes on main.
-# Needs repository secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, DATABASE_URL.
-# App secrets (BETTER_AUTH_SECRET, TUTOR_EMAIL, RESEND_API_KEY, ...) live in Cloudflare;
-# see docs/DEPLOY.md.
+# Puts the site online with only two repository secrets:
+#   NEON_API_KEY          finds the database (or creates one), runs migrations
+#   CLOUDFLARE_API_TOKEN  finds the account, creates the free workers.dev address, deploys
+# (DATABASE_URL and CLOUDFLARE_ACCOUNT_ID also work instead, if you prefer.)
+# Everything personal (name, email, prices, WhatsApp, ...) is entered by the tutor on the site.
+# Runs after CI passes on main, or by hand (Actions → Deploy → Run workflow).
 
 on:
   workflow_run:
@@ -11,6 +13,15 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      reset_db_password:
+        description: 'Reset the database password first (if it was ever shared)'
+        type: boolean
+        default: false
+      new_setup_code:
+        description: 'Make a new tutor setup code (replaces an unused one)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -35,30 +46,118 @@ jobs:
     environment: production
     steps:
       - name: Check secrets are set
+        id: check
         env:
           CF: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          NEON: ${{ secrets.NEON_API_KEY }}
           DB: ${{ secrets.DATABASE_URL }}
         run: |
-          if [ -z "$CF" ] || [ -z "$DB" ]; then
-            echo "::error::Set CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and DATABASE_URL secrets first (docs/DEPLOY.md)."
-            exit 1
+          if [ -z "$CF" ] || { [ -z "$NEON" ] && [ -z "$DB" ]; }; then
+            msg="Not deployed yet: add the repository secrets NEON_API_KEY and CLOUDFLARE_API_TOKEN (docs/DEPLOY.md), then run this workflow again."
+            if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then echo "::error::$msg"; exit 1; fi
+            echo "::notice::$msg"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
       - uses: actions/checkout@v5
+        if: steps.check.outputs.ready == 'true'
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: pnpm/action-setup@v4
+        if: steps.check.outputs.ready == 'true'
       - uses: actions/setup-node@v5
+        if: steps.check.outputs.ready == 'true'
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Apply database migrations
-        run: pnpm db:migrate
+        if: steps.check.outputs.ready == 'true'
+
+      - name: Find the database
+        if: steps.check.outputs.ready == 'true'
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          DB: ${{ secrets.DATABASE_URL }}
+          RESET_PASSWORD: ${{ inputs.reset_db_password && 'true' || 'false' }}
+        run: |
+          if [ -n "$NEON_API_KEY" ]; then
+            node scripts/deploy/neon.mjs
+          else
+            clean=$(node -e 'const u=new URL(process.argv[1].trim());u.searchParams.delete("channel_binding");console.log(u.toString())' "$DB")
+            echo "::add-mask::$clean"
+            echo "DATABASE_URL=$clean" >> "$GITHUB_ENV"
+          fi
+
+      - name: Prepare Cloudflare
+        id: cf
+        if: steps.check.outputs.ready == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: node scripts/deploy/cloudflare.mjs
+
+      - name: Prepare app secrets
+        if: steps.check.outputs.ready == 'true'
+        env:
+          AUTH: ${{ secrets.BETTER_AUTH_SECRET }}
+          CRON: ${{ secrets.CRON_SECRET }}
+        run: |
+          # No separate secrets needed: derive stable ones from the (secret) database address.
+          if [ -z "$AUTH" ]; then AUTH=$(printf 'tutora-auth:%s' "$DATABASE_URL" | sha256sum | cut -d' ' -f1); fi
+          if [ -z "$CRON" ]; then CRON=$(printf 'tutora-cron:%s' "$DATABASE_URL" | sha256sum | cut -d' ' -f1); fi
+          echo "::add-mask::$AUTH"
+          echo "::add-mask::$CRON"
+          { echo "BETTER_AUTH_SECRET=$AUTH"; echo "CRON_SECRET=$CRON"; } >> "$GITHUB_ENV"
+
+      - name: Prepare the database tables
+        if: steps.check.outputs.ready == 'true'
+        run: pnpm db:migrate
+
+      - name: Make the one-time tutor setup code
+        if: steps.check.outputs.ready == 'true'
+        env:
+          NEW_SETUP_CODE: ${{ inputs.new_setup_code && 'true' || 'false' }}
+        # Prints the code only encrypted (see scripts/deploy/setup-code.mjs).
+        run: node scripts/deploy/setup-code.mjs
+
       - run: pnpm build
+        if: steps.check.outputs.ready == 'true'
+
       - uses: cloudflare/wrangler-action@v3
+        if: steps.check.outputs.ready == 'true'
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          accountId: ${{ env.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
+          secrets: |
+            DATABASE_URL
+            BETTER_AUTH_SECRET
+            CRON_SECRET
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
+          BETTER_AUTH_SECRET: ${{ env.BETTER_AUTH_SECRET }}
+          CRON_SECRET: ${{ env.CRON_SECRET }}
+
+      - name: Check the website answers
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          # A brand-new workers.dev address can take a minute or two to start working.
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE_URL/" || true)
+            if [ "$code" = "200" ]; then break; fi
+            sleep 10
+          done
+          setup=$(curl -s -o /dev/null -w '%{http_code}' "$SITE_URL/setup" || true)
+          echo "Home page: HTTP $code · /setup: HTTP $setup"
+          {
+            echo "## Tutora is online"
+            echo ""
+            echo "Website: $SITE_URL"
+            echo ""
+            echo "The tutor claims it at $SITE_URL/setup with the one-time setup code."
+            echo ""
+            echo "Home page answered HTTP $code."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "SITE: $SITE_URL"
+          [ "$code" = "200" ] || { echo "::warning::The site did not answer 200 yet (got $code). It may need another minute."; }

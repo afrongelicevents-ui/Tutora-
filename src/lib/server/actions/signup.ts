@@ -6,14 +6,15 @@ import { profile, user } from '../db/schema.ts';
 import { signupSchema, fieldErrors } from '../../validation/auth.ts';
 
 export type SignupResult =
-	{ ok: true; email: string } | { ok: false; errors: Record<string, string> };
+	| { ok: true; email: string; userId?: string; role?: string }
+	| { ok: false; errors: Record<string, string> };
 
 /**
  * Creates the account, sets the chosen role (student or parent — never tutor) and
  * stores the profile. Kept separate from the route so it can be tested against a real database.
  */
 export async function signUp(
-	deps: { auth: Auth; db: DB; tutorEmail: string },
+	deps: { auth: Auth; db: DB; tutorEmail?: string },
 	input: Record<string, string>,
 	callbackURL = '/account'
 ): Promise<SignupResult> {
@@ -21,7 +22,7 @@ export async function signUp(
 	if (!parsed.success) return { ok: false, errors: fieldErrors(parsed.error) };
 	const v = parsed.data;
 	// The tutor account is created only through /setup (proves control of the inbox).
-	if (v.email === deps.tutorEmail.trim().toLowerCase()) {
+	if (deps.tutorEmail && v.email === deps.tutorEmail.trim().toLowerCase()) {
 		return { ok: false, errors: { email: 'err_use_tutor_setup' } };
 	}
 
@@ -68,5 +69,5 @@ export async function signUp(
 		})
 		.onConflictDoNothing();
 
-	return { ok: true, email: v.email };
+	return { ok: true, email: v.email, userId, role: v.accountType };
 }

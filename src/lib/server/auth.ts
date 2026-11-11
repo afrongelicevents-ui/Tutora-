@@ -12,11 +12,14 @@ import type { DB } from './db/types';
 import { createAuth } from './auth-config';
 import { createSendEmail } from './email';
 
-export const sendEmail = createSendEmail({
-	apiKey: RESEND_API_KEY,
-	from: EMAIL_FROM,
-	production: !dev
-});
+/** Emails work in development (printed to the log) or when a Resend key is set. */
+export const emailEnabled = dev || !!RESEND_API_KEY;
+
+const send = createSendEmail({ apiKey: RESEND_API_KEY, from: EMAIL_FROM, production: !dev });
+/** Sends an email if an email service is set up; otherwise does nothing. */
+export const sendEmail: typeof send = async (msg) => {
+	if (emailEnabled) await send(msg);
+};
 
 /** Better Auth bound to this request's database connection. */
 export function makeAuth(db: DB) {
@@ -26,6 +29,7 @@ export function makeAuth(db: DB) {
 		secret: BETTER_AUTH_SECRET,
 		tutorEmail: TUTOR_EMAIL,
 		sendEmail,
+		emailEnabled,
 		transactions: true,
 		production: !dev,
 		plugins: [sveltekitCookies(getRequestEvent)] // must stay last

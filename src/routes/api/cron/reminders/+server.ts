@@ -13,10 +13,10 @@ function sameText(a: string, b: string) {
 }
 
 /** Called every hour by .github/workflows/reminders.yml with the CRON_SECRET. */
-export const POST: RequestHandler = async ({ locals, request }) => {
+export const POST: RequestHandler = async ({ locals, request, url }) => {
 	const given = request.headers.get('authorization') ?? '';
 	if (!CRON_SECRET || CRON_SECRET.length < 24 || !sameText(given, `Bearer ${CRON_SECRET}`))
 		error(404, 'Not found');
-	const sent = await sendDueReminders(locals.db, sendEmail, ORIGIN);
+	const sent = await sendDueReminders(locals.db, sendEmail, ORIGIN ?? url.origin);
 	return json({ sent });
 };

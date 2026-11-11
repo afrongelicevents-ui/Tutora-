@@ -1,14 +1,16 @@
-import { dev } from '$app/env';
 import { BETTER_AUTH_SECRET } from '$app/env/private';
-import { error } from '@sveltejs/kit';
-import { LocalStore, R2Store, signedUrl, type FileStore } from './files.ts';
+import { getRequestEvent } from '$app/server';
+import { R2Store, signedUrl, type FileStore } from './files.ts';
+import { DbStore } from './db-store.ts';
 
-/** R2 bucket binding `FILES` in production, a local folder in development. */
+/**
+ * Where uploaded files live: a Cloudflare R2 bucket if one is connected (binding `FILES`),
+ * otherwise the database itself, so the site works with no extra account.
+ */
 export function getStore(platform: App.Platform | undefined): FileStore {
 	const bucket = platform?.env?.FILES;
 	if (bucket) return new R2Store(bucket);
-	if (dev) return new LocalStore();
-	error(500, 'File storage is not configured');
+	return new DbStore(getRequestEvent().locals.db);
 }
 
 /** Short-lived link to a private file. Callers must check access first. */

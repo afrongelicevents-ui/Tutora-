@@ -5,13 +5,15 @@ import { signUp } from '#lib/server/actions/signup.ts';
 import { hitLimit, clientIp } from '#lib/server/rate-limit.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { homeFor } from '#lib/roles.ts';
+import { emailEnabled } from '#lib/server/auth.ts';
+import { endLogin } from '#lib/server/auth-cookies.ts';
 
 export const load: PageServerLoad = ({ locals }) => {
 	if (locals.user) redirect(303, homeFor(locals.user.role));
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals }) => {
+	default: async ({ request, locals, cookies }) => {
 		const input = formObject(await request.formData());
 		const values = { ...input, password: '' };
 
@@ -30,6 +32,18 @@ export const actions: Actions = {
 		);
 		if (!result.ok) return fail(400, { values, errors: result.errors });
 
+		// Without an email service there is nothing to confirm: the new account is already logged in.
+		if (!emailEnabled) {
+			// A parent account was set up as "student" a moment ago; log in again so the
+			// login cookie carries the right role.
+			if (result.userId && result.role === 'parent') {
+				await endLogin(locals.db, cookies, result.userId);
+				await locals.auth.api
+					.signInEmail({ body: { email: result.email, password: input.password ?? '' } })
+					.catch(() => {});
+			}
+			redirect(303, '/student');
+		}
 		redirect(303, `/verify-email?email=${encodeURIComponent(result.email)}`);
 	}
 };

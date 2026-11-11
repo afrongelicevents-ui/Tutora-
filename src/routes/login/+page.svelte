@@ -12,6 +12,9 @@
 <section class="wrap narrow">
 	<h1>{m.login_title()}</h1>
 	{#if page.url.searchParams.has('reset')}<p class="notice" role="status">{m.reset_done()}</p>{/if}
+	{#if page.url.searchParams.has('claimed')}<p class="notice" role="status">
+			{m.login_claimed()}
+		</p>{/if}
 	{#if e.form}<p class="alert" role="alert">
 			{t(e.form, { minutes: form?.retryMinutes ?? 1 })}
 		</p>{/if}

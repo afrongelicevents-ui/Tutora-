@@ -12,7 +12,7 @@ export const LIMITS = {
 	login: { max: 5, windowSeconds: 60 },
 	/** per account, from any IP: stops slow password guessing spread over many addresses */
 	loginAccount: { max: 20, windowSeconds: 60 * 60 },
-	tutorSetup: { max: 3, windowSeconds: 60 * 60 },
+	tutorSetup: { max: 5, windowSeconds: 60 * 60 },
 	signup: { max: 5, windowSeconds: 60 * 60 },
 	passwordReset: { max: 3, windowSeconds: 60 * 60 },
 	twoFactor: { max: 5, windowSeconds: 60 },

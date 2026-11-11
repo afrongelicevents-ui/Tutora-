@@ -25,6 +25,7 @@
 		times: { weekday: number; startMinute: number; endMinute: number }[];
 		results: { id: number; value: string; label: string }[];
 		email?: string;
+		emailOn?: boolean;
 	};
 	let {
 		section,
@@ -516,22 +517,54 @@
 		{#if form?.emailSent}
 			<p class="notice" role="status">{m.set_email_sent({ email: String(form.emailSent) })}</p>
 		{:else}
+			{#if form?.emailChanged}
+				<p class="notice" role="status">{m.set_email_changed()}</p>
+			{/if}
 			<form method="POST" action="?/changeEmail" class="stack" novalidate>
 				<Field
 					name="newEmail"
 					type="email"
 					label={m.set_new_email()}
-					hint={m.set_new_email_hint()}
+					hint={data.emailOn ? m.set_new_email_hint() : undefined}
 					error={e.newEmail}
 					autocomplete="email"
 				/>
+				{#if !data.emailOn}
+					<Field
+						name="password"
+						type="password"
+						label={m.set_current_password()}
+						error={e.password}
+						autocomplete="current-password"
+					/>
+				{/if}
 				<button class="btn btn-secondary btn-block" type="submit">{m.set_change_email()}</button>
 			</form>
 		{/if}
 	</div>
 	<div class="card stack">
-		<p class="small">{m.set_password_lead()}</p>
-		<a class="btn btn-secondary" href="/forgot-password">{m.set_change_password()}</a>
+		<h2 class="h3">{m.set_change_password()}</h2>
+		{#if form?.passwordChanged}
+			<p class="notice" role="status">{m.set_password_changed()}</p>
+		{/if}
+		<form method="POST" action="?/changePassword" class="stack" novalidate>
+			<Field
+				name="currentPassword"
+				type="password"
+				label={m.set_current_password()}
+				error={e.currentPassword}
+				autocomplete="current-password"
+			/>
+			<Field
+				name="newPassword"
+				type="password"
+				label={m.set_new_password()}
+				hint={m.field_password_hint()}
+				error={e.newPassword}
+				autocomplete="new-password"
+			/>
+			<button class="btn btn-secondary btn-block" type="submit">{m.set_change_password()}</button>
+		</form>
 		<a class="btn btn-secondary" href="/account/2fa">{m.account_2fa_manage()}</a>
 	</div>
 {/if}

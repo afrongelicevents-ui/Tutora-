@@ -28,6 +28,7 @@ import { isIsoDate, localDate } from '#lib/tz.ts';
 import { attendee } from '#lib/server/db/app.schema.ts';
 import { and, eq } from 'drizzle-orm';
 import { m } from '#lib/paraglide/messages.js';
+import { setPasswordFor, tempPassword } from '#lib/server/account.ts';
 
 async function student(db: App.Locals['db'], id: string) {
 	const s = await getStudent(db, id);
@@ -154,5 +155,14 @@ export const actions: Actions = {
 		if (!answer) return fail(404, { error: 'err_not_found' });
 		await giveFeedback(locals.db, answer.id, f.feedback?.trim().slice(0, 1000) || null);
 		return { saved: true };
+	},
+	tempPassword: async ({ locals, url, params }) => {
+		requireTutor(locals.user, url);
+		const s = await student(locals.db, params.id);
+		const password = tempPassword();
+		const ok = await setPasswordFor({ auth: locals.auth, db: locals.db }, s.id, password);
+		if (!ok) return fail(400, { error: 'stu_temp_none' });
+		// Shown once to the tutor only; never stored in plain text.
+		return { tempPassword: password, tempFor: s.name };
 	}
 };

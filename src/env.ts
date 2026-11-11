@@ -13,8 +13,11 @@ export const variables = defineEnvVars({
 	},
 	ORIGIN: {
 		description:
-			'Public base URL of the site, e.g. `https://tutora.co.zw`. Kept configurable until the domain is bought.',
-		schema: z.url()
+			'Optional. Public base URL of the site, e.g. `https://tutora.co.zw`. If empty, the address the site is opened on is used.',
+		schema: optional.refine(
+			(v) => v === undefined || z.url().safeParse(v).success,
+			'ORIGIN must be a URL'
+		)
 	},
 	BETTER_AUTH_SECRET: {
 		description: 'Secret used to sign sessions. At least 32 random characters.',
@@ -22,12 +25,12 @@ export const variables = defineEnvVars({
 	},
 	TUTOR_EMAIL: {
 		description:
-			'Email address of the tutor. The account that signs up and verifies this address becomes the tutor (admin).',
-		schema: z.email()
+			'Optional. If set, the tutor claims the site at /setup with a link sent to this address. If empty, the first person to complete /setup becomes the tutor (do it right after the first deploy).',
+		schema: optional
 	},
 	RESEND_API_KEY: {
 		description:
-			'Resend API key for sending emails. If empty, emails are printed to the server log (development only).',
+			'Optional. Resend API key for sending emails. Without it the site works without emails: no email confirmation, no reminder or receipt emails.',
 		schema: optional
 	},
 	CRON_SECRET: {

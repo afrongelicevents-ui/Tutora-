@@ -43,7 +43,7 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 			{ auth, db, tutorEmail: TUTOR_EMAIL },
 			{ ...base, name: 'Rudo', email: 'rudo@example.com', accountType: 'student' }
 		);
-		expect(r).toEqual({ ok: true, email: 'rudo@example.com' });
+		expect(r).toMatchObject({ ok: true, email: 'rudo@example.com' });
 		expect(await roleOf('rudo@example.com')).toBe('student');
 		expect(outbox.at(-1)?.subject).toMatch(/Confirm your email/);
 		const [p] = await db.select().from(profile);
