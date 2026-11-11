@@ -38,7 +38,7 @@
 	{@render children()}
 </main>
 <Footer whatsapp={data.whatsapp} />
-{#if showWhatsApp}<WhatsAppButton phone={data.whatsapp} />{/if}
+{#if showWhatsApp}{#if data.whatsapp}<WhatsAppButton phone={data.whatsapp} />{/if}{/if}
 
 <style>
 	.skip:focus {

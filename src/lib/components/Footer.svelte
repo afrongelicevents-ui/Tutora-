@@ -2,14 +2,15 @@
 	import { m } from '#lib/i18n.ts';
 	import { formatZwPhone } from '#lib/whatsapp.ts';
 
-	let { whatsapp }: { whatsapp: string } = $props();
+	let { whatsapp }: { whatsapp: string | null } = $props();
 </script>
 
 <footer>
 	<div class="wrap">
 		<p class="small muted">
 			<a href="/privacy">{m.footer_privacy()}</a> ·
-			<a href="/terms">{m.footer_terms()}</a> · WhatsApp {formatZwPhone(whatsapp)}
+			<a href="/terms">{m.footer_terms()}</a>{#if whatsapp}
+				· WhatsApp {formatZwPhone(whatsapp)}{/if}
 		</p>
 	</div>
 </footer>

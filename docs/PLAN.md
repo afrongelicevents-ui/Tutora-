@@ -80,10 +80,10 @@ Each phase ends with a deploy to a preview URL for you to check.
 
 ## 5. Decisions so far
 
-| Item                   | Decision                                                                                                                                                                                      |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Wordmark               | Option A (approved)                                                                                                                                                                           |
-| Figma design direction | Approved                                                                                                                                                                                      |
+| Item                   | Decision                                                                 |
+| ---------------------- | ------------------------------------------------------------------------ |
+| Wordmark               | Option A (approved)                                                      |
+| Figma design direction | Approved                                                                 |
 | WhatsApp number        | Set by the tutor in the setup wizard / Settings (no number in the code). |
 
 ## 6. Still open

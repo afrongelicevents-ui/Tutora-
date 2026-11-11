@@ -53,7 +53,13 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 	it('creates a parent account', async () => {
 		await signUp(
 			{ auth, db, tutorEmail: TUTOR_EMAIL },
-			{ ...base, name: 'Mai Rudo', email: 'mai@example.com', accountType: 'parent' }
+			{
+				...base,
+				name: 'Mai Rudo',
+				email: 'mai@example.com',
+				accountType: 'parent',
+				childName: 'Kid'
+			}
 		);
 		expect(await roleOf('mai@example.com')).toBe('parent');
 	});
@@ -90,7 +96,13 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 	it('the tutor email cannot be used on the public sign-up form', async () => {
 		const r = await signUp(
 			{ auth, db, tutorEmail: TUTOR_EMAIL },
-			{ ...base, name: 'Impostor', email: TUTOR_EMAIL.toUpperCase(), accountType: 'parent' }
+			{
+				...base,
+				name: 'Impostor',
+				email: TUTOR_EMAIL.toUpperCase(),
+				accountType: 'parent',
+				childName: 'Kid'
+			}
 		);
 		expect(r).toEqual({ ok: false, errors: { email: 'err_use_tutor_setup' } });
 		expect(await roleOf(TUTOR_EMAIL)).toBeUndefined();
@@ -146,6 +158,7 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 				name: 'Stranger',
 				email: 'owner@example.com',
 				accountType: 'parent',
+				childName: 'Kid',
 				password: 'stranger-pass-1'
 			}
 		);
@@ -203,6 +216,7 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 				name: 'Attacker',
 				email: 'rudo@example.com',
 				accountType: 'parent',
+				childName: 'Kid',
 				password: 'attacker-pass-1'
 			}
 		);

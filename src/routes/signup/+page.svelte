@@ -82,6 +82,16 @@
 			error={e.phone}
 		/>
 
+		<div class="child">
+			<Field
+				name="childName"
+				label={m.field_child_name()}
+				hint={m.field_child_name_hint()}
+				value={v.childName ?? ''}
+				error={e.childName}
+			/>
+		</div>
+
 		<!-- Shown and hidden with CSS only, so it works without JavaScript. -->
 		<label class="check under18">
 			<input type="checkbox" name="isUnder18" checked={v.isUnder18 === 'on'} />
@@ -143,9 +153,16 @@
 	form:has(input[value='parent']:checked) .under18 {
 		display: none;
 	}
+	.child {
+		display: none;
+	}
+	form:has(input[value='parent']:checked) .child {
+		display: block;
+	}
 	/* Older phones without :has() always see the parent section. */
 	@supports not selector(:has(*)) {
-		.parent {
+		.parent,
+		.child {
 			display: block;
 		}
 	}

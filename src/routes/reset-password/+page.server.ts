@@ -3,7 +3,7 @@ import { APIError } from 'better-auth/api';
 import type { Actions, PageServerLoad } from './$types';
 import { fieldErrors, formObject, resetSchema } from '#lib/validation/auth.ts';
 
-export const load: PageServerLoad = ({ url, locals }) => {
+export const load: PageServerLoad = ({ url }) => {
 	const token = url.searchParams.get('token');
 	const invalid = !token || url.searchParams.get('error') === 'INVALID_TOKEN';
 	return { token: invalid ? null : token };

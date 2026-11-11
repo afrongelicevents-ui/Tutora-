@@ -12,16 +12,14 @@ export async function makeUser(
 	name = `Person ${++n}`
 ) {
 	const id = `u_${role}_${++n}_${Math.random().toString(36).slice(2, 7)}`;
-	await db
-		.insert(user)
-		.values({
-			id,
-			name,
-			email: `${id}@example.com`,
-			emailVerified: true,
-			role,
-			twoFactorEnabled: role === 'tutor'
-		});
+	await db.insert(user).values({
+		id,
+		name,
+		email: `${id}@example.com`,
+		emailVerified: true,
+		role,
+		twoFactorEnabled: role === 'tutor'
+	});
 	if (role !== 'tutor') await db.insert(profile).values({ userId: id, consentAt: new Date() });
 	return { id, name, role };
 }

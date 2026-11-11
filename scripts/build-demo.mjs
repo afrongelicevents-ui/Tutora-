@@ -8,6 +8,7 @@ const out = src
 	.replaceAll('{{WORDMARK_B64}}', b64('brand/wordmark.svg'))
 	.replaceAll('{{ICON_B64}}', b64('brand/icon.svg'));
 if (/\{\{[A-Z_]+\}\}/.test(out)) throw new Error('unreplaced placeholder');
-if (/(src|href)=["']https?:/i.test(out)) throw new Error('demo must not load anything from the internet');
+if (/(src|href)=["']https?:/i.test(out))
+	throw new Error('demo must not load anything from the internet');
 writeFileSync('docs/demo/tutora-demo.html', out);
 console.log(`docs/demo/tutora-demo.html: ${(out.length / 1024).toFixed(1)} KB`);

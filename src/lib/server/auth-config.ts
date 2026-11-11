@@ -86,6 +86,8 @@ export function createAuth(deps: AuthDeps) {
 			}
 		},
 		user: {
+			// Changing the login email sends a link to the NEW address; it only changes once clicked.
+			changeEmail: { enabled: true },
 			additionalFields: {
 				role: {
 					type: [...ROLES],

@@ -43,10 +43,14 @@ export const signupSchema = z
 			.union([emailField, z.literal('')])
 			.optional()
 			.transform((v) => (v ? v : undefined)),
+		childName: optionalText(80),
 		consent: checkbox
 	})
 	.superRefine((v, ctx) => {
 		if (!v.consent) ctx.addIssue({ code: 'custom', path: ['consent'], message: 'err_consent' });
+		if (v.accountType === 'parent' && !v.childName) {
+			ctx.addIssue({ code: 'custom', path: ['childName'], message: 'err_child_name' });
+		}
 		if (v.accountType === 'student' && v.isUnder18) {
 			if (!v.parentName)
 				ctx.addIssue({ code: 'custom', path: ['parentName'], message: 'err_parent_required' });
@@ -64,7 +68,7 @@ export const signupSchema = z
 					parentPhone: undefined,
 					parentEmail: undefined
 				}
-			: v
+			: { ...v, childName: undefined }
 	);
 
 export type SignupInput = z.infer<typeof signupSchema>;

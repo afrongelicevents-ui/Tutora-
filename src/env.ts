@@ -30,6 +30,20 @@ export const variables = defineEnvVars({
 			'Resend API key for sending emails. If empty, emails are printed to the server log (development only).',
 		schema: optional
 	},
+	CRON_SECRET: {
+		description:
+			'Optional. Long random text; the hourly reminder job must send it. Reminders are off without it.',
+		schema: optional
+	},
+	TURN_KEY_ID: {
+		description:
+			'Optional. Cloudflare Realtime TURN key id, for calls on networks that block direct connections.',
+		schema: optional
+	},
+	TURN_KEY_API_TOKEN: {
+		description: 'Optional. Cloudflare Realtime TURN key API token (secret).',
+		schema: optional
+	},
 	EMAIL_FROM: {
 		description: 'Sender address for emails, e.g. `Tutora <hello@tutora.co.zw>`.',
 		schema: optional

@@ -55,6 +55,7 @@ describe('signup validation', () => {
 		const r = signupSchema.parse({
 			...ok,
 			accountType: 'parent',
+			childName: 'Kid',
 			isUnder18: 'on',
 			parentName: 'x'
 		});

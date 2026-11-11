@@ -26,6 +26,8 @@
 				<a href="/">{m.nav_home()}</a>
 				{#if user}
 					{#if user.role === 'tutor'}
+						<a href="/tutor/calendar">{m.tnav_calendar()}</a>
+						<a href="/tutor/settings">{m.settings_title()}</a>
 						<a href="/tutor">{m.nav_tutor()}</a>
 					{:else}
 						<a href="/student">{m.nav_dashboard()}</a>
@@ -35,6 +37,7 @@
 						<button class="btn-link" type="submit">{m.nav_logout()}</button>
 					</form>
 				{:else}
+					<a href="/about">{m.about_h()}</a>
 					<a href="/login">{m.nav_login()}</a>
 					<a href="/signup">{m.nav_signup()}</a>
 				{/if}

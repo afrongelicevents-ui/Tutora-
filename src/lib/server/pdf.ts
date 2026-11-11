@@ -12,7 +12,7 @@ const METHOD: Record<ReceiptData['method'], string> = {
 };
 
 /** Standard fonts only cover basic Latin; replace anything else so the PDF never fails. */
-const latin = (s: string) => s.replace(/[^\x20-\x7e -ÿ]/g, '?');
+const latin = (s: string) => s.replace(new RegExp('[^\x20-\x7e\xa0-\xff]', 'g'), '?');
 
 /** A one-page A5 receipt, about 3 KB. */
 export async function receiptPdf(r: ReceiptData): Promise<Uint8Array> {

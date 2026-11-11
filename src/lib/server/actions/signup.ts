@@ -63,6 +63,7 @@ export async function signUp(
 			parentName: v.parentName ?? null,
 			parentPhone: v.parentPhone ?? null,
 			parentEmail: v.parentEmail ?? null,
+			childName: v.childName ?? null,
 			consentAt: new Date()
 		})
 		.onConflictDoNothing();
