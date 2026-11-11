@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0E6B52">
 <title>Tutora demo (sample data)</title>
 <link rel="icon" href="data:image/svg+xml;base64,{{ICON_B64}}">
@@ -141,7 +141,9 @@ const money = (cents) => (S.settings.currency === 'ZWG' ? 'ZiG ' : '$') + (cents
 const initials = (n) => n.split(/\s+/).map((x) => x[0]).slice(0, 2).join('').toUpperCase();
 let uid = 100; const nid = () => ++uid;
 function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => (t.hidden = true), 2600); }
-function download(name, type, text) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+const embedded = (() => { try { return window.self !== window.top; } catch { return true; } })();
+function download(name, type, text) {
+	if (embedded) return toast(`In the real app this downloads ${name}.`); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
 const ICON = {
 	home: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
 	cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
@@ -578,20 +580,20 @@ document.addEventListener('click', (e) => {
 			case 'wa-remind': { const l = S.lessons.find((x) => x.id === id); return toast(`WhatsApp opens with: “Reminder: ${l.subject} lesson today at ${fmtTime(l.start)}.”`); }
 			case 'stab': S.studentTab = t.dataset.v; return render();
 			case 'ptab': S.payTab = t.dataset.v; return render();
-			case 'ics': return download('tutora-lesson.ics', 'text/calendar', makeICS(S.lessons.find((l) => l.id === id))), toast('Calendar file downloaded. Open it to add the lesson.');
-			case 'cancel': if (confirm('Cancel this lesson?')) { S.lessons.find((l) => l.id === id).status = 'cancelled'; toast('Lesson cancelled. The tutor has been told.'); render(); } return;
+			case 'ics': if (embedded) return toast('In the real app this adds the lesson to your phone calendar.'); return download('tutora-lesson.ics', 'text/calendar', makeICS(S.lessons.find((l) => l.id === id))), toast('Calendar file downloaded. Open it to add the lesson.');
+			case 'cancel': S.lessons.find((l) => l.id === id).status = 'cancelled'; toast('Lesson cancelled. The tutor has been told.'); return render();
 			case 'accept-prop': { const q = S.requests.find((x) => x.id === id); q.status = 'accepted'; S.lessons.push({ id: nid(), students: [q.student], subject: q.subject, start: q.proposed, mins: 60, mode: q.mode, status: 'scheduled' }); toast('Booked!'); return render(); }
 			case 'decline-prop': S.requests.find((x) => x.id === id).status = 'declined'; return render();
 			case 'req-accept': { const q = S.requests.find((x) => x.id === id); q.status = 'accepted'; S.lessons.push({ id: nid(), students: [q.student], subject: q.subject, start: q.start, mins: 60, mode: q.mode, status: 'scheduled' }); S.charges[q.student] = (S.charges[q.student] || 0) + 800; toast('Accepted. The student gets an email, and it’s in your calendar.'); return render(); }
 			case 'req-decline': S.requests.find((x) => x.id === id).status = 'declined'; toast('Declined. The student has been told.'); return render();
 			case 'req-propose': { const q = S.requests.find((x) => x.id === id); q.status = 'proposed'; q.proposed = new Date(q.start.getTime() + DAY); toast(`Suggested ${fmtDay(q.proposed)} ${fmtTime(q.proposed)} instead.`); return render(); }
 			case 'pay-ok': { const p = S.payments.find((x) => x.id === id); confirmPayment(p); toast(`Confirmed. Receipt ${p.receipt} sent to both of you.`); return render(); }
-			case 'pay-no': { const p = S.payments.find((x) => x.id === id); const why = prompt('Reason (the student will see this):', 'Reference not found'); if (why === null) return; p.status = 'rejected'; p.reason = why; toast('Rejected. The student has been told why.'); return render(); }
+			case 'pay-no': { const p = S.payments.find((x) => x.id === id); p.status = 'rejected'; p.reason = 'Reference not found'; toast('Rejected (reason: reference not found). The student has been told.'); return render(); }
 			case 'cal-view': S.calView = t.dataset.v; return render();
 			case 'cal-move': S.calDay = new Date(S.calDay.getTime() + (+t.dataset.v) * (S.calView === 'week' ? 7 : 1) * DAY); return render();
 			case 'cal-today': S.calDay = new Date(today0); return render();
 			case 'cal-pick': S.calDay = new Date(t.dataset.d); S.calView = 'day'; return render();
-			case 'csv': { const rows = [['Student', 'Paid', 'Waiting', 'Owed'], ...S.students.map((s) => [s.name, paidBy(s.id) / 100, waitingBy(s.id) / 100, owedBy(s.id) / 100])]; download('tutora-payments.csv', 'text/csv', rows.map((r) => r.join(',')).join('\n')); return toast('CSV downloaded.'); }
+			case 'csv': { const rows = [['Student', 'Paid', 'Waiting', 'Owed'], ...S.students.map((s) => [s.name, paidBy(s.id) / 100, waitingBy(s.id) / 100, owedBy(s.id) / 100])]; if (embedded) return toast('In the real app this downloads a spreadsheet (CSV).'); download('tutora-payments.csv', 'text/csv', rows.map((r) => r.join(',')).join('\n')); return toast('CSV downloaded.'); }
 			case 'record-cash': { const sid = S.students[2].id; const p = { id: nid(), student: sid, amount: 800, method: 'Cash', ref: '', date: new Date(), status: 'waiting', covers: [] }; S.payments.push(p); confirmPayment(p); toast(`Cash recorded for ${student(sid).name}. Receipt ${p.receipt}.`); return render(); }
 			case 'rev-toggle': { const rv = S.reviews.find((x) => x.id === id); rv.hidden = !rv.hidden; return render(); }
 			case 'wiz': S.wizard = Math.max(0, Math.min(WIZ.length - 1, S.wizard + +t.dataset.v)); return render(), window.scrollTo(0, 0);
@@ -601,7 +603,7 @@ document.addEventListener('click', (e) => {
 			case 'show-prices': S.settings.showPrices = t.checked; return;
 			case 'toast': return toast(t.dataset.msg);
 			case 'fake-file': return toast(`${t.dataset.name} would open here (private link that expires in 10 minutes).`);
-			case 'print': return window.print();
+			case 'print': if (embedded) return toast('In the real app this downloads the PDF receipt.'); return window.print();
 			case 'room-admit': r.knocking = false; r.chat.push({ who: 'Tutora', text: 'Rudo joined.' }); return render();
 			case 'room-admit-me': r.admitted = true; r.chat.push({ who: 'Tutora', text: 'You joined. Audio only (saves data).' }); return render();
 			case 'pen': r.color = t.dataset.v; return document.querySelectorAll('[data-act=pen]').forEach((b) => b.setAttribute('aria-pressed', String(b === t)));
