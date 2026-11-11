@@ -72,14 +72,20 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 		}
 		{
 			const [p] = await event.locals.db
-				.select({ must: user.mustChangePassword })
+				.select({ must: user.mustChangePassword, suspendedAt: user.suspendedAt })
 				.from(user)
 				.where(eq(user.id, data.user.id));
-			// after a temporary password made by someone else: choose your own before anything else
-			const path = event.url.pathname;
-			if (p?.must && path !== '/account/password' && path !== '/logout') {
-				if (event.isDataRequest) return new Response('Forbidden', { status: 403 });
-				return new Response(null, { status: 303, headers: { location: '/account/password' } });
+			// an account suspended by the owner is treated as logged out
+			if (p?.suspendedAt) {
+				event.locals.user = undefined;
+				event.locals.session = undefined;
+			} else {
+				// after a temporary password made by someone else: choose your own before anything else
+				const path = event.url.pathname;
+				if (p?.must && path !== '/account/password' && path !== '/logout') {
+					if (event.isDataRequest) return new Response('Forbidden', { status: 403 });
+					return new Response(null, { status: 303, headers: { location: '/account/password' } });
+				}
 			}
 		}
 	}

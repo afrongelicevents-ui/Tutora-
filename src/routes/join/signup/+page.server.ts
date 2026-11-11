@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { signUpTutor } from '#lib/server/actions/setup.ts';
 import { hitLimit, clientIp } from '#lib/server/rate-limit.ts';
 import { formObject } from '#lib/validation/auth.ts';
+import { looksLikeBot } from '#lib/server/bot.ts';
 import { homeFor } from '#lib/roles.ts';
 
 export const load: PageServerLoad = ({ locals }) => {
@@ -14,7 +15,14 @@ export const load: PageServerLoad = ({ locals }) => {
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
 		const f = formObject(await request.formData());
-		const values = { name: f.name ?? '', email: f.email ?? '' };
+		const values = {
+			name: f.name ?? '',
+			email: f.email ?? '',
+			phone: f.phone ?? '',
+			town: f.town ?? ''
+		};
+		if (looksLikeBot(f))
+			return fail(400, { values, errors: { form: 'err_try_again' } as Record<string, string> });
 		const limit = await hitLimit(locals.db, 'signup', clientIp(request));
 		if (!limit.ok)
 			return fail(429, {
@@ -29,7 +37,9 @@ export const actions: Actions = {
 				email: f.email ?? '',
 				password: f.password ?? '',
 				confirm: f.confirm ?? '',
-				terms: f.terms
+				terms: f.terms,
+				phone: f.phone ?? '',
+				town: f.town ?? ''
 			}
 		);
 		if (!r.ok) return fail(400, { values, errors: r.errors });
@@ -41,6 +51,7 @@ export const actions: Actions = {
 			.then(() => true)
 			.catch(() => false);
 		if (!loggedIn) redirect(303, `/verify-email?email=${encodeURIComponent(email)}`);
-		redirect(303, '/tutor-status');
+		// next: the authenticator app, then the profile wizard
+		redirect(303, '/account?welcome=1');
 	}
 };

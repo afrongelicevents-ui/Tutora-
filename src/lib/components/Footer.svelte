@@ -9,7 +9,8 @@
 	<div class="wrap">
 		<p class="small muted">
 			<a href="/privacy">{m.footer_privacy()}</a> ·
-			<a href="/terms">{m.footer_terms()}</a>{#if whatsapp}
+			<a href="/terms">{m.footer_terms()}</a> ·
+			<a href="/contact">{m.footer_contact()}</a>{#if whatsapp}
 				· WhatsApp {formatZwPhone(whatsapp)}{/if}
 		</p>
 	</div>

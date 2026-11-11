@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { signUp } from '#lib/server/actions/signup.ts';
 import { hitLimit, clientIp } from '#lib/server/rate-limit.ts';
 import { formObject } from '#lib/validation/auth.ts';
+import { looksLikeBot } from '#lib/server/bot.ts';
 import { homeFor } from '#lib/roles.ts';
 import { safeNext } from '#lib/server/guards.ts';
 import { emailEnabled } from '#lib/server/auth.ts';
@@ -21,6 +22,8 @@ export const actions: Actions = {
 		const input = formObject(await request.formData());
 		const values = { ...input, password: '' };
 
+		if (looksLikeBot(input))
+			return fail(400, { values, errors: { form: 'err_try_again' } as Record<string, string> });
 		const limit = await hitLimit(locals.db, 'signup', clientIp(request));
 		if (!limit.ok) {
 			return fail(429, {

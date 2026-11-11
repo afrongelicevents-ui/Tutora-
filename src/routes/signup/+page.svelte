@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Field from '#lib/components/Field.svelte';
+	import BotTrap from '#lib/components/BotTrap.svelte';
 	import { m, t } from '#lib/i18n.ts';
 
 	let { form, data } = $props();
@@ -21,6 +22,7 @@
 	{/if}
 
 	<form method="POST" class="stack" novalidate>
+		<BotTrap />
 		<fieldset>
 			<legend>{m.signup_i_am()}</legend>
 			<div class="choice">
@@ -81,6 +83,7 @@
 			autocomplete="tel"
 			value={v.phone ?? ''}
 			error={e.phone}
+			required
 		/>
 
 		<div class="child">

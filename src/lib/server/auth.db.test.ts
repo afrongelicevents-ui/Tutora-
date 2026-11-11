@@ -11,7 +11,7 @@ import { profile, user } from './db/schema.ts';
 import type { DB } from './db/types.ts';
 
 const PASSWORD = 'correct-horse-1';
-const base = { password: PASSWORD, consent: 'on' };
+const base = { password: PASSWORD, consent: 'on', phone: '0771 234 567' };
 
 describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 	let db: DB;
@@ -117,7 +117,15 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 		expect(bad.ok).toBe(false);
 		const r = await signUpTutor(
 			{ auth, db },
-			{ name: 'Mr T. Moyo', email: TUTOR_EMAIL, password: PASSWORD, confirm: PASSWORD, terms: 'on' }
+			{
+				name: 'Mr T. Moyo',
+				email: TUTOR_EMAIL,
+				password: PASSWORD,
+				confirm: PASSWORD,
+				terms: 'on',
+				phone: '+263 77 123 4567',
+				town: 'Harare'
+			}
 		);
 		expect(r.ok).toBe(true);
 		expect(await roleOf(TUTOR_EMAIL)).toBe('tutor');
@@ -125,13 +133,26 @@ describe.skipIf(!hasTestDb)('accounts, roles and 2FA (real database)', () => {
 			.select()
 			.from(tutorProfile)
 			.where(eq(tutorProfile.tutorId, r.ok ? r.userId : ''));
-		expect(p).toMatchObject({ status: 'pending', slug: 'mr-t-moyo', tutorName: 'Mr T. Moyo' });
+		expect(p).toMatchObject({
+			status: 'draft',
+			slug: 'mr-t-moyo',
+			tutorName: 'Mr T. Moyo',
+			phone: '+263771234567',
+			town: 'Harare'
+		});
 		// the email is not confirmed yet; a confirmation link was sent
 		await verify(TUTOR_EMAIL);
 		// the same email cannot join twice
 		const again = await signUpTutor(
 			{ auth, db },
-			{ name: 'Copy', email: TUTOR_EMAIL, password: PASSWORD, confirm: PASSWORD, terms: 'on' }
+			{
+				name: 'Copy',
+				email: TUTOR_EMAIL,
+				password: PASSWORD,
+				confirm: PASSWORD,
+				terms: 'on',
+				phone: '0771234567'
+			}
 		);
 		expect(again).toEqual({ ok: false, errors: { email: 'err_email_taken' } });
 	});

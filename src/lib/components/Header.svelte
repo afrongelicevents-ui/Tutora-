@@ -3,14 +3,28 @@
 	import wordmark from '#lib/assets/wordmark.svg';
 	import type { Role } from '#lib/roles.ts';
 
-	let { user }: { user: { name: string; role: Role } | null } = $props();
+	let { user, unread = 0 }: { user: { name: string; role: Role } | null; unread?: number } =
+		$props();
 </script>
 
 <header>
 	<div class="wrap bar">
 		<a href="/" class="logo">
-			<img src={wordmark} alt={m.site_name()} width="96" height="22" />
+			<img src={wordmark} alt={m.site_name()} width="124" height="28" />
 		</a>
+		{#if user}<a
+				class="bell"
+				href="/notifications"
+				aria-label={unread ? m.notif_unread({ n: unread }) : m.notif_title()}
+				><svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+					><path
+						d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4l2-2Zm4 4h4"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linejoin="round"
+					/></svg
+				>{#if unread}<span class="dot">{unread > 9 ? '9+' : unread}</span>{/if}</a
+			>{/if}
 		<details class="menu">
 			<summary aria-label={m.nav_menu()}>
 				<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -36,15 +50,15 @@
 						<a href="/student/payments">{m.payments_title()}</a>
 						<a href="/student/homework">{m.homework_h()}</a>
 					{/if}
+					<a href="/notifications">{m.notif_title()}</a>
 					<a href="/account">{m.nav_account()}</a>
 					<form method="POST" action="/logout">
 						<button class="btn-link" type="submit">{m.nav_logout()}</button>
 					</form>
 				{:else}
-					<a href="/#find">{m.find_a_tutor()}</a>
-					<a href="/join">{m.nav_join()}</a>
+					<a href="/tutors">{m.find_a_tutor()}</a>
+					<a href="/#how">{m.nav_how()}</a>
 					<a href="/login">{m.nav_login()}</a>
-					<a href="/signup">{m.nav_signup()}</a>
 				{/if}
 			</nav>
 		</details>
@@ -53,8 +67,7 @@
 
 <style>
 	header {
-		background: var(--white);
-		border-bottom: 1px solid var(--line);
+		background: var(--paper-50);
 	}
 	.bar {
 		display: flex;
@@ -68,11 +81,35 @@
 		min-height: 44px;
 	}
 	.logo img {
-		width: 96px;
+		width: 124px;
 		height: auto;
 	}
 	.menu {
 		position: relative;
+	}
+	.bell {
+		position: relative;
+		display: grid;
+		place-items: center;
+		width: 48px;
+		height: 48px;
+		margin-left: auto;
+		color: var(--ink-900);
+	}
+	.dot {
+		position: absolute;
+		top: 6px;
+		right: 4px;
+		min-width: 18px;
+		height: 18px;
+		padding: 0 4px;
+		border-radius: 9px;
+		background: var(--clay-600);
+		color: #fff;
+		font-size: 11px;
+		font-weight: 700;
+		line-height: 18px;
+		text-align: center;
 	}
 	summary {
 		list-style: none;

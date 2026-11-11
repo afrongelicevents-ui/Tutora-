@@ -38,7 +38,7 @@
 
 <a class="sr-only skip" href="#main">{m.skip_to_content()}</a>
 {#if data.testSite}<div class="testbar" role="note">{m.test_site_bar()}</div>{/if}
-<Header user={data.user} />
+<Header user={data.user} unread={data.unread} />
 <main id="main">
 	{@render children()}
 </main>

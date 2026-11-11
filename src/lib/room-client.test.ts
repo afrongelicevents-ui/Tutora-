@@ -44,7 +44,8 @@ describe('settings validation', () => {
 		expect(pricesSchema.parse({ defaultPrice: '12.5', currency: 'ZWG' })).toEqual({
 			defaultPrice: 1250,
 			showPrices: false,
-			currency: 'ZWG'
+			currency: 'ZWG',
+			offersIntro: false
 		});
 		expect(pricesSchema.safeParse({ defaultPrice: '-3', currency: 'USD' }).success).toBe(false);
 		expect(

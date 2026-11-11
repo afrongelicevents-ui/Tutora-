@@ -6,7 +6,8 @@ import {
 	resultHighlight,
 	review,
 	tutorProfile,
-	subject
+	subject,
+	platformSubject
 } from './db/app.schema.ts';
 import type { AvailabilityRow } from '../validation/settings.ts';
 
@@ -108,6 +109,13 @@ export async function activeTutorBySlug(db: DB, slug: string): Promise<SiteSetti
 	return row ?? null;
 }
 
+/** Any tutor's settings by page address, whatever their status (owner preview only). */
+export async function tutorBySlug(db: DB, slug: string): Promise<SiteSettings | null> {
+	if (!/^[a-z0-9-]{1,40}$/.test(slug)) return null;
+	const [row] = await db.select().from(tutorProfile).where(eq(tutorProfile.slug, slug));
+	return row ?? null;
+}
+
 export async function isActiveTutor(db: DB, tutorId: string): Promise<boolean> {
 	const [row] = await db
 		.select({ id: tutorProfile.tutorId })
@@ -120,52 +128,163 @@ export interface TutorCard {
 	slug: string;
 	name: string;
 	headline: string | null;
+	bio: string | null;
 	town: string | null;
 	hasPhoto: boolean;
 	photoVersion: number;
 	tutorId: string;
 	subjects: string[];
+	levels: string[];
 	lessonModes: SiteSettings['lessonModes'];
+	/** cheapest lesson price shown publicly, or null for "Ask for price" */
+	fromPriceCents: number | null;
+	currency: SiteSettings['currency'];
+	/** only real, visible reviews; null when there are none */
+	rating: number | null;
+	reviewCount: number;
+	/** lessons that really took place */
+	lessonCount: number;
+	createdAt: Date;
+}
+
+export interface TutorFilter {
+	subject?: string;
+	level?: string;
+	mode?: 'online' | 'in_person' | '';
+	location?: string;
+	sort?: 'rating' | 'price' | 'newest' | '';
 }
 
 /**
- * Approved tutors for "Find a tutor", optionally only those teaching a subject
- * (matched by name, ignoring case). Tutors without a name yet are left out.
+ * Approved tutors for "Find a tutor" and the homepage, with real ratings and lesson counts.
+ * Filters: subject and level (by name, ignoring case), online / in person, town.
  */
-export async function listTutors(db: DB, subjectQuery?: string): Promise<TutorCard[]> {
+export async function listTutors(db: DB, f: TutorFilter | string = {}): Promise<TutorCard[]> {
+	const filter: TutorFilter = typeof f === 'string' ? { subject: f } : f;
 	const tutors = await db
 		.select()
 		.from(tutorProfile)
 		.where(and(eq(tutorProfile.status, 'active'), isNotNull(tutorProfile.tutorName)))
 		.orderBy(asc(tutorProfile.tutorName));
 	if (!tutors.length) return [];
-	const subs = await db
-		.select({ tutorId: subject.tutorId, name: subject.name })
-		.from(subject)
-		.where(
-			and(
-				eq(subject.active, true),
-				inArray(
-					subject.tutorId,
-					tutors.map((t) => t.tutorId)
-				)
-			)
-		)
-		.orderBy(asc(subject.sortOrder), asc(subject.id));
-	const q = subjectQuery?.trim().toLowerCase();
-	return tutors
-		.map((t) => ({
+	const ids = tutors.map((t) => t.tutorId);
+	const [subs, ratings, lessons] = await Promise.all([
+		db
+			.select({
+				tutorId: subject.tutorId,
+				name: subject.name,
+				levels: subject.levels,
+				priceCents: subject.priceCents
+			})
+			.from(subject)
+			.where(and(eq(subject.active, true), inArray(subject.tutorId, ids)))
+			.orderBy(asc(subject.sortOrder), asc(subject.id)),
+		db
+			.select({
+				tutorId: review.tutorId,
+				avg: sql<number>`avg(${review.rating})::float`,
+				n: sql<number>`count(*)::int`
+			})
+			.from(review)
+			.where(and(inArray(review.tutorId, ids), eq(review.hidden, false)))
+			.groupBy(review.tutorId),
+		db.execute(sql`
+			select l.tutor_id as "tutorId", count(*)::int as n
+			from attendee a join lesson l on l.id = a.lesson_id
+			where l.tutor_id in (${sql.join(
+				ids.map((id) => sql`${id}`),
+				sql`, `
+			)})
+			  and l.status = 'scheduled' and a.status = 'booked' and l.ends_at < now()
+			  and coalesce(a.attendance, 'completed') <> 'absent'
+			group by l.tutor_id`)
+	]);
+	const lessonRows = ((lessons as unknown as { rows?: { tutorId: string; n: number }[] }).rows ??
+		(lessons as unknown as { tutorId: string; n: number }[])) as { tutorId: string; n: number }[];
+	const lower = (v?: string) => v?.trim().toLowerCase() ?? '';
+	const q = {
+		subject: lower(filter.subject),
+		level: lower(filter.level),
+		town: lower(filter.location)
+	};
+	let cards: TutorCard[] = tutors.map((t) => {
+		const mine = subs.filter((x) => x.tutorId === t.tutorId);
+		const prices = t.showPrices
+			? mine.map((x) => x.priceCents ?? t.defaultPriceCents).filter((x): x is number => x != null)
+			: [];
+		const r = ratings.find((x) => x.tutorId === t.tutorId);
+		return {
 			slug: t.slug,
 			name: t.tutorName!,
 			headline: t.headline,
+			bio: t.bio,
 			town: t.town,
 			hasPhoto: !!t.photoKey,
 			photoVersion: t.photoVersion,
 			tutorId: t.tutorId,
-			subjects: subs.filter((x) => x.tutorId === t.tutorId).map((x) => x.name),
-			lessonModes: t.lessonModes
-		}))
-		.filter((t) => !q || t.subjects.some((n) => n.toLowerCase().includes(q)));
+			subjects: mine.map((x) => x.name),
+			levels: [
+				...new Set(
+					mine.flatMap((x) =>
+						x.levels
+							.split(',')
+							.map((l) => l.trim())
+							.filter(Boolean)
+					)
+				)
+			],
+			lessonModes: t.lessonModes,
+			fromPriceCents: prices.length ? Math.min(...prices) : null,
+			currency: t.currency,
+			rating: r && r.n > 0 ? Math.round(r.avg * 10) / 10 : null,
+			reviewCount: r?.n ?? 0,
+			lessonCount: lessonRows.find((x) => x.tutorId === t.tutorId)?.n ?? 0,
+			createdAt: t.createdAt
+		};
+	});
+	cards = cards.filter(
+		(t) =>
+			(!q.subject || t.subjects.some((n) => n.toLowerCase().includes(q.subject))) &&
+			(!q.level || t.levels.some((n) => n.toLowerCase().includes(q.level))) &&
+			(!q.town || (t.town ?? '').toLowerCase().includes(q.town)) &&
+			(!filter.mode || t.lessonModes === 'both' || t.lessonModes === filter.mode)
+	);
+	if (filter.sort === 'rating')
+		cards.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0) || b.reviewCount - a.reviewCount);
+	else if (filter.sort === 'price')
+		cards.sort((a, b) => (a.fromPriceCents ?? 1e12) - (b.fromPriceCents ?? 1e12));
+	else if (filter.sort === 'newest') cards.sort((a, b) => +b.createdAt - +a.createdAt);
+	return cards;
+}
+
+/** Up to 3 tutors for the homepage: best rated and most lessons first. */
+export async function popularTutors(db: DB, n = 3) {
+	const all = await listTutors(db);
+	return all
+		.sort(
+			(a, b) =>
+				(b.rating ?? 0) * Math.log2(2 + b.reviewCount) -
+					(a.rating ?? 0) * Math.log2(2 + a.reviewCount) || b.lessonCount - a.lessonCount
+		)
+		.slice(0, n);
+}
+
+/** The standard subjects list (owner admin) plus any subject an approved tutor teaches. */
+export async function subjectOptions(db: DB): Promise<string[]> {
+	const [std, taught] = await Promise.all([
+		db
+			.select({ name: platformSubject.name })
+			.from(platformSubject)
+			.orderBy(asc(platformSubject.sortOrder)),
+		allSubjectNames(db)
+	]);
+	const seen = new Set<string>();
+	return [...taught, ...std.map((x) => x.name)].filter((n) => {
+		const k = n.toLowerCase();
+		if (seen.has(k)) return false;
+		seen.add(k);
+		return true;
+	});
 }
 
 /** Distinct subject names taught by approved tutors (for the "Find a tutor" filter). */
@@ -322,7 +441,12 @@ export interface PublicSite {
 	subjects: { id: number; name: string; levels: string; priceCents: number | null }[];
 	packages: { id: number; name: string; lessonCount: number; priceCents: number | null }[];
 	results: { value: string; label: string }[];
-	reviews: { displayName: string; rating: number; text: string }[];
+	reviews: { displayName: string; rating: number; text: string; reply: string | null }[];
+	/** average of the visible reviews, or null when there are none */
+	rating: number | null;
+	offersIntro: boolean;
+	/** weekly free times, Zimbabwe time */
+	times: { weekday: number; startMinute: number; endMinute: number }[];
 	/** sections with content; empty ones are hidden */
 	has: { about: boolean; subjects: boolean; results: boolean; reviews: boolean; anything: boolean };
 }
@@ -339,7 +463,12 @@ export async function publicSite(db: DB, s: SiteSettings): Promise<PublicSite> {
 		listPackages(db, tutorId),
 		listResults(db, tutorId),
 		db
-			.select({ displayName: review.displayName, rating: review.rating, text: review.text })
+			.select({
+				displayName: review.displayName,
+				rating: review.rating,
+				text: review.text,
+				reply: review.reply
+			})
 			.from(review)
 			.where(and(eq(review.tutorId, tutorId), eq(review.hidden, false)))
 			.orderBy(asc(review.id))
@@ -391,6 +520,15 @@ export async function publicSite(db: DB, s: SiteSettings): Promise<PublicSite> {
 		})),
 		results: shownResults,
 		reviews,
+		rating: reviews.length
+			? Math.round((reviews.reduce((a, r) => a + r.rating, 0) / reviews.length) * 10) / 10
+			: null,
+		offersIntro: s.offersIntro,
+		times: (await listAvailability(db, tutorId)).map((t) => ({
+			weekday: t.weekday,
+			startMinute: t.startMinute,
+			endMinute: t.endMinute
+		})),
 		has
 	};
 }
@@ -408,7 +546,8 @@ export function paymentDetails(s: SiteSettings) {
 			: null,
 		ecocash: s.ecocashNumber ? { number: s.ecocashNumber, name: s.ecocashName } : null,
 		innbucks: s.innbucksNumber ? { number: s.innbucksNumber, name: s.innbucksName } : null,
-		note: s.paymentNote
+		note: s.paymentNote,
+		cash: s.acceptsCash
 	};
 }
 

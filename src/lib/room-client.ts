@@ -79,7 +79,10 @@ export class RoomClient {
 		private lessonId: number,
 		private me: { id: string; name: string; isTutor: boolean },
 		private ice: RTCIceServer[],
-		private on: RoomEvents
+		private on: RoomEvents,
+		/** group lessons go through the relay (TURN) when one is set up: phones then send
+		 * their stream once instead of to every other person */
+		private relayOnly = false
 	) {}
 
 	async start() {
@@ -161,7 +164,11 @@ export class RoomClient {
 	private peer(other: string): RTCPeerConnection {
 		let pc = this.pcs.get(other);
 		if (pc) return pc;
-		pc = new RTCPeerConnection({ iceServers: this.ice });
+		const hasTurn = this.ice.some((s) => [s.urls].flat().some((u) => String(u).startsWith('turn')));
+		pc = new RTCPeerConnection({
+			iceServers: this.ice,
+			iceTransportPolicy: this.relayOnly && hasTurn ? 'relay' : 'all'
+		});
 		this.pcs.set(other, pc);
 		for (const t of this.local?.getTracks() ?? []) pc.addTrack(t, this.local!);
 		if (this.video) pc.addTrack(this.video, this.local!);

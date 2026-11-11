@@ -48,7 +48,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		details:
 			tutor.status === 'active'
 				? paymentDetails(s)
-				: { bank: null, ecocash: null, innbucks: null, note: null },
+				: { bank: null, ecocash: null, innbucks: null, note: null, cash: false },
 		balance,
 		today: localDate(new Date()),
 		payments: payments.map((p) => ({
@@ -122,6 +122,9 @@ export const actions: Actions = {
 				error: 'err_rate_limited',
 				minutes: Math.ceil(limit.retryAfterSeconds / 60)
 			});
+		// only for tutors who take cash
+		if (tutor.status !== 'active' || !(await getSettings(locals.db, tutor.tutorId)).acceptsCash)
+			return fail(400, { error: 'err_no_cash' });
 		const f = formObject(await request.formData());
 		const cents = parseMoney(f.amount ?? '');
 		if (!cents) return fail(400, { error: 'err_money' });

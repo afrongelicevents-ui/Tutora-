@@ -22,7 +22,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		recentPayments(locals.db, t, 30),
 		balances(locals.db, t),
 		listStudents(locals.db, t),
-		monthlyTotals(locals.db, t, addDays(now, -366))
+		monthlyTotals(locals.db, t, addDays(now, -3 * 366))
 	]);
 	const rows = students
 		.map((x) => ({
@@ -35,7 +35,19 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		currency: s.currency,
 		today: localDate(now),
 		thisMonth: localDate(now).slice(0, 7),
-		months,
+		months: months.slice(0, 24),
+		// totals per year (from the monthly totals)
+		years: Object.values(
+			months.reduce<
+				Record<string, { year: string; currency: 'USD' | 'ZWG'; total: number; count: number }>
+			>((acc, x) => {
+				const k = x.month.slice(0, 4) + x.currency;
+				acc[k] ??= { year: x.month.slice(0, 4), currency: x.currency, total: 0, count: 0 };
+				acc[k].total += x.total;
+				acc[k].count += x.count;
+				return acc;
+			}, {})
+		),
 		pending: await Promise.all(
 			pending.map(async (p) => ({
 				...p,

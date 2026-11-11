@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, inArray, lt, ne, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import {
 	attendee,
@@ -148,6 +148,24 @@ export function studentLessons(db: DB, tutorId: string, userId: string) {
 }
 
 /** The tutor's private note on one place in one of THEIR lessons. */
+/** After the lesson the tutor marks each student: completed or absent (only in THEIR lessons). */
+export async function setAttendance(
+	db: DB,
+	tutorId: string,
+	attendeeId: number,
+	value: 'completed' | 'absent' | null
+) {
+	await db
+		.update(attendee)
+		.set({ attendance: value })
+		.where(
+			and(
+				eq(attendee.id, attendeeId),
+				sql`${attendee.lessonId} in (select ${lesson.id} from ${lesson} where ${lesson.tutorId} = ${tutorId} and ${lesson.startsAt} < now() and ${lesson.endsAt} > now() - interval '7 days')`
+			)
+		);
+}
+
 export async function setPrivateNote(
 	db: DB,
 	tutorId: string,
@@ -239,6 +257,46 @@ export async function handIn(
 	return row;
 }
 
+/** Answers handed in to this tutor that are not checked yet (newest first). */
+export function answersToCheck(db: DB, tutorId: string) {
+	return db
+		.select({
+			id: homeworkAnswer.id,
+			note: homeworkAnswer.note,
+			fileKey: homeworkAnswer.fileKey,
+			fileName: homeworkAnswer.fileName,
+			createdAt: homeworkAnswer.createdAt,
+			title: homework.title,
+			userId: homework.userId,
+			studentName: user.name
+		})
+		.from(homeworkAnswer)
+		.innerJoin(homework, eq(homework.id, homeworkAnswer.homeworkId))
+		.innerJoin(user, eq(user.id, homework.userId))
+		.where(and(eq(homework.tutorId, tutorId), sql`${homeworkAnswer.checkedAt} is null`))
+		.orderBy(desc(homeworkAnswer.createdAt));
+}
+
+/** The tutor marks an answer checked, with an optional comment (only answers to THEIR homework). */
+export async function checkAnswer(
+	db: DB,
+	tutorId: string,
+	answerId: number,
+	comment: string | null
+) {
+	const done = await db
+		.update(homeworkAnswer)
+		.set({ feedback: comment, checkedAt: new Date() })
+		.where(
+			and(
+				eq(homeworkAnswer.id, answerId),
+				sql`${homeworkAnswer.homeworkId} in (select ${homework.id} from ${homework} where ${homework.tutorId} = ${tutorId})`
+			)
+		)
+		.returning({ id: homeworkAnswer.id });
+	return done.length > 0;
+}
+
 export async function giveFeedback(
 	db: DB,
 	tutorId: string,
@@ -259,23 +317,29 @@ export async function giveFeedback(
 /* ---------- reviews ---------- */
 
 /** Only people with at least one past lesson that wasn't cancelled can review. */
-/** Only people with at least one past lesson with THIS tutor that wasn't cancelled can review. */
+/**
+ * Only after a completed, paid lesson with THIS tutor: the lesson has ended, the student was
+ * not marked absent, it was not a free intro chat, and it was paid (or covered by a package).
+ */
 export async function canReview(db: DB, tutorId: string, userId: string, now = new Date()) {
-	const r = await db
-		.select({ id: attendee.id })
-		.from(attendee)
-		.innerJoin(lesson, eq(lesson.id, attendee.lessonId))
-		.where(
-			and(
-				eq(attendee.userId, userId),
-				eq(lesson.tutorId, tutorId),
-				eq(attendee.status, 'booked'),
-				ne(lesson.status, 'cancelled'),
-				lt(lesson.endsAt, now)
-			)
-		)
-		.limit(1);
-	return r.length > 0;
+	const r = await db.execute(sql`
+		select 1
+		from ${attendee} a
+		join ${lesson} l on l.id = a.lesson_id
+		where a.user_id = ${userId} and l.tutor_id = ${tutorId}
+		  and a.status = 'booked' and l.status <> 'cancelled' and l.ends_at < ${now}
+		  and l.kind = 'lesson' and coalesce(a.attendance, 'completed') <> 'absent'
+		  and (
+		    a.student_package_id is not null
+		    or exists (
+		      select 1 from charge c
+		      where c.attendee_id = a.id and not c.voided
+		        and c.amount_cents <= coalesce((select sum(pa.amount_cents) from payment_allocation pa where pa.charge_id = c.id), 0)
+		    )
+		  )
+		limit 1`);
+	const rows = (r as unknown as { rows?: unknown[] }).rows ?? (r as unknown as unknown[]);
+	return rows.length > 0;
 }
 
 export async function myReview(db: DB, tutorId: string, userId: string) {
@@ -308,7 +372,8 @@ export async function postReview(
 		.values({ tutorId, userId, displayName: displayNameFor(fullName), rating, text })
 		.onConflictDoUpdate({
 			target: [review.tutorId, review.userId],
-			set: { rating, text, createdAt: now }
+			// new words: the tutor's old reply no longer fits; a hidden review stays hidden
+			set: { rating, text, createdAt: now, reply: null, repliedAt: null }
 		})
 		.returning();
 	return row;
@@ -317,12 +382,27 @@ export async function postReview(
 export const allReviews = (db: DB, tutorId: string) =>
 	db.select().from(review).where(eq(review.tutorId, tutorId)).orderBy(desc(review.createdAt));
 
-/** The tutor can hide or show a review of THEM, but never change its words. */
-export async function setReviewHidden(db: DB, tutorId: string, id: number, hidden: boolean) {
+/** Only the platform owner can hide or show a review (e.g. after a report); nobody edits its words. */
+export async function setReviewHidden(db: DB, id: number, hidden: boolean) {
+	await db.update(review).set({ hidden }).where(eq(review.id, id));
+}
+
+/** The tutor answers a review of THEM (shown under it). Empty text removes the reply. */
+export async function replyToReview(db: DB, tutorId: string, id: number, text: string | null) {
 	await db
 		.update(review)
-		.set({ hidden })
+		.set({ reply: text, repliedAt: text ? new Date() : null })
 		.where(and(eq(review.id, id), eq(review.tutorId, tutorId)));
+}
+
+/** The tutor reports an abusive review of THEM to the Tutora team. */
+export async function reportReview(db: DB, tutorId: string, id: number, reason: string) {
+	const done = await db
+		.update(review)
+		.set({ reportedAt: new Date(), reportReason: reason })
+		.where(and(eq(review.id, id), eq(review.tutorId, tutorId)))
+		.returning({ id: review.id });
+	return done.length > 0;
 }
 
 export async function countStudents(db: DB, tutorId: string) {

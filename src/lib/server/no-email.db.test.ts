@@ -84,6 +84,7 @@ describe.skipIf(!hasTestDb)('running without an email service (real database)', 
 				email: 'rudo@example.com',
 				password: PW,
 				consent: 'on',
+				phone: '+263771234567',
 				accountType: 'student'
 			}
 		);

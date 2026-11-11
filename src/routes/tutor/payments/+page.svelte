@@ -93,6 +93,20 @@
 	<a class="btn btn-secondary" href="/tutor/payments/export" download>{m.download_csv()}</a>
 	<p class="small muted">{m.record_cash_where()}</p>
 
+	<h2>{m.by_year()}</h2>
+	<ul class="list card">
+		{#each data.years as y (y.year + y.currency)}
+			<li>
+				<span>{y.year}</span><b
+					>{formatMoney(y.total, y.currency)}
+					<span class="small muted">({m.payments_count({ n: y.count })})</span></b
+				>
+			</li>
+		{:else}
+			<li class="muted small">{m.none_yet()}</li>
+		{/each}
+	</ul>
+
 	<h2>{m.by_month()}</h2>
 	<ul class="list card">
 		{#each data.months as mo (mo.month + mo.currency)}

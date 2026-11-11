@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Field from '#lib/components/Field.svelte';
+	import BotTrap from '#lib/components/BotTrap.svelte';
 	import { m, t } from '#lib/i18n.ts';
 	let { form } = $props();
 	const e = $derived((form && 'errors' in form ? form.errors : {}) as Record<string, string>);
@@ -15,6 +16,7 @@
 			{t(e.form, { minutes: (form as { retryMinutes?: number })?.retryMinutes ?? 60 })}
 		</p>{/if}
 	<form method="POST" class="stack" novalidate>
+		<BotTrap />
 		<Field
 			name="name"
 			label={m.set_name()}
@@ -32,6 +34,23 @@
 			value={v.email ?? ''}
 			error={e.email}
 			required
+		/>
+		<Field
+			name="phone"
+			type="tel"
+			label={m.field_phone()}
+			hint={m.field_phone_hint()}
+			autocomplete="tel"
+			value={v.phone ?? ''}
+			error={e.phone}
+			required
+		/>
+		<Field
+			name="town"
+			label={m.join_town()}
+			hint={m.join_town_hint()}
+			autocomplete="address-level2"
+			value={v.town ?? ''}
 		/>
 		<Field
 			name="password"

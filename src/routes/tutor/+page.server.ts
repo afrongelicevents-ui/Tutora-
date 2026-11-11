@@ -1,4 +1,8 @@
+import { fail } from '@sveltejs/kit';
+import { answersToCheck } from '#lib/server/people.ts';
+import { myNotifications } from '#lib/server/notify.ts';
 import { requireTutor } from '#lib/server/guards.ts';
+import { SubmitFail, submitForApproval } from '#lib/server/tutor.ts';
 import type { Actions, PageServerLoad } from './$types';
 import { inArray } from 'drizzle-orm';
 import { lessonsBetween, pendingRequests } from '#lib/server/bookings.ts';
@@ -53,8 +57,26 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			}))
 		),
 		currency: s.currency,
-		missing
+		missing,
+		toCheck: (await answersToCheck(locals.db, t)).length,
+		activity: (await myNotifications(locals.db, t, 5)).map((n) => ({
+			id: n.id,
+			title: n.title,
+			createdAt: n.createdAt
+		}))
 	};
 };
 
-export const actions: Actions = inboxActions;
+export const actions: Actions = {
+	...inboxActions,
+	submit: async ({ locals, url }) => {
+		const t = requireTutor(locals.user, url).id;
+		try {
+			await submitForApproval(locals.db, t);
+		} catch (e) {
+			if (e instanceof SubmitFail) return fail(400, { error: e.message });
+			throw e;
+		}
+		return { done: 'submitted' };
+	}
+};

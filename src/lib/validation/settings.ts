@@ -75,6 +75,7 @@ export const teachingSchema = z.object({
 export const pricesSchema = z.object({
 	defaultPrice: moneyField,
 	showPrices: checkbox,
+	offersIntro: checkbox,
 	currency: z.enum(['USD', 'ZWG'], 'err_required')
 });
 
@@ -93,7 +94,8 @@ export const paymentDetailsSchema = z.object({
 	ecocashName: text(80),
 	innbucksNumber: phone,
 	innbucksName: text(80),
-	paymentNote: text(300)
+	paymentNote: text(300),
+	acceptsCash: checkbox
 });
 
 export const subjectSchema = z.object({

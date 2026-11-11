@@ -4,8 +4,8 @@ import { lesson, roomFile, roomParticipant, roomSignal } from './db/app.schema.t
 import { user } from './db/auth.schema.ts';
 import { isAttendee } from './bookings.ts';
 
-/** The room opens 30 minutes before the lesson and closes 2 hours after it ends. */
-export const OPEN_BEFORE_MIN = 30;
+/** The room opens 10 minutes before the lesson and closes 2 hours after it ends. */
+export const OPEN_BEFORE_MIN = 10;
 export const CLOSE_AFTER_MIN = 120;
 export const MAX_SIGNAL_BYTES = 16_000;
 /** A participant counts as present if they polled in the last 30 seconds. */
@@ -25,7 +25,7 @@ export async function roomAccess(
 		id: string;
 		role: string;
 		twoFactorEnabled?: boolean | null;
-		tutorStatus?: 'pending' | 'active' | 'suspended' | null;
+		tutorStatus?: 'draft' | 'pending' | 'active' | 'rejected' | 'suspended' | null;
 	},
 	lessonId: number,
 	now = new Date()

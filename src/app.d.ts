@@ -16,7 +16,7 @@ declare global {
 				role: Role;
 				twoFactorEnabled: boolean;
 				/** for tutors: waiting for approval, approved, or suspended */
-				tutorStatus?: 'pending' | 'active' | 'suspended' | null;
+				tutorStatus?: 'draft' | 'pending' | 'active' | 'rejected' | 'suspended' | null;
 			};
 			session?: Session;
 		}

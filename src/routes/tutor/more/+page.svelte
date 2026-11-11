@@ -1,4 +1,5 @@
 <script lang="ts">
+	let { data } = $props();
 	import { m } from '#lib/i18n.ts';
 </script>
 
@@ -15,7 +16,14 @@
 	<a class="big-opt" href="/tutor/reviews"
 		>{m.reviews_title()}<small>{m.more_reviews_hint()}</small></a
 	>
-	<a class="big-opt" href="/">{m.more_public()}<small>{m.more_public_hint()}</small></a>
+	<a class="big-opt" href="/tutor/homework"
+		>{m.homework_h()}<small>{m.more_homework_hint()}</small></a
+	>
+	<a class="big-opt" href="/notifications">{m.notif_title()}<small>{m.more_notif_hint()}</small></a>
+	{#if data.status === 'active'}<a class="big-opt" href="/t/{data.slug}"
+			>{m.more_public()}<small>{m.more_public_hint()}</small></a
+		>{/if}
+	<a class="big-opt" href="/account">{m.nav_account()}<small>{m.more_account_hint()}</small></a>
 	<a class="big-opt" href="/account/2fa">{m.account_2fa()}<small>{m.more_2fa_hint()}</small></a>
 	<form method="POST" action="/logout">
 		<button class="btn btn-secondary btn-block" type="submit">{m.nav_logout()}</button>

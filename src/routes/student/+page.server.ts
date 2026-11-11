@@ -12,6 +12,7 @@ import {
 import { packagesForUser } from '#lib/server/billing.ts';
 import { canReview, tutorsForUser } from '#lib/server/people.ts';
 import { getSettings } from '#lib/server/settings.ts';
+import { attentionFor, myChildren, myFavourites } from '#lib/server/student.ts';
 import { requireRole } from '#lib/server/guards.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
 import { OPEN_BEFORE_MIN, CLOSE_AFTER_MIN } from '#lib/server/room.ts';
@@ -23,11 +24,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	requireRole(locals.user, url, ['student', 'parent']);
 	const u = locals.user!;
 	const now = new Date();
-	const [lessons, requests, packages, tutors] = await Promise.all([
+	const [lessons, requests, packages, tutors, attention, favourites, kids] = await Promise.all([
 		lessonsForUser(locals.db, u.id),
 		requestsForUser(locals.db, u.id),
 		packagesForUser(locals.db, u.id),
-		tutorsForUser(locals.db, u.id)
+		tutorsForUser(locals.db, u.id),
+		attentionFor(locals.db, u.id, now),
+		myFavourites(locals.db, u.id),
+		u.role === 'parent' ? myChildren(locals.db, u.id) : []
 	]);
 	// each tutor's own cancel rule and contact; and whether this person may review them
 	const myTutors = await Promise.all(
@@ -48,6 +52,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	return {
 		now,
 		name: u.name,
+		isParent: u.role === 'parent',
+		attention,
+		favourites,
+		children: kids.map((k) => ({ id: k.id, name: k.name })),
 		tutors: myTutors.map(({ tutorId: _id, ...t }) => t),
 		upcoming: lessons
 			.filter((l) => l.endsAt.getTime() + CLOSE_AFTER_MIN * 60_000 > now.getTime())

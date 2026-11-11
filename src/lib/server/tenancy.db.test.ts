@@ -43,7 +43,8 @@ import {
 	handIn,
 	listStudents,
 	setPrivateNote,
-	setReviewHidden,
+	replyToReview,
+	reportReview,
 	studentLessons,
 	tutorsForUser
 } from './people.ts';
@@ -213,8 +214,10 @@ describe.skipIf(!hasTestDb)('many tutors: every tutor only sees their own data',
 			.insert(review)
 			.values({ tutorId: A, userId: s.id, displayName: 'L', rating: 5, text: 'Great' })
 			.returning();
-		await setReviewHidden(db, B, r.id, true);
-		expect((await db.select().from(review).where(eq(review.id, r.id)))[0].hidden).toBe(false);
+		// another tutor cannot reply to (or report) A's review
+		await replyToReview(db, B, r.id, 'sneaky');
+		expect((await db.select().from(review).where(eq(review.id, r.id)))[0].reply).toBeNull();
+		expect(await reportReview(db, B, r.id, 'sneaky')).toBe(false);
 		const ev = await addEvent(db, A, {
 			title: 'Meeting',
 			startsAt: zw(2, '09:00'),

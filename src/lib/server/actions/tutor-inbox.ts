@@ -31,7 +31,8 @@ export const inboxActions: Actions = {
 				locals.db,
 				r.userId,
 				m.email_booked_s(),
-				m.email_booked_b({ when: fmtDayTime(r.startsAt) })
+				m.email_booked_b({ when: fmtDayTime(r.startsAt) }),
+				{ kind: 'booking', link: '/student' }
 			);
 			return { done: 'accepted' };
 		} catch (e) {
@@ -53,7 +54,8 @@ export const inboxActions: Actions = {
 				m.email_declined_b({
 					when: fmtDayTime(b.startsAt),
 					extra: f.message ? m.email_message_line({ text: message(f.message) ?? '' }) : ''
-				})
+				}),
+				{ kind: 'booking', link: '/student#requests' }
 			);
 			return { done: 'declined' };
 		} catch (e) {
@@ -78,7 +80,8 @@ export const inboxActions: Actions = {
 				m.email_proposed_b({
 					when: fmtDayTime(when),
 					extra: f.message ? m.email_message_line({ text: message(f.message) ?? '' }) : ''
-				})
+				}),
+				{ kind: 'booking', link: '/student#requests' }
 			);
 			return { done: 'proposed' };
 		} catch (e) {
@@ -96,7 +99,8 @@ export const inboxActions: Actions = {
 				locals.db,
 				r.userId,
 				m.email_confirmed_s({ receipt: receiptNumber(r.receiptNo) }),
-				m.email_confirmed_b({ amount: formatMoney(r.amountCents, r.currency) })
+				m.email_confirmed_b({ amount: formatMoney(r.amountCents, r.currency) }),
+				{ kind: 'payment', link: '/student/payments?tab=history' }
 			);
 			return { done: 'confirmed', receipt: receiptNumber(r.receiptNo) };
 		} catch (e) {
@@ -120,7 +124,8 @@ export const inboxActions: Actions = {
 					m.email_rejected_b({
 						amount: formatMoney(before.amountCents, before.currency),
 						extra: f.reason ? m.email_reason_line({ text: message(f.reason) ?? '' }) : ''
-					})
+					}),
+					{ kind: 'payment', link: '/student/payments?tab=history' }
 				);
 			return { done: 'rejected' };
 		} catch (e) {

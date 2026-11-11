@@ -22,7 +22,8 @@ export const load: PageServerLoad = async ({ locals, url, params, fetch }) => {
 		title: l?.subjectName ?? null,
 		startsAt: access.lesson.startsAt,
 		endsAt: access.lesson.endsAt,
-		ice: await iceServers(fetch)
+		ice: await iceServers(fetch),
+		group: access.lesson.capacity > 1
 	};
 };
 

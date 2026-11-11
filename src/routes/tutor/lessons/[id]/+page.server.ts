@@ -1,7 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { BookingFail, cancelLesson, lessonWithPeople } from '#lib/server/bookings.ts';
-import { setPrivateNote } from '#lib/server/people.ts';
+import { setAttendance, setPrivateNote } from '#lib/server/people.ts';
 import { requireTutor } from '#lib/server/guards.ts';
 import { notifyUser } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
@@ -18,7 +18,7 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	const t = requireTutor(locals.user, url).id;
 	const l = await lessonWithPeople(locals.db, lessonId(params.id), t);
 	if (!l) error(404, 'Not found');
-	return { lesson: l };
+	return { lesson: l, started: l.startsAt.getTime() <= Date.now() };
 };
 
 export const actions: Actions = {
@@ -29,6 +29,31 @@ export const actions: Actions = {
 		const a = l?.people.find((p) => p.attendeeId === Number(f.attendeeId));
 		if (!a) return fail(404, { error: 'err_not_found' });
 		await setPrivateNote(locals.db, t, a.attendeeId, f.note?.trim().slice(0, 2000) || null);
+		return { saved: true };
+	},
+	attendance: async ({ locals, url, request, params }) => {
+		const t = requireTutor(locals.user, url).id;
+		const f = formObject(await request.formData());
+		const l = await lessonWithPeople(locals.db, lessonId(params.id), t);
+		const a = l?.people.find((p) => p.attendeeId === Number(f.attendeeId));
+		if (!l || !a) return fail(404, { error: 'err_not_found' });
+		if (l.startsAt.getTime() > Date.now()) return fail(400, { error: 'err_not_started' });
+		if (l.endsAt.getTime() < Date.now() - 7 * 86_400_000)
+			return fail(400, { error: 'err_too_late_mark' });
+		const v = f.value === 'completed' || f.value === 'absent' ? f.value : null;
+		await setAttendance(locals.db, t, a.attendeeId, v);
+		// the student is told when they are marked absent
+		if (v === 'absent' && a.attendance !== 'absent')
+			await notifyUser(
+				locals.db,
+				a.userId,
+				m.absent_s(),
+				m.absent_b({ when: fmtDayTime(l.startsAt) }),
+				{
+					kind: 'lesson',
+					link: `/student/lessons/${l.id}`
+				}
+			);
 		return { saved: true };
 	},
 	cancel: async ({ locals, url, request, params }) => {

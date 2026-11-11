@@ -16,7 +16,7 @@
 			{m.login_claimed()}
 		</p>{/if}
 	{#if e.form}<p class="alert" role="alert">
-			{t(e.form, { minutes: form?.retryMinutes ?? 1 })}
+			{t(e.form, { minutes: (form as { retryMinutes?: number } | null)?.retryMinutes ?? 1 })}
 		</p>{/if}
 	<form method="POST" class="stack" novalidate>
 		<Field

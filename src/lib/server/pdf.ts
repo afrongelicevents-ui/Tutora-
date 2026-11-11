@@ -57,6 +57,7 @@ export async function receiptPdf(r: ReceiptData): Promise<Uint8Array> {
 		y -= 16;
 	};
 	row(m.pdf_date(), fmtDate(r.date));
+	if (r.tutorName) row(m.pdf_tutor(), r.tutorName);
 	row(m.pdf_from(), r.studentName);
 	row(m.pdf_method(), METHOD[r.method]() + (r.reference ? `  ·  ${r.reference}` : ''));
 	if (r.covers.length) {
@@ -87,5 +88,7 @@ export async function receiptPdf(r: ReceiptData): Promise<Uint8Array> {
 	row(m.pdf_amount(), formatMoney(r.amountCents, r.currency), true);
 	y -= 6;
 	page.drawText(latin(m.pdf_thanks()), { x, y, size: 9, font, color: grey });
+	y -= 14;
+	page.drawText(latin(m.pdf_recorded()), { x, y, size: 8, font, color: grey, maxWidth: 348 });
 	return doc.save();
 }

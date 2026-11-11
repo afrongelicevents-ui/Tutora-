@@ -1,5 +1,8 @@
 import type { Actions, PageServerLoad } from './$types';
-import { allReviews, setReviewHidden } from '#lib/server/people.ts';
+import { allReviews, replyToReview, reportReview } from '#lib/server/people.ts';
+import { notifyOwners } from '#lib/server/notify.ts';
+import { m } from '#lib/paraglide/messages.js';
+import { fail } from '@sveltejs/kit';
 import { requireTutor } from '#lib/server/guards.ts';
 import { formObject } from '#lib/validation/auth.ts';
 
@@ -11,11 +14,29 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
-	toggle: async ({ locals, url, request }) => {
+	reply: async ({ locals, url, request }) => {
 		const t = requireTutor(locals.user, url).id;
 		const f = formObject(await request.formData());
 		const id = Number(f.id);
-		if (Number.isInteger(id)) await setReviewHidden(locals.db, t, id, f.hidden === 'true');
+		if (!Number.isInteger(id)) return fail(400, { error: 'err_generic' });
+		await replyToReview(locals.db, t, id, f.reply?.trim().slice(0, 600) || null);
 		return { saved: true };
+	},
+	report: async ({ locals, url, request }) => {
+		const t = requireTutor(locals.user, url).id;
+		const f = formObject(await request.formData());
+		const id = Number(f.id);
+		const reason = f.reason?.trim().slice(0, 300) ?? '';
+		if (!Number.isInteger(id) || reason.length < 3)
+			return fail(400, { error: 'err_report_reason' });
+		if (!(await reportReview(locals.db, t, id, reason)))
+			return fail(404, { error: 'err_not_found' });
+		await notifyOwners(
+			locals.db,
+			m.owner_report_s(),
+			m.owner_report_b({ reason }),
+			'/owner/reports'
+		);
+		return { reported: true };
 	}
 };

@@ -29,6 +29,32 @@
 	{#each l.people as p (p.attendeeId)}
 		<div class="card">
 			<a href="/tutor/students/{p.userId}"><b>{p.name}</b></a>
+			{#if p.childName}<p class="small muted">{m.ld_for()}: {p.childName}</p>{/if}
+			{#if data.started}
+				<div class="row" style="margin-top:8px">
+					<span class="small grow"
+						>{p.attendance === 'completed'
+							? m.status_done()
+							: p.attendance === 'absent'
+								? m.att_absent()
+								: m.att_not_marked()}</span
+					>
+					<form method="POST" action="?/attendance">
+						<input type="hidden" name="attendeeId" value={p.attendeeId} /><input
+							type="hidden"
+							name="value"
+							value="completed"
+						/><button class="btn btn-sm" type="submit">{m.att_mark_done()}</button>
+					</form>
+					<form method="POST" action="?/attendance">
+						<input type="hidden" name="attendeeId" value={p.attendeeId} /><input
+							type="hidden"
+							name="value"
+							value="absent"
+						/><button class="btn btn-secondary btn-sm" type="submit">{m.att_mark_absent()}</button>
+					</form>
+				</div>
+			{/if}
 			<form method="POST" action="?/note" class="stack" style="margin-top:8px">
 				<input type="hidden" name="attendeeId" value={p.attendeeId} />
 				<label class="small" for="note-{p.attendeeId}">{m.private_note()}</label>

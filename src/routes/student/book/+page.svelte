@@ -32,6 +32,17 @@
 	{:else}
 		<form method="POST" class="stack" novalidate>
 			<input type="hidden" name="kind" value={data.intro ? 'intro' : 'lesson'} />
+			{#if data.children.length}
+				<fieldset>
+					<legend>{m.book_for_child()}</legend>
+					{#each data.children as c, i (c.id)}
+						<label class="big-choice">
+							<input type="radio" name="childId" value={c.id} checked={i === 0} required />
+							<span><b>{c.name}</b></span>
+						</label>
+					{/each}
+				</fieldset>
+			{/if}
 			{#if !data.intro}
 				<fieldset>
 					<legend>{step()}. {m.book_subject()}</legend>
