@@ -3,6 +3,7 @@ import type { Auth } from '../auth-config.ts';
 import type { DB } from '../db/types.ts';
 import { user } from '../db/schema.ts';
 import { emailField } from '../../validation/auth.ts';
+import { checkSetupCode, useUpSetupCode } from '../setup-code.ts';
 
 /** True once the tutor has confirmed their address (by setting a password from the emailed link). */
 export async function tutorIsSetUp(db: DB): Promise<boolean> {
@@ -43,15 +44,19 @@ export type ClaimResult =
 	{ ok: true; userId: string } | { ok: false; errors: Record<string, string> };
 
 /**
- * Simple set-up without an email service: the first person to complete /setup creates the
- * tutor (admin) account with their own name, email and password. A database rule allows only
- * one tutor ever, so once claimed, /setup is closed for good.
+ * Simple set-up without an email service: whoever has the one-time setup code (made by the
+ * deploy workflow) creates the tutor (admin) account with their own name, email and password.
+ * The code is deleted once used, and a database rule allows only one tutor ever, so once
+ * claimed, /setup is closed for good.
  */
 export async function claimTutor(
 	deps: { auth: Auth; db: DB },
-	input: { name: string; email: string; password: string; confirm: string }
+	input: { name: string; email: string; password: string; confirm: string; code: string }
 ): Promise<ClaimResult> {
 	if (await tutorExists(deps.db)) return { ok: false, errors: { form: 'setup_done' } };
+	// The one-time code from the deploy proves this is the owner, not a passer-by.
+	if (!(await checkSetupCode(deps.db, input.code ?? '')))
+		return { ok: false, errors: { code: 'err_setup_code' } };
 	const name = input.name.trim().slice(0, 80);
 	const email = emailField.safeParse(input.email);
 	const errors: Record<string, string> = {};
@@ -81,6 +86,7 @@ export async function claimTutor(
 		await deps.db.delete(user).where(eq(user.id, created.id));
 		return { ok: false, errors: { form: 'setup_done' } };
 	}
+	await useUpSetupCode(deps.db);
 	return { ok: true, userId: created.id };
 }
 

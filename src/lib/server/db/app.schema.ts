@@ -460,3 +460,18 @@ export const fileBlob = pgTable('file_blob', {
 	data: bytea('data').notNull(),
 	createdAt: created()
 });
+
+/**
+ * The one-time code that lets the owner create the tutor account at /setup. Made by the deploy
+ * workflow; only a SHA-256 fingerprint is stored. Deleted as soon as it has been used.
+ */
+export const setupCode = pgTable(
+	'setup_code',
+	{
+		id: integer('id').primaryKey().default(1),
+		codeHash: text('code_hash').notNull(),
+		expiresAt: ts('expires_at').notNull(),
+		createdAt: created()
+	},
+	(t) => [check('setup_code_singleton', sql`${t.id} = 1`)]
+);

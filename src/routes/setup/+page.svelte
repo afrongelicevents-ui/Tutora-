@@ -23,6 +23,17 @@
 		<form method="POST" class="stack" novalidate>
 			{#if data.mode === 'direct'}
 				<Field
+					name="code"
+					label={m.setup_code()}
+					hint={m.setup_code_hint()}
+					autocomplete="one-time-code"
+					autocapitalize="characters"
+					spellcheck="false"
+					value={v.code ?? data.code}
+					error={e.code}
+					required
+				/>
+				<Field
 					name="name"
 					label={m.set_name()}
 					hint={m.set_name_hint()}

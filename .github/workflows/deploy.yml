@@ -18,6 +18,10 @@ on:
         description: 'Reset the database password first (if it was ever shared)'
         type: boolean
         default: false
+      new_setup_code:
+        description: 'Make a new tutor setup code (replaces an unused one)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -110,6 +114,13 @@ jobs:
         if: steps.check.outputs.ready == 'true'
         run: pnpm db:migrate
 
+      - name: Make the one-time tutor setup code
+        if: steps.check.outputs.ready == 'true'
+        env:
+          NEW_SETUP_CODE: ${{ inputs.new_setup_code && 'true' || 'false' }}
+        # Prints the code only encrypted (see scripts/deploy/setup-code.mjs).
+        run: node scripts/deploy/setup-code.mjs
+
       - run: pnpm build
         if: steps.check.outputs.ready == 'true'
 
@@ -144,7 +155,7 @@ jobs:
             echo ""
             echo "Website: $SITE_URL"
             echo ""
-            echo "The tutor claims it at $SITE_URL/setup (first person there becomes the tutor)."
+            echo "The tutor claims it at $SITE_URL/setup with the one-time setup code."
             echo ""
             echo "Home page answered HTTP $code."
           } >> "$GITHUB_STEP_SUMMARY"

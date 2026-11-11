@@ -633,7 +633,7 @@
 	"pdf_for": "For",
 	"pdf_amount": "Amount",
 	"pdf_thanks": "Confirmed by the tutor. Thank you!",
-	"setup_lead_direct": "For the tutor only. Create your login: your name, your email and a password. You can change all of these later in Settings.",
+	"setup_lead_direct": "For the tutor only. Enter your setup code, then create your login: your name, your email and a password. You can change all of these later in Settings.",
 	"setup_create": "Create my tutor account",
 	"login_claimed": "Your tutor account is ready. Log in to continue.",
 	"set_current_password": "Current password",
@@ -646,5 +646,8 @@
 	"stu_temp_btn": "Make a temporary password",
 	"stu_temp_done": "New password for {name}: {password}",
 	"stu_temp_none": "This student has no password login.",
-	"acc_password_title": "Change password"
+	"acc_password_title": "Change password",
+	"setup_code": "Setup code",
+	"setup_code_hint": "The one-time code you were given with the website link.",
+	"err_setup_code": "That setup code is not right, was already used, or has expired. Ask the person who put the site online."
 }

@@ -6,6 +6,7 @@ import { logIn } from './actions/login.ts';
 import { claimTutor, tutorExists } from './actions/setup.ts';
 import { changeEmailNow, setPasswordFor, tempPassword } from './account.ts';
 import { DbStore } from './db-store.ts';
+import { createSetupCode, hasSetupCode } from './setup-code.ts';
 import { session, user } from './db/schema.ts';
 import type { DB } from './db/types.ts';
 
@@ -27,28 +28,52 @@ describe.skipIf(!hasTestDb)('running without an email service (real database)', 
 	const roleOf = async (email: string) =>
 		(await db.select({ role: user.role }).from(user).where(eq(user.email, email)))[0]?.role;
 
-	it('the first person at /setup becomes the tutor, and only once', async () => {
+	it('only someone with the one-time setup code becomes the tutor, and only once', async () => {
+		const form = { name: 'Tendai', email: 'Boss@Example.com', password: PW, confirm: PW };
 		expect(await tutorExists(db)).toBe(false);
-		const bad = await claimTutor(
-			{ auth, db },
-			{ name: 'T', email: 'boss@example.com', password: PW, confirm: 'nope-nope-1' }
-		);
-		expect(bad.ok).toBe(false);
 
+		// no code made yet / missing / wrong code: refused, nobody created
+		expect(await claimTutor({ auth, db }, { ...form, code: 'ABCD-EFGH-JKMN' })).toMatchObject({
+			ok: false,
+			errors: { code: 'err_setup_code' }
+		});
+		const code = await createSetupCode(db);
+		expect(code).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
+		expect((await claimTutor({ auth, db }, { ...form, code: '' })).ok).toBe(false);
+		expect((await claimTutor({ auth, db }, { ...form, code: 'ABCD-EFGH-JKMN' })).ok).toBe(false);
+		const mismatch = await claimTutor({ auth, db }, { ...form, confirm: 'nope-nope-1', code });
+		expect(mismatch.ok).toBe(false);
+		expect(await roleOf('boss@example.com')).toBeUndefined();
+
+		// right code (any case, with or without dashes)
 		const r = await claimTutor(
 			{ auth, db },
-			{ name: 'Tendai', email: 'Boss@Example.com', password: PW, confirm: PW }
+			{ ...form, code: code.toLowerCase().replace(/-/g, '') }
 		);
 		expect(r.ok).toBe(true);
 		expect(await roleOf('boss@example.com')).toBe('tutor');
-		expect(await tutorExists(db)).toBe(true);
+		expect(await hasSetupCode(db)).toBe(false); // used up
 
 		const again = await claimTutor(
 			{ auth, db },
-			{ name: 'Intruder', email: 'evil@example.com', password: PW, confirm: PW }
+			{ name: 'Intruder', email: 'evil@example.com', password: PW, confirm: PW, code }
 		);
 		expect(again.ok).toBe(false);
 		expect(await roleOf('evil@example.com')).toBeUndefined();
+	});
+
+	it('an expired setup code does not work', async () => {
+		const { db: db2, close: close2 } = await freshDb();
+		try {
+			const code = await createSetupCode(db2, -1);
+			const r = await claimTutor(
+				{ auth: testAuth(db2, { emailEnabled: false, tutorEmail: undefined }).auth, db: db2 },
+				{ name: 'Late', email: 'late@example.com', password: PW, confirm: PW, code }
+			);
+			expect(r).toMatchObject({ ok: false, errors: { code: 'err_setup_code' } });
+		} finally {
+			await close2();
+		}
 	});
 
 	it('the database refuses a second tutor even if code slips', async () => {

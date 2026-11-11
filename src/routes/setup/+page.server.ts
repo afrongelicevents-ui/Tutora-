@@ -10,16 +10,27 @@ import {
 import { clientIp, hitLimit } from '#lib/server/rate-limit.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { endLogin } from '#lib/server/auth-cookies.ts';
+import { createSetupCode, hasSetupCode } from '#lib/server/setup-code.ts';
+import { dev } from '$app/env';
 
 /**
  * Two ways to claim the tutor account:
  * - TUTOR_EMAIL set: type that email, get a link, choose a password (proves the inbox).
- * - TUTOR_EMAIL not set (simplest): the first person here creates the account directly.
+ * - TUTOR_EMAIL not set (simplest): whoever has the one-time setup code from the deploy
+ *   creates the account directly. The link may carry it: /setup?code=XXXX-XXXX-XXXX.
  */
-export const load: PageServerLoad = async ({ locals }) => ({
-	done: TUTOR_EMAIL ? await tutorIsSetUp(locals.db) : await tutorExists(locals.db),
-	mode: TUTOR_EMAIL ? ('email' as const) : ('direct' as const)
-});
+export const load: PageServerLoad = async ({ locals, url }) => {
+	const done = TUTOR_EMAIL ? await tutorIsSetUp(locals.db) : await tutorExists(locals.db);
+	if (dev && !TUTOR_EMAIL && !done && !(await hasSetupCode(locals.db))) {
+		// local development only: there is no deploy to make a code, so print one
+		console.log(`[dev] Tutor setup code: ${await createSetupCode(locals.db)}`);
+	}
+	return {
+		done,
+		mode: TUTOR_EMAIL ? ('email' as const) : ('direct' as const),
+		code: url.searchParams.get('code')?.slice(0, 40) ?? ''
+	};
+};
 
 export const actions: Actions = {
 	default: async ({ request, locals, cookies }) => {
@@ -44,11 +55,15 @@ export const actions: Actions = {
 				name: f.name ?? '',
 				email: f.email ?? '',
 				password: f.password ?? '',
-				confirm: f.confirm ?? ''
+				confirm: f.confirm ?? '',
+				code: f.code ?? ''
 			}
 		);
 		if (!r.ok)
-			return fail(400, { errors: r.errors, values: { name: f.name ?? '', email: f.email ?? '' } });
+			return fail(400, {
+				errors: r.errors,
+				values: { name: f.name ?? '', email: f.email ?? '', code: f.code ?? '' }
+			});
 		// Sign-up logged them in as a student a moment ago; start clean so the login carries the tutor role.
 		await endLogin(locals.db, cookies, r.userId);
 		redirect(303, '/login?claimed=1');
