@@ -2,6 +2,9 @@
 
 Low-data tutoring website and PWA for one tutor in Zimbabwe.
 
+- **Try it with no setup:** open [`docs/demo/tutora-demo.html`](docs/demo/tutora-demo.html) (one file, works offline, sample data)
+- Put it online: [docs/DEPLOY.md](docs/DEPLOY.md) · Decisions: [docs/DECISIONS.md](docs/DECISIONS.md)
+
 - Plan, hosting and design decisions: [docs/PLAN.md](docs/PLAN.md)
 - Deploying and local setup: [docs/DEPLOY.md](docs/DEPLOY.md)
 - Brand files: `brand/`. Figma: https://www.figma.com/design/DxxUgk80UR8qcOo21dYc0m

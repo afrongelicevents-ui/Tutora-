@@ -1,6 +1,6 @@
 # Tutora — Plan (for approval)
 
-Status: **Hosting approved. Phase 1 (foundation) built**, waiting for the Cloudflare/Neon/Resend accounts before the first deploy (see `docs/DEPLOY.md`).
+Status: **All 7 phases built (11 Nov 2026).** Not deployed yet; see `docs/DEPLOY.md`. Choices made overnight are listed in `docs/DECISIONS.md`.
 
 Figma (brand board + 390px home mock): https://www.figma.com/design/DxxUgk80UR8qcOo21dYc0m
 Screenshots: `docs/design/brand-board.png`, `docs/design/home-mobile.png`
@@ -69,12 +69,12 @@ For comparison, a Zoom or Meet video call uses roughly 500 MB–1 GB per hour.
 ## 4. Phases
 
 1. ✅ **Foundation (built):** SvelteKit + Cloudflare project, Neon schema and migrations, Better Auth (roles: `tutor`, `student`, `parent`; tutor 2FA), design tokens, i18n setup, security headers (CSP, HSTS), CI on GitHub Actions (lint, typecheck, tests), and a deploy to Cloudflare from `main`.
-2. **Public site:** home, about, subjects, results (with consent), reviews (verified students only, tutor can hide but not edit), price setting, WhatsApp button, privacy and terms pages.
-3. **Bookings + calendar:** weekly availability, booking requests, accept / decline / propose a new time, group size, cancellation window, day and week calendar, the tutor's own events, `.ics` files, and email + WhatsApp-link reminders.
-4. **Payments:** proof upload, cash, confirm / reject, numbered receipts as PDF, packages with a balance that counts down, owed / paid view per student, monthly totals, CSV export. Amounts are stored as integer cents. USD by default, ZiG optional.
-5. **Lesson room:** as described in section 2.
-6. **Tutor tools:** Today screen, students list and notes, homework, settings.
-7. **Hardening:** `/security-review` with all findings fixed, test coverage for the items in §11 of the brief, and a Lighthouse check on throttled slow 3G with a low-end phone profile.
+2. ✅ **Public site:** home, about, subjects, results (with consent), reviews (verified students only, tutor can hide but not edit), price setting, WhatsApp button, privacy and terms pages.
+3. ✅ **Bookings + calendar:** weekly availability, booking requests, accept / decline / propose a new time, group size, cancellation window, day and week calendar, the tutor's own events, `.ics` files, and email + WhatsApp-link reminders.
+4. ✅ **Payments:** proof upload, cash, confirm / reject, numbered receipts as PDF, packages with a balance that counts down, owed / paid view per student, monthly totals, CSV export. Amounts are stored as integer cents. USD by default, ZiG optional.
+5. ✅ **Lesson room:** as described in section 2.
+6. ✅ **Tutor tools:** Today screen, students list and notes, homework, settings.
+7. ✅ **Hardening:** `/security-review` with all findings fixed, test coverage for the items in §11 of the brief, and a Lighthouse check on throttled slow 3G with a low-end phone profile.
 
 Each phase ends with a deploy to a preview URL for you to check.
 
