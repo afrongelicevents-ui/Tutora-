@@ -3,14 +3,17 @@
 	import wordmark from '#lib/assets/wordmark.svg';
 	import type { Role } from '#lib/roles.ts';
 
-	let { user, unread = 0 }: { user: { name: string; role: Role } | null; unread?: number } =
-		$props();
+	let {
+		user,
+		unread = 0,
+		overlay = false
+	}: { user: { name: string; role: Role } | null; unread?: number; overlay?: boolean } = $props();
 </script>
 
-<header>
+<header class:overlay>
 	<div class="wrap bar">
 		<a href="/" class="logo">
-			<img src={wordmark} alt={m.site_name()} width="124" height="28" />
+			<img src={wordmark} alt={m.site_name()} width="110" height="25" />
 		</a>
 		{#if user}<a
 				class="bell"
@@ -69,6 +72,17 @@
 	header {
 		background: var(--paper-50);
 	}
+	/* homepage: logo and menu sit on top of the hero photo */
+	header.overlay {
+		position: absolute;
+		left: 0;
+		right: 0;
+		z-index: 5;
+		background: transparent;
+	}
+	header.overlay .bar {
+		min-height: 56px;
+	}
 	.bar {
 		display: flex;
 		align-items: center;
@@ -81,7 +95,7 @@
 		min-height: 44px;
 	}
 	.logo img {
-		width: 124px;
+		width: 110px;
 		height: auto;
 	}
 	.menu {
