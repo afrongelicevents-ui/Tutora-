@@ -1,3 +1,4 @@
+import { requireTutor } from '#lib/server/guards.ts';
 import type { Actions, PageServerLoad } from './$types';
 import { inArray } from 'drizzle-orm';
 import { lessonsBetween, pendingRequests } from '#lib/server/bookings.ts';
@@ -8,7 +9,8 @@ import { inboxActions } from '#lib/server/actions/tutor-inbox.ts';
 import { profile } from '#lib/server/db/app.schema.ts';
 import { addDays, startOfLocalDay } from '#lib/tz.ts';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
+	requireTutor(locals.user, url);
 	const now = new Date();
 	const day = startOfLocalDay(now);
 	const [lessons, requests, payments, s, subjects, times] = await Promise.all([

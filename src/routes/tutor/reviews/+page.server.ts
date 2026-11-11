@@ -3,9 +3,12 @@ import { allReviews, setReviewHidden } from '#lib/server/people.ts';
 import { requireTutor } from '#lib/server/guards.ts';
 import { formObject } from '#lib/validation/auth.ts';
 
-export const load: PageServerLoad = async ({ locals }) => ({
-	reviews: await allReviews(locals.db)
-});
+export const load: PageServerLoad = async ({ locals, url }) => {
+	requireTutor(locals.user, url);
+	return {
+		reviews: await allReviews(locals.db)
+	};
+};
 
 export const actions: Actions = {
 	toggle: async ({ locals, url, request }) => {

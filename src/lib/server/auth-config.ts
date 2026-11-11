@@ -77,7 +77,9 @@ export function createAuth(deps: AuthDeps) {
 			// Don't send fresh links when someone tries to log in to an unconfirmed account:
 			// a stranger could use that to send real-looking emails to the owner.
 			sendOnSignIn: false,
-			autoSignInAfterVerification: true,
+			// After confirming, people log in with their own password. (Auto-login could put the
+			// real owner into an account a stranger pre-registered with their email.)
+			autoSignInAfterVerification: false,
 			sendVerificationEmail: async ({ user, url }) => {
 				await deps.sendEmail({
 					to: user.email,

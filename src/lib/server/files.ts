@@ -110,14 +110,15 @@ function ascii(b: Uint8Array, at: number, len: number) {
  * JPEG: drop APP1-APP15 and COM segments. PNG: drop text/EXIF/time chunks.
  * WebP: drop EXIF and XMP chunks.
  */
-export function stripMetadata(b: Uint8Array, kind: FileKind): Uint8Array {
+export function stripMetadata(b: Uint8Array, kind: FileKind): Uint8Array | null {
 	if (kind === 'image/jpeg') return stripJpeg(b);
 	if (kind === 'image/png') return stripPng(b);
 	if (kind === 'image/webp') return stripWebp(b);
 	return b;
 }
 
-function stripJpeg(b: Uint8Array): Uint8Array {
+/** Returns null if the file can't be read cleanly (then it is refused, never stored as-is). */
+function stripJpeg(b: Uint8Array): Uint8Array | null {
 	const out: Uint8Array[] = [b.subarray(0, 2)];
 	let i = 2;
 	while (i + 4 <= b.length) {
@@ -139,8 +140,7 @@ function stripJpeg(b: Uint8Array): Uint8Array {
 		if (!drop) out.push(b.subarray(i, i + 2 + len));
 		i += 2 + len;
 	}
-	out.push(b.subarray(i));
-	return concat(out);
+	return null;
 }
 
 const PNG_DROP = new Set(['tEXt', 'zTXt', 'iTXt', 'eXIf', 'tIME']);
@@ -214,6 +214,7 @@ export async function readUpload(
 	const kind = sniff(raw);
 	if (!kind || !opts.allowed.includes(kind)) return { ok: false, error: 'err_file_type' };
 	const bytes = stripMetadata(raw, kind);
+	if (!bytes) return { ok: false, error: 'err_file_type' };
 	return { ok: true, bytes, kind, ext: EXT[kind], name: safeName(file.name, EXT[kind]) };
 }
 

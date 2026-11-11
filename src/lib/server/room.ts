@@ -21,7 +21,7 @@ export interface RoomAccess {
 /** Who may use this room: the tutor, and students booked on this lesson. */
 export async function roomAccess(
 	db: DB,
-	me: { id: string; role: string },
+	me: { id: string; role: string; twoFactorEnabled?: boolean | null },
 	lessonId: number,
 	now = new Date()
 ): Promise<RoomAccess | null> {
@@ -30,7 +30,8 @@ export async function roomAccess(
 	const open = new Date(l.startsAt.getTime() - OPEN_BEFORE_MIN * 60_000);
 	const close = new Date(l.endsAt.getTime() + CLOSE_AFTER_MIN * 60_000);
 	if (now < open || now > close) return null;
-	if (me.role === 'tutor') return { lesson: l, role: 'tutor' };
+	// the tutor must have two-step verification on, like everywhere else
+	if (me.role === 'tutor') return me.twoFactorEnabled ? { lesson: l, role: 'tutor' } : null;
 	if (await isAttendee(db, me.id, lessonId)) return { lesson: l, role: 'student' };
 	return null;
 }
@@ -102,7 +103,7 @@ export async function participants(db: DB, lessonId: number, now = new Date()) {
 		}));
 }
 
-async function isAdmitted(db: DB, lessonId: number, userId: string) {
+export async function isAdmitted(db: DB, lessonId: number, userId: string) {
 	const [p] = await db
 		.select({ status: roomParticipant.status })
 		.from(roomParticipant)
@@ -158,7 +159,8 @@ export async function poll(
 				.orderBy(asc(roomSignal.id))
 				.limit(100)
 		: [];
-	return { admitted, signals, people: await participants(db, lessonId, now) };
+	// people still waiting only learn that they are waiting
+	return { admitted, signals, people: admitted ? await participants(db, lessonId, now) : [] };
 }
 
 export async function addRoomFile(

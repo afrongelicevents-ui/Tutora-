@@ -69,3 +69,37 @@ describe('safeNext', () => {
 		expect(safeNext('/student?tab=pay#x', '/')).toBe('/student?tab=pay#x');
 	});
 });
+
+describe('central lock for private areas (also page-data requests)', () => {
+	const student = { id: 's', role: 'student', emailVerified: true };
+	const tutorNo2fa = { id: 't', role: 'tutor', emailVerified: true, twoFactorEnabled: false };
+	const tutor = { ...tutorNo2fa, twoFactorEnabled: true };
+	it('blocks visitors and students from tutor data, including __data.json', async () => {
+		const { areaAccess } = await import('./guards.ts');
+		expect(
+			areaAccess('/tutor/students/__data.json', '?x-sveltekit-invalidated=001', undefined)
+		).toEqual({
+			ok: false,
+			status: 303,
+			location: '/login?next=%2Ftutor%2Fstudents'
+		});
+		expect(areaAccess('/tutor/students/abc/__data.json', '', student)).toEqual({
+			ok: false,
+			status: 403
+		});
+		expect(areaAccess('/tutor', '', tutorNo2fa)).toMatchObject({
+			ok: false,
+			location: '/account/2fa?required=1'
+		});
+		expect(areaAccess('/tutor/payments/export', '', tutor)).toEqual({ ok: true });
+	});
+	it('student area is for students and parents only', async () => {
+		const { areaAccess } = await import('./guards.ts');
+		expect(areaAccess('/student/__data.json', '', tutor)).toEqual({ ok: false, status: 403 });
+		expect(areaAccess('/student/payments', '', { ...student, role: 'parent' })).toEqual({
+			ok: true
+		});
+		expect(areaAccess('/students-of-the-month', '', undefined)).toEqual({ ok: true });
+		expect(areaAccess('/tutorial', '', undefined)).toEqual({ ok: true });
+	});
+});

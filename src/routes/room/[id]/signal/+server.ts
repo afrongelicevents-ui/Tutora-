@@ -2,6 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { RequestHandler } from './$types';
 import { requireUser } from '#lib/server/guards.ts';
+import { hitLimit } from '#lib/server/rate-limit.ts';
 import {
 	admit,
 	leave,
@@ -47,7 +48,7 @@ export const POST: RequestHandler = async ({ locals, url, params, request }) => 
 	switch (b.op) {
 		case 'poll': {
 			const r = await poll(locals.db, id, u.id, b.after);
-			const files = await roomFiles(locals.db, id);
+			const files = r.admitted ? await roomFiles(locals.db, id) : [];
 			return json({
 				...r,
 				files: await Promise.all(
@@ -60,6 +61,8 @@ export const POST: RequestHandler = async ({ locals, url, params, request }) => 
 			});
 		}
 		case 'send':
+			if (!(await hitLimit(locals.db, 'signal', `${id}:${u.id}`)).ok)
+				error(429, 'Too many messages');
 			return json({ ok: await sendSignal(locals.db, id, u.id, b.to, b.kind, b.payload) });
 		case 'admit':
 			if (access.role !== 'tutor') error(403, 'Only the tutor can let people in');

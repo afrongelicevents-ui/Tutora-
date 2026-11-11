@@ -16,6 +16,7 @@ import { fmtDayTime, localDate } from '#lib/tz.ts';
 import { m } from '#lib/paraglide/messages.js';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
+	requireRole(locals.user, url, ['student', 'parent']);
 	const intro = url.searchParams.get('intro') === '1';
 	const [site, slots, groups] = await Promise.all([
 		publicSite(locals.db),

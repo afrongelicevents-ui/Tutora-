@@ -18,7 +18,8 @@ import { formObject } from '#lib/validation/auth.ts';
 import { fmtDayTime } from '#lib/tz.ts';
 import { m } from '#lib/paraglide/messages.js';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
+	requireRole(locals.user, url, ['student', 'parent']);
 	const u = locals.user!;
 	const now = new Date();
 	const [lessons, requests, packages, s, reviewable] = await Promise.all([

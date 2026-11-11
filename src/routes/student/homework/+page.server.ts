@@ -9,7 +9,8 @@ import { notifyTutor } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { m } from '#lib/paraglide/messages.js';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
+	requireRole(locals.user, url, ['student', 'parent']);
 	const items = await homeworkForUser(locals.db, locals.user!.id);
 	const link = (k: string | null, n: string | null) => (k ? fileLink(k, n ?? 'file') : null);
 	return {

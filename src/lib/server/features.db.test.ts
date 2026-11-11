@@ -222,7 +222,10 @@ describe.skipIf(!hasTestDb)(
 				await enter(db, (await roomAccess(db, s, l.id, at))!, s.id, at);
 				let p = await poll(db, l.id, s.id, 0, at);
 				expect(p.admitted).toBe(false);
-				expect(p.people.find((x) => x.userId === s.id)?.status).toBe('waiting');
+				// a waiting student sees nobody; the tutor sees them waiting
+				expect(p.people).toEqual([]);
+				const tp = await poll(db, l.id, tutor.id, 0, at);
+				expect(tp.people.find((x) => x.userId === s.id)?.status).toBe('waiting');
 				expect(await sendSignal(db, l.id, tutor.id, s.id, 'offer', '{}')).toBe(false);
 				await admit(db, l.id, s.id);
 				expect(await sendSignal(db, l.id, tutor.id, s.id, 'offer', '{"sdp":"x"}')).toBe(true);

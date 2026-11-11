@@ -42,10 +42,13 @@ export async function sendDueReminders(
 			);
 		for (const l of due) {
 			// mark first so a crash never sends the same reminder twice
-			await db
+			const claimed = await db
 				.update(lesson)
 				.set({ [flag]: true })
-				.where(eq(lesson.id, l.id));
+				.where(and(eq(lesson.id, l.id), eq(col, false)))
+				.returning({ id: lesson.id });
+			// another run already sent this one
+			if (!claimed.length) continue;
 			const people = await db
 				.select({ email: user.email, name: user.name })
 				.from(attendee)

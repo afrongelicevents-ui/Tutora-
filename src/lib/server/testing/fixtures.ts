@@ -21,7 +21,7 @@ export async function makeUser(
 		twoFactorEnabled: role === 'tutor'
 	});
 	if (role !== 'tutor') await db.insert(profile).values({ userId: id, consentAt: new Date() });
-	return { id, name, role };
+	return { id, name, role, twoFactorEnabled: role === 'tutor' };
 }
 
 /** Monday 16 Nov 2026, 08:00 Zimbabwe time. */

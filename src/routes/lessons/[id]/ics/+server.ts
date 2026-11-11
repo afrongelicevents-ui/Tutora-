@@ -9,11 +9,12 @@ import { requireUser } from '#lib/server/guards.ts';
 export const GET: RequestHandler = async ({ locals, url, params }) => {
 	const u = requireUser(locals.user, url);
 	const id = Number(params.id) || 0;
-	if (u.role !== 'tutor' && !(await isAttendee(locals.db, u.id, id))) error(404, 'Not found');
+	const isTutor = u.role === 'tutor' && u.twoFactorEnabled;
+	if (!isTutor && !(await isAttendee(locals.db, u.id, id))) error(404, 'Not found');
 	const l = await lessonWithPeople(locals.db, id);
 	if (!l || l.status !== 'scheduled') error(404, 'Not found');
 	const title = `${l.subjectName ?? 'Intro chat'} lesson (Tutora)`;
-	const link = `${ORIGIN}${u.role === 'tutor' ? `/tutor/lessons/${l.id}` : '/student'}`;
+	const link = `${ORIGIN}${isTutor ? `/tutor/lessons/${l.id}` : '/student'}`;
 	const ics = lessonIcs(
 		{
 			id: l.id,

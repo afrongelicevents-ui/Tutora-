@@ -1,3 +1,4 @@
+import { requireTutor } from '#lib/server/guards.ts';
 import type { Actions, PageServerLoad } from './$types';
 import {
 	balances,
@@ -12,7 +13,8 @@ import { fileLink } from '#lib/server/storage.ts';
 import { inboxActions } from '#lib/server/actions/tutor-inbox.ts';
 import { addDays, localDate } from '#lib/tz.ts';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
+	requireTutor(locals.user, url);
 	const now = new Date();
 	const [s, pending, recent, bal, students, months] = await Promise.all([
 		getSettings(locals.db),

@@ -14,7 +14,8 @@ const lessonId = (p: string) => {
 	return n;
 };
 
-export const load: PageServerLoad = async ({ locals, params }) => {
+export const load: PageServerLoad = async ({ locals, params, url }) => {
+	requireTutor(locals.user, url);
 	const l = await lessonWithPeople(locals.db, lessonId(params.id));
 	if (!l) error(404, 'Not found');
 	return { lesson: l };

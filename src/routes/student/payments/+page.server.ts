@@ -22,6 +22,7 @@ import { isIsoDate, localDate } from '#lib/tz.ts';
 import { m } from '#lib/paraglide/messages.js';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
+	requireRole(locals.user, url, ['student', 'parent']);
 	const u = locals.user!;
 	const [s, balance, payments, mine, offers] = await Promise.all([
 		getSettings(locals.db),

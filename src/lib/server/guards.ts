@@ -56,3 +56,39 @@ export function safeNext(next: string | null | undefined, fallback: string): str
 	if (url.origin !== base) return fallback;
 	return url.pathname + url.search + url.hash;
 }
+
+export type AreaDecision =
+	{ ok: true } | { ok: false; status: 303; location: string } | { ok: false; status: 403 };
+
+/**
+ * Central lock for the private areas, checked in hooks.server.ts for EVERY request,
+ * including SvelteKit's page-data requests (`.../__data.json`). Page loads and form
+ * actions check again; this is the outer wall so a forgotten check can't leak data.
+ */
+export function areaAccess(
+	pathname: string,
+	search: string,
+	user: GuardUser | undefined
+): AreaDecision {
+	const area =
+		pathname === '/tutor' || pathname.startsWith('/tutor/')
+			? 'tutor'
+			: pathname === '/student' || pathname.startsWith('/student/')
+				? 'student'
+				: null;
+	if (!area) return { ok: true };
+	if (!user) {
+		const next =
+			pathname.replace(/\/__data\.json$/, '') + search.replace(/[?&]x-sveltekit-[^&]*/g, '');
+		return { ok: false, status: 303, location: `/login?next=${encodeURIComponent(next || '/')}` };
+	}
+	if (area === 'tutor') {
+		if (user.role !== 'tutor') return { ok: false, status: 403 };
+		if (!user.twoFactorEnabled)
+			return { ok: false, status: 303, location: '/account/2fa?required=1' };
+		return { ok: true };
+	}
+	return user.role === 'student' || user.role === 'parent'
+		? { ok: true }
+		: { ok: false, status: 403 };
+}

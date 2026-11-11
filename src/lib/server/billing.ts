@@ -86,6 +86,14 @@ export async function confirmPayment(db: DB, paymentId: number, now = new Date()
 			.set({ status: 'confirmed', receiptNo: n, decidedAt: now })
 			.where(eq(payment.id, p.id));
 
+		// One confirmation at a time per student: lock their charge rows, so two payments
+		// confirmed at the same moment never both cover the same lesson.
+		await tx
+			.select({ id: charge.id })
+			.from(charge)
+			.where(eq(charge.userId, p.userId))
+			.orderBy(asc(charge.id))
+			.for('update');
 		const open = await unpaidCharges(tx, p.userId);
 		let left = p.amountCents;
 		for (const c of open) {
@@ -109,10 +117,13 @@ export async function rejectPayment(
 	const [p] = await db.select().from(payment).where(eq(payment.id, paymentId));
 	if (!p) throw new BillingFail('err_not_found');
 	if (p.status !== 'pending') throw new BillingFail('err_state');
-	await db
+	// only a payment that is still waiting can be rejected (never a confirmed one)
+	const done = await db
 		.update(payment)
 		.set({ status: 'rejected', rejectReason: reason, decidedAt: now })
-		.where(eq(payment.id, p.id));
+		.where(and(eq(payment.id, p.id), eq(payment.status, 'pending')))
+		.returning({ id: payment.id });
+	if (!done.length) throw new BillingFail('err_state');
 	return p;
 }
 
@@ -143,15 +154,18 @@ export async function recordCash(
 
 /** Charges with money still due, oldest first. */
 export async function unpaidCharges(db: DB, userId: string) {
+	// a plain join: amounts already put towards each charge
 	const rows = await db
 		.select({
 			id: charge.id,
 			description: charge.description,
 			amountCents: charge.amountCents,
-			paid: sql<number>`coalesce((select sum(pa.amount_cents)::int from ${paymentAllocation} pa where pa.charge_id = ${charge.id}), 0)`
+			paid: sql<number>`coalesce(sum(${paymentAllocation.amountCents}), 0)::int`
 		})
 		.from(charge)
+		.leftJoin(paymentAllocation, eq(paymentAllocation.chargeId, charge.id))
 		.where(and(eq(charge.userId, userId), eq(charge.voided, false)))
+		.groupBy(charge.id)
 		.orderBy(asc(charge.createdAt), asc(charge.id));
 	return rows.map((r) => ({ ...r, due: r.amountCents - r.paid })).filter((r) => r.due > 0);
 }

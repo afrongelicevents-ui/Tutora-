@@ -8,6 +8,7 @@ import { getTextDirection } from '#lib/paraglide/runtime.js';
 import { paraglideMiddleware } from '#lib/paraglide/server.js';
 import { isAllowedAuthPath, securityHeaders } from '#lib/server/security.ts';
 import { isRole } from '#lib/roles.ts';
+import { areaAccess } from '#lib/server/guards.ts';
 
 const handleParaglide: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request, locale }) => {
@@ -57,6 +58,13 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 			role,
 			twoFactorEnabled: !!data.user.twoFactorEnabled
 		};
+	}
+	// Outer wall for /tutor and /student (also covers page-data requests).
+	const gate = areaAccess(event.url.pathname, event.url.search, event.locals.user);
+	if (!gate.ok) {
+		return gate.status === 303
+			? new Response(null, { status: 303, headers: { location: gate.location } })
+			: new Response('You do not have access to this page.', { status: 403 });
 	}
 	return svelteKitHandler({ event, resolve, auth, building });
 };

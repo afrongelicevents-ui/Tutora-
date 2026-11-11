@@ -147,7 +147,7 @@ describe('upload type checks', () => {
 
 describe('photo metadata is removed', () => {
 	it('JPEG: drops EXIF and comments, keeps the image', () => {
-		const out = stripMetadata(jpeg, 'image/jpeg');
+		const out = stripMetadata(jpeg, 'image/jpeg')!;
 		expect(has(jpeg, 'GPS')).toBe(true);
 		expect(has(out, 'GPS')).toBe(false);
 		expect(has(out, 'hey!')).toBe(false);
@@ -156,15 +156,22 @@ describe('photo metadata is removed', () => {
 		expect(out[0]).toBe(0xff);
 		expect(sniff(out)).toBe('image/jpeg');
 	});
+	it('JPEG that cannot be read cleanly is refused, never stored with its data', async () => {
+		const broken = jpeg.slice(0, 20);
+		expect(stripMetadata(broken, 'image/jpeg')).toBeNull();
+		expect(
+			await readUpload(new File([broken], 'x.jpg'), { maxBytes: MB, allowed: DOC_KINDS })
+		).toEqual({ ok: false, error: 'err_file_type' });
+	});
 	it('PNG: drops text and EXIF chunks', () => {
-		const out = stripMetadata(png, 'image/png');
+		const out = stripMetadata(png, 'image/png')!;
 		expect(has(out, 'Harare')).toBe(false);
 		expect(has(out, 'eXIf')).toBe(false);
 		expect(has(out, 'IDAT')).toBe(true);
 		expect(has(out, 'IEND')).toBe(true);
 	});
 	it('WebP: drops EXIF, clears the flag and fixes the size', () => {
-		const out = stripMetadata(webp, 'image/webp');
+		const out = stripMetadata(webp, 'image/webp')!;
 		expect(has(out, 'GPS-data')).toBe(false);
 		expect(has(out, 'VP8 ')).toBe(true);
 		const size = out[4] | (out[5] << 8);

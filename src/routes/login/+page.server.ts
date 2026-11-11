@@ -20,7 +20,8 @@ export const actions: Actions = {
 		const ip = clientIp(request);
 		const byIp = await hitLimit(locals.db, 'login', `${ip}:${who}`);
 		const byAccount = await hitLimit(locals.db, 'loginAccount', who);
-		const limit = !byIp.ok ? byIp : byAccount;
+		const byIpOnly = await hitLimit(locals.db, 'loginIp', ip);
+		const limit = !byIp.ok ? byIp : !byIpOnly.ok ? byIpOnly : byAccount;
 		if (!limit.ok) {
 			return fail(429, {
 				values,

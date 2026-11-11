@@ -17,6 +17,7 @@ import {
 } from '#lib/tz.ts';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
+	requireTutor(locals.user, url);
 	const view = url.searchParams.get('view') === 'day' ? 'day' : 'week';
 	const d = url.searchParams.get('date') ?? '';
 	const anchor = isIsoDate(d) ? fromLocal(d, 12 * 60) : new Date();

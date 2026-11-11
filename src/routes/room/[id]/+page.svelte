@@ -104,9 +104,10 @@
 			files: (f) => {
 				if (f.length !== files.length) files = f;
 			},
-			message: (msg: BoardMsg) => {
-				if (msg.t === 'chat')
-					chat = [...chat, { who: msg.name.slice(0, 30), text: String(msg.text).slice(0, 500) }];
+			message: (msg: BoardMsg, from: string) => {
+				// the name comes from the server's list of people, not from the message itself
+				const who = people.find((p) => p.userId === from)?.name ?? '?';
+				if (msg.t === 'chat') chat = [...chat, { who, text: String(msg.text).slice(0, 500) }];
 				else redraw();
 			},
 			remoteStream: (id, s) => (remotes = { ...remotes, [id]: s }),

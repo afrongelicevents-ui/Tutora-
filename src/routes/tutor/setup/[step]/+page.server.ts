@@ -11,7 +11,8 @@ function stepOf(param: string) {
 	return n;
 }
 
-export const load: PageServerLoad = async ({ locals, params }) => {
+export const load: PageServerLoad = async ({ locals, params, url }) => {
+	requireTutor(locals.user, url);
 	const step = stepOf(params.step);
 	const section = step >= 1 && step <= WIZARD.length ? WIZARD[step - 1] : null;
 	const data = section

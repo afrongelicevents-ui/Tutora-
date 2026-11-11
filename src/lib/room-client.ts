@@ -71,6 +71,8 @@ export class RoomClient {
 	private hd = false;
 	private making = new Set<string>();
 	admitted = false;
+	/** who is in the room, from the server (used to trust messages by sender) */
+	private people: Person[] = [];
 	strokes: Stroke[] = [];
 
 	constructor(
@@ -126,6 +128,7 @@ export class RoomClient {
 				this.admitted = r.admitted;
 				this.on.admitted(r.admitted);
 			}
+			this.people = r.people;
 			this.on.people(r.people);
 			this.on.files(r.files);
 			for (const s of r.signals) {
@@ -172,6 +175,10 @@ export class RoomClient {
 		dc.onmessage = (e) => {
 			try {
 				const msg = JSON.parse(String(e.data)) as BoardMsg;
+				// only the tutor may wipe or replace the whole board
+				const fromTutor = this.people.some((p) => p.userId === other && p.isTutor);
+				if ((msg.t === 'clear' || msg.t === 'sync') && !fromTutor) return;
+				if (msg.t === 'sync' && (!Array.isArray(msg.strokes) || msg.strokes.length > 5000)) return;
 				if (msg.t === 'stroke') this.strokes.push(msg.s);
 				if (msg.t === 'clear') this.strokes = [];
 				if (msg.t === 'sync') this.strokes = msg.strokes;

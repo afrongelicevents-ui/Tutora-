@@ -35,7 +35,8 @@ async function student(db: App.Locals['db'], id: string) {
 	return s;
 }
 
-export const load: PageServerLoad = async ({ locals, params }) => {
+export const load: PageServerLoad = async ({ locals, params, url }) => {
+	requireTutor(locals.user, url);
 	const s = await student(locals.db, params.id);
 	const [lessons, balance, payments, packages, homework, settings] = await Promise.all([
 		studentLessons(locals.db, s.id),

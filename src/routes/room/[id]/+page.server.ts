@@ -1,7 +1,7 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireUser } from '#lib/server/guards.ts';
-import { addRoomFile, enter, roomAccess } from '#lib/server/room.ts';
+import { addRoomFile, enter, isAdmitted, roomAccess } from '#lib/server/room.ts';
 import { lessonWithPeople } from '#lib/server/bookings.ts';
 import { iceServers } from '#lib/server/ice.ts';
 import { getStore } from '#lib/server/storage.ts';
@@ -31,7 +31,8 @@ export const actions: Actions = {
 		const u = requireUser(locals.user, url);
 		const id = Number(params.id) || 0;
 		const access = await roomAccess(locals.db, u, id);
-		if (!access) return fail(404, { error: 'err_not_found' });
+		if (!access || !(await isAdmitted(locals.db, id, u.id)))
+			return fail(404, { error: 'err_not_found' });
 		const limit = await hitLimit(locals.db, 'upload', u.id);
 		if (!limit.ok) return fail(429, { error: 'err_rate_limited' });
 		const file = await readUpload((await request.formData()).get('file'), {

@@ -5,7 +5,8 @@ import { canReview, myReview, postReview } from '#lib/server/people.ts';
 import { requireRole } from '#lib/server/guards.ts';
 import { formObject } from '#lib/validation/auth.ts';
 
-export const load: PageServerLoad = async ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
+	requireRole(locals.user, url, ['student', 'parent']);
 	const u = locals.user!;
 	return { allowed: await canReview(locals.db, u.id), mine: await myReview(locals.db, u.id) };
 };

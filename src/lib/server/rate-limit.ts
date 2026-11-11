@@ -17,7 +17,11 @@ export const LIMITS = {
 	passwordReset: { max: 3, windowSeconds: 60 * 60 },
 	twoFactor: { max: 5, windowSeconds: 60 },
 	booking: { max: 10, windowSeconds: 60 * 60 },
-	upload: { max: 20, windowSeconds: 60 * 60 }
+	upload: { max: 20, windowSeconds: 60 * 60 },
+	/** whole-site login tries from one address (stops trying one password on many accounts) */
+	loginIp: { max: 30, windowSeconds: 10 * 60 },
+	/** lesson-room set-up messages per person per minute */
+	signal: { max: 150, windowSeconds: 60 }
 } satisfies Record<string, LimitRule>;
 
 export type LimitName = keyof typeof LIMITS;

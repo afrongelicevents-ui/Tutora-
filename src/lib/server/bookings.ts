@@ -93,10 +93,12 @@ export async function openGroupLessons(db: DB, now = new Date()) {
 			startsAt: lesson.startsAt,
 			endsAt: lesson.endsAt,
 			capacity: lesson.capacity,
-			booked: sql<number>`(select count(*)::int from ${attendee} a where a.lesson_id = ${lesson.id} and a.status = 'booked')`
+			// a plain join + count of the places still booked
+			booked: sql<number>`count(${attendee.id}) filter (where ${attendee.status} = 'booked')::int`
 		})
 		.from(lesson)
 		.leftJoin(subject, eq(subject.id, lesson.subjectId))
+		.leftJoin(attendee, eq(attendee.lessonId, lesson.id))
 		.where(
 			and(
 				eq(lesson.status, 'scheduled'),
@@ -104,6 +106,7 @@ export async function openGroupLessons(db: DB, now = new Date()) {
 				gt(lesson.startsAt, addMinutes(now, 60))
 			)
 		)
+		.groupBy(lesson.id, subject.name)
 		.orderBy(asc(lesson.startsAt));
 	return rows.filter((r) => r.capacity > 1 && r.booked < r.capacity);
 }
@@ -180,8 +183,10 @@ export async function requestBooking(
 	return row;
 }
 
-async function loadBooking(db: DB, id: number) {
-	const [b] = await db.select().from(booking).where(eq(booking.id, id));
+async function loadBooking(db: DB, id: number, lock = false) {
+	// inside a transaction, lock the row so two clicks can't both act on it
+	const q = db.select().from(booking).where(eq(booking.id, id));
+	const [b] = lock ? await q.for('update') : await q;
 	if (!b) throw new BookingFail('err_not_found');
 	return b;
 }
@@ -192,7 +197,7 @@ async function loadBooking(db: DB, id: number) {
  */
 export async function acceptBooking(db: DB, bookingId: number, now = new Date()) {
 	return db.transaction(async (tx) => {
-		const b = await loadBooking(tx, bookingId);
+		const b = await loadBooking(tx, bookingId, true);
 		if (b.status !== 'requested') throw new BookingFail('err_state');
 		const s = await getSettings(tx);
 		const [subj] = b.subjectId
@@ -331,12 +336,13 @@ export async function respondToProposal(
 		await db
 			.update(booking)
 			.set({ status: 'cancelled', decidedAt: now })
-			.where(eq(booking.id, b.id));
+			.where(and(eq(booking.id, b.id), eq(booking.status, 'proposed')));
 		return null;
 	}
 	if (b.proposedStartsAt <= now) throw new BookingFail('err_slot_taken');
 	const len = b.endsAt.getTime() - b.startsAt.getTime();
-	await db
+	// conditional: if two "yes" taps arrive together, only one moves on
+	const moved = await db
 		.update(booking)
 		.set({
 			status: 'requested',
@@ -344,7 +350,9 @@ export async function respondToProposal(
 			endsAt: new Date(b.proposedStartsAt.getTime() + len),
 			proposedStartsAt: null
 		})
-		.where(eq(booking.id, b.id));
+		.where(and(eq(booking.id, b.id), eq(booking.status, 'proposed')))
+		.returning({ id: booking.id });
+	if (!moved.length) throw new BookingFail('err_state');
 	return acceptBooking(db, b.id, now);
 }
 
@@ -358,7 +366,13 @@ export async function withdrawRequest(db: DB, userId: string, bookingId: number,
 
 /** Undo the money side of one attendee: void the charge, or give the package credit back. */
 async function releaseAttendee(tx: DB, a: typeof attendee.$inferSelect) {
-	await tx.update(attendee).set({ status: 'cancelled' }).where(eq(attendee.id, a.id));
+	// only the request that actually flips booked -> cancelled may give money/credits back
+	const done = await tx
+		.update(attendee)
+		.set({ status: 'cancelled' })
+		.where(and(eq(attendee.id, a.id), eq(attendee.status, 'booked')))
+		.returning({ id: attendee.id });
+	if (!done.length) return false;
 	await tx.update(charge).set({ voided: true }).where(eq(charge.attendeeId, a.id));
 	if (a.studentPackageId) {
 		await tx
@@ -368,6 +382,7 @@ async function releaseAttendee(tx: DB, a: typeof attendee.$inferSelect) {
 	}
 	if (a.bookingId)
 		await tx.update(booking).set({ status: 'cancelled' }).where(eq(booking.id, a.bookingId));
+	return true;
 }
 
 /** Student cancels their place, only if it is at least `cancelHours` before the start. */
@@ -388,7 +403,7 @@ export async function cancelMyPlace(db: DB, userId: string, lessonId: number, no
 		if (!row || row.l.status !== 'scheduled') throw new BookingFail('err_not_found');
 		if (row.l.startsAt.getTime() - now.getTime() < s.cancelHours * 3_600_000)
 			throw new BookingFail('err_cancel_late');
-		await releaseAttendee(tx, row.a);
+		if (!(await releaseAttendee(tx, row.a))) throw new BookingFail('err_not_found');
 		const [{ n }] = await tx
 			.select({ n: sql<number>`count(*)::int` })
 			.from(attendee)
@@ -402,15 +417,16 @@ export async function cancelMyPlace(db: DB, userId: string, lessonId: number, no
 /** Tutor cancels a whole lesson: everyone's charge is removed / credit given back. */
 export async function cancelLesson(db: DB, lessonId: number) {
 	return db.transaction(async (tx) => {
-		const [l] = await tx.select().from(lesson).where(eq(lesson.id, lessonId));
+		const [l] = await tx.select().from(lesson).where(eq(lesson.id, lessonId)).for('update');
 		if (!l || l.status !== 'scheduled') throw new BookingFail('err_not_found');
 		const as = await tx
 			.select()
 			.from(attendee)
 			.where(and(eq(attendee.lessonId, lessonId), eq(attendee.status, 'booked')));
-		for (const a of as) await releaseAttendee(tx, a);
+		const released: string[] = [];
+		for (const a of as) if (await releaseAttendee(tx, a)) released.push(a.userId);
 		await tx.update(lesson).set({ status: 'cancelled' }).where(eq(lesson.id, lessonId));
-		return { lesson: l, userIds: as.map((a) => a.userId) };
+		return { lesson: l, userIds: released };
 	});
 }
 
