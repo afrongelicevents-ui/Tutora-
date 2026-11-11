@@ -14,6 +14,7 @@ import { notifyUser } from '../notify.ts';
 import { formObject } from '../../validation/auth.ts';
 import { fmtDayTime, fromLocal, hhmmToMinutes, isIsoDate } from '../../tz.ts';
 import { formatMoney } from '../../money.ts';
+import { m } from '../../paraglide/messages.js';
 
 const id = z.object({ id: z.coerce.number().int().positive() });
 const message = (v: string | undefined) => (v?.trim() ? v.trim().slice(0, 300) : null);
@@ -29,8 +30,8 @@ export const inboxActions: Actions = {
 			await notifyUser(
 				locals.db,
 				r.userId,
-				'Your lesson is booked',
-				`Your lesson on ${fmtDayTime(r.startsAt)} (Zimbabwe time) is confirmed. See it under "Lessons" on Tutora.`
+				m.email_booked_s(),
+				m.email_booked_b({ when: fmtDayTime(r.startsAt) })
 			);
 			return { done: 'accepted' };
 		} catch (e) {
@@ -48,8 +49,11 @@ export const inboxActions: Actions = {
 			await notifyUser(
 				locals.db,
 				b.userId,
-				'About your lesson request',
-				`Sorry, the tutor can't do ${fmtDayTime(b.startsAt)}.${f.message ? `\nMessage: ${message(f.message)}` : ''}\nYou can choose another time on Tutora.`
+				m.email_declined_s(),
+				m.email_declined_b({
+					when: fmtDayTime(b.startsAt),
+					extra: f.message ? m.email_message_line({ text: message(f.message) ?? '' }) : ''
+				})
 			);
 			return { done: 'declined' };
 		} catch (e) {
@@ -70,8 +74,11 @@ export const inboxActions: Actions = {
 			await notifyUser(
 				locals.db,
 				b.userId,
-				'The tutor suggested another time',
-				`The tutor suggests ${fmtDayTime(when)} instead.${f.message ? `\nMessage: ${message(f.message)}` : ''}\nOpen Tutora to accept or say no.`
+				m.email_proposed_s(),
+				m.email_proposed_b({
+					when: fmtDayTime(when),
+					extra: f.message ? m.email_message_line({ text: message(f.message) ?? '' }) : ''
+				})
 			);
 			return { done: 'proposed' };
 		} catch (e) {
@@ -88,8 +95,8 @@ export const inboxActions: Actions = {
 			await notifyUser(
 				locals.db,
 				r.userId,
-				`Payment confirmed – receipt ${receiptNumber(r.receiptNo)}`,
-				`The tutor confirmed your payment of ${formatMoney(r.amountCents, r.currency)}. Your receipt is under "Payments" on Tutora.`
+				m.email_confirmed_s({ receipt: receiptNumber(r.receiptNo) }),
+				m.email_confirmed_b({ amount: formatMoney(r.amountCents, r.currency) })
 			);
 			return { done: 'confirmed', receipt: receiptNumber(r.receiptNo) };
 		} catch (e) {
@@ -109,8 +116,11 @@ export const inboxActions: Actions = {
 				await notifyUser(
 					locals.db,
 					before.userId,
-					'About your payment',
-					`The tutor could not confirm your payment of ${formatMoney(before.amountCents, before.currency)}.${f.reason ? `\nReason: ${message(f.reason)}` : ''}\nPlease check and send it again, or message the tutor.`
+					m.email_rejected_s(),
+					m.email_rejected_b({
+						amount: formatMoney(before.amountCents, before.currency),
+						extra: f.reason ? m.email_reason_line({ text: message(f.reason) ?? '' }) : ''
+					})
 				);
 			return { done: 'rejected' };
 		} catch (e) {

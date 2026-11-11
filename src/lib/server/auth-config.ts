@@ -11,6 +11,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { twoFactor } from 'better-auth/plugins';
 import type { DB } from './db/types.ts';
 import { ROLES } from '../roles.ts';
+import { m } from '../paraglide/messages.js';
 
 export type SendEmail = (msg: { to: string; subject: string; text: string }) => Promise<void>;
 
@@ -59,15 +60,15 @@ export function createAuth(deps: AuthDeps) {
 			onExistingUserSignUp: async ({ user }) => {
 				await deps.sendEmail({
 					to: user.email,
-					subject: 'Someone tried to sign up to Tutora with your email',
-					text: `Hello,\n\nSomeone just tried to create a Tutora account with this email address, which already has an account.\n\nIf it was you and you forgot your password, reset it here:\n${origin}/forgot-password\n\nIf it was not you, you can ignore this email. Your account has not been changed.`
+					subject: m.email_exists_s(),
+					text: m.email_exists_b({ url: `${origin}/forgot-password` })
 				});
 			},
 			sendResetPassword: async ({ user, url }) => {
 				await deps.sendEmail({
 					to: user.email,
-					subject: 'Reset your Tutora password',
-					text: `Hello ${user.name},\n\nTap this link to choose a new password:\n${url}\n\nThe link expires in 1 hour. If you did not ask for this, you can ignore this email.`
+					subject: m.email_reset_s(),
+					text: m.email_reset_b({ name: user.name, url })
 				});
 			}
 		},
@@ -80,8 +81,8 @@ export function createAuth(deps: AuthDeps) {
 			sendVerificationEmail: async ({ user, url }) => {
 				await deps.sendEmail({
 					to: user.email,
-					subject: 'Confirm your email for Tutora',
-					text: `Hello ${user.name},\n\nTap this link to confirm your email address:\n${url}\n\nIf you did not sign up for Tutora, you can ignore this email.`
+					subject: m.email_verify_s(),
+					text: m.email_verify_b({ name: user.name, url })
 				});
 			}
 		},

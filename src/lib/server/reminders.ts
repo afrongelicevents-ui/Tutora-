@@ -5,6 +5,7 @@ import { user } from './db/auth.schema.ts';
 import type { SendEmail } from './auth-config.ts';
 import { fmtDayTime } from '../tz.ts';
 import { cleanupSignals } from './room.ts';
+import { m } from '../paraglide/messages.js';
 
 /**
  * Sends reminder emails about 24 hours and 1 hour before each lesson.
@@ -51,11 +52,18 @@ export async function sendDueReminders(
 				.innerJoin(user, eq(user.id, attendee.userId))
 				.where(and(eq(attendee.lessonId, l.id), eq(attendee.status, 'booked')));
 			for (const p of people) {
-				const where = l.mode === 'online' ? `Join online: ${origin}/student` : 'In person';
+				const where =
+					l.mode === 'online'
+						? m.email_remind_online({ url: `${origin}/student` })
+						: m.email_remind_in_person();
+				const subject = l.subjectName ?? m.email_lesson_word();
 				await sendEmail({
 					to: p.email,
-					subject: `Reminder: ${l.subjectName ?? 'lesson'} ${hours === 1 ? 'in 1 hour' : 'tomorrow'}`,
-					text: `Hello ${p.name},\n\nThis is a reminder of your ${l.subjectName ?? ''} lesson on ${fmtDayTime(l.startsAt)} (Zimbabwe time).\n${where}\n\nSee you then!`
+					subject:
+						hours === 1
+							? m.email_remind_hour_s({ subject })
+							: m.email_remind_tomorrow_s({ subject }),
+					text: m.email_remind_b({ name: p.name, subject, when: fmtDayTime(l.startsAt), where })
 				}).catch(() => {});
 				sent++;
 			}

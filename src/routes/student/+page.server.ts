@@ -16,6 +16,7 @@ import { notifyTutor } from '#lib/server/notify.ts';
 import { OPEN_BEFORE_MIN, CLOSE_AFTER_MIN } from '#lib/server/room.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { fmtDayTime } from '#lib/tz.ts';
+import { m } from '#lib/paraglide/messages.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const u = locals.user!;
@@ -71,8 +72,8 @@ export const actions: Actions = {
 		if (err) return err;
 		await notifyTutor(
 			locals.db,
-			'Lesson cancelled by student',
-			`${u.name} cancelled their place on ${fmtDayTime(when!)}.`
+			m.email_student_cancel_s(),
+			m.email_student_cancel_b({ name: u.name, when: fmtDayTime(when!) })
 		);
 		return { done: 'cancelled' };
 	},
@@ -89,8 +90,8 @@ export const actions: Actions = {
 		if (err) return err;
 		await notifyTutor(
 			locals.db,
-			yes ? 'New time accepted' : 'New time declined',
-			`${u.name} ${yes ? 'accepted' : 'declined'} the time you suggested.`
+			yes ? m.email_time_accepted_s() : m.email_time_declined_s(),
+			yes ? m.email_time_accepted_b({ name: u.name }) : m.email_time_declined_b({ name: u.name })
 		);
 		return { done: yes ? 'accepted' : 'declined' };
 	}

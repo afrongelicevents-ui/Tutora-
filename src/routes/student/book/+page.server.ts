@@ -13,6 +13,7 @@ import { hitLimit } from '#lib/server/rate-limit.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { fmtDayTime, localDate } from '#lib/tz.ts';
+import { m } from '#lib/paraglide/messages.js';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const intro = url.searchParams.get('intro') === '1';
@@ -68,8 +69,12 @@ export const actions: Actions = {
 			});
 			await notifyTutor(
 				locals.db,
-				'New booking request',
-				`${u.name} asked for a ${v.kind === 'intro' ? 'free intro chat' : 'lesson'} on ${fmtDayTime(b.startsAt)}. Open Tutora to accept, decline or suggest another time.`
+				m.email_booking_new_s(),
+				m.email_booking_new_b({
+					name: u.name,
+					what: v.kind === 'intro' ? m.email_what_intro() : m.email_what_lesson(),
+					when: fmtDayTime(b.startsAt)
+				})
 			);
 		} catch (e) {
 			if (e instanceof BookingFail) return fail(400, { error: e.code });

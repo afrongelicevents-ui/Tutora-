@@ -7,6 +7,7 @@ import { DOC_KINDS, MB, newKey, readUpload } from '#lib/server/files.ts';
 import { hitLimit } from '#lib/server/rate-limit.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
+import { m } from '#lib/paraglide/messages.js';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const items = await homeworkForUser(locals.db, locals.user!.id);
@@ -50,11 +51,7 @@ export const actions: Actions = {
 			fileName: file?.ok ? file.name : null
 		});
 		if (!row) return fail(404, { error: 'err_not_found' });
-		await notifyTutor(
-			locals.db,
-			'Homework handed in',
-			`${u.name} handed in homework. Open their page on Tutora to see it.`
-		);
+		await notifyTutor(locals.db, m.email_hw_in_s(), m.email_hw_in_b({ name: u.name }));
 		return { done: true };
 	}
 };

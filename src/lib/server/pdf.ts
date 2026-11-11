@@ -2,13 +2,14 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import type { ReceiptData } from './billing.ts';
 import { formatMoney } from '../money.ts';
 import { fmtDate } from '../tz.ts';
+import { m } from '../paraglide/messages.js';
 
-const METHOD: Record<ReceiptData['method'], string> = {
-	bank: 'Bank transfer',
-	ecocash: 'EcoCash',
-	innbucks: 'InnBucks',
-	cash: 'Cash',
-	other: 'Other'
+const METHOD: Record<ReceiptData['method'], () => string> = {
+	bank: m.method_bank,
+	ecocash: () => 'EcoCash',
+	innbucks: () => 'InnBucks',
+	cash: m.method_cash,
+	other: m.method_other
 };
 
 /** Standard fonts only cover basic Latin; replace anything else so the PDF never fails. */
@@ -17,7 +18,7 @@ const latin = (s: string) => s.replace(new RegExp('[^\x20-\x7e\xa0-\xff]', 'g'),
 /** A one-page A5 receipt, about 3 KB. */
 export async function receiptPdf(r: ReceiptData): Promise<Uint8Array> {
 	const doc = await PDFDocument.create();
-	doc.setTitle(`Receipt ${r.number}`);
+	doc.setTitle(m.pdf_title({ n: r.number }));
 	doc.setProducer('Tutora');
 	const page = doc.addPage([420, 595]);
 	const font = await doc.embedFont(StandardFonts.Helvetica);
@@ -31,7 +32,7 @@ export async function receiptPdf(r: ReceiptData): Promise<Uint8Array> {
 	let y = 545;
 
 	page.drawText('tutora', { x, y, size: 26, font: serif, color: green });
-	page.drawText('RECEIPT', { x: 300, y: y + 8, size: 12, font: bold, color: ink });
+	page.drawText(latin(m.pdf_receipt()), { x: 300, y: y + 8, size: 12, font: bold, color: ink });
 	page.drawText(r.number, { x: 300, y: y - 8, size: 11, font, color: ink });
 	y -= 28;
 	const from = [r.tutorName, r.tutorEmail].filter(Boolean).join('  ·  ');
@@ -39,7 +40,7 @@ export async function receiptPdf(r: ReceiptData): Promise<Uint8Array> {
 	y -= 30;
 
 	const row = (label: string, value: string, strong = false) => {
-		page.drawText(label, { x, y, size: 10, font, color: grey });
+		page.drawText(latin(label), { x, y, size: 10, font, color: grey });
 		const f = strong ? bold : font;
 		const v = latin(value);
 		const w = f.widthOfTextAtSize(v, 10);
@@ -55,11 +56,11 @@ export async function receiptPdf(r: ReceiptData): Promise<Uint8Array> {
 		page.drawLine({ start: { x, y }, end: { x: 384, y }, thickness: 0.6, color: line });
 		y -= 16;
 	};
-	row('Date', fmtDate(r.date));
-	row('Received from', r.studentName);
-	row('Method', METHOD[r.method] + (r.reference ? `  ·  ${r.reference}` : ''));
+	row(m.pdf_date(), fmtDate(r.date));
+	row(m.pdf_from(), r.studentName);
+	row(m.pdf_method(), METHOD[r.method]() + (r.reference ? `  ·  ${r.reference}` : ''));
 	if (r.covers.length) {
-		page.drawText('For', { x, y, size: 10, font, color: grey });
+		page.drawText(latin(m.pdf_for()), { x, y, size: 10, font, color: grey });
 		y -= 16;
 		for (const c of r.covers.slice(0, 14)) {
 			page.drawText(latin(c.description).slice(0, 60), {
@@ -83,8 +84,8 @@ export async function receiptPdf(r: ReceiptData): Promise<Uint8Array> {
 		page.drawLine({ start: { x, y }, end: { x: 384, y }, thickness: 0.6, color: line });
 		y -= 16;
 	}
-	row('Amount', formatMoney(r.amountCents, r.currency), true);
+	row(m.pdf_amount(), formatMoney(r.amountCents, r.currency), true);
 	y -= 6;
-	page.drawText('Confirmed by the tutor. Thank you!', { x, y, size: 9, font, color: grey });
+	page.drawText(latin(m.pdf_thanks()), { x, y, size: 9, font, color: grey });
 	return doc.save();
 }

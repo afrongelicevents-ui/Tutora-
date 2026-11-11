@@ -19,6 +19,7 @@ import { notifyTutor } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { formatMoney, parseMoney } from '#lib/money.ts';
 import { isIsoDate, localDate } from '#lib/tz.ts';
+import { m } from '#lib/paraglide/messages.js';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const u = locals.user!;
@@ -85,8 +86,13 @@ export const actions: Actions = {
 		});
 		await notifyTutor(
 			locals.db,
-			'Payment to confirm',
-			`${u.name} says they paid ${formatMoney(cents, row.currency)} (${p.data.method}, ref ${p.data.reference}). Open Tutora to check the proof and confirm or reject.`
+			m.email_pay_new_s(),
+			m.email_pay_new_b({
+				name: u.name,
+				amount: formatMoney(cents, row.currency),
+				method: p.data.method,
+				ref: p.data.reference
+			})
 		);
 		return { done: 'sent' };
 	},
@@ -112,8 +118,8 @@ export const actions: Actions = {
 		});
 		await notifyTutor(
 			locals.db,
-			'Cash payment to confirm',
-			`${u.name} says they paid you ${formatMoney(cents, row.currency)} in cash on ${date}. Open Tutora to confirm.`
+			m.email_cash_new_s(),
+			m.email_cash_new_b({ name: u.name, amount: formatMoney(cents, row.currency), date })
 		);
 		return { done: 'cash' };
 	},
@@ -122,7 +128,7 @@ export const actions: Actions = {
 		const f = formObject(await request.formData());
 		try {
 			const sp = await buyPackage(locals.db, u.id, Number(f.id) || 0);
-			await notifyTutor(locals.db, 'Package chosen', `${u.name} chose the package "${sp.name}".`);
+			await notifyTutor(locals.db, m.email_pkg_s(), m.email_pkg_b({ name: u.name, pkg: sp.name }));
 		} catch (e) {
 			if (e instanceof BillingFail) return fail(400, { error: e.code });
 			throw e;

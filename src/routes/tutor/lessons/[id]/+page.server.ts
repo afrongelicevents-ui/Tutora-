@@ -6,6 +6,7 @@ import { requireTutor } from '#lib/server/guards.ts';
 import { notifyUser } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { fmtDayTime } from '#lib/tz.ts';
+import { m } from '#lib/paraglide/messages.js';
 
 const lessonId = (p: string) => {
 	const n = Number(p);
@@ -39,8 +40,8 @@ export const actions: Actions = {
 				await notifyUser(
 					locals.db,
 					uid,
-					'Lesson cancelled',
-					`The tutor had to cancel the lesson on ${fmtDayTime(r.lesson.startsAt)}. Any charge for it has been removed. Please book another time on Tutora.`
+					m.email_lesson_cancel_s(),
+					m.email_lesson_cancel_b({ when: fmtDayTime(r.lesson.startsAt) })
 				);
 			}
 		} catch (e) {

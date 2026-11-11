@@ -27,6 +27,7 @@ import { parseMoney, formatMoney } from '#lib/money.ts';
 import { isIsoDate, localDate } from '#lib/tz.ts';
 import { attendee } from '#lib/server/db/app.schema.ts';
 import { and, eq } from 'drizzle-orm';
+import { m } from '#lib/paraglide/messages.js';
 
 async function student(db: App.Locals['db'], id: string) {
 	const s = await getStudent(db, id);
@@ -109,8 +110,8 @@ export const actions: Actions = {
 		await notifyUser(
 			locals.db,
 			s.id,
-			`Cash received – receipt ${receiptNumber(r.receiptNo)}`,
-			`The tutor recorded your cash payment of ${formatMoney(cents, r.currency)}. Your receipt is under "Payments" on Tutora.`
+			m.email_cash_rec_s({ receipt: receiptNumber(r.receiptNo) }),
+			m.email_cash_rec_b({ amount: formatMoney(cents, r.currency) })
 		);
 		return { saved: true, receipt: receiptNumber(r.receiptNo) };
 	},
@@ -138,8 +139,8 @@ export const actions: Actions = {
 		await notifyUser(
 			locals.db,
 			s.id,
-			'New homework',
-			`You have new homework: "${parsed.data.title}". Open "Homework" on Tutora.`
+			m.email_hw_new_s(),
+			m.email_hw_new_b({ title: parsed.data.title })
 		);
 		return { saved: true };
 	},

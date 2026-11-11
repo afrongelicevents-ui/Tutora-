@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { user } from './db/auth.schema.ts';
 import { sendEmail } from './auth.ts';
+import { m } from '../paraglide/messages.js';
 
 /** Email someone about their booking/payment. Never fails the action if email is down. */
 export async function notifyUser(db: DB, userId: string, subject: string, body: string) {
@@ -11,7 +12,11 @@ export async function notifyUser(db: DB, userId: string, subject: string, body: 
 			.from(user)
 			.where(eq(user.id, userId));
 		if (!u) return;
-		await sendEmail({ to: u.email, subject, text: `Hello ${u.name},\n\n${body}\n\nTutora` });
+		await sendEmail({
+			to: u.email,
+			subject,
+			text: `${m.email_hello({ name: u.name })}\n\n${body}\n\n${m.email_sign()}`
+		});
 	} catch (e) {
 		console.error('notifyUser failed', e);
 	}
@@ -26,7 +31,7 @@ export async function notifyTutor(db: DB, subject: string, body: string) {
 			.where(eq(user.role, 'tutor'))
 			.limit(1);
 		if (!t) return;
-		await sendEmail({ to: t.email, subject, text: `${body}\n\nTutora` });
+		await sendEmail({ to: t.email, subject, text: `${body}\n\n${m.email_sign()}` });
 	} catch (e) {
 		console.error('notifyTutor failed', e);
 	}
