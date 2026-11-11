@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0E6B52">
+<title>Tutora – Maths &amp; Science lessons</title>
+<meta name="description" content="Clear, patient Maths and Science lessons. ZIMSEC and Cambridge, Grade 7 to A Level. Online or in person.">
+<style>
+:root{--g7:#0e6b52;--g9:#0a4f3d;--clay:#b4531a;--ochre:#e3a33b;--ink:#1c2620;--ink6:#5b665f;--paper:#fbf8f2;--mint:#e3f1ea;--line:#e6e0d6;--r:14px;--font:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;--serif:Georgia,"Times New Roman",serif}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;font:16px/1.55 var(--font);color:var(--ink);background:var(--paper)}
+a{color:var(--g7)}h1,h2,h3{font-family:var(--serif);line-height:1.2;margin:0 0 12px}h1{font-size:clamp(1.9rem,7vw,2.8rem)}h2{font-size:1.6rem}h3{font-size:1.15rem}
+p{margin:0 0 14px}.muted{color:var(--ink6)}.small{font-size:.88rem}
+.wrap{max-width:720px;margin:0 auto;padding:0 20px}
+header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;justify-content:space-between;align-items:center;min-height:60px}
+.logo{font-family:var(--serif);font-weight:700;font-size:1.7rem;color:var(--g7);text-decoration:none;letter-spacing:-.02em}.logo span{color:var(--ochre)}
+nav.top{display:flex;gap:4px}nav.top a{padding:10px 8px;font-weight:600;color:var(--ink);text-decoration:none;font-size:.95rem}
+@media(max-width:520px){nav.top .hide-sm{display:none}}
+section{padding:36px 0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 22px;border-radius:var(--r);border:2px solid var(--g7);background:var(--g7);color:#fbf8f2;font:inherit;font-weight:700;text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--g9);border-color:var(--g9)}.btn.sec{background:#fff;color:var(--g7)}.btn.sec:hover{background:var(--mint)}.btn.block{width:100%}
+.stack>*+*{margin-top:12px}
+.hero{padding-top:28px}
+.who{display:flex;gap:16px;align-items:center;margin-bottom:18px}
+.avatar{width:92px;height:92px;border-radius:50%;background:var(--mint);border:3px solid var(--ochre);display:grid;place-items:center;font-family:var(--serif);font-size:2rem;color:var(--g9);flex:none}
+.pill{display:inline-block;background:var(--mint);color:var(--g9);border-radius:99px;padding:2px 12px;font-size:.82rem;font-weight:700}
+.band{background:var(--g9);color:var(--paper);border-radius:var(--r);padding:20px}
+.band .lbl{color:var(--mint);font-size:.85rem;font-weight:600;margin-bottom:6px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stats b{display:block;font-family:var(--serif);font-size:1.8rem}.stats span{font-size:.85rem}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.card+.card{margin-top:10px}
+.subject{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.price{color:var(--clay);font-weight:700;white-space:nowrap}
+.grid2{display:grid;grid-template-columns:1fr;gap:10px}@media(min-width:600px){.grid2{grid-template-columns:1fr 1fr}}
+.feat{display:flex;gap:12px;align-items:flex-start}.feat svg{flex:none;color:var(--g7);margin-top:2px}
+.review{background:var(--mint);border-radius:var(--r);padding:16px;margin:0 0 10px}.stars{color:var(--clay);letter-spacing:2px}
+.tag{font-size:.75rem;font-weight:700;color:var(--ink6);text-transform:uppercase;letter-spacing:.05em}
+form .field{display:grid;gap:5px;margin-bottom:14px}form label,.lab{font-weight:600}
+input,select,textarea{font:inherit;color:inherit;min-height:50px;padding:10px 12px;border:1.5px solid #8a948e;border-radius:10px;background:#fff;width:100%}
+textarea{min-height:90px}
+.choice{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.choice label{display:flex;align-items:center;gap:8px;min-height:50px;padding:0 12px;border:1.5px solid #8a948e;border-radius:10px;background:#fff;cursor:pointer;font-weight:600}
+.choice label:has(input:checked){border-color:var(--g7);background:var(--mint)}.choice input{width:20px;height:20px;min-height:0;accent-color:var(--g7);margin:0}
+.notice{background:#fdf3e1;color:#6b4600;border-radius:10px;padding:12px 14px;margin-top:12px}
+.fab{position:fixed;right:16px;bottom:18px;z-index:30;display:inline-flex;gap:8px;align-items:center;min-height:54px;padding:0 20px 0 16px;border-radius:99px;background:var(--g7);color:#fbf8f2;font-weight:700;text-decoration:none;box-shadow:0 4px 14px rgb(0 0 0/.22)}
+footer{border-top:1px solid var(--line);padding:28px 0 100px;color:var(--ink6);font-size:.9rem}
+:focus-visible{outline:3px solid var(--g7);outline-offset:2px}
+</style>
+</head>
+<body>
+<header>
+	<div class="wrap">
+		<a class="logo" href="#top" aria-label="Tutora">tut<span>o</span>ra</a>
+		<nav class="top" aria-label="Main">
+			<a href="#subjects" class="hide-sm">Subjects</a>
+			<a href="#about" class="hide-sm">About</a>
+			<a href="#book">Book</a>
+		</nav>
+	</div>
+</header>
+
+<main id="top">
+	<section class="hero wrap">
+		<div class="who">
+			<div class="avatar" aria-hidden="true" data-initials></div>
+			<div>
+				<h3 style="margin:0" data-name></h3>
+				<div class="muted small" data-place></div>
+				<span class="pill" data-years></span>
+			</div>
+		</div>
+		<h1>Clear, patient lessons that get results</h1>
+		<p class="muted">Maths and Science for ZIMSEC and Cambridge students, Grade 7 to A Level. Online from anywhere, or in person.</p>
+		<div class="stack">
+			<a class="btn block" href="#book">Book a lesson</a>
+			<a class="btn sec block" href="#book" data-intro>Free 15-minute intro chat</a>
+		</div>
+	</section>
+
+	<section class="wrap" style="padding-top:0">
+		<div class="band">
+			<div class="lbl">Results <span style="opacity:.8">(example figures)</span></div>
+			<div class="stats">
+				<div><b>94%</b><span>O Level pass rate</span></div>
+				<div><b>31</b><span>A grades</span></div>
+				<div><b>120+</b><span>students taught</span></div>
+			</div>
+		</div>
+	</section>
+
+	<section class="wrap" id="subjects">
+		<h2>Subjects &amp; prices</h2>
+		<div id="subject-list"></div>
+		<p class="small muted" style="margin-top:10px">Lesson packages are available. Ask on WhatsApp.</p>
+	</section>
+
+	<section class="wrap">
+		<h2>How lessons work</h2>
+		<div class="grid2">
+			<div class="card feat"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><div><b>Online</b><p class="small muted" style="margin:0">Audio and a shared whiteboard. Works on a phone and uses little data.</p></div></div>
+			<div class="card feat"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg><div><b>In person</b><p class="small muted" style="margin:0" data-place-long></p></div></div>
+			<div class="card feat"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg><div><b>One-to-one or small groups</b><p class="small muted" style="margin:0">Small groups of up to 4 students are also possible.</p></div></div>
+			<div class="card feat"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="2" y="6" width="20" height="13" rx="2"/><circle cx="12" cy="12.5" r="3"/></svg><div><b>Easy payment</b><p class="small muted" style="margin:0">EcoCash, InnBucks, bank transfer or cash. A receipt for every payment.</p></div></div>
+		</div>
+	</section>
+
+	<section class="wrap" id="about">
+		<h2>About me</h2>
+		<div class="card">
+			<p>I have taught Maths and Science for many years, in schools and privately. I explain step by step, check understanding often, and give short practice after each lesson so students keep improving between lessons.</p>
+			<p style="margin:0" class="small muted">Qualifications: BSc Mathematics &amp; Physics, PGDE (to be confirmed)</p>
+		</div>
+	</section>
+
+	<section class="wrap">
+		<h2>What students say</h2>
+		<p class="tag">Example reviews: real reviews will appear here</p>
+		<figure class="review"><div class="stars" aria-label="5 out of 5">★★★★★</div><blockquote style="margin:6px 0">“I went from a D to a B in Maths in one term. He explains until you get it.”</blockquote><figcaption class="small muted">— Student, Form 4</figcaption></figure>
+		<figure class="review"><div class="stars" aria-label="5 out of 5">★★★★★</div><blockquote style="margin:6px 0">“Very organised. Homework after every lesson and clear receipts.”</blockquote><figcaption class="small muted">— Parent</figcaption></figure>
+	</section>
+
+	<section class="wrap" id="book">
+		<h2>Book a lesson</h2>
+		<p class="muted">Fill this in and tap the button. WhatsApp opens with your message ready to send.</p>
+		<form id="book-form" class="card" novalidate>
+			<div class="field"><label for="b-name">Your name</label><input id="b-name" name="name" autocomplete="name" required maxlength="80"></div>
+			<fieldset style="border:0;padding:0;margin:0 0 14px"><legend class="lab" style="margin-bottom:6px">I am</legend>
+				<div class="choice"><label><input type="radio" name="who" value="a student" checked> A student</label><label><input type="radio" name="who" value="a parent"> A parent</label></div></fieldset>
+			<div class="field"><label for="b-subject">Subject</label><select id="b-subject" name="subject"></select></div>
+			<div class="field"><label for="b-level">Level / form</label><input id="b-level" name="level" placeholder="e.g. Form 4, O Level" maxlength="60"></div>
+			<fieldset style="border:0;padding:0;margin:0 0 14px"><legend class="lab" style="margin-bottom:6px">Where</legend>
+				<div class="choice"><label><input type="radio" name="where" value="online" checked> Online</label><label><input type="radio" name="where" value="in person"> In person</label></div></fieldset>
+			<div class="field"><label for="b-when">Best days and times</label><input id="b-when" name="when" placeholder="e.g. Tuesdays after 4 pm" maxlength="100"></div>
+			<div class="field"><label for="b-note">Anything else? (optional)</label><textarea id="b-note" name="note" maxlength="400"></textarea></div>
+			<button class="btn block" type="submit">Send on WhatsApp</button>
+			<p id="book-msg" class="notice" hidden></p>
+		</form>
+	</section>
+</main>
+
+<footer>
+	<div class="wrap">
+		<p style="margin:0 0 6px"><b data-name></b> · <span data-place></span></p>
+		<p style="margin:0">WhatsApp: <span data-phone></span></p>
+		<p class="small" style="margin-top:12px">Students' details are only used to arrange lessons and are never shared. No photos of students are published.</p>
+	</div>
+</footer>
+
+<a class="fab" id="fab" href="#book"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/></svg><span>WhatsApp</span></a>
+
+<script>
+'use strict';
+/* ====== EDIT THESE when the tutor sends their details ====== */
+const TUTOR = {
+	name: 'Your Tutor',                 // e.g. 'Mr T. Moyo'
+	initials: 'YT',
+	place: 'Harare',                    // town or area
+	placeLong: 'At my home in Harare, or a quiet place near you.',
+	years: '10+ years teaching',
+	whatsapp: '',                       // e.g. '+263 77 123 4567' (leave empty until known)
+	subjects: [
+		{ name: 'Mathematics', levels: 'Grade 7 · O Level · A Level', price: '$8 / lesson' },
+		{ name: 'Physics', levels: 'O Level · A Level', price: '$10 / lesson' },
+		{ name: 'Combined Science', levels: 'O Level', price: '$8 / lesson' }
+	]
+};
+/* ============================================================ */
+
+const $ = (s) => document.querySelector(s);
+const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const digits = TUTOR.whatsapp.replace(/\D/g, '');
+const wa = (text) => (digits ? `https://wa.me/${digits}?text=${encodeURIComponent(text)}` : null);
+
+document.querySelectorAll('[data-name]').forEach((el) => (el.textContent = TUTOR.name));
+document.querySelectorAll('[data-place]').forEach((el) => (el.textContent = `Maths & Science tutor · ${TUTOR.place}`));
+document.querySelectorAll('[data-place-long]').forEach((el) => (el.textContent = TUTOR.placeLong));
+document.querySelectorAll('[data-initials]').forEach((el) => (el.textContent = TUTOR.initials));
+document.querySelectorAll('[data-years]').forEach((el) => (el.textContent = TUTOR.years));
+document.querySelectorAll('[data-phone]').forEach((el) => (el.textContent = TUTOR.whatsapp || 'coming soon'));
+
+$('#subject-list').innerHTML = TUTOR.subjects
+	.map((s) => `<div class="card subject"><div><b>${esc(s.name)}</b><div class="small muted">${esc(s.levels)}</div></div><span class="price">${esc(s.price)}</span></div>`)
+	.join('');
+$('#b-subject').innerHTML = TUTOR.subjects.map((s) => `<option>${esc(s.name)}</option>`).join('') + '<option>Free 15-minute intro chat</option>';
+
+const hello = "Hi, I found your Tutora page and I'd like to ask about lessons.";
+const fab = $('#fab');
+if (wa(hello)) { fab.href = wa(hello); fab.target = '_blank'; fab.rel = 'noopener noreferrer'; }
+
+document.querySelectorAll('[data-intro]').forEach((a) => a.addEventListener('click', () => { $('#b-subject').value = 'Free 15-minute intro chat'; }));
+
+$('#book-form').addEventListener('submit', (e) => {
+	e.preventDefault();
+	const f = new FormData(e.target);
+	const msg = $('#book-msg');
+	const name = String(f.get('name') || '').trim();
+	if (!name) { msg.hidden = false; msg.textContent = 'Please enter your name.'; $('#b-name').focus(); return; }
+	const text = [
+		`Hi, I'm ${name}, ${f.get('who')}. I'd like to book: ${f.get('subject')}${f.get('level') ? ` (${String(f.get('level')).trim()})` : ''}, ${f.get('where')}.`,
+		f.get('when') ? `Best times: ${String(f.get('when')).trim()}.` : '',
+		f.get('note') ? String(f.get('note')).trim() : ''
+	].filter(Boolean).join('\n');
+	const link = wa(text);
+	if (!link) {
+		msg.hidden = false;
+		msg.innerHTML = 'Bookings by WhatsApp open soon. Your message is ready:<br><br>' + esc(text).replace(/\n/g, '<br>');
+		return;
+	}
+	msg.hidden = false;
+	msg.innerHTML = `<a class="btn block" href="${esc(link)}" target="_blank" rel="noopener noreferrer">Open WhatsApp to send</a>`;
+});
+</script>
+</body>
+</html>
