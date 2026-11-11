@@ -1,4 +1,4 @@
-export const ROLES = ['tutor', 'student', 'parent'] as const;
+export const ROLES = ['owner', 'tutor', 'student', 'parent'] as const;
 export type Role = (typeof ROLES)[number];
 
 /** Roles a person can pick when signing up. `tutor` is never self-selected. */
@@ -10,6 +10,7 @@ export function isRole(value: unknown): value is Role {
 }
 
 /** Where each role lands after logging in. */
-export function homeFor(role: Role): '/tutor' | '/student' {
+export function homeFor(role: Role): '/owner' | '/tutor' | '/student' {
+	if (role === 'owner') return '/owner';
 	return role === 'tutor' ? '/tutor' : '/student';
 }

@@ -9,40 +9,36 @@
 <svelte:head><title>{m.setup_title()} · Tutora</title></svelte:head>
 
 <section class="wrap narrow stack">
-	<h1>{m.setup_title()}</h1>
+	<h1>{m.setup_owner_title()}</h1>
 	{#if data.done}
 		<p class="notice">{m.setup_done()}</p>
 		<a class="btn" href="/login">{m.nav_login()}</a>
-	{:else if form && 'sent' in form}
-		<p class="notice" role="status">{m.setup_sent()}</p>
 	{:else}
-		<p class="muted">{data.mode === 'direct' ? m.setup_lead_direct() : m.setup_lead()}</p>
+		<p class="muted">{m.setup_lead_owner()}</p>
 		{#if e.form}<p class="alert" role="alert">
 				{t(e.form, { minutes: (form as { retryMinutes?: number })?.retryMinutes ?? 60 })}
 			</p>{/if}
 		<form method="POST" class="stack" novalidate>
-			{#if data.mode === 'direct'}
-				<Field
-					name="code"
-					label={m.setup_code()}
-					hint={m.setup_code_hint()}
-					autocomplete="one-time-code"
-					autocapitalize="characters"
-					spellcheck="false"
-					value={v.code ?? data.code}
-					error={e.code}
-					required
-				/>
-				<Field
-					name="name"
-					label={m.set_name()}
-					hint={m.set_name_hint()}
-					autocomplete="name"
-					value={v.name ?? ''}
-					error={e.name}
-					required
-				/>
-			{/if}
+			<Field
+				name="code"
+				label={m.setup_code()}
+				hint={m.setup_code_hint()}
+				autocomplete="one-time-code"
+				autocapitalize="characters"
+				spellcheck="false"
+				value={v.code ?? data.code}
+				error={e.code}
+				required
+			/>
+			<Field
+				name="name"
+				label={m.set_name()}
+				hint={m.set_name_hint()}
+				autocomplete="name"
+				value={v.name ?? ''}
+				error={e.name}
+				required
+			/>
 			<Field
 				name="email"
 				type="email"
@@ -52,28 +48,24 @@
 				error={e.email}
 				required
 			/>
-			{#if data.mode === 'direct'}
-				<Field
-					name="password"
-					type="password"
-					label={m.field_password()}
-					hint={m.field_password_hint()}
-					autocomplete="new-password"
-					error={e.password}
-					required
-				/>
-				<Field
-					name="confirm"
-					type="password"
-					label={m.field_password_confirm()}
-					autocomplete="new-password"
-					error={e.confirm}
-					required
-				/>
-			{/if}
-			<button class="btn btn-block" type="submit"
-				>{data.mode === 'direct' ? m.setup_create() : m.setup_submit()}</button
-			>
+			<Field
+				name="password"
+				type="password"
+				label={m.field_password()}
+				hint={m.field_password_hint()}
+				autocomplete="new-password"
+				error={e.password}
+				required
+			/>
+			<Field
+				name="confirm"
+				type="password"
+				label={m.field_password_confirm()}
+				autocomplete="new-password"
+				error={e.confirm}
+				required
+			/>
+			<button class="btn btn-block" type="submit">{m.setup_create()}</button>
 		</form>
 	{/if}
 </section>

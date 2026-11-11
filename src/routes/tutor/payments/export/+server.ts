@@ -5,9 +5,9 @@ import { localDate } from '#lib/tz.ts';
 
 /** All payments of the last 2 years as a spreadsheet file (amounts in normal units, not cents). */
 export const GET: RequestHandler = async ({ locals, url }) => {
-	requireTutor(locals.user, url);
+	const t = requireTutor(locals.user, url).id;
 	const now = new Date();
-	const rows = await paymentsBetween(locals.db, new Date(now.getTime() - 730 * 86_400_000), now);
+	const rows = await paymentsBetween(locals.db, t, new Date(now.getTime() - 730 * 86_400_000), now);
 	const csv = toCsv([
 		['Date', 'Student', 'Amount', 'Currency', 'Method', 'Reference', 'Status', 'Receipt'],
 		...rows.map((p) => [

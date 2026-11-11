@@ -32,7 +32,7 @@ import {
 import { fieldErrors, formObject } from '../validation/auth.ts';
 import { readUpload, IMAGE_KINDS, newKey } from './files.ts';
 import { getStore } from './storage.ts';
-import { requireTutor } from './guards.ts';
+import { requireRole, requireTutor } from './guards.ts';
 import { hitLimit, clientIp } from './rate-limit.ts';
 import { emailEnabled } from './auth.ts';
 import { changeEmailNow } from './account.ts';
@@ -65,13 +65,13 @@ export function isSection(s: string): s is Section {
 	return (SECTIONS as readonly string[]).includes(s);
 }
 
-export async function loadSection(db: DB, section: Section) {
-	const s = await getSettings(db);
+export async function loadSection(db: DB, tutorId: string, section: Section) {
+	const s = await getSettings(db, tutorId);
 	const [subjects, packages, times, results] = await Promise.all([
-		section === 'subjects' || section === 'prices' ? listSubjects(db) : [],
-		section === 'prices' ? listPackages(db) : [],
-		section === 'times' ? listAvailability(db) : [],
-		section === 'results' ? listResults(db) : []
+		section === 'subjects' || section === 'prices' ? listSubjects(db, tutorId) : [],
+		section === 'prices' ? listPackages(db, tutorId) : [],
+		section === 'times' ? listAvailability(db, tutorId) : [],
+		section === 'results' ? listResults(db, tutorId) : []
 	]);
 	return { settings: s, subjects, packages, times, results };
 }
@@ -93,7 +93,7 @@ export function sectionActions(after: (ev: Ev) => string | null): Actions {
 	};
 	return {
 		profile: async (ev) => {
-			guard(ev);
+			const t = guard(ev).id;
 			const data = await ev.request.formData();
 			const parsed = profileSchema.safeParse(formObject(data));
 			if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
@@ -108,7 +108,7 @@ export function sectionActions(after: (ev: Ev) => string | null): Actions {
 				});
 			if (photo?.ok) {
 				const store = getStore(ev.platform);
-				const s = await getSettings(ev.locals.db);
+				const s = await getSettings(ev.locals.db, t);
 				const key = newKey('public', photo.ext);
 				await store.put(key, photo.bytes, photo.kind);
 				if (s.photoKey) await store.delete(s.photoKey).catch(() => {});
@@ -116,68 +116,68 @@ export function sectionActions(after: (ev: Ev) => string | null): Actions {
 				patch.photoVersion = s.photoVersion + 1;
 			}
 			if (data.get('removePhoto') === 'on') {
-				const s = await getSettings(ev.locals.db);
+				const s = await getSettings(ev.locals.db, t);
 				if (s.photoKey)
 					await getStore(ev.platform)
 						.delete(s.photoKey)
 						.catch(() => {});
 				patch.photoKey = null;
 			}
-			await updateSettings(ev.locals.db, patch);
+			await updateSettings(ev.locals.db, t, patch);
 			return done(ev);
 		},
 		teaching: async (ev) => {
-			guard(ev);
+			const t = guard(ev).id;
 			const parsed = teachingSchema.safeParse(await form(ev));
 			if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
-			await updateSettings(ev.locals.db, parsed.data);
+			await updateSettings(ev.locals.db, t, parsed.data);
 			return done(ev);
 		},
 		prices: async (ev) => {
-			guard(ev);
+			const t = guard(ev).id;
 			const f = await form(ev);
 			const parsed = pricesSchema.safeParse(f);
 			if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
 			// subject prices are edited on the same page: price_<id>
-			const subjects = await listSubjects(ev.locals.db);
+			const subjects = await listSubjects(ev.locals.db, t);
 			for (const subj of subjects) {
 				const field = `price_${subj.id}`;
 				if (!(field in f)) continue;
 				const p = subjectSchema.shape.price.safeParse(f[field]);
 				if (!p.success) return fail(400, { errors: { [field]: 'err_money' } });
-				await updateSubject(ev.locals.db, subj.id, {
+				await updateSubject(ev.locals.db, t, subj.id, {
 					name: subj.name,
 					levels: subj.levels,
 					price: p.data
 				});
 			}
 			const { defaultPrice, ...rest } = parsed.data;
-			await updateSettings(ev.locals.db, { ...rest, defaultPriceCents: defaultPrice });
+			await updateSettings(ev.locals.db, t, { ...rest, defaultPriceCents: defaultPrice });
 			return done(ev);
 		},
 		contact: async (ev) => {
-			guard(ev);
+			const t = guard(ev).id;
 			const parsed = contactSchema.safeParse(await form(ev));
 			if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
-			await updateSettings(ev.locals.db, parsed.data);
+			await updateSettings(ev.locals.db, t, parsed.data);
 			return done(ev);
 		},
 		payments: async (ev) => {
-			guard(ev);
+			const t = guard(ev).id;
 			const parsed = paymentDetailsSchema.safeParse(await form(ev));
 			if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
-			await updateSettings(ev.locals.db, parsed.data);
+			await updateSettings(ev.locals.db, t, parsed.data);
 			return done(ev);
 		},
 		times: async (ev) => {
-			guard(ev);
+			const t = guard(ev).id;
 			const f = await form(ev);
 			const avail = parseAvailability(f);
 			if (!avail.ok) return fail(400, { errors: avail.errors });
 			const parsed = teachingSchema.pick({ lessonMinutes: true, cancelHours: true }).safeParse(f);
 			if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
-			await replaceAvailability(ev.locals.db, avail.rows);
-			await updateSettings(ev.locals.db, parsed.data);
+			await replaceAvailability(ev.locals.db, t, avail.rows);
+			await updateSettings(ev.locals.db, t, parsed.data);
 			return done(ev);
 		},
 		next: async (ev) => {
@@ -186,62 +186,69 @@ export function sectionActions(after: (ev: Ev) => string | null): Actions {
 			return done(ev);
 		},
 		addSubject: async (ev) => {
-			guard(ev);
+			const t = guard(ev).id;
 			const parsed = subjectSchema.safeParse(await form(ev));
 			if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
-			await addSubject(ev.locals.db, parsed.data);
+			await addSubject(ev.locals.db, t, parsed.data);
 			return { saved: true };
 		},
 		editSubject: async (ev) => {
-			guard(ev);
+			const t = guard(ev).id;
 			const f = await form(ev);
 			const id = idSchema.safeParse(f);
 			const parsed = subjectSchema.safeParse(f);
 			if (!id.success || !parsed.success)
 				return fail(400, { errors: parsed.success ? {} : fieldErrors(parsed.error) });
-			await updateSubject(ev.locals.db, id.data.id, parsed.data);
+			await updateSubject(ev.locals.db, t, id.data.id, parsed.data);
 			return { saved: true };
 		},
 		removeSubject: async (ev) => {
-			guard(ev);
+			const t = guard(ev).id;
 			const id = idSchema.safeParse(await form(ev));
-			if (id.success) await removeSubject(ev.locals.db, id.data.id);
+			if (id.success) await removeSubject(ev.locals.db, t, id.data.id);
 			return { saved: true };
 		},
 		addPackage: async (ev) => {
-			guard(ev);
+			const t = guard(ev).id;
 			const parsed = packageSchema.safeParse(await form(ev));
 			if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
-			await addPackage(ev.locals.db, { ...parsed.data, price: parsed.data.price! });
+			await addPackage(ev.locals.db, t, { ...parsed.data, price: parsed.data.price! });
 			return { saved: true };
 		},
 		removePackage: async (ev) => {
-			guard(ev);
+			const t = guard(ev).id;
 			const id = idSchema.safeParse(await form(ev));
-			if (id.success) await removePackage(ev.locals.db, id.data.id);
+			if (id.success) await removePackage(ev.locals.db, t, id.data.id);
 			return { saved: true };
 		},
 		addResult: async (ev) => {
-			guard(ev);
+			const t = guard(ev).id;
 			const parsed = resultSchema.safeParse(await form(ev));
 			if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
-			await addResult(ev.locals.db, parsed.data);
+			await addResult(ev.locals.db, t, parsed.data);
 			return { saved: true };
 		},
 		removeResult: async (ev) => {
-			guard(ev);
+			const t = guard(ev).id;
 			const id = idSchema.safeParse(await form(ev));
-			if (id.success) await removeResult(ev.locals.db, id.data.id);
+			if (id.success) await removeResult(ev.locals.db, t, id.data.id);
 			return { saved: true };
 		},
 		resultsConsent: async (ev) => {
-			guard(ev);
+			const t = guard(ev).id;
 			const f = await form(ev);
-			await updateSettings(ev.locals.db, { resultsConsent: f.consent === 'on' });
+			await updateSettings(ev.locals.db, t, { resultsConsent: f.consent === 'on' });
 			return { saved: true };
 		},
+		...accountActions()
+	};
+}
+
+/** Login email and password changes, for tutors and the platform owner. */
+export function accountActions(): Actions {
+	return {
 		changeEmail: async (ev) => {
-			const u = guard(ev);
+			const u = requireRole(ev.locals.user, ev.url, ['tutor', 'owner']);
 			const limit = await hitLimit(
 				ev.locals.db,
 				'passwordReset',
@@ -286,7 +293,7 @@ export function sectionActions(after: (ev: Ev) => string | null): Actions {
 			return { emailSent: parsed.data.newEmail };
 		},
 		changePassword: async (ev) => {
-			const u = guard(ev);
+			const u = requireRole(ev.locals.user, ev.url, ['tutor', 'owner']);
 			const limit = await hitLimit(
 				ev.locals.db,
 				'passwordReset',

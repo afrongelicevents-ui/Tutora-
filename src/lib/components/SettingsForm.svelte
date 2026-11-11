@@ -67,7 +67,7 @@
 			<label for="f-photo">{m.set_photo()}</label>
 			<span class="hint" id="f-photo-hint">{m.set_photo_hint()}</span>
 			{#if s.photoKey}<img
-					src="/photo?v={s.photoVersion}"
+					src="/tutor/photo?v={s.photoVersion}"
 					alt=""
 					width="96"
 					height="96"

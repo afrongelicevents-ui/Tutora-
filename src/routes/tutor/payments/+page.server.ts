@@ -14,15 +14,15 @@ import { inboxActions } from '#lib/server/actions/tutor-inbox.ts';
 import { addDays, localDate } from '#lib/tz.ts';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	requireTutor(locals.user, url);
+	const t = requireTutor(locals.user, url).id;
 	const now = new Date();
 	const [s, pending, recent, bal, students, months] = await Promise.all([
-		getSettings(locals.db),
-		pendingPayments(locals.db),
-		recentPayments(locals.db, 30),
-		balances(locals.db),
-		listStudents(locals.db),
-		monthlyTotals(locals.db, addDays(now, -366))
+		getSettings(locals.db, t),
+		pendingPayments(locals.db, t),
+		recentPayments(locals.db, t, 30),
+		balances(locals.db, t),
+		listStudents(locals.db, t),
+		monthlyTotals(locals.db, t, addDays(now, -366))
 	]);
 	const rows = students
 		.map((x) => ({

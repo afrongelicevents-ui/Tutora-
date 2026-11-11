@@ -1,19 +1,23 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { TUTOR_EMAIL } from '$app/env/private';
 import { signUp } from '#lib/server/actions/signup.ts';
 import { hitLimit, clientIp } from '#lib/server/rate-limit.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { homeFor } from '#lib/roles.ts';
+import { safeNext } from '#lib/server/guards.ts';
 import { emailEnabled } from '#lib/server/auth.ts';
 import { endLogin } from '#lib/server/auth-cookies.ts';
+import { activeTutorBySlug } from '#lib/server/settings.ts';
 
-export const load: PageServerLoad = ({ locals }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	if (locals.user) redirect(303, homeFor(locals.user.role));
+	// signing up from a tutor's page: show whose student they will be
+	const tutor = await activeTutorBySlug(locals.db, url.searchParams.get('tutor') ?? '');
+	return { tutorName: tutor?.tutorName ?? null };
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals, cookies }) => {
+	default: async ({ request, locals, cookies, url }) => {
 		const input = formObject(await request.formData());
 		const values = { ...input, password: '' };
 
@@ -27,7 +31,11 @@ export const actions: Actions = {
 		}
 
 		const result = await signUp(
-			{ auth: locals.auth, db: locals.db, tutorEmail: TUTOR_EMAIL },
+			{
+				auth: locals.auth,
+				db: locals.db,
+				tutorId: (await activeTutorBySlug(locals.db, url.searchParams.get('tutor') ?? ''))?.tutorId
+			},
 			input
 		);
 		if (!result.ok) return fail(400, { values, errors: result.errors });
@@ -42,7 +50,8 @@ export const actions: Actions = {
 					.signInEmail({ body: { email: result.email, password: input.password ?? '' } })
 					.catch(() => {});
 			}
-			redirect(303, '/student');
+			// straight on to booking when they came from a tutor's page
+			redirect(303, safeNext(url.searchParams.get('next'), '/student'));
 		}
 		redirect(303, `/verify-email?email=${encodeURIComponent(result.email)}`);
 	}

@@ -36,6 +36,10 @@
 			required
 			error={e.password}
 		/>
+		<label class="check"
+			><input type="checkbox" name="remember" defaultChecked={true} />
+			<span>{m.login_remember()}</span></label
+		>
 		<button class="btn btn-block" type="submit">{m.login_submit()}</button>
 	</form>
 	<p><a href="/forgot-password">{m.login_forgot()}</a></p>

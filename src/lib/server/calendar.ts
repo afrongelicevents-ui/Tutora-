@@ -2,23 +2,35 @@ import { and, asc, eq, gt, lt } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { calendarEvent } from './db/app.schema.ts';
 
-export const eventsBetween = (db: DB, from: Date, to: Date) =>
+export const eventsBetween = (db: DB, tutorId: string, from: Date, to: Date) =>
 	db
 		.select()
 		.from(calendarEvent)
-		.where(and(lt(calendarEvent.startsAt, to), gt(calendarEvent.endsAt, from)))
+		.where(
+			and(
+				eq(calendarEvent.tutorId, tutorId),
+				lt(calendarEvent.startsAt, to),
+				gt(calendarEvent.endsAt, from)
+			)
+		)
 		.orderBy(asc(calendarEvent.startsAt));
 
 export async function addEvent(
 	db: DB,
+	tutorId: string,
 	v: { title: string; startsAt: Date; endsAt: Date; note: string | null }
 ) {
-	const [row] = await db.insert(calendarEvent).values(v).returning();
+	const [row] = await db
+		.insert(calendarEvent)
+		.values({ ...v, tutorId })
+		.returning();
 	return row;
 }
 
-export async function removeEvent(db: DB, id: number) {
-	await db.delete(calendarEvent).where(eq(calendarEvent.id, id));
+export async function removeEvent(db: DB, tutorId: string, id: number) {
+	await db
+		.delete(calendarEvent)
+		.where(and(eq(calendarEvent.id, id), eq(calendarEvent.tutorId, tutorId)));
 }
 
 /** iCalendar text for one lesson, so it can be added to the phone's calendar. */

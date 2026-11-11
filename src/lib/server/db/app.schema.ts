@@ -12,13 +12,19 @@ import {
 	text,
 	timestamp,
 	uniqueIndex,
-	bigint
+	bigint,
+	primaryKey
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { user } from './auth.schema';
 
 const ts = (name: string) => timestamp(name, { withTimezone: true });
 const created = () => ts('created_at').notNull().defaultNow();
+/** The tutor (a user with role "tutor") this row belongs to. Every tutor's data is separate. */
+const tutorRef = () =>
+	text('tutor_id')
+		.notNull()
+		.references(() => user.id, { onDelete: 'cascade' });
 
 /**
  * Extra details for students and parents.
@@ -57,14 +63,26 @@ export const CURRENCIES = ['USD', 'ZWG'] as const;
 export const LESSON_MODES = ['online', 'in_person', 'both'] as const;
 export const GROUP_MODES = ['one_to_one', 'groups', 'both'] as const;
 
+export const TUTOR_STATUS = ['pending', 'active', 'suspended'] as const;
+
 /**
- * One row (id = 1) of everything the tutor sets up. Every personal field starts empty;
- * the public site hides sections that are still empty.
+ * Everything one tutor sets up: their public page, how lessons work, prices, contact and
+ * payment details. Every personal field starts empty; the public page hides empty sections.
+ * `status`: new tutors wait for the platform owner's approval ("pending").
+ * `plan` / `planUntil`: ready for tutor billing later (everyone is on "free" for now).
  */
-export const siteSettings = pgTable(
-	'site_settings',
+export const tutorProfile = pgTable(
+	'tutor_profile',
 	{
-		id: integer('id').primaryKey().default(1),
+		tutorId: text('tutor_id')
+			.primaryKey()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		/** address of the public page: /t/<slug> */
+		slug: text('slug').notNull(),
+		status: text('status', { enum: TUTOR_STATUS }).notNull().default('pending'),
+		approvedAt: ts('approved_at'),
+		plan: text('plan').notNull().default('free'),
+		planUntil: ts('plan_until'),
 		// profile
 		tutorName: text('tutor_name'),
 		headline: text('headline'),
@@ -89,7 +107,7 @@ export const siteSettings = pgTable(
 		whatsappNumber: text('whatsapp_number'),
 		phone: text('phone'),
 		contactEmail: text('contact_email'),
-		// payment details (shown to logged-in students only)
+		// payment details (shown to this tutor's logged-in students only)
 		bankName: text('bank_name'),
 		bankAccountName: text('bank_account_name'),
 		bankAccountNumber: text('bank_account_number'),
@@ -104,33 +122,60 @@ export const siteSettings = pgTable(
 		// setup wizard
 		setupStep: integer('setup_step').notNull().default(0),
 		setupDoneAt: ts('setup_done_at'),
+		createdAt: created(),
 		updatedAt: ts('updated_at')
 			.notNull()
 			.defaultNow()
 			.$onUpdate(() => new Date())
 	},
 	(t) => [
-		check('site_settings_singleton', sql`${t.id} = 1`),
-		check('site_settings_group', sql`${t.maxGroupSize} between 2 and 20`),
-		check('site_settings_len', sql`${t.lessonMinutes} between 15 and 240`)
+		uniqueIndex('tutor_profile_slug').on(t.slug),
+		index('tutor_profile_status_idx').on(t.status),
+		check('tutor_profile_group', sql`${t.maxGroupSize} between 2 and 20`),
+		check('tutor_profile_len', sql`${t.lessonMinutes} between 15 and 240`),
+		check('tutor_profile_slug_ok', sql`${t.slug} ~ '^[a-z0-9]([a-z0-9-]{0,38}[a-z0-9])?$'`)
 	]
 );
 
-export const subject = pgTable('subject', {
-	id: serial('id').primaryKey(),
-	name: text('name').notNull(),
-	/** e.g. "Grade 7, O Level, A Level" */
-	levels: text('levels').notNull().default(''),
-	priceCents: integer('price_cents'),
-	sortOrder: integer('sort_order').notNull().default(0),
-	active: boolean('active').notNull().default(true),
-	createdAt: created()
-});
+/**
+ * A student or parent account linked to a tutor (made when they sign up from the tutor's
+ * page or book with them). A tutor only ever sees their own enrolled students.
+ */
+export const enrollment = pgTable(
+	'enrollment',
+	{
+		tutorId: tutorRef(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		/** the tutor's note of the student's level, e.g. "Form 3" */
+		level: text('level'),
+		createdAt: created()
+	},
+	(t) => [primaryKey({ columns: [t.tutorId, t.userId] }), index('enrollment_user_idx').on(t.userId)]
+);
+
+export const subject = pgTable(
+	'subject',
+	{
+		id: serial('id').primaryKey(),
+		tutorId: tutorRef(),
+		name: text('name').notNull(),
+		/** e.g. "Grade 7, O Level, A Level" */
+		levels: text('levels').notNull().default(''),
+		priceCents: integer('price_cents'),
+		sortOrder: integer('sort_order').notNull().default(0),
+		active: boolean('active').notNull().default(true),
+		createdAt: created()
+	},
+	(t) => [index('subject_tutor_idx').on(t.tutorId)]
+);
 
 export const lessonPackage = pgTable(
 	'lesson_package',
 	{
 		id: serial('id').primaryKey(),
+		tutorId: tutorRef(),
 		name: text('name').notNull(),
 		lessonCount: integer('lesson_count').notNull(),
 		priceCents: integer('price_cents').notNull(),
@@ -148,6 +193,7 @@ export const availability = pgTable(
 	'availability',
 	{
 		id: serial('id').primaryKey(),
+		tutorId: tutorRef(),
 		weekday: integer('weekday').notNull(),
 		startMinute: integer('start_minute').notNull(),
 		endMinute: integer('end_minute').notNull()
@@ -163,6 +209,7 @@ export const availability = pgTable(
 
 export const resultHighlight = pgTable('result_highlight', {
 	id: serial('id').primaryKey(),
+	tutorId: tutorRef(),
 	value: text('value').notNull(),
 	label: text('label').notNull(),
 	sortOrder: integer('sort_order').notNull().default(0)
@@ -172,6 +219,7 @@ export const review = pgTable(
 	'review',
 	{
 		id: serial('id').primaryKey(),
+		tutorId: tutorRef(),
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' }),
@@ -183,7 +231,7 @@ export const review = pgTable(
 		createdAt: created()
 	},
 	(t) => [
-		uniqueIndex('review_one_per_user').on(t.userId),
+		uniqueIndex('review_one_per_tutor_user').on(t.tutorId, t.userId),
 		check('review_rating', sql`${t.rating} between 1 and 5`)
 	]
 );
@@ -195,6 +243,7 @@ export const lesson = pgTable(
 	'lesson',
 	{
 		id: serial('id').primaryKey(),
+		tutorId: tutorRef(),
 		kind: text('kind', { enum: LESSON_KINDS }).notNull().default('lesson'),
 		subjectId: integer('subject_id').references(() => subject.id),
 		mode: text('mode', { enum: PLACE }).notNull(),
@@ -210,6 +259,7 @@ export const lesson = pgTable(
 	},
 	(t) => [
 		index('lesson_starts_idx').on(t.startsAt),
+		index('lesson_tutor_idx').on(t.tutorId, t.startsAt),
 		check('lesson_time', sql`${t.startsAt} < ${t.endsAt}`)
 	]
 );
@@ -226,6 +276,7 @@ export const booking = pgTable(
 	'booking',
 	{
 		id: serial('id').primaryKey(),
+		tutorId: tutorRef(),
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' }),
@@ -242,13 +293,18 @@ export const booking = pgTable(
 		createdAt: created(),
 		decidedAt: ts('decided_at')
 	},
-	(t) => [index('booking_user_idx').on(t.userId), index('booking_status_idx').on(t.status)]
+	(t) => [
+		index('booking_user_idx').on(t.userId),
+		index('booking_status_idx').on(t.status),
+		index('booking_tutor_idx').on(t.tutorId, t.status)
+	]
 );
 
 export const studentPackage = pgTable(
 	'student_package',
 	{
 		id: serial('id').primaryKey(),
+		tutorId: tutorRef(),
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' }),
@@ -294,6 +350,7 @@ export const calendarEvent = pgTable(
 	'calendar_event',
 	{
 		id: serial('id').primaryKey(),
+		tutorId: tutorRef(),
 		title: text('title').notNull(),
 		startsAt: ts('starts_at').notNull(),
 		endsAt: ts('ends_at').notNull(),
@@ -308,6 +365,7 @@ export const charge = pgTable(
 	'charge',
 	{
 		id: serial('id').primaryKey(),
+		tutorId: tutorRef(),
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' }),
@@ -319,7 +377,11 @@ export const charge = pgTable(
 		voided: boolean('voided').notNull().default(false),
 		createdAt: created()
 	},
-	(t) => [index('charge_user_idx').on(t.userId), check('charge_amount', sql`${t.amountCents} >= 0`)]
+	(t) => [
+		index('charge_user_idx').on(t.userId),
+		index('charge_tutor_user_idx').on(t.tutorId, t.userId),
+		check('charge_amount', sql`${t.amountCents} >= 0`)
+	]
 );
 
 export const receiptSeq = pgSequence('receipt_no_seq', { startWith: 1 });
@@ -331,6 +393,7 @@ export const payment = pgTable(
 	'payment',
 	{
 		id: serial('id').primaryKey(),
+		tutorId: tutorRef(),
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id, { onDelete: 'cascade' }),
@@ -350,6 +413,7 @@ export const payment = pgTable(
 	(t) => [
 		uniqueIndex('payment_receipt_no').on(t.receiptNo),
 		index('payment_user_idx').on(t.userId),
+		index('payment_tutor_idx').on(t.tutorId, t.status),
 		check('payment_amount', sql`${t.amountCents} > 0`)
 	]
 );
@@ -367,6 +431,7 @@ export const paymentAllocation = pgTable('payment_allocation', {
 
 export const homework = pgTable('homework', {
 	id: serial('id').primaryKey(),
+	tutorId: tutorRef(),
 	userId: text('user_id')
 		.notNull()
 		.references(() => user.id, { onDelete: 'cascade' }),
@@ -462,7 +527,7 @@ export const fileBlob = pgTable('file_blob', {
 });
 
 /**
- * The one-time code that lets the owner create the tutor account at /setup. Made by the deploy
+ * The one-time code that lets the platform owner create their account at /setup. Made by the deploy
  * workflow; only a SHA-256 fingerprint is stored. Deleted as soon as it has been used.
  */
 export const setupCode = pgTable(

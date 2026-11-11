@@ -13,7 +13,7 @@ export const user = pgTable('user', {
 		.$onUpdate(() => /* @__PURE__ */ new Date())
 		.notNull(),
 	twoFactorEnabled: boolean('two_factor_enabled').default(false),
-	role: text('role', { enum: ['tutor', 'student', 'parent'] }).default('student')
+	role: text('role', { enum: ['owner', 'tutor', 'student', 'parent'] }).default('student')
 });
 
 export const session = pgTable(

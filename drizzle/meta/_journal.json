@@ -36,6 +36,20 @@
       "when": 1794395205434,
       "tag": "0004_setup_code",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794399943487,
+      "tag": "0005_multi_tutor",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794399985567,
+      "tag": "0006_drop_site_settings",
+      "breakpoints": true
     }
   ]
 }

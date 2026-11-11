@@ -17,6 +17,7 @@
 
 <section class="wrap narrow">
 	<h1>{data.intro ? m.intro_title() : m.book_lesson()}</h1>
+	{#if data.site.name}<p class="muted">{m.with_tutor({ name: data.site.name })}</p>{/if}
 	{#if form?.error}<p class="alert" role="alert">
 			{t(form.error, { minutes: (form as { minutes?: number }).minutes ?? 60 })}
 		</p>{/if}
@@ -25,7 +26,9 @@
 		<p class="panel">{m.book_not_ready()}</p>
 	{:else if !data.days.length && !data.groups.length}
 		<p class="panel">{m.book_no_times()}</p>
-		{#if site.whatsapp}<p><a href="/" class="btn btn-secondary">{m.nav_home()}</a></p>{/if}
+		{#if site.whatsapp}<p>
+				<a href="/t/{site.slug}" class="btn btn-secondary">{m.nav_home()}</a>
+			</p>{/if}
 	{:else}
 		<form method="POST" class="stack" novalidate>
 			<input type="hidden" name="kind" value={data.intro ? 'intro' : 'lesson'} />

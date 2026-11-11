@@ -14,7 +14,13 @@ export async function logIn(
 	if (!parsed.success) return { ok: false, errors: fieldErrors(parsed.error) };
 	try {
 		const res = (await deps.auth.api.signInEmail({
-			body: { email: parsed.data.email, password: parsed.data.password, callbackURL: '/account' },
+			body: {
+				email: parsed.data.email,
+				password: parsed.data.password,
+				callbackURL: '/account',
+				// "Stay logged in on this phone" (ticked by default): 30 days; otherwise until the browser closes
+				rememberMe: input.remember === 'on'
+			},
 			headers
 		})) as { twoFactorRedirect?: boolean };
 		return { ok: true, twoFactor: !!res?.twoFactorRedirect };

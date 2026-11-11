@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
 import {
 	getStudent,
+	tutorsForUser,
 	giveFeedback,
 	giveHomework,
 	homeworkForUser,
@@ -30,22 +31,23 @@ import { and, eq } from 'drizzle-orm';
 import { m } from '#lib/paraglide/messages.js';
 import { setPasswordFor, tempPassword } from '#lib/server/account.ts';
 
-async function student(db: App.Locals['db'], id: string) {
-	const s = await getStudent(db, id);
+async function student(db: App.Locals['db'], tutorId: string, id: string) {
+	// only this tutor's own students; anyone else is "not found"
+	const s = await getStudent(db, tutorId, id);
 	if (!s) error(404, 'Not found');
 	return s;
 }
 
 export const load: PageServerLoad = async ({ locals, params, url }) => {
-	requireTutor(locals.user, url);
-	const s = await student(locals.db, params.id);
+	const t = requireTutor(locals.user, url).id;
+	const s = await student(locals.db, t, params.id);
 	const [lessons, balance, payments, packages, homework, settings] = await Promise.all([
-		studentLessons(locals.db, s.id),
-		balanceFor(locals.db, s.id),
-		paymentsForUser(locals.db, s.id),
-		packagesForUser(locals.db, s.id),
-		homeworkForUser(locals.db, s.id),
-		getSettings(locals.db)
+		studentLessons(locals.db, t, s.id),
+		balanceFor(locals.db, t, s.id),
+		paymentsForUser(locals.db, s.id, t),
+		packagesForUser(locals.db, s.id, t),
+		homeworkForUser(locals.db, s.id, t),
+		getSettings(locals.db, t)
 	]);
 	const link = (k: string | null, n: string | null) => (k ? fileLink(k, n ?? 'file') : null);
 	return {
@@ -82,15 +84,15 @@ const hwSchema = z.object({
 
 export const actions: Actions = {
 	level: async ({ locals, url, request, params }) => {
-		requireTutor(locals.user, url);
-		const s = await student(locals.db, params.id);
+		const t = requireTutor(locals.user, url).id;
+		const s = await student(locals.db, t, params.id);
 		const f = formObject(await request.formData());
-		await setLevel(locals.db, s.id, f.level?.trim().slice(0, 60) || null);
+		await setLevel(locals.db, t, s.id, f.level?.trim().slice(0, 60) || null);
 		return { saved: true };
 	},
 	note: async ({ locals, url, request, params }) => {
-		requireTutor(locals.user, url);
-		const s = await student(locals.db, params.id);
+		const t = requireTutor(locals.user, url).id;
+		const s = await student(locals.db, t, params.id);
 		const f = formObject(await request.formData());
 		// only notes on this student's own lesson places
 		const [a] = await locals.db
@@ -98,17 +100,17 @@ export const actions: Actions = {
 			.from(attendee)
 			.where(and(eq(attendee.id, Number(f.attendeeId) || 0), eq(attendee.userId, s.id)));
 		if (!a) return fail(404, { error: 'err_not_found' });
-		await setPrivateNote(locals.db, a.id, f.note?.trim().slice(0, 2000) || null);
+		await setPrivateNote(locals.db, t, a.id, f.note?.trim().slice(0, 2000) || null);
 		return { saved: true };
 	},
 	cash: async ({ locals, url, request, params }) => {
-		requireTutor(locals.user, url);
-		const s = await student(locals.db, params.id);
+		const t = requireTutor(locals.user, url).id;
+		const s = await student(locals.db, t, params.id);
 		const f = formObject(await request.formData());
 		const cents = parseMoney(f.amount ?? '');
 		if (!cents) return fail(400, { error: 'err_money' });
 		const date = isIsoDate(f.date ?? '') ? f.date : localDate(new Date());
-		const r = await recordCash(locals.db, s.id, cents, date);
+		const r = await recordCash(locals.db, t, s.id, cents, date);
 		await notifyUser(
 			locals.db,
 			s.id,
@@ -118,8 +120,8 @@ export const actions: Actions = {
 		return { saved: true, receipt: receiptNumber(r.receiptNo) };
 	},
 	homework: async ({ locals, url, request, params, platform }) => {
-		requireTutor(locals.user, url);
-		const s = await student(locals.db, params.id);
+		const t = requireTutor(locals.user, url).id;
+		const s = await student(locals.db, t, params.id);
 		const data = await request.formData();
 		const parsed = hwSchema.safeParse(formObject(data));
 		if (!parsed.success) return fail(400, { error: 'err_required' });
@@ -130,7 +132,7 @@ export const actions: Actions = {
 			fileKey = newKey(`homework/${s.id}`, file.ext);
 			await getStore(platform).put(fileKey, file.bytes, file.kind);
 		}
-		await giveHomework(locals.db, {
+		await giveHomework(locals.db, t, {
 			userId: s.id,
 			title: parsed.data.title,
 			note: parsed.data.note || null,
@@ -147,18 +149,22 @@ export const actions: Actions = {
 		return { saved: true };
 	},
 	feedback: async ({ locals, url, request, params }) => {
-		requireTutor(locals.user, url);
-		const s = await student(locals.db, params.id);
+		const t = requireTutor(locals.user, url).id;
+		const s = await student(locals.db, t, params.id);
 		const f = formObject(await request.formData());
-		const hw = await homeworkForUser(locals.db, s.id);
+		const hw = await homeworkForUser(locals.db, s.id, t);
 		const answer = hw.flatMap((h) => h.answers).find((a) => a.id === Number(f.answerId));
 		if (!answer) return fail(404, { error: 'err_not_found' });
-		await giveFeedback(locals.db, answer.id, f.feedback?.trim().slice(0, 1000) || null);
+		await giveFeedback(locals.db, t, answer.id, f.feedback?.trim().slice(0, 1000) || null);
 		return { saved: true };
 	},
 	tempPassword: async ({ locals, url, params }) => {
-		requireTutor(locals.user, url);
-		const s = await student(locals.db, params.id);
+		const t = requireTutor(locals.user, url).id;
+		const s = await student(locals.db, t, params.id);
+		// A student with more than one tutor: one tutor must not be able to take over the
+		// account (it would show them the other tutor's lessons). Then only Tutora support can.
+		const tutors = await tutorsForUser(locals.db, s.id);
+		if (tutors.some((x) => x.tutorId !== t)) return fail(400, { error: 'stu_temp_shared' });
 		const password = tempPassword();
 		const ok = await setPasswordFor({ auth: locals.auth, db: locals.db }, s.id, password);
 		if (!ok) return fail(400, { error: 'stu_temp_none' });

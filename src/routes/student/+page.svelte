@@ -5,6 +5,12 @@
 	let { data, form } = $props();
 	const isToday = (d: Date) => localDate(d) === localDate(data.now);
 	const next = $derived(data.upcoming[0]);
+	const waOf = (name: string | null) => data.tutors.find((t) => t.name === name)?.whatsapp ?? null;
+	const bookHref = $derived(
+		data.tutors.filter((t) => t.active).length === 1
+			? `/student/book?tutor=${data.tutors.find((t) => t.active)!.slug}`
+			: '/student/book'
+	);
 	const status = (s: string) =>
 		({
 			requested: m.status_requested(),
@@ -29,7 +35,10 @@
 					: fmtDay(next.startsAt)}
 				{fmtTime(next.startsAt)}
 			</p>
-			<p class="small">{next.mode === 'online' ? m.online_room() : m.mode_in_person()}</p>
+			<p class="small">
+				{next.mode === 'online' ? m.online_room() : m.mode_in_person()}{#if next.tutorName}
+					· {m.with_tutor({ name: next.tutorName })}{/if}
+			</p>
 			{#if next.roomOpen}<a class="btn btn-secondary" href="/room/{next.id}">{m.room_join()}</a
 				>{:else if next.mode === 'online'}<p class="small">{m.room_opens_soon()}</p>{/if}
 		</div>
@@ -38,7 +47,10 @@
 	{#each data.packages as p (p.id)}
 		<div class="card row">
 			<span class="grow"
-				><b>{p.name}</b><span class="small muted block">{m.package_balance()}</span></span
+				><b>{p.name}</b><span class="small muted block"
+					>{m.package_balance()}{#if p.tutorName}
+						· {p.tutorName}{/if}</span
+				></span
 			><span class="pill p-ok"
 				>{m.left_of({ left: p.lessonsTotal - p.lessonsUsed, total: p.lessonsTotal })}</span
 			>
@@ -60,6 +72,7 @@
 								: 'p-wait'}">{status(r.status)}</span
 					>
 				</div>
+				{#if r.tutorName}<p class="small muted">{m.with_tutor({ name: r.tutorName })}</p>{/if}
 				{#if r.tutorMessage}<p class="small quote">“{r.tutorMessage}”</p>{/if}
 				{#if r.status === 'proposed' && r.proposedStartsAt}
 					<p class="small">{m.tutor_suggests({ when: fmtDayTime(r.proposedStartsAt) })}</p>
@@ -86,7 +99,7 @@
 						>
 					</form>
 				{:else}
-					<a class="small" href="/student/book">{m.choose_another_time()}</a>
+					<a class="small" href={bookHref}>{m.choose_another_time()}</a>
 				{/if}
 			</div>
 		{/each}
@@ -103,7 +116,10 @@
 			<p class="small muted">
 				{isToday(l.startsAt) ? m.today_word() : fmtDay(l.startsAt)} · {fmtTime(
 					l.startsAt
-				)}–{fmtTime(l.endsAt)} · {l.mode === 'online' ? m.mode_online() : m.mode_in_person()}
+				)}–{fmtTime(l.endsAt)} · {l.mode === 'online'
+					? m.mode_online()
+					: m.mode_in_person()}{#if l.tutorName}
+					· {l.tutorName}{/if}
 			</p>
 			<div class="row">
 				{#if l.roomOpen}<a class="btn btn-sm" href="/room/{l.id}">{m.room_join()}</a>{/if}
@@ -117,8 +133,9 @@
 					</form>
 				{:else}
 					<span class="small muted"
-						>{m.cancel_too_late({ hours: data.cancelHours })}{#if data.whatsapp}
-							<a href={waLink(data.whatsapp)} target="_blank" rel="noopener noreferrer">WhatsApp</a
+						>{m.cancel_too_late({ hours: l.cancelHours })}{#if waOf(l.tutorName)}
+							<a href={waLink(waOf(l.tutorName)!)} target="_blank" rel="noopener noreferrer"
+								>WhatsApp</a
 							>{/if}</span
 					>
 				{/if}
@@ -127,7 +144,7 @@
 	{:else}
 		<p class="empty">{m.no_lessons_yet()}</p>
 	{/each}
-	<a class="btn btn-block" href="/student/book">{m.book_lesson()}</a>
+	<a class="btn btn-block" href={bookHref}>{m.book_lesson()}</a>
 
 	{#if data.past.length}
 		<h2>{m.past_lessons()}</h2>
@@ -139,8 +156,21 @@
 				</li>{/each}
 		</ul>
 	{/if}
-	{#if data.reviewable}<a class="btn btn-secondary btn-block" href="/student/review"
-			>{m.leave_review()}</a
-		>{/if}
+	<h2>{m.my_tutors()}</h2>
+	{#each data.tutors as tu (tu.slug)}
+		<div class="card row">
+			<span class="grow"
+				>{#if tu.active}<a href="/t/{tu.slug}">{tu.name ?? m.tutor_word()}</a>{:else}{tu.name ??
+						m.tutor_word()}
+					<span class="small muted">({m.tutor_unavailable()})</span>{/if}</span
+			>
+			{#if tu.reviewable}<a class="btn btn-secondary btn-sm" href="/student/review?tutor={tu.slug}"
+					>{m.leave_review()}</a
+				>{/if}
+		</div>
+	{:else}
+		<p class="empty">{m.no_tutors_yet()}</p>
+	{/each}
+	<a class="btn btn-secondary btn-block" href="/#find">{m.find_a_tutor()}</a>
 	<p style="margin-top:16px"><a href="/account">{m.nav_account()}</a></p>
 </section>

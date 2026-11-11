@@ -2,6 +2,7 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import {
 	BookingFail,
+	bookingTutorId,
 	cancelMyPlace,
 	lessonsForUser,
 	requestsForUser,
@@ -9,7 +10,7 @@ import {
 	withdrawRequest
 } from '#lib/server/bookings.ts';
 import { packagesForUser } from '#lib/server/billing.ts';
-import { canReview } from '#lib/server/people.ts';
+import { canReview, tutorsForUser } from '#lib/server/people.ts';
 import { getSettings } from '#lib/server/settings.ts';
 import { requireRole } from '#lib/server/guards.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
@@ -22,32 +23,49 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	requireRole(locals.user, url, ['student', 'parent']);
 	const u = locals.user!;
 	const now = new Date();
-	const [lessons, requests, packages, s, reviewable] = await Promise.all([
+	const [lessons, requests, packages, tutors] = await Promise.all([
 		lessonsForUser(locals.db, u.id),
 		requestsForUser(locals.db, u.id),
 		packagesForUser(locals.db, u.id),
-		getSettings(locals.db),
-		canReview(locals.db, u.id, now)
+		tutorsForUser(locals.db, u.id)
 	]);
+	// each tutor's own cancel rule and contact; and whether this person may review them
+	const myTutors = await Promise.all(
+		tutors.map(async (t) => {
+			const s = await getSettings(locals.db, t.tutorId);
+			return {
+				tutorId: t.tutorId,
+				slug: t.slug,
+				name: t.name,
+				active: t.status === 'active',
+				cancelHours: s.cancelHours,
+				whatsapp: t.status === 'active' ? s.whatsappNumber : null,
+				reviewable: t.status === 'active' && (await canReview(locals.db, t.tutorId, u.id, now))
+			};
+		})
+	);
+	const hours = (tutorId: string) => myTutors.find((t) => t.tutorId === tutorId)?.cancelHours ?? 24;
 	return {
 		now,
 		name: u.name,
-		cancelHours: s.cancelHours,
-		whatsapp: s.whatsappNumber,
+		tutors: myTutors.map(({ tutorId: _id, ...t }) => t),
 		upcoming: lessons
 			.filter((l) => l.endsAt.getTime() + CLOSE_AFTER_MIN * 60_000 > now.getTime())
-			.map((l) => ({
+			.map(({ tutorId, ...l }) => ({
 				...l,
-				canCancel: l.startsAt.getTime() - now.getTime() >= s.cancelHours * 3_600_000,
+				cancelHours: hours(tutorId),
+				canCancel: l.startsAt.getTime() - now.getTime() >= hours(tutorId) * 3_600_000,
 				roomOpen:
 					l.mode === 'online' && now.getTime() >= l.startsAt.getTime() - OPEN_BEFORE_MIN * 60_000
 			})),
 		past: lessons
 			.filter((l) => l.endsAt.getTime() + CLOSE_AFTER_MIN * 60_000 <= now.getTime())
+			.map(({ tutorId: _t, ...l }) => l)
 			.reverse(),
 		requests,
-		packages: packages.filter((p) => p.lessonsUsed < p.lessonsTotal),
-		reviewable
+		packages: packages
+			.filter((p) => p.lessonsUsed < p.lessonsTotal)
+			.map(({ tutorId: _t, ...p }) => p)
 	};
 };
 
@@ -66,15 +84,17 @@ export const actions: Actions = {
 	cancel: async ({ locals, url, request }) => {
 		const u = requireRole(locals.user, url, ['student', 'parent']);
 		const f = formObject(await request.formData());
-		let when: Date | null = null;
+		let lesson: { startsAt: Date; tutorId: string } | null = null;
 		const err = await handle(async () => {
-			when = (await cancelMyPlace(locals.db, u.id, idOf(f))).startsAt;
+			lesson = await cancelMyPlace(locals.db, u.id, idOf(f));
 		});
 		if (err) return err;
+		const { startsAt: when, tutorId } = lesson!;
 		await notifyTutor(
 			locals.db,
+			tutorId,
 			m.email_student_cancel_s(),
-			m.email_student_cancel_b({ name: u.name, when: fmtDayTime(when!) })
+			m.email_student_cancel_b({ name: u.name, when: fmtDayTime(when) })
 		);
 		return { done: 'cancelled' };
 	},
@@ -87,13 +107,16 @@ export const actions: Actions = {
 		const u = requireRole(locals.user, url, ['student', 'parent']);
 		const f = formObject(await request.formData());
 		const yes = f.answer === 'yes';
+		const tutorId = await bookingTutorId(locals.db, u.id, idOf(f));
 		const err = await handle(() => respondToProposal(locals.db, u.id, idOf(f), yes));
 		if (err) return err;
-		await notifyTutor(
-			locals.db,
-			yes ? m.email_time_accepted_s() : m.email_time_declined_s(),
-			yes ? m.email_time_accepted_b({ name: u.name }) : m.email_time_declined_b({ name: u.name })
-		);
+		if (tutorId)
+			await notifyTutor(
+				locals.db,
+				tutorId,
+				yes ? m.email_time_accepted_s() : m.email_time_declined_s(),
+				yes ? m.email_time_accepted_b({ name: u.name }) : m.email_time_declined_b({ name: u.name })
+			);
 		return { done: yes ? 'accepted' : 'declined' };
 	}
 };

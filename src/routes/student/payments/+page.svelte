@@ -15,6 +15,7 @@
 			cash: m.method_cash(),
 			other: m.method_other()
 		})[k] ?? k;
+	const q = $derived(`tutor=${data.tutor.slug}`);
 	const tabs = [
 		['pay', m.pay_tab_account()],
 		['cash', m.pay_tab_cash()],
@@ -27,6 +28,17 @@
 
 <section class="wrap narrow">
 	<h1>{m.payments_title()}</h1>
+	{#if data.tutors.length > 1}
+		<nav class="tabs" aria-label={m.my_tutors()}>
+			{#each data.tutors as tu (tu.slug)}<a
+					href="?tutor={tu.slug}"
+					aria-current={tu.slug === data.tutor.slug ? 'true' : undefined}
+					>{tu.name ?? m.tutor_word()}</a
+				>{/each}
+		</nav>
+	{:else}
+		<p class="muted">{m.with_tutor({ name: data.tutor.name ?? m.tutor_word() })}</p>
+	{/if}
 	{#if form?.error}<p class="alert" role="alert">
 			{t(form.error, { minutes: (form as { minutes?: number }).minutes ?? 60 })}
 		</p>{/if}
@@ -45,7 +57,7 @@
 
 	<nav class="tabs" aria-label={m.payments_title()}>
 		{#each tabs as [key, label] (key)}<a
-				href="?tab={key}"
+				href="?{q}&tab={key}"
 				aria-current={data.tab === key ? 'true' : undefined}>{label}</a
 			>{/each}
 	</nav>
@@ -70,7 +82,13 @@
 		{:else}
 			<p class="panel small">{m.no_pay_details()}</p>
 		{/if}
-		<form method="POST" action="?/pay" enctype="multipart/form-data" class="card stack" novalidate>
+		<form
+			method="POST"
+			action="?{q}&/pay"
+			enctype="multipart/form-data"
+			class="card stack"
+			novalidate
+		>
 			<div class="field">
 				<label for="pa">{m.amount({ currency: cur })}</label><input
 					id="pa"
@@ -124,7 +142,7 @@
 			<button class="btn btn-block" type="submit">{m.send_for_checking()}</button>
 		</form>
 	{:else if data.tab === 'cash'}
-		<form method="POST" action="?/cash" class="card stack" novalidate>
+		<form method="POST" action="?{q}&/cash" class="card stack" novalidate>
 			<p class="small muted">{m.cash_lead()}</p>
 			<div class="field">
 				<label for="ca">{m.amount({ currency: cur })}</label><input
@@ -181,7 +199,7 @@
 		{/each}
 		<h2 class="h3">{m.packages_offered()}</h2>
 		{#each data.offers as o (o.id)}
-			<form method="POST" action="?/buy" class="card row">
+			<form method="POST" action="?{q}&/buy" class="card row">
 				<input type="hidden" name="id" value={o.id} />
 				<span class="grow"
 					><b>{o.name}</b><span class="small muted block"

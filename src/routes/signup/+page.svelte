@@ -2,7 +2,7 @@
 	import Field from '#lib/components/Field.svelte';
 	import { m, t } from '#lib/i18n.ts';
 
-	let { form } = $props();
+	let { form, data } = $props();
 	const v = $derived((form?.values ?? {}) as Record<string, string>);
 	const e = $derived((form?.errors ?? {}) as Record<string, string>);
 
@@ -13,6 +13,7 @@
 
 <section class="wrap narrow">
 	<h1>{m.signup_title()}</h1>
+	{#if data.tutorName}<p class="muted">{m.signup_with_tutor({ name: data.tutorName })}</p>{/if}
 	<p class="muted">{m.signup_lead()}</p>
 
 	{#if e.form}

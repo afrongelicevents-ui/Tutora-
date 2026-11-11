@@ -18,20 +18,23 @@ import { enter, poll, roomAccess } from './room.ts';
 /** Double taps and parallel requests must never create money or credits out of nothing. */
 describe.skipIf(!hasTestDb)('parallel requests (real database)', () => {
 	let db: DB;
+	let tid: string;
 	let close: () => Promise<void>;
 	let maths: number;
 	const now = MONDAY_8AM;
 	beforeAll(async () => {
 		({ db, close } = await freshDb());
-		await updateSettings(db, {
+		tid = (await makeUser(db, 'tutor', 'Tutor One')).id;
+		await updateSettings(db, tid, {
 			lessonModes: 'both',
 			groupMode: 'one_to_one',
 			lessonMinutes: 60,
 			cancelHours: 24
 		});
-		maths = (await addSubject(db, { name: 'Maths', levels: '', price: 800 })).id;
+		maths = (await addSubject(db, tid, { name: 'Maths', levels: '', price: 800 })).id;
 		await replaceAvailability(
 			db,
+			tid,
 			[1, 2, 3, 4, 5].map((weekday) => ({ weekday, startMinute: 900, endMinute: 1080 }))
 		);
 	});
@@ -47,14 +50,14 @@ describe.skipIf(!hasTestDb)('parallel requests (real database)', () => {
 
 	it('accepting the same request twice at once makes one lesson and one charge', async () => {
 		const u = await makeUser(db, 'student');
-		const b = await requestBooking(db, u.id, req(zw(1, '15:00')), now);
+		const b = await requestBooking(db, tid, u.id, req(zw(1, '15:00')), now);
 		const r = await Promise.allSettled([
-			acceptBooking(db, b.id, now),
-			acceptBooking(db, b.id, now),
-			acceptBooking(db, b.id, now)
+			acceptBooking(db, tid, b.id, now),
+			acceptBooking(db, tid, b.id, now),
+			acceptBooking(db, tid, b.id, now)
 		]);
 		expect(r.filter((x) => x.status === 'fulfilled')).toHaveLength(1);
-		expect((await balanceFor(db, u.id)).owed).toBe(800);
+		expect((await balanceFor(db, tid, u.id)).owed).toBe(800);
 		const ls = await db
 			.select()
 			.from(lesson)
@@ -64,22 +67,27 @@ describe.skipIf(!hasTestDb)('parallel requests (real database)', () => {
 
 	it('saying yes to a new time twice at once books once', async () => {
 		const u = await makeUser(db, 'student');
-		const b = await requestBooking(db, u.id, req(zw(2, '15:00')), now);
-		await proposeTime(db, b.id, zw(2, '16:00'), null, now);
+		const b = await requestBooking(db, tid, u.id, req(zw(2, '15:00')), now);
+		await proposeTime(db, tid, b.id, zw(2, '16:00'), null, now);
 		const r = await Promise.allSettled([
 			respondToProposal(db, u.id, b.id, true, now),
 			respondToProposal(db, u.id, b.id, true, now)
 		]);
 		expect(r.filter((x) => x.status === 'fulfilled')).toHaveLength(1);
-		expect((await balanceFor(db, u.id)).owed).toBe(800);
+		expect((await balanceFor(db, tid, u.id)).owed).toBe(800);
 	});
 
 	it('cancelling twice at once gives one package credit back, not two', async () => {
-		const pkg = await addPackage(db, { name: '4', lessonCount: 4, price: 2800 });
+		const pkg = await addPackage(db, tid, { name: '4', lessonCount: 4, price: 2800 });
 		const u = await makeUser(db, 'student');
-		await buyPackage(db, u.id, pkg.id);
+		await buyPackage(db, tid, u.id, pkg.id);
 		for (const t of ['15:00', '16:00'])
-			await acceptBooking(db, (await requestBooking(db, u.id, req(zw(3, t)), now)).id, now);
+			await acceptBooking(
+				db,
+				tid,
+				(await requestBooking(db, tid, u.id, req(zw(3, t)), now)).id,
+				now
+			);
 		const [lessonRow] = await db
 			.select()
 			.from(lesson)
@@ -91,7 +99,7 @@ describe.skipIf(!hasTestDb)('parallel requests (real database)', () => {
 
 	it('a confirmed payment cannot be rejected, even at the same moment', async () => {
 		const u = await makeUser(db, 'student');
-		const p = await submitPayment(db, u.id, {
+		const p = await submitPayment(db, tid, u.id, {
 			amountCents: 500,
 			method: 'ecocash',
 			reference: 'x',
@@ -99,18 +107,23 @@ describe.skipIf(!hasTestDb)('parallel requests (real database)', () => {
 			proofKey: null
 		});
 		const r = await Promise.allSettled([
-			confirmPayment(db, p.id, now),
-			rejectPayment(db, p.id, 'no', now)
+			confirmPayment(db, tid, p.id, now),
+			rejectPayment(db, tid, p.id, 'no', now)
 		]);
 		expect(r.filter((x) => x.status === 'fulfilled')).toHaveLength(1);
-		await expect(rejectPayment(db, p.id, 'no', now)).rejects.toThrow();
+		await expect(rejectPayment(db, tid, p.id, 'no', now)).rejects.toThrow();
 	});
 
 	it('two payments confirmed at once never over-cover the same lesson', async () => {
 		const u = await makeUser(db, 'student');
-		await acceptBooking(db, (await requestBooking(db, u.id, req(zw(4, '15:00')), now)).id, now);
+		await acceptBooking(
+			db,
+			tid,
+			(await requestBooking(db, tid, u.id, req(zw(4, '15:00')), now)).id,
+			now
+		);
 		const pay = () =>
-			submitPayment(db, u.id, {
+			submitPayment(db, tid, u.id, {
 				amountCents: 800,
 				method: 'cash',
 				reference: null,
@@ -118,12 +131,12 @@ describe.skipIf(!hasTestDb)('parallel requests (real database)', () => {
 				proofKey: null
 			});
 		const [a, b] = [await pay(), await pay()];
-		await Promise.all([confirmPayment(db, a.id, now), confirmPayment(db, b.id, now)]);
+		await Promise.all([confirmPayment(db, tid, a.id, now), confirmPayment(db, tid, b.id, now)]);
 		const allocs = await db.select().from(paymentAllocation);
 		const forThese = allocs.filter((x) => x.paymentId === a.id || x.paymentId === b.id);
 		expect(forThese, JSON.stringify(allocs)).toHaveLength(1);
 		expect(forThese.reduce((s, x) => s + x.amountCents, 0)).toBe(800);
-		expect(await balanceFor(db, u.id)).toMatchObject({ owed: 0, credit: 800 });
+		expect(await balanceFor(db, tid, u.id)).toMatchObject({ owed: 0, credit: 800 });
 	});
 
 	it('room: tutor needs 2FA; waiting students see nobody', async () => {
@@ -133,6 +146,7 @@ describe.skipIf(!hasTestDb)('parallel requests (real database)', () => {
 		const [l] = await db
 			.insert(lesson)
 			.values({
+				tutorId: tutorNo2fa.id,
 				kind: 'lesson',
 				mode: 'online',
 				startsAt: start,

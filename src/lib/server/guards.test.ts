@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isHttpError, isRedirect } from '@sveltejs/kit';
-import { requireRole, requireTutor, requireUser, safeNext } from './guards.ts';
+import { requireOwner, requireRole, requireTutor, requireUser, safeNext } from './guards.ts';
 
 const url = new URL('http://localhost/tutor/payments?x=1');
 const base = { id: 'u1', emailVerified: true, twoFactorEnabled: false };
@@ -44,8 +44,32 @@ describe('role guards (server-side permissions)', () => {
 	it('makes the tutor turn on 2FA before entering the tutor area', () => {
 		const e = thrown(() => requireTutor({ ...base, role: 'tutor' }, url));
 		expect(isRedirect(e) && e.location).toBe('/account/2fa?required=1');
-		const ok = requireTutor({ ...base, role: 'tutor', twoFactorEnabled: true }, url);
+		const ok = requireTutor(
+			{ ...base, role: 'tutor', twoFactorEnabled: true, tutorStatus: 'active' },
+			url
+		);
 		expect(ok.role).toBe('tutor');
+	});
+
+	it('keeps tutors waiting for approval (or suspended) out of the tutor area', () => {
+		for (const tutorStatus of ['pending', 'suspended', null] as const) {
+			const e = thrown(() =>
+				requireTutor({ ...base, role: 'tutor', twoFactorEnabled: true, tutorStatus }, url)
+			);
+			expect(isRedirect(e) && e.location).toBe('/tutor-status');
+		}
+	});
+
+	it('the owner area is only for the owner, with 2FA', () => {
+		for (const role of ['tutor', 'student', 'parent']) {
+			const e = thrown(() => requireOwner({ ...base, role, twoFactorEnabled: true }, url));
+			expect(isHttpError(e) && e.status).toBe(403);
+		}
+		const e = thrown(() => requireOwner({ ...base, role: 'owner' }, url));
+		expect(isRedirect(e) && e.location).toBe('/account/2fa?required=1');
+		expect(requireOwner({ ...base, role: 'owner', twoFactorEnabled: true }, url).role).toBe(
+			'owner'
+		);
 	});
 
 	it('lets students and parents into the student area', () => {
@@ -73,7 +97,8 @@ describe('safeNext', () => {
 describe('central lock for private areas (also page-data requests)', () => {
 	const student = { id: 's', role: 'student', emailVerified: true };
 	const tutorNo2fa = { id: 't', role: 'tutor', emailVerified: true, twoFactorEnabled: false };
-	const tutor = { ...tutorNo2fa, twoFactorEnabled: true };
+	const tutor = { ...tutorNo2fa, twoFactorEnabled: true, tutorStatus: 'active' as const };
+	const owner = { id: 'o', role: 'owner', emailVerified: true, twoFactorEnabled: true };
 	it('blocks visitors and students from tutor data, including __data.json', async () => {
 		const { areaAccess } = await import('./guards.ts');
 		expect(
@@ -85,7 +110,14 @@ describe('central lock for private areas (also page-data requests)', () => {
 		});
 		expect(areaAccess('/tutor/students/abc/__data.json', '', student)).toEqual({
 			ok: false,
-			status: 403
+			status: 403,
+			area: 'tutor'
+		});
+		expect(areaAccess('/tutor', '', owner)).toMatchObject({ ok: false, status: 403 });
+		expect(areaAccess('/tutor', '', { ...tutor, tutorStatus: 'pending' as const })).toEqual({
+			ok: false,
+			status: 303,
+			location: '/tutor-status'
 		});
 		expect(areaAccess('/tutor', '', tutorNo2fa)).toMatchObject({
 			ok: false,
@@ -95,11 +127,29 @@ describe('central lock for private areas (also page-data requests)', () => {
 	});
 	it('student area is for students and parents only', async () => {
 		const { areaAccess } = await import('./guards.ts');
-		expect(areaAccess('/student/__data.json', '', tutor)).toEqual({ ok: false, status: 403 });
+		expect(areaAccess('/student/__data.json', '', tutor)).toEqual({
+			ok: false,
+			status: 403,
+			area: 'student'
+		});
 		expect(areaAccess('/student/payments', '', { ...student, role: 'parent' })).toEqual({
 			ok: true
 		});
 		expect(areaAccess('/students-of-the-month', '', undefined)).toEqual({ ok: true });
 		expect(areaAccess('/tutorial', '', undefined)).toEqual({ ok: true });
+	});
+	it('owner area is for the owner only', async () => {
+		const { areaAccess } = await import('./guards.ts');
+		expect(areaAccess('/owner', '', owner)).toEqual({ ok: true });
+		expect(areaAccess('/owner/__data.json', '', tutor)).toEqual({
+			ok: false,
+			status: 403,
+			area: 'owner'
+		});
+		expect(areaAccess('/owner', '', { ...owner, twoFactorEnabled: false })).toMatchObject({
+			location: '/account/2fa?required=1'
+		});
+		expect(areaAccess('/owner', '', undefined)).toMatchObject({ status: 303 });
+		expect(areaAccess('/ownership-faq', '', undefined)).toEqual({ ok: true });
 	});
 });

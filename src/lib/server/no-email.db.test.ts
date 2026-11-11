@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { freshDb, hasTestDb, testAuth } from './testing/db.ts';
 import { signUp } from './actions/signup.ts';
 import { logIn } from './actions/login.ts';
-import { claimTutor, tutorExists } from './actions/setup.ts';
+import { claimOwner, ownerExists } from './actions/setup.ts';
 import { changeEmailNow, setPasswordFor, tempPassword } from './account.ts';
 import { DbStore } from './db-store.ts';
 import { createSetupCode, hasSetupCode } from './setup-code.ts';
@@ -21,40 +21,40 @@ describe.skipIf(!hasTestDb)('running without an email service (real database)', 
 
 	beforeAll(async () => {
 		({ db, close } = await freshDb());
-		({ auth, outbox } = testAuth(db, { emailEnabled: false, tutorEmail: undefined }));
+		({ auth, outbox } = testAuth(db, { emailEnabled: false }));
 	});
 	afterAll(async () => close?.());
 
 	const roleOf = async (email: string) =>
 		(await db.select({ role: user.role }).from(user).where(eq(user.email, email)))[0]?.role;
 
-	it('only someone with the one-time setup code becomes the tutor, and only once', async () => {
+	it('only someone with the one-time setup code becomes the owner, and only once', async () => {
 		const form = { name: 'Tendai', email: 'Boss@Example.com', password: PW, confirm: PW };
-		expect(await tutorExists(db)).toBe(false);
+		expect(await ownerExists(db)).toBe(false);
 
 		// no code made yet / missing / wrong code: refused, nobody created
-		expect(await claimTutor({ auth, db }, { ...form, code: 'ABCD-EFGH-JKMN' })).toMatchObject({
+		expect(await claimOwner({ auth, db }, { ...form, code: 'ABCD-EFGH-JKMN' })).toMatchObject({
 			ok: false,
 			errors: { code: 'err_setup_code' }
 		});
 		const code = await createSetupCode(db);
 		expect(code).toMatch(/^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
-		expect((await claimTutor({ auth, db }, { ...form, code: '' })).ok).toBe(false);
-		expect((await claimTutor({ auth, db }, { ...form, code: 'ABCD-EFGH-JKMN' })).ok).toBe(false);
-		const mismatch = await claimTutor({ auth, db }, { ...form, confirm: 'nope-nope-1', code });
+		expect((await claimOwner({ auth, db }, { ...form, code: '' })).ok).toBe(false);
+		expect((await claimOwner({ auth, db }, { ...form, code: 'ABCD-EFGH-JKMN' })).ok).toBe(false);
+		const mismatch = await claimOwner({ auth, db }, { ...form, confirm: 'nope-nope-1', code });
 		expect(mismatch.ok).toBe(false);
 		expect(await roleOf('boss@example.com')).toBeUndefined();
 
 		// right code (any case, with or without dashes)
-		const r = await claimTutor(
+		const r = await claimOwner(
 			{ auth, db },
 			{ ...form, code: code.toLowerCase().replace(/-/g, '') }
 		);
 		expect(r.ok).toBe(true);
-		expect(await roleOf('boss@example.com')).toBe('tutor');
+		expect(await roleOf('boss@example.com')).toBe('owner');
 		expect(await hasSetupCode(db)).toBe(false); // used up
 
-		const again = await claimTutor(
+		const again = await claimOwner(
 			{ auth, db },
 			{ name: 'Intruder', email: 'evil@example.com', password: PW, confirm: PW, code }
 		);
@@ -66,28 +66,14 @@ describe.skipIf(!hasTestDb)('running without an email service (real database)', 
 		const { db: db2, close: close2 } = await freshDb();
 		try {
 			const code = await createSetupCode(db2, -1);
-			const r = await claimTutor(
-				{ auth: testAuth(db2, { emailEnabled: false, tutorEmail: undefined }).auth, db: db2 },
+			const r = await claimOwner(
+				{ auth: testAuth(db2, { emailEnabled: false }).auth, db: db2 },
 				{ name: 'Late', email: 'late@example.com', password: PW, confirm: PW, code }
 			);
 			expect(r).toMatchObject({ ok: false, errors: { code: 'err_setup_code' } });
 		} finally {
 			await close2();
 		}
-	});
-
-	it('the database refuses a second tutor even if code slips', async () => {
-		const [s] = await db
-			.insert(user)
-			.values({
-				id: 'x2',
-				name: 'X',
-				email: 'x2@example.com',
-				emailVerified: true,
-				role: 'student'
-			})
-			.returning();
-		await expect(db.update(user).set({ role: 'tutor' }).where(eq(user.id, s.id))).rejects.toThrow();
 	});
 
 	it('students sign up and log in straight away, no email sent', async () => {
@@ -127,7 +113,7 @@ describe.skipIf(!hasTestDb)('running without an email service (real database)', 
 		expect(await changeEmailNow(db, t.id, 'RUDO@example.com')).toBe('taken');
 		expect(await changeEmailNow(db, t.id, 'boss@example.com')).toBe('same');
 		expect(await changeEmailNow(db, t.id, 'new.boss@example.com')).toBe('ok');
-		expect(await roleOf('new.boss@example.com')).toBe('tutor');
+		expect(await roleOf('new.boss@example.com')).toBe('owner');
 	});
 
 	it('stores files in the database when there is no bucket', async () => {

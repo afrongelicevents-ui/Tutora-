@@ -22,11 +22,11 @@ const message = (v: string | undefined) => (v?.trim() ? v.trim().slice(0, 300) :
 /** Answer booking requests and payments. Used on Today and on the Money page. */
 export const inboxActions: Actions = {
 	accept: async ({ locals, url, request }) => {
-		requireTutor(locals.user, url);
+		const me = requireTutor(locals.user, url);
 		const p = id.safeParse(formObject(await request.formData()));
 		if (!p.success) return fail(400, { error: 'err_generic' });
 		try {
-			const r = await acceptBooking(locals.db, p.data.id);
+			const r = await acceptBooking(locals.db, me.id, p.data.id);
 			await notifyUser(
 				locals.db,
 				r.userId,
@@ -40,12 +40,12 @@ export const inboxActions: Actions = {
 		}
 	},
 	decline: async ({ locals, url, request }) => {
-		requireTutor(locals.user, url);
+		const me = requireTutor(locals.user, url);
 		const f = formObject(await request.formData());
 		const p = id.safeParse(f);
 		if (!p.success) return fail(400, { error: 'err_generic' });
 		try {
-			const b = await declineBooking(locals.db, p.data.id, message(f.message));
+			const b = await declineBooking(locals.db, me.id, p.data.id, message(f.message));
 			await notifyUser(
 				locals.db,
 				b.userId,
@@ -62,7 +62,7 @@ export const inboxActions: Actions = {
 		}
 	},
 	propose: async ({ locals, url, request }) => {
-		requireTutor(locals.user, url);
+		const me = requireTutor(locals.user, url);
 		const f = formObject(await request.formData());
 		const p = id.safeParse(f);
 		const min = hhmmToMinutes(f.time ?? '');
@@ -70,7 +70,7 @@ export const inboxActions: Actions = {
 			return fail(400, { error: 'err_times', id: f.id });
 		const when = fromLocal(f.date, min);
 		try {
-			const b = await proposeTime(locals.db, p.data.id, when, message(f.message));
+			const b = await proposeTime(locals.db, me.id, p.data.id, when, message(f.message));
 			await notifyUser(
 				locals.db,
 				b.userId,
@@ -87,11 +87,11 @@ export const inboxActions: Actions = {
 		}
 	},
 	confirmPayment: async ({ locals, url, request }) => {
-		requireTutor(locals.user, url);
+		const me = requireTutor(locals.user, url);
 		const p = id.safeParse(formObject(await request.formData()));
 		if (!p.success) return fail(400, { error: 'err_generic' });
 		try {
-			const r = await confirmPayment(locals.db, p.data.id);
+			const r = await confirmPayment(locals.db, me.id, p.data.id);
 			await notifyUser(
 				locals.db,
 				r.userId,
@@ -105,13 +105,13 @@ export const inboxActions: Actions = {
 		}
 	},
 	rejectPayment: async ({ locals, url, request }) => {
-		requireTutor(locals.user, url);
+		const me = requireTutor(locals.user, url);
 		const f = formObject(await request.formData());
 		const p = id.safeParse(f);
 		if (!p.success) return fail(400, { error: 'err_generic' });
 		try {
-			const before = await getPayment(locals.db, p.data.id);
-			await rejectPayment(locals.db, p.data.id, message(f.reason));
+			const before = await getPayment(locals.db, p.data.id, me.id);
+			await rejectPayment(locals.db, me.id, p.data.id, message(f.reason));
 			if (before)
 				await notifyUser(
 					locals.db,

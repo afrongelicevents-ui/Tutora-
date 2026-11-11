@@ -19,6 +19,7 @@
 						>{m.due({ date: fmtDate(new Date(h.dueOn + 'T12:00:00Z')) })}</span
 					>{/if}
 			</div>
+			{#if h.tutorName}<p class="small muted">{m.with_tutor({ name: h.tutorName })}</p>{/if}
 			{#if h.note}<p class="small">{h.note}</p>{/if}
 			{#if h.fileUrl}<a
 					class="btn btn-secondary btn-sm"

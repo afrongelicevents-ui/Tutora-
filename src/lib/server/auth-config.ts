@@ -4,7 +4,6 @@
  * Do not import `$app/*` modules here.
  */
 import { betterAuth, type BetterAuthPlugin } from 'better-auth';
-import { APIError } from 'better-auth/api';
 import { eq } from 'drizzle-orm';
 import { user as userTable } from './db/auth.schema.ts';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
@@ -20,8 +19,6 @@ export interface AuthDeps {
 	/** Public address; if missing, the address the site is opened on is used. */
 	baseURL?: string;
 	secret: string;
-	/** Optional: if set, only /setup can create the account for this email. */
-	tutorEmail?: string;
 	sendEmail: SendEmail;
 	/**
 	 * Whether emails can be sent. Without an email service the site still works:
@@ -35,11 +32,7 @@ export interface AuthDeps {
 	production?: boolean;
 }
 
-/** Error code when someone tries to sign up publicly with the tutor's address. */
-export const USE_TUTOR_SETUP = 'USE_TUTOR_SETUP';
-
 export function createAuth(deps: AuthDeps) {
-	const tutorEmail = deps.tutorEmail?.trim().toLowerCase() || null;
 	const origin = (deps.baseURL ?? '').replace(/\/$/, '');
 	const emailOn = deps.emailEnabled ?? true;
 	return betterAuth({
@@ -118,12 +111,9 @@ export function createAuth(deps: AuthDeps) {
 		databaseHooks: {
 			user: {
 				create: {
-					// Everyone created through Better Auth is a student. The tutor account is only
-					// created by the /setup flow, which proves control of the TUTOR_EMAIL inbox.
+					// Everyone created through Better Auth starts as a student. Tutor and owner roles
+					// are only ever set by the server (tutor sign-up, owner set-up with the one-time code).
 					before: async (user) => {
-						if (tutorEmail && user.email.trim().toLowerCase() === tutorEmail) {
-							throw new APIError('FORBIDDEN', { code: USE_TUTOR_SETUP, message: USE_TUTOR_SETUP });
-						}
 						return { data: { ...user, role: 'student' } };
 					}
 				}

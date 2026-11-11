@@ -42,5 +42,7 @@
 					>{/if}
 			</div>{/each}
 	{/if}
-	{#if site.has.subjects}<a class="btn btn-block" href="/student/book">{m.home_book()}</a>{/if}
+	{#if site.has.subjects}<a class="btn btn-block" href="/student/book?tutor={site.slug}"
+			>{m.home_book()}</a
+		>{/if}
 </section>

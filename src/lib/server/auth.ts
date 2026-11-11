@@ -1,10 +1,4 @@
-import {
-	ORIGIN,
-	BETTER_AUTH_SECRET,
-	TUTOR_EMAIL,
-	RESEND_API_KEY,
-	EMAIL_FROM
-} from '$app/env/private';
+import { ORIGIN, BETTER_AUTH_SECRET, RESEND_API_KEY, EMAIL_FROM } from '$app/env/private';
 import { dev } from '$app/env';
 import { getRequestEvent } from '$app/server';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
@@ -27,7 +21,6 @@ export function makeAuth(db: DB) {
 		db,
 		baseURL: ORIGIN,
 		secret: BETTER_AUTH_SECRET,
-		tutorEmail: TUTOR_EMAIL,
 		sendEmail,
 		emailEnabled,
 		transactions: true,

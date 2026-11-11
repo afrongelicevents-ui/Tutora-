@@ -15,28 +15,28 @@ const lessonId = (p: string) => {
 };
 
 export const load: PageServerLoad = async ({ locals, params, url }) => {
-	requireTutor(locals.user, url);
-	const l = await lessonWithPeople(locals.db, lessonId(params.id));
+	const t = requireTutor(locals.user, url).id;
+	const l = await lessonWithPeople(locals.db, lessonId(params.id), t);
 	if (!l) error(404, 'Not found');
 	return { lesson: l };
 };
 
 export const actions: Actions = {
 	note: async ({ locals, url, request, params }) => {
-		requireTutor(locals.user, url);
+		const t = requireTutor(locals.user, url).id;
 		const f = formObject(await request.formData());
-		const l = await lessonWithPeople(locals.db, lessonId(params.id));
+		const l = await lessonWithPeople(locals.db, lessonId(params.id), t);
 		const a = l?.people.find((p) => p.attendeeId === Number(f.attendeeId));
 		if (!a) return fail(404, { error: 'err_not_found' });
-		await setPrivateNote(locals.db, a.attendeeId, f.note?.trim().slice(0, 2000) || null);
+		await setPrivateNote(locals.db, t, a.attendeeId, f.note?.trim().slice(0, 2000) || null);
 		return { saved: true };
 	},
 	cancel: async ({ locals, url, request, params }) => {
-		requireTutor(locals.user, url);
+		const t = requireTutor(locals.user, url).id;
 		const f = formObject(await request.formData());
 		if (f.sure !== 'on') return fail(400, { error: 'err_tick_sure' });
 		try {
-			const r = await cancelLesson(locals.db, lessonId(params.id));
+			const r = await cancelLesson(locals.db, t, lessonId(params.id));
 			for (const uid of r.userIds) {
 				await notifyUser(
 					locals.db,

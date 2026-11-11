@@ -10,16 +10,16 @@ import { profile } from '#lib/server/db/app.schema.ts';
 import { addDays, startOfLocalDay } from '#lib/tz.ts';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	requireTutor(locals.user, url);
+	const t = requireTutor(locals.user, url).id;
 	const now = new Date();
 	const day = startOfLocalDay(now);
 	const [lessons, requests, payments, s, subjects, times] = await Promise.all([
-		lessonsBetween(locals.db, day, addDays(day, 1)),
-		pendingRequests(locals.db),
-		pendingPayments(locals.db),
-		getSettings(locals.db),
-		listSubjects(locals.db),
-		listAvailability(locals.db)
+		lessonsBetween(locals.db, t, day, addDays(day, 1)),
+		pendingRequests(locals.db, t),
+		pendingPayments(locals.db, t),
+		getSettings(locals.db, t),
+		listSubjects(locals.db, t),
+		listAvailability(locals.db, t)
 	]);
 	const ids = [...new Set(lessons.flatMap((l) => l.people.map((p) => p.userId)))];
 	const phones: { userId: string; phone: string | null; parentPhone: string | null }[] = ids.length

@@ -1,33 +1,49 @@
-import { eq } from 'drizzle-orm';
 import { user } from '../db/auth.schema.ts';
-import { profile } from '../db/app.schema.ts';
+import { enrollment, profile } from '../db/app.schema.ts';
 import type { DB } from '../db/types.ts';
+import { createTutorProfile } from '../settings.ts';
 import { fromLocal } from '../../tz.ts';
 
 let n = 0;
+/** The tutor made last; students made afterwards are enrolled with them (tests only). */
+let lastTutor: string | null = null;
 
-/** Insert a user directly (tests only). */
+/**
+ * Insert a user directly (tests only). Tutors get an approved profile. Students and parents
+ * are linked to `tutorId` (default: the tutor made last); pass null for nobody.
+ */
 export async function makeUser(
 	db: DB,
-	role: 'tutor' | 'student' | 'parent',
-	name = `Person ${++n}`
+	role: 'tutor' | 'student' | 'parent' | 'owner',
+	name = `Person ${++n}`,
+	tutorId: string | null | undefined = undefined
 ) {
-	if (role === 'tutor') {
-		// The database allows only one tutor: reuse it if a test already made one.
-		const [t] = await db.select().from(user).where(eq(user.role, 'tutor'));
-		if (t) return { id: t.id, name: t.name, role, twoFactorEnabled: true };
-	}
 	const id = `u_${role}_${++n}_${Math.random().toString(36).slice(2, 7)}`;
+	const twoFactorEnabled = role === 'tutor' || role === 'owner';
 	await db.insert(user).values({
 		id,
 		name,
 		email: `${id}@example.com`,
 		emailVerified: true,
 		role,
-		twoFactorEnabled: role === 'tutor'
+		twoFactorEnabled
 	});
-	if (role !== 'tutor') await db.insert(profile).values({ userId: id, consentAt: new Date() });
-	return { id, name, role, twoFactorEnabled: role === 'tutor' };
+	if (role === 'tutor') {
+		await createTutorProfile(db, id, name, 'active');
+		lastTutor = id;
+	}
+	if (role === 'student' || role === 'parent') {
+		await db.insert(profile).values({ userId: id, consentAt: new Date() });
+		const t = tutorId === undefined ? lastTutor : tutorId;
+		if (t) await db.insert(enrollment).values({ tutorId: t, userId: id });
+	}
+	return {
+		id,
+		name,
+		role,
+		twoFactorEnabled,
+		tutorStatus: role === 'tutor' ? ('active' as const) : null
+	};
 }
 
 /** Monday 16 Nov 2026, 08:00 Zimbabwe time. */

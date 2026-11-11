@@ -25,6 +25,8 @@
 		'/verify-email'
 	];
 	const showWhatsApp = $derived(!PRIVATE.some((p) => page.url.pathname.startsWith(p)));
+	// WhatsApp is the tutor's own number, only on that tutor's page (none on Tutora's pages)
+	const whatsapp = $derived((page.data.tutorWhatsapp as string | null | undefined) ?? null);
 </script>
 
 <svelte:head>
@@ -35,14 +37,23 @@
 </svelte:head>
 
 <a class="sr-only skip" href="#main">{m.skip_to_content()}</a>
+{#if data.testSite}<div class="testbar" role="note">{m.test_site_bar()}</div>{/if}
 <Header user={data.user} />
 <main id="main">
 	{@render children()}
 </main>
-<Footer whatsapp={data.whatsapp} />
-{#if showWhatsApp}{#if data.whatsapp}<WhatsAppButton phone={data.whatsapp} />{/if}{/if}
+<Footer {whatsapp} />
+{#if showWhatsApp && whatsapp}<WhatsAppButton phone={whatsapp} />{/if}
 
 <style>
+	.testbar {
+		background: #b45309;
+		color: #fff;
+		font-weight: 700;
+		text-align: center;
+		padding: 6px 12px;
+		font-size: 14px;
+	}
 	.skip:focus {
 		position: static;
 		width: auto;
