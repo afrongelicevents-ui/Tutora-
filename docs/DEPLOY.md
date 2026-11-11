@@ -1,46 +1,18 @@
 # Putting Tutora online (from a phone)
 
-Free plans only. About 20 minutes. You need **two accounts**: Cloudflare (website) and Neon (database, you already have it). No email service is needed: the tutor types their own email, name and details on the site.
+Free plans only. You make two keys and paste them into GitHub. Everything else (database, tables, website address, deploy) is done by the **Deploy** workflow. No email service is needed: the tutor types their own details on the site.
 
 Tip: on GitHub in a phone browser, tap **⋮ → Desktop site** if a settings page doesn't react.
 
-## 1. Neon: get a fresh database address (3 min)
+1. **Neon key:** https://console.neon.tech/app/settings/api-keys → **Create new API key** → name `tutora` → **Create** → **Copy**.
+2. **GitHub:** https://github.com/afrongelicevents-ui/Tutora-/settings/secrets/actions/new → Name `NEON_API_KEY` → paste → **Add secret**.
+3. **Cloudflare account:** https://dash.cloudflare.com/sign-up → sign up → open the confirmation email → tap the link.
+4. **Cloudflare key:** https://dash.cloudflare.com/profile/api-tokens → **Create Token** → next to **Edit Cloudflare Workers** tap **Use template** → Account Resources: _All accounts_ → Zone Resources: _All zones_ → **Continue to summary** → **Create Token** → **Copy**.
+5. **GitHub:** same page as step 2 → Name `CLOUDFLARE_API_TOKEN` → paste → **Add secret**.
+6. **Deploy:** https://github.com/afrongelicevents-ui/Tutora-/actions/workflows/deploy.yml → **Run workflow** → branch `main` → tick _Reset the database password_ the first time → **Run workflow**. When it's green, the run's summary shows the website address.
+7. **The tutor claims the site straight away:** open `<website address>/setup` → type their own name, email and password → log in → set up the authenticator app → fill in the wizard. Everything can be changed later in **Settings**.
 
-The old password was shared in a chat, so make a new one first.
-
-1. https://console.neon.tech → your project → **Branches** → `main` → **Roles** → `neondb_owner` → **⋮ → Reset password** → confirm.
-2. **Dashboard → Connect** → copy the connection string (starts with `postgresql://`). This is **DATABASE_URL**. Don't paste it anywhere except step 3.
-
-## 2. Cloudflare: account, ID and token (7 min)
-
-1. https://dash.cloudflare.com/sign-up → sign up → confirm your email.
-2. Open https://dash.cloudflare.com/?to=/:account/workers-and-pages once (this creates your free `workers.dev` address). Copy the **Account ID** shown on that page (or under the ⋮ / account menu). This is **CLOUDFLARE_ACCOUNT_ID**.
-3. https://dash.cloudflare.com/profile/api-tokens → **Create Token** → **Edit Cloudflare Workers** → **Use template** → Account Resources: your account; Zone Resources: **All zones** → **Continue to summary** → **Create Token** → copy it. This is **CLOUDFLARE_API_TOKEN**.
-
-## 3. GitHub: three secrets (3 min)
-
-Open https://github.com/afrongelicevents-ui/Tutora-/settings/secrets/actions/new and add, one at a time (Name, then Secret, then **Add secret**):
-
-| Name                    | Secret        |
-| ----------------------- | ------------- |
-| `CLOUDFLARE_API_TOKEN`  | from step 2.3 |
-| `CLOUDFLARE_ACCOUNT_ID` | from step 2.2 |
-| `DATABASE_URL`          | from step 1.2 |
-
-## 4. GitHub: put the latest code on `main` and publish (5 min)
-
-1. https://github.com/afrongelicevents-ui/Tutora-/compare/main...ccr-767e9d9a-el14qg → **Create pull request** → **Create pull request** → **Merge pull request** → **Confirm merge**.
-2. https://github.com/afrongelicevents-ui/Tutora-/actions/workflows/deploy.yml → **Run workflow** → branch `main` → **Run workflow**. Wait for the green tick (about 3 minutes). (It also runs by itself after each merge once CI is green.)
-3. Tap the finished run → **deploy** → the last step shows the address, like `https://tutora.<your-name>.workers.dev`. That is the website.
-
-## 5. The tutor claims the site (do this straight away)
-
-1. Open `https://tutora.<your-name>.workers.dev/setup`.
-2. The tutor types **their own** name, email and a password → **Create my tutor account**. After this, `/setup` is closed for everyone else.
-3. Log in → set up the authenticator app (Google Authenticator or Microsoft Authenticator, free) → write down the backup codes.
-4. The setup wizard asks for photo, subjects, prices, free times, WhatsApp and payment details. Anything can be skipped and changed later in **Settings**. Login email and password: **Settings → Account**.
-
-If you are setting it up for a client to look at first, you can claim it yourself with a test email; when they say yes, change the name, email and password in **Settings** to theirs.
+The workflow picks the Neon project called "tutora", or your only project, or creates one. If you have several projects, rename the right one to `tutora`.
 
 ## Optional, later
 
