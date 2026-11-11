@@ -34,6 +34,23 @@
 			required
 		/>
 		<Field
+			name="phone"
+			type="tel"
+			label={m.field_phone()}
+			hint={m.field_phone_hint()}
+			autocomplete="tel"
+			value={v.phone ?? ''}
+			error={e.phone}
+			required
+		/>
+		<Field
+			name="town"
+			label={m.join_town()}
+			hint={m.join_town_hint()}
+			autocomplete="address-level2"
+			value={v.town ?? ''}
+		/>
+		<Field
 			name="password"
 			type="password"
 			label={m.field_password()}

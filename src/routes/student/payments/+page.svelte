@@ -16,12 +16,12 @@
 			other: m.method_other()
 		})[k] ?? k;
 	const q = $derived(`tutor=${data.tutor.slug}`);
-	const tabs = [
+	const tabs = $derived([
 		['pay', m.pay_tab_account()],
-		['cash', m.pay_tab_cash()],
+		...(d.cash ? [['cash', m.pay_tab_cash()]] : []),
 		['history', m.pay_tab_receipts()],
 		['packages', m.pay_tab_packages()]
-	];
+	]);
 </script>
 
 <svelte:head><title>{m.payments_title()} · Tutora</title></svelte:head>

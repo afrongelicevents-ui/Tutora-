@@ -77,7 +77,12 @@ export async function attentionFor(db: DB, userId: string, now = new Date()) {
 			});
 	}
 	const reqs = await db
-		.select({ id: booking.id, status: booking.status, name: tutorProfile.tutorName, slug: tutorProfile.slug })
+		.select({
+			id: booking.id,
+			status: booking.status,
+			name: tutorProfile.tutorName,
+			slug: tutorProfile.slug
+		})
 		.from(booking)
 		.innerJoin(tutorProfile, eq(tutorProfile.tutorId, booking.tutorId))
 		.where(
@@ -219,7 +224,13 @@ export async function myLesson(db: DB, userId: string, lessonId: number) {
 /** Everything Tutora holds about this person, as one JSON file (data download). */
 export async function exportMyData(db: DB, userId: string) {
 	const [u] = await db
-		.select({ id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt })
+		.select({
+			id: user.id,
+			name: user.name,
+			email: user.email,
+			role: user.role,
+			createdAt: user.createdAt
+		})
 		.from(user)
 		.where(eq(user.id, userId));
 	const [prof, kids, bookings, places, payments, hw, reviews, notes] = await Promise.all([
@@ -286,7 +297,13 @@ export async function deleteMyAccount(db: DB, userId: string) {
 		// a tutor's public page goes offline
 		await tx
 			.update(tutorProfile)
-			.set({ status: 'suspended', whatsappNumber: null, phone: null, contactEmail: null, photoKey: null })
+			.set({
+				status: 'suspended',
+				whatsappNumber: null,
+				phone: null,
+				contactEmail: null,
+				photoKey: null
+			})
 			.where(eq(tutorProfile.tutorId, userId));
 	});
 }

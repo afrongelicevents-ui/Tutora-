@@ -539,7 +539,8 @@ export function paymentDetails(s: SiteSettings) {
 			: null,
 		ecocash: s.ecocashNumber ? { number: s.ecocashNumber, name: s.ecocashName } : null,
 		innbucks: s.innbucksNumber ? { number: s.innbucksNumber, name: s.innbucksName } : null,
-		note: s.paymentNote
+		note: s.paymentNote,
+		cash: s.acceptsCash
 	};
 }
 

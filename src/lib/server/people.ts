@@ -148,6 +148,24 @@ export function studentLessons(db: DB, tutorId: string, userId: string) {
 }
 
 /** The tutor's private note on one place in one of THEIR lessons. */
+/** After the lesson the tutor marks each student: completed or absent (only in THEIR lessons). */
+export async function setAttendance(
+	db: DB,
+	tutorId: string,
+	attendeeId: number,
+	value: 'completed' | 'absent' | null
+) {
+	await db
+		.update(attendee)
+		.set({ attendance: value })
+		.where(
+			and(
+				eq(attendee.id, attendeeId),
+				sql`${attendee.lessonId} in (select ${lesson.id} from ${lesson} where ${lesson.tutorId} = ${tutorId} and ${lesson.startsAt} < now())`
+			)
+		);
+}
+
 export async function setPrivateNote(
 	db: DB,
 	tutorId: string,
@@ -237,6 +255,46 @@ export async function handIn(
 		.values({ homeworkId, ...v })
 		.returning();
 	return row;
+}
+
+/** Answers handed in to this tutor that are not checked yet (newest first). */
+export function answersToCheck(db: DB, tutorId: string) {
+	return db
+		.select({
+			id: homeworkAnswer.id,
+			note: homeworkAnswer.note,
+			fileKey: homeworkAnswer.fileKey,
+			fileName: homeworkAnswer.fileName,
+			createdAt: homeworkAnswer.createdAt,
+			title: homework.title,
+			userId: homework.userId,
+			studentName: user.name
+		})
+		.from(homeworkAnswer)
+		.innerJoin(homework, eq(homework.id, homeworkAnswer.homeworkId))
+		.innerJoin(user, eq(user.id, homework.userId))
+		.where(and(eq(homework.tutorId, tutorId), sql`${homeworkAnswer.checkedAt} is null`))
+		.orderBy(desc(homeworkAnswer.createdAt));
+}
+
+/** The tutor marks an answer checked, with an optional comment (only answers to THEIR homework). */
+export async function checkAnswer(
+	db: DB,
+	tutorId: string,
+	answerId: number,
+	comment: string | null
+) {
+	const done = await db
+		.update(homeworkAnswer)
+		.set({ feedback: comment, checkedAt: new Date() })
+		.where(
+			and(
+				eq(homeworkAnswer.id, answerId),
+				sql`${homeworkAnswer.homeworkId} in (select ${homework.id} from ${homework} where ${homework.tutorId} = ${tutorId})`
+			)
+		)
+		.returning({ id: homeworkAnswer.id });
+	return done.length > 0;
 }
 
 export async function giveFeedback(

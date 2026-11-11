@@ -29,7 +29,10 @@
 	<p class="muted">{fmtDate(data.now)}</p>
 
 	{#if form?.done}<p class="notice" role="status">
-			{t(`done_${form.done}`)}{form.receipt ? ` ${form.receipt}` : ''}
+			{form.done === 'submitted' ? m.tdone_submitted() : t(`done_${form.done}`)}{'receipt' in
+				form && form.receipt
+				? ` ${form.receipt}`
+				: ''}
 		</p>{/if}
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
 

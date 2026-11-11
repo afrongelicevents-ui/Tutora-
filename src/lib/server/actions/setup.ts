@@ -2,7 +2,8 @@ import { eq } from 'drizzle-orm';
 import type { Auth } from '../auth-config.ts';
 import type { DB } from '../db/types.ts';
 import { user } from '../db/schema.ts';
-import { emailField } from '../../validation/auth.ts';
+import { emailField, phone as phoneField } from '../../validation/auth.ts';
+import { tutorProfile } from '../db/app.schema.ts';
 import { checkSetupCode, useUpSetupCode } from '../setup-code.ts';
 import { createTutorProfile } from '../settings.ts';
 
@@ -95,10 +96,13 @@ export async function claimOwner(
  */
 export async function signUpTutor(
 	deps: { auth: Auth; db: DB },
-	input: NewAccount & { terms?: string }
+	input: NewAccount & { terms?: string; phone?: string; town?: string }
 ): Promise<AccountResult> {
 	const v = check(input);
 	if (input.terms !== 'on') v.errors.terms = 'err_consent';
+	const ph = phoneField.safeParse(input.phone ?? '');
+	if (!ph.success) v.errors.phone = 'err_phone';
+	const town = (input.town ?? '').trim().slice(0, 80);
 	if (Object.keys(v.errors).length) return { ok: false, errors: v.errors };
 	const id = await createLogin(deps.auth, deps.db, v.name, v.email, input.password);
 	if (!id) return { ok: false, errors: { email: 'err_email_taken' } };
@@ -107,6 +111,14 @@ export async function signUpTutor(
 	await deps.db.update(user).set({ role: 'tutor' }).where(eq(user.id, id));
 	// starts as a draft: the tutor fills in their profile, then submits it for approval
 	await createTutorProfile(deps.db, id, v.name, 'draft');
+	await deps.db
+		.update(tutorProfile)
+		.set({
+			phone: ph.success ? ph.data : null,
+			whatsappNumber: ph.success ? ph.data : null,
+			town: town || null
+		})
+		.where(eq(tutorProfile.tutorId, id));
 	await deps.auth.api
 		.sendVerificationEmail({ body: { email: v.email, callbackURL: '/login' } })
 		.catch(() => {});

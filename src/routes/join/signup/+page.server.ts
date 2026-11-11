@@ -14,7 +14,12 @@ export const load: PageServerLoad = ({ locals }) => {
 export const actions: Actions = {
 	default: async ({ request, locals }) => {
 		const f = formObject(await request.formData());
-		const values = { name: f.name ?? '', email: f.email ?? '' };
+		const values = {
+			name: f.name ?? '',
+			email: f.email ?? '',
+			phone: f.phone ?? '',
+			town: f.town ?? ''
+		};
 		const limit = await hitLimit(locals.db, 'signup', clientIp(request));
 		if (!limit.ok)
 			return fail(429, {
@@ -29,7 +34,9 @@ export const actions: Actions = {
 				email: f.email ?? '',
 				password: f.password ?? '',
 				confirm: f.confirm ?? '',
-				terms: f.terms
+				terms: f.terms,
+				phone: f.phone ?? '',
+				town: f.town ?? ''
 			}
 		);
 		if (!r.ok) return fail(400, { values, errors: r.errors });

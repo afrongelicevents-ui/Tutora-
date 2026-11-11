@@ -246,6 +246,10 @@
 	</form>
 {:else if section === 'prices'}
 	<form method="POST" action="?/prices" class="stack" novalidate>
+		<label class="check"
+			><input type="checkbox" name="offersIntro" defaultChecked={!!s.offersIntro} />
+			<span>{m.set_offers_intro()}</span></label
+		>
 		<fieldset>
 			<legend>{m.set_currency()}</legend>
 			<div class="choice">
@@ -406,6 +410,10 @@
 {:else if section === 'payments'}
 	<form method="POST" action="?/payments" class="stack" novalidate>
 		<p class="small muted">{m.set_pay_lead()}</p>
+		<label class="check"
+			><input type="checkbox" name="acceptsCash" defaultChecked={!!s.acceptsCash} />
+			<span>{m.set_accepts_cash()}</span></label
+		>
 		<fieldset class="card stack">
 			<legend>{m.method_bank()}</legend>
 			<Field name="bankName" label={m.set_bank_name()} value={v('bankName')} error={e.bankName} />
