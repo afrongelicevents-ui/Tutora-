@@ -94,7 +94,7 @@
 		/>
 		<div class="field">
 			<label for="f-bio">{m.set_bio()}</label>
-			<textarea id="f-bio" name="bio" maxlength="2000" rows="5">{v('bio')}</textarea>
+			<textarea id="f-bio" name="bio" maxlength="2000" rows="5" defaultValue={v('bio')}></textarea>
 			{#if e.bio}<span class="error">{t(e.bio)}</span>{/if}
 		</div>
 		<Field
@@ -112,9 +112,12 @@
 		/>
 		<div class="field">
 			<label for="f-style">{m.set_style()}</label>
-			<textarea id="f-style" name="teachingStyle" maxlength="1000" rows="3"
-				>{v('teachingStyle')}</textarea
-			>
+			<textarea
+				id="f-style"
+				name="teachingStyle"
+				maxlength="1000"
+				rows="3"
+				defaultValue={v('teachingStyle')}></textarea>
 		</div>
 		<Field
 			name="town"
@@ -203,9 +206,12 @@
 			<legend>{m.set_group_mode()}</legend>
 			{#each [['one_to_one', m.set_one_to_one(), m.set_one_to_one_hint()], ['groups', m.set_groups(), m.set_groups_hint()], ['both', m.set_both(), m.set_both_groups_hint()]] as [val, label, hint] (val)}
 				<label class="big-choice"
-					><input type="radio" name="groupMode" value={val} checked={s.groupMode === val} /><span
-						><b>{label}</b><small>{hint}</small></span
-					></label
+					><input
+						type="radio"
+						name="groupMode"
+						defaultValue={val}
+						defaultChecked={s.groupMode === val}
+					/><span><b>{label}</b><small>{hint}</small></span></label
 				>
 			{/each}
 		</fieldset>
@@ -222,7 +228,12 @@
 			<div class="choice three">
 				{#each [['online', m.mode_online()], ['in_person', m.mode_in_person()], ['both', m.set_both()]] as [val, label] (val)}
 					<label
-						><input type="radio" name="lessonModes" value={val} checked={s.lessonModes === val} />
+						><input
+							type="radio"
+							name="lessonModes"
+							defaultValue={val}
+							defaultChecked={s.lessonModes === val}
+						/>
 						{label}</label
 					>
 				{/each}
@@ -238,10 +249,10 @@
 			<legend>{m.set_currency()}</legend>
 			<div class="choice">
 				<label
-					><input type="radio" name="currency" value="USD" checked={s.currency === 'USD'} /> USD</label
+					><input type="radio" name="currency" value="USD" defaultChecked={s.currency === 'USD'} /> USD</label
 				>
 				<label
-					><input type="radio" name="currency" value="ZWG" checked={s.currency === 'ZWG'} /> ZiG</label
+					><input type="radio" name="currency" value="ZWG" defaultChecked={s.currency === 'ZWG'} /> ZiG</label
 				>
 			</div>
 		</fieldset>
@@ -265,12 +276,12 @@
 		<fieldset>
 			<legend>{m.set_show_prices()}</legend>
 			<label class="big-choice"
-				><input type="radio" name="showPrices" value="on" checked={s.showPrices} /><span
+				><input type="radio" name="showPrices" value="on" defaultChecked={s.showPrices} /><span
 					><b>{m.set_show_prices_yes()}</b></span
 				></label
 			>
 			<label class="big-choice"
-				><input type="radio" name="showPrices" value="" checked={!s.showPrices} /><span
+				><input type="radio" name="showPrices" value="" defaultChecked={!s.showPrices} /><span
 					><b>{m.set_show_prices_no()}</b></span
 				></label
 			>
@@ -329,7 +340,7 @@
 			{@const w = timeFor(d)}
 			<div class="dayrow" class:off={!w}>
 				<label class="check"
-					><input type="checkbox" name="on{d}" checked={!!w} /> <b>{day}</b></label
+					><input type="checkbox" name="on{d}" defaultChecked={!!w} /> <b>{day}</b></label
 				>
 				<label class="sr-only" for="from{d}">{m.set_from({ day })}</label>
 				<input
@@ -337,7 +348,7 @@
 					name="from{d}"
 					type="time"
 					step="900"
-					value={w ? minutesToHHMM(w.startMinute) : '15:00'}
+					defaultValue={w ? minutesToHHMM(w.startMinute) : '15:00'}
 				/>
 				<span aria-hidden="true">–</span>
 				<label class="sr-only" for="to{d}">{m.set_to({ day })}</label>
@@ -346,7 +357,7 @@
 					name="to{d}"
 					type="time"
 					step="900"
-					value={w ? minutesToHHMM(w.endMinute) : '18:00'}
+					defaultValue={w ? minutesToHHMM(w.endMinute) : '18:00'}
 				/>
 				{#if e[`day${d}`]}<span class="error full">{t(e[`day${d}`])}</span>{/if}
 			</div>
@@ -451,9 +462,12 @@
 		</fieldset>
 		<div class="field">
 			<label for="f-pnote">{m.set_pay_note()}</label>
-			<textarea id="f-pnote" name="paymentNote" maxlength="300" rows="2"
-				>{v('paymentNote')}</textarea
-			>
+			<textarea
+				id="f-pnote"
+				name="paymentNote"
+				maxlength="300"
+				rows="2"
+				defaultValue={v('paymentNote')}></textarea>
 		</div>
 		<button class="btn btn-block" type="submit">{submitLabel}</button>
 	</form>
@@ -491,7 +505,7 @@
 	</form>
 	<form method="POST" action="?/resultsConsent" class="card stack">
 		<label class="check"
-			><input type="checkbox" name="consent" checked={s.resultsConsent} />
+			><input type="checkbox" name="consent" defaultChecked={s.resultsConsent} />
 			<span>{m.set_results_consent()}</span></label
 		>
 		<button class="btn btn-block" type="submit">{m.save()}</button>

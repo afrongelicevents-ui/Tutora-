@@ -59,7 +59,7 @@
 				id="lvl"
 				name="level"
 				class="grow input"
-				value={s.level ?? ''}
+				defaultValue={s.level ?? ''}
 				placeholder={m.level_hint()}
 				maxlength="60"
 			/>
@@ -99,7 +99,7 @@
 					id="cd"
 					name="date"
 					type="date"
-					value={data.today}
+					defaultValue={data.today}
 				/>
 			</div>
 			<button class="btn" type="submit">{m.record_cash_btn()}</button>
@@ -140,8 +140,8 @@
 					name="note"
 					rows="2"
 					maxlength="2000"
-					placeholder={m.private_note_hint()}>{l.note ?? ''}</textarea
-				>
+					placeholder={m.private_note_hint()}
+					defaultValue={l.note ?? ''}></textarea>
 				<button class="btn btn-secondary btn-sm" type="submit">{m.save_note()}</button>
 			</form>
 		</div>
@@ -172,8 +172,8 @@
 							name="feedback"
 							rows="2"
 							maxlength="1000"
-							placeholder={m.feedback()}>{a.feedback ?? ''}</textarea
-						>
+							placeholder={m.feedback()}
+							defaultValue={a.feedback ?? ''}></textarea>
 						<button class="btn btn-secondary btn-sm" type="submit">{m.send_feedback()}</button>
 					</form>
 				</div>

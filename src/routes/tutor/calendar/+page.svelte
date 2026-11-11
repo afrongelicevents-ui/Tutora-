@@ -65,8 +65,8 @@
 				{@const d = fromLocal(day, 12 * 60)}
 				<a class="cal-day" class:today={day === data.today} href={q(day, 'day')}>
 					<span class="d">{fmtWeekday(d)}<br />{Number(day.slice(8))}</span>
-					{#each itemsOn(day) as it (it.key)}<span class="ev {it.html.cls}"
-							><b>{it.html.time}</b> {it.html.text}</span
+					{#each itemsOn(day) as it (it.key)}<span class="ev {it.html.cls}" title={it.html.text}
+							><b>{it.html.time}</b><span class="ev-text">{it.html.text}</span></span
 						>{/each}
 				</a>
 			{/each}

@@ -77,14 +77,19 @@
 					name="amount"
 					inputmode="decimal"
 					required
-					value={data.balance.owed ? (data.balance.owed / 100).toFixed(2) : ''}
+					defaultValue={data.balance.owed ? (data.balance.owed / 100).toFixed(2) : ''}
 				/>
 			</div>
 			<fieldset>
 				<legend>{m.paid_with()}</legend>
 				<div class="choice">
 					{#each ['ecocash', 'bank', 'innbucks', 'other'] as k (k)}<label
-							><input type="radio" name="method" value={k} checked={k === 'ecocash'} />
+							><input
+								type="radio"
+								name="method"
+								defaultValue={k}
+								defaultChecked={k === 'ecocash'}
+							/>
 							{method(k)}</label
 						>{/each}
 				</div>
@@ -99,7 +104,7 @@
 					id="pd"
 					name="date"
 					type="date"
-					value={data.today}
+					defaultValue={data.today}
 					max={data.today}
 					required
 				/>
@@ -134,7 +139,7 @@
 					id="cd"
 					name="date"
 					type="date"
-					value={data.today}
+					defaultValue={data.today}
 					max={data.today}
 				/>
 			</div>

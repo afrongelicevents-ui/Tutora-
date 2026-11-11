@@ -23,6 +23,8 @@
 	let color = $state('#1c2620');
 	let draft = $state('');
 	let started = $state(false);
+	// the button only works once the page's JavaScript has loaded (can take a while on slow 3G)
+	let ready = $state(false);
 	let remotes = $state<Record<string, MediaStream>>({});
 	let myVideo = $state<MediaStream | null>(null);
 	let canvas: HTMLCanvasElement | undefined = $state();
@@ -158,6 +160,7 @@
 	}
 
 	onMount(() => {
+		ready = true;
 		window.addEventListener('resize', resize);
 		const bye = () => void client?.stop();
 		window.addEventListener('pagehide', bye);
@@ -167,8 +170,13 @@
 		};
 	});
 	onDestroy(() => void client?.stop());
+	// Re-measure the board whenever its size changes (e.g. when the tutor lets you in,
+	// the room goes from hidden to visible), otherwise it would draw at 0 x 0 pixels.
 	$effect(() => {
-		if (canvas) resize();
+		if (!canvas) return;
+		const ro = new ResizeObserver(() => resize());
+		ro.observe(canvas);
+		return () => ro.disconnect();
 	});
 </script>
 
@@ -184,8 +192,8 @@
 		<div class="card stack">
 			<p>{m.room_ready_lead()}</p>
 			<p class="small muted">{m.room_data_note()}</p>
-			<button class="btn btn-block" type="button" onclick={start}
-				>{data.me.isTutor ? m.room_start() : m.room_join()}</button
+			<button class="btn btn-block" type="button" onclick={start} disabled={!ready}
+				>{!ready ? m.loading() : data.me.isTutor ? m.room_start() : m.room_join()}</button
 			>
 		</div>
 	{:else if !admitted}

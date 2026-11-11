@@ -574,5 +574,6 @@
 	"date_label": "Date",
 	"field_child_name": "Your child's name",
 	"field_child_name_hint": "The student who will have the lessons.",
-	"err_child_name": "Please enter your child's name."
+	"err_child_name": "Please enter your child's name.",
+	"loading": "Loading…"
 }

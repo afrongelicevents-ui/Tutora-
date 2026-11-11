@@ -13,6 +13,8 @@
 
 	// The floating button is for public pages; on forms and private areas it would cover fields.
 	const PRIVATE = [
+		'/room',
+		'/setup',
 		'/login',
 		'/signup',
 		'/account',

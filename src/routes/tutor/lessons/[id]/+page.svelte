@@ -37,8 +37,8 @@
 					name="note"
 					maxlength="2000"
 					rows="3"
-					placeholder={m.private_note_hint()}>{p.note ?? ''}</textarea
-				>
+					placeholder={m.private_note_hint()}
+					defaultValue={p.note ?? ''}></textarea>
 				<button class="btn btn-secondary btn-sm" type="submit">{m.save_note()}</button>
 			</form>
 		</div>

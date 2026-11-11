@@ -457,11 +457,18 @@ textarea {
 	grid-template-columns: 1fr 1fr 1fr;
 }
 .choice.five {
-	grid-template-columns: repeat(5, 1fr);
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	gap: 4px;
 }
 .choice.five label {
 	justify-content: center;
-	padding: 0 4px;
+	gap: 2px;
+	padding: 0 2px;
+	font-size: 0.9rem;
+}
+.choice.five input {
+	width: 16px;
+	height: 16px;
 }
 .price {
 	color: var(--clay-600);
@@ -747,6 +754,17 @@ table.t .n {
 	line-height: 1.25;
 	overflow: hidden;
 	overflow-wrap: anywhere;
+}
+.cal-day .ev b,
+.cal-day .ev .ev-text {
+	display: block;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.cal-day .ev {
+	padding: 2px 3px;
+	font-size: 0.66rem;
 }
 .ev.on {
 	background: var(--mint-50);
