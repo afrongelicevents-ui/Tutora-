@@ -11,8 +11,8 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "wrangler dev .svelte-kit/cloudflare/_worker.js --port 4173",
-		"prepare": "svelte-kit sync || echo ''",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"prepare": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide && svelte-kit sync || echo \"\"",
+		"check": "pnpm i18n && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
@@ -25,7 +25,8 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
 		"demo": "node scripts/build-demo.mjs",
-		"auth:schema": "auth generate --config scripts/auth-cli.ts --output src/lib/server/db/auth.schema.ts --yes"
+		"auth:schema": "auth generate --config scripts/auth-cli.ts --output src/lib/server/db/auth.schema.ts --yes",
+		"i18n": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide"
 	},
 	"devDependencies": {
 		"@better-auth/utils": "0.5.1",
