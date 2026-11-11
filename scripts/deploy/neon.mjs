@@ -56,7 +56,12 @@ async function allProjects() {
 			out.push({ ...p, orgId });
 		}
 	};
-	add((await neon('/projects?limit=400')).projects);
+	try {
+		// accounts that belong to an organization must name it (400 "org_id is required")
+		add((await neon('/projects?limit=400')).projects);
+	} catch (e) {
+		if (!/org_id/i.test(e.message)) throw e;
+	}
 	let orgs = [];
 	try {
 		orgs = (await neon('/users/me/organizations')).organizations ?? [];
