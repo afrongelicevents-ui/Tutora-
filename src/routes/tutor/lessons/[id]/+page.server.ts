@@ -7,6 +7,17 @@ import { notifyUser } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { fmtDayTime } from '#lib/tz.ts';
 import { m } from '#lib/paraglide/messages.js';
+import { toolsEnv } from '#lib/server/tools/env.ts';
+import { connections } from '#lib/server/tools/oauth.ts';
+import { cancelMeetingForLesson, getToolPref, meetingFor } from '#lib/server/tools/meetings.ts';
+import { pickerConfig, shareWithAll, verifyPickedFile } from '#lib/server/tools/drive.ts';
+import {
+	addLessonMaterial,
+	lessonMaterialsForTutor,
+	lessonStudentEmails,
+	MaterialFail,
+	removeLessonMaterial
+} from '#lib/server/materials.ts';
 
 const lessonId = (p: string) => {
 	const n = Number(p);
@@ -18,10 +29,76 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	const t = requireTutor(locals.user, url).id;
 	const l = await lessonWithPeople(locals.db, lessonId(params.id), t);
 	if (!l) error(404, 'Not found');
-	return { lesson: l, started: l.startsAt.getTime() <= Date.now() };
+	const [materials, meeting, conn, pref] = await Promise.all([
+		lessonMaterialsForTutor(locals.db, t, l.id),
+		meetingFor(locals.db, l.id),
+		connections(locals.db, t),
+		getToolPref(locals.db, t)
+	]);
+	return {
+		lesson: l,
+		started: l.startsAt.getTime() <= Date.now(),
+		materials,
+		meeting,
+		kahootOn: pref.kahootOn,
+		picker: pickerConfig(toolsEnv(url), conn.drive)
+	};
+};
+
+const materialFail = (e: unknown) => {
+	if (e instanceof MaterialFail) return fail(400, { error: e.code });
+	throw e;
 };
 
 export const actions: Actions = {
+	/** a file picked with the Google Picker: checked with the tutor's Drive, then shared */
+	attachDrive: async ({ locals, url, request, params }) => {
+		const t = requireTutor(locals.user, url).id;
+		const id = lessonId(params.id);
+		const f = formObject(await request.formData());
+		const env = toolsEnv(url);
+		const file = await verifyPickedFile(locals.db, env, t, f.fileId ?? '');
+		if (!file) return fail(400, { error: 'tools6_err_drive_file' });
+		try {
+			await addLessonMaterial(locals.db, t, id, {
+				kind: 'drive',
+				title: file.name,
+				url: file.url,
+				driveFileId: file.id
+			});
+		} catch (e) {
+			return materialFail(e);
+		}
+		const emails = await lessonStudentEmails(locals.db, t, id);
+		const share = emails.length
+			? await shareWithAll(locals.db, env, t, file.id, emails)
+			: ('skipped' as const);
+		return { attached: true, share };
+	},
+	addLink: async ({ locals, url, request, params }) => {
+		const t = requireTutor(locals.user, url).id;
+		const f = formObject(await request.formData());
+		const kind = f.kind === 'kahoot' ? 'kahoot' : 'link';
+		try {
+			await addLessonMaterial(locals.db, t, lessonId(params.id), {
+				kind,
+				title: f.title ?? '',
+				url: f.url
+			});
+		} catch (e) {
+			return materialFail(e);
+		}
+		return { attached: true };
+	},
+	removeMaterial: async ({ locals, url, request, params }) => {
+		const t = requireTutor(locals.user, url).id;
+		const f = formObject(await request.formData());
+		const mid = Number(f.id);
+		if (!Number.isInteger(mid) || mid <= 0) return fail(404, { error: 'err_not_found' });
+		const ok = await removeLessonMaterial(locals.db, t, lessonId(params.id), mid);
+		if (!ok) return fail(404, { error: 'err_not_found' });
+		return { removed: true };
+	},
 	note: async ({ locals, url, request, params }) => {
 		const t = requireTutor(locals.user, url).id;
 		const f = formObject(await request.formData());
@@ -62,6 +139,8 @@ export const actions: Actions = {
 		if (f.sure !== 'on') return fail(400, { error: 'err_tick_sure' });
 		try {
 			const r = await cancelLesson(locals.db, t, lessonId(params.id));
+			// remove the Meet event / Teams meeting too (best effort, never blocks)
+			await cancelMeetingForLesson(locals.db, toolsEnv(url), r.lesson.id);
 			for (const uid of r.userIds) {
 				await notifyUser(
 					locals.db,

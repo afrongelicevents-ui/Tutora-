@@ -1,9 +1,20 @@
 import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireRole } from '#lib/server/guards.ts';
-import { examReadiness, overallProgress, recentResults, topicScores, WEAK_PCT } from '#lib/server/progress.ts';
+import {
+	examReadiness,
+	overallProgress,
+	recentResults,
+	topicScores,
+	WEAK_PCT
+} from '#lib/server/progress.ts';
 import { planFor, weekSummary } from '#lib/server/study.ts';
-import { removeSchoolSubject, saveSchoolInfo, saveSchoolSubject, schoolWork } from '#lib/server/school.ts';
+import {
+	removeSchoolSubject,
+	saveSchoolInfo,
+	saveSchoolSubject,
+	schoolWork
+} from '#lib/server/school.ts';
 import { formObject } from '#lib/validation/auth.ts';
 
 export const load: PageServerLoad = async ({ locals, url }) => {

@@ -35,7 +35,11 @@
 		if (!(match(item.href) || (item.also ?? []).some(match))) return false;
 		// the most specific tab wins ("/student" vs "/student/lessons")
 		return !all.some(
-			(o) => o !== item && o.href.length > item.href.length && match(o.href) && o.href.startsWith(item.href)
+			(o) =>
+				o !== item &&
+				o.href.length > item.href.length &&
+				match(o.href) &&
+				o.href.startsWith(item.href)
 		);
 	}
 	const all = $derived([...tabs, ...more]);
@@ -52,7 +56,8 @@
 		</nav>
 		<div class="side-foot">
 			<a href="/notifications" aria-current={path === '/notifications' ? 'page' : undefined}
-				>{m.notif_title()}{#if unread}<span class="count">{unread > 9 ? '9+' : unread}</span>{/if}</a
+				>{m.notif_title()}{#if unread}<span class="count">{unread > 9 ? '9+' : unread}</span
+					>{/if}</a
 			>
 			<a href="/account" aria-current={path.startsWith('/account') ? 'page' : undefined}
 				>{m.nav_account()}</a
@@ -86,7 +91,11 @@
 		{@render children()}
 	</div>
 
-	<nav class="tabbar" aria-label={label} style="grid-template-columns: repeat({tabs.length}, minmax(0, 1fr))">
+	<nav
+		class="tabbar"
+		aria-label={label}
+		style="grid-template-columns: repeat({tabs.length}, minmax(0, 1fr))"
+	>
 		{#each tabs as item (item.href)}
 			<a href={item.href} aria-current={isOn(item, all) ? 'page' : undefined}>{item.label}</a>
 		{/each}

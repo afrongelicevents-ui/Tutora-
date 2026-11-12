@@ -4,7 +4,13 @@ import type { Actions, PageServerLoad } from './$types';
 import { requireRole } from '#lib/server/guards.ts';
 import { myLesson } from '#lib/server/student.ts';
 import { OPEN_BEFORE_MIN, CLOSE_AFTER_MIN } from '#lib/server/room.ts';
-import { lessonFeedback, lessonMaterial, lessonMeeting, schoolInfo, schoolSubject } from '#lib/server/db/v3.schema.ts';
+import {
+	lessonFeedback,
+	lessonMaterial,
+	lessonMeeting,
+	schoolInfo,
+	schoolSubject
+} from '#lib/server/db/v3.schema.ts';
 import { BookingFail, cancelMyPlace } from '#lib/server/bookings.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
 import { fmtDayTime } from '#lib/tz.ts';
@@ -42,7 +48,10 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 			.select({ text: lessonFeedback.text })
 			.from(lessonFeedback)
 			.where(eq(lessonFeedback.attendeeId, l.attendeeId)),
-		locals.db.select({ year: schoolInfo.year }).from(schoolInfo).where(eq(schoolInfo.studentId, u.id)),
+		locals.db
+			.select({ year: schoolInfo.year })
+			.from(schoolInfo)
+			.where(eq(schoolInfo.studentId, u.id)),
 		currentTopic(locals.db, u.id, l.subjectName)
 	]);
 	const { tutorId: _t, ...lesson } = l;

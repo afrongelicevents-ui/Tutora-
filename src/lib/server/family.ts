@@ -317,7 +317,11 @@ export async function parentAccess(db: DB, parentId: string, studentId: string):
 }
 
 /** Parent ids that should hear about this child's `what` (respecting what the child shares). */
-export async function parentsWhoSee(db: DB, studentId: string, what: Exclude<ShareKey, 'checkins'>) {
+export async function parentsWhoSee(
+	db: DB,
+	studentId: string,
+	what: Exclude<ShareKey, 'checkins'>
+) {
 	const rows = await db
 		.select({ parentId: familyLink.parentId })
 		.from(familyLink)
@@ -347,7 +351,13 @@ export async function setSharing(
 	db: DB,
 	studentId: string,
 	parentId: string,
-	v: { progress: boolean; lessons: boolean; homework: boolean; study: boolean; label?: string | null }
+	v: {
+		progress: boolean;
+		lessons: boolean;
+		homework: boolean;
+		study: boolean;
+		label?: string | null;
+	}
 ) {
 	const [row] = await db
 		.select({ guardian: familyLink.guardian, isUnder18: profile.isUnder18 })
@@ -477,12 +487,16 @@ export function kidUsername(email: string): string | null {
 }
 
 export async function countPending(db: DB, guardianId: string) {
-	const [r] = await db.execute<{ n: number }>(sql`
+	const [r] = await db
+		.execute<{ n: number }>(
+			sql`
 		select count(*)::int as n from family_link f
 		join family_link g on g.student_id = f.student_id and g.parent_id = ${guardianId}
 		  and g.guardian and g.status = 'active'
-		where f.status = 'pending_guardian'`).then(
-		(x) => ((x as unknown as { rows?: { n: number }[] }).rows ?? (x as unknown as { n: number }[]))
-	);
+		where f.status = 'pending_guardian'`
+		)
+		.then(
+			(x) => (x as unknown as { rows?: { n: number }[] }).rows ?? (x as unknown as { n: number }[])
+		);
 	return r?.n ?? 0;
 }

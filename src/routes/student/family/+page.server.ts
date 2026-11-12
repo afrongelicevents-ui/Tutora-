@@ -48,7 +48,11 @@ export const actions: Actions = {
 	invite: async ({ locals, url }) => {
 		const u = requireRole(locals.user, url, ['student']);
 		const limit = await hitLimit(locals.db, 'familyInvite', u.id);
-		if (!limit.ok) return fail(429, { error: 'err_rate_limited', minutes: Math.ceil(limit.retryAfterSeconds / 60) });
+		if (!limit.ok)
+			return fail(429, {
+				error: 'err_rate_limited',
+				minutes: Math.ceil(limit.retryAfterSeconds / 60)
+			});
 		const { code, expiresAt } = await createInvite(locals.db, u.id);
 		return { code, expiresAt };
 	},

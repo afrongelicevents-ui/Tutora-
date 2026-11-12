@@ -24,7 +24,14 @@ import {
 	toolsAllowedFor
 } from './family.ts';
 import { addCheckin, sharedCheckins } from './checkins.ts';
-import { examReadiness, addExam, overallProgress, recordResult, topicScores, weakTopics } from './progress.ts';
+import {
+	examReadiness,
+	addExam,
+	overallProgress,
+	recordResult,
+	topicScores,
+	weakTopics
+} from './progress.ts';
 import { addPlanItem, endSession, startSession, streak, todaysPlan, weekSummary } from './study.ts';
 import { addDays } from '../tz.ts';
 
@@ -149,7 +156,12 @@ describe.skipIf(!hasTestDb)('Family Connection', () => {
 		const r1 = await redeemInvite(db, c1.code, mum.id, { guardianClaim: true }, now);
 		expect(r1.guardian).toBe(true);
 		// the child cannot hide lessons or progress from the guardian
-		await setSharing(db, kid.id, mum.id, { progress: false, lessons: false, homework: false, study: false });
+		await setSharing(db, kid.id, mum.id, {
+			progress: false,
+			lessons: false,
+			homework: false,
+			study: false
+		});
 		const g = await parentAccess(db, mum.id, kid.id);
 		expect(g.progress && g.lessons && g.homework && g.study).toBe(true);
 		// and cannot remove the guardian
@@ -171,7 +183,10 @@ describe.skipIf(!hasTestDb)('Family Connection', () => {
 		await expect(
 			setGuardianPermissions(db, aunt.id, kid.id, { toolsAllowed: true, approveNewFamily: true })
 		).rejects.toThrow(FamilyFail);
-		await setGuardianPermissions(db, mum.id, kid.id, { toolsAllowed: true, approveNewFamily: true });
+		await setGuardianPermissions(db, mum.id, kid.id, {
+			toolsAllowed: true,
+			approveNewFamily: true
+		});
 		expect(await toolsAllowedFor(db, kid.id)).toBe(true);
 	});
 });
@@ -242,7 +257,12 @@ describe.skipIf(!hasTestDb)('progress and study from real data only', () => {
 			topic: 'Fractions'
 		});
 		expect((await todaysPlan(db, s.id, now))[0].state).toBe('next');
-		const sess = await startSession(db, s.id, { planItemId: item!.id, subject: '', minutes: 0 }, now);
+		const sess = await startSession(
+			db,
+			s.id,
+			{ planItemId: item!.id, subject: '', minutes: 0 },
+			now
+		);
 		expect(sess?.subject).toBe('Maths');
 		expect((await todaysPlan(db, s.id, now))[0].state).toBe('now');
 		await endSession(db, s.id, sess!.id, true, new Date(now.getTime() + 45 * 60_000));

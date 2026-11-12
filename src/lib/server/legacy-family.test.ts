@@ -4,7 +4,10 @@ import { LEGACY_FAMILY_SQL } from './legacy-family.ts';
 
 describe('legacy parent conversion', () => {
 	it('is the same as the 0011 migration', () => {
-		const file = readFileSync(new URL('../../../drizzle/0011_v3_family_data.sql', import.meta.url), 'utf8');
+		const file = readFileSync(
+			new URL('../../../drizzle/0011_v3_family_data.sql', import.meta.url),
+			'utf8'
+		);
 		const stmts = file
 			.split('--> statement-breakpoint')
 			.map((p) =>

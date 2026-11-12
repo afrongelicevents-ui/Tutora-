@@ -3,7 +3,11 @@
 	import { m } from '#lib/i18n.ts';
 	import { formatMoney } from '#lib/money.ts';
 	let { data } = $props();
-	const initial = (n: string) => n.replace(/^(Mr|Mrs|Ms|Miss|Dr)\.?\s+/i, '').charAt(0).toUpperCase();
+	const initial = (n: string) =>
+		n
+			.replace(/^(Mr|Mrs|Ms|Miss|Dr)\.?\s+/i, '')
+			.charAt(0)
+			.toUpperCase();
 	const withParam = (k: string, v: string) => {
 		const u = new URL(page.url.href);
 		if (v) u.searchParams.set(k, v);
@@ -11,9 +15,7 @@
 		u.searchParams.delete('n');
 		return u.pathname + u.search;
 	};
-	const filtered = $derived(
-		!!(data.f.level || data.f.mode || data.f.location || data.f.max)
-	);
+	const filtered = $derived(!!(data.f.level || data.f.mode || data.f.location || data.f.max));
 	const modeText = (mo: string, town: string | null) =>
 		mo === 'online'
 			? m.find3_online()
@@ -46,7 +48,8 @@
 				<a
 					class="chip"
 					href={withParam('subject', data.f.subject.toLowerCase() === s.toLowerCase() ? '' : s)}
-					aria-current={data.f.subject.toLowerCase() === s.toLowerCase() ? 'true' : undefined}>{s}</a
+					aria-current={data.f.subject.toLowerCase() === s.toLowerCase() ? 'true' : undefined}
+					>{s}</a
 				>
 			{/each}
 			<a
@@ -68,16 +71,33 @@
 			>
 			<label class="field"
 				><span class="label">{m.find3_max_price()}</span>
-				<input name="max" type="number" min="1" step="1" inputmode="numeric" value={data.f.max} /></label
+				<input
+					name="max"
+					type="number"
+					min="1"
+					step="1"
+					inputmode="numeric"
+					value={data.f.max}
+				/></label
 			>
 			<fieldset class="field">
 				<legend class="label">{m.find3_how()}</legend>
 				<div class="chips">
 					<label class="chip"
-						><input type="radio" name="mode" value="" checked={!data.f.mode} />{m.find3_any()}</label
+						><input
+							type="radio"
+							name="mode"
+							value=""
+							checked={!data.f.mode}
+						/>{m.find3_any()}</label
 					>
 					<label class="chip"
-						><input type="radio" name="mode" value="online" checked={data.f.mode === 'online'} />{m.find3_online()}</label
+						><input
+							type="radio"
+							name="mode"
+							value="online"
+							checked={data.f.mode === 'online'}
+						/>{m.find3_online()}</label
 					>
 					<label class="chip"
 						><input
@@ -134,9 +154,13 @@
 		{/if}
 	{:else}
 		<div class="empty-state">
-			<h2 class="h3">{data.f.q || data.f.subject || filtered ? m.find3_none_match() : m.find3_none_yet()}</h2>
+			<h2 class="h3">
+				{data.f.q || data.f.subject || filtered ? m.find3_none_match() : m.find3_none_yet()}
+			</h2>
 			<p class="lead">
-				{data.f.q || data.f.subject || filtered ? m.find3_none_match_lead() : m.find3_none_yet_lead()}
+				{data.f.q || data.f.subject || filtered
+					? m.find3_none_match_lead()
+					: m.find3_none_yet_lead()}
 			</p>
 			{#if data.f.q || data.f.subject || filtered}<a class="btn btn-ghost" href="/student/find"
 					>{m.find3_clear()}</a

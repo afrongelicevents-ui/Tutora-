@@ -16,12 +16,8 @@ export async function afterAccept(
 	env: ToolsEnv,
 	r: { lessonId: number; userId: string; startsAt: Date }
 ) {
-	let meeting: Awaited<ReturnType<typeof createMeetingForLesson>> = null;
-	try {
-		meeting = await createMeetingForLesson(db, env, r.lessonId);
-	} catch {
-		meeting = null; // the lesson still works in the low-data room
-	}
+	// a failure never blocks the booking: the lesson still works in the low-data room
+	const meeting = await createMeetingForLesson(db, env, r.lessonId).catch(() => null);
 	const when = fmtDayTime(r.startsAt);
 	await notifyUser(db, r.userId, m.email_booked_s(), m.email_booked_b({ when }), {
 		kind: 'booking',

@@ -2,13 +2,20 @@
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay, fmtWeekday } from '#lib/tz.ts';
 	import { shrink } from '#lib/shrink.ts';
+	import DrivePickButton from '#lib/components/tools/DrivePickButton.svelte';
 	let { data, form } = $props();
 	const dueDate = (iso: string) => new Date(iso + 'T12:00:00Z');
 	const today = new Date().toISOString().slice(0, 10);
 	const dueLabel = (iso: string) =>
 		iso < today ? m.hw3_overdue() : m.hw3_due({ day: fmtWeekday(dueDate(iso)) });
 	const source = (k: string) =>
-		k === 'drive' ? 'Drive' : k === 'kahoot' ? 'Kahoot!' : k === 'file' ? m.ld3_file() : m.ld3_link();
+		k === 'drive'
+			? 'Drive'
+			: k === 'kahoot'
+				? 'Kahoot!'
+				: k === 'file'
+					? m.ld3_file()
+					: m.ld3_link();
 	const subjects = $derived([...new Set(data.resources.map((r) => r.subject))]);
 </script>
 
@@ -28,19 +35,23 @@
 			<div class="card hw">
 				<div class="top">
 					<strong>{h.title}</strong>
-					{#if marked}<span class="pill p-ok">{m.hw3_marked()}</span
-						>{:else if sent}<span class="pill p-info">{m.handed_in_pill()}</span
+					{#if marked}<span class="pill p-ok">{m.hw3_marked()}</span>{:else if sent}<span
+							class="pill p-info">{m.handed_in_pill()}</span
 						>{:else if h.dueOn}<span class="pill p-wait">{dueLabel(h.dueOn)}</span>{/if}
 				</div>
 				<span class="small muted"
-					>{[h.tutorName, h.subject, h.topic].filter(Boolean).join(' · ')}{#if h.links.some((l) => l.kind === 'drive')}
+					>{[h.tutorName, h.subject, h.topic]
+						.filter(Boolean)
+						.join(' · ')}{#if h.links.some((l) => l.kind === 'drive')}
 						· {m.hw3_from_drive()}{/if}</span
 				>
 				{#if h.note}<p class="small prewrap">{h.note}</p>{/if}
 				{#if h.fileUrl || h.links.length}
 					<div class="rows">
 						{#if h.fileUrl}<a href={h.fileUrl} target="_blank" rel="noopener"
-								><span>{h.fileName ?? m.ld3_file()}</span><span class="muted small">{m.ld3_file()}</span></a
+								><span>{h.fileName ?? m.ld3_file()}</span><span class="muted small"
+									>{m.ld3_file()}</span
+								></a
 							>{/if}
 						{#each h.links as l (l.id)}
 							<a href={l.url} target="_blank" rel="noopener noreferrer"
@@ -63,19 +74,43 @@
 						<span class="muted">{m.your_answer({ date: fmtDay(a.createdAt) })}</span>
 						{#if a.note}<p class="prewrap">{a.note}</p>{/if}
 						{#if a.fileUrl}<a href={a.fileUrl} target="_blank" rel="noopener">{a.fileName}</a>{/if}
-						{#if a.feedback}<p class="feedback"><strong>{m.tutor_feedback()}:</strong> {a.feedback}</p>{/if}
+						{#if a.feedback}<p class="feedback">
+								<strong>{m.tutor_feedback()}:</strong>
+								{a.feedback}
+							</p>{/if}
 					</div>
 				{/each}
-				<details open={!sent && !!form?.error && String((form as { id?: string }).id) === String(h.id)}>
-					<summary class="btn {sent ? 'btn-ghost' : ''} btn-block">{sent ? m.hand_in_again() : m.hw3_upload()}</summary>
-					<form method="POST" action="?/handIn" enctype="multipart/form-data" class="stack inner" novalidate>
-						{#if form?.error && String((form as { id?: string }).id) === String(h.id)}<p class="alert">
+				<details
+					open={!sent && !!form?.error && String((form as { id?: string }).id) === String(h.id)}
+				>
+					<summary class="btn {sent ? 'btn-ghost' : ''} btn-block"
+						>{sent ? m.hand_in_again() : m.hw3_upload()}</summary
+					>
+					<form
+						method="POST"
+						action="?/handIn"
+						enctype="multipart/form-data"
+						class="stack inner"
+						novalidate
+					>
+						{#if form?.error && String((form as { id?: string }).id) === String(h.id)}<p
+								class="alert"
+							>
 								{t(form.error, { minutes: (form as { minutes?: number }).minutes ?? 60 })}
 							</p>{/if}
 						<input type="hidden" name="id" value={h.id} />
 						<div class="field">
-							<label for="hf-{h.id}">{m.upload_answer()}</label><span class="hint">{m.file_hint_5mb()}</span>
-							<input id="hf-{h.id}" name="file" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" capture="environment" use:shrink />
+							<label for="hf-{h.id}">{m.upload_answer()}</label><span class="hint"
+								>{m.file_hint_5mb()}</span
+							>
+							<input
+								id="hf-{h.id}"
+								name="file"
+								type="file"
+								accept="image/jpeg,image/png,image/webp,application/pdf"
+								capture="environment"
+								use:shrink
+							/>
 						</div>
 						<div class="field">
 							<label for="hn-{h.id}">{m.answer_note()}</label>
@@ -83,6 +118,11 @@
 						</div>
 						<button class="btn btn-block" type="submit">{m.hand_in()}</button>
 					</form>
+					<DrivePickButton
+						config={data.picker}
+						action="?/attachDrive"
+						fields={{ id: String(h.id) }}
+					/>
 				</details>
 			</div>
 		{:else}
@@ -101,7 +141,9 @@
 				{#each data.resources.filter((r) => r.subject === s) as r (r.id)}
 					{#if r.url}<a href={r.url} target="_blank" rel="noopener noreferrer"
 							><span>{r.title}</span><span class="muted small">{source(r.kind)}</span></a
-						>{:else}<div><span>{r.title}</span><span class="muted small">{source(r.kind)}</span></div>{/if}
+						>{:else}<div>
+							<span>{r.title}</span><span class="muted small">{source(r.kind)}</span>
+						</div>{/if}
 				{/each}
 			</div>
 		{:else}

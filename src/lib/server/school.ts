@@ -40,7 +40,12 @@ export async function saveSchoolInfo(
 	by: string,
 	v: { school?: string | null; year?: string | null }
 ) {
-	const values = { school: clean(v.school), year: clean(v.year, 40), enteredBy: by, updatedAt: new Date() };
+	const values = {
+		school: clean(v.school),
+		year: clean(v.year, 40),
+		enteredBy: by,
+		updatedAt: new Date()
+	};
 	await db
 		.insert(schoolInfo)
 		.values({ studentId, ...values })
@@ -53,7 +58,12 @@ export async function saveSchoolSubject(
 	studentId: string,
 	by: string,
 	id: number | null,
-	v: { subject: string; syllabus?: string | null; textbook?: string | null; currentTopic?: string | null }
+	v: {
+		subject: string;
+		syllabus?: string | null;
+		textbook?: string | null;
+		currentTopic?: string | null;
+	}
 ) {
 	const subject = clean(v.subject, 60);
 	if (!subject) return null;
@@ -75,7 +85,10 @@ export async function saveSchoolSubject(
 			.returning();
 		return row ?? null;
 	}
-	const [row] = await db.insert(schoolSubject).values({ studentId, ...values }).returning();
+	const [row] = await db
+		.insert(schoolSubject)
+		.values({ studentId, ...values })
+		.returning();
 	return row;
 }
 

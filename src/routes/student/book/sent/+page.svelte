@@ -8,7 +8,10 @@
 <div class="screen sent">
 	<span class="eyebrow ok-t">{m.bk3_sent()}</span>
 	<h1>{m.bk3_waiting({ name: data.tutorName ?? '' })}</h1>
-	<p class="lead">{m.bk3_sent_lead()} {#if data.family}{m.bk3_sent_family()}{/if}</p>
+	<p class="lead">
+		{m.bk3_sent_lead()}
+		{#if data.family}{m.bk3_sent_family()}{/if}
+	</p>
 	<a class="btn btn-block" href="/student/lessons">{m.bk3_see_lessons()}</a>
 </div>
 

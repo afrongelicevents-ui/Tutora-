@@ -16,11 +16,17 @@
 		{ href: '/tutor/calendar', label: m.v3_nav_schedule() },
 		{ href: '/tutor/students', label: m.v3_nav_students() },
 		{ href: '/tutor/payments', label: m.v3_nav_earnings() },
-		{ href: '/tutor/more', label: m.v3_nav_more(), also: ['/tutor/settings', '/tutor/reviews', '/tutor/photo', '/tutor/setup'] }
+		{
+			href: '/tutor/more',
+			label: m.v3_nav_more(),
+			also: ['/tutor/settings', '/tutor/reviews', '/tutor/photo', '/tutor/setup']
+		}
 	]}
 	more={[
 		{ href: '/tutor/homework', label: m.v3_nav_marking() },
 		{ href: '/tutor/assessments', label: m.v3_nav_assessments() },
+		{ href: '/tutor/resources', label: m.res3_nav() },
+		{ href: '/tutor/school-plus', label: m.sp3_title() },
 		{ href: '/tutor/tools', label: m.v3_nav_tools() },
 		{ href: '/tutor/settings', label: m.v3_nav_profile() }
 	]}

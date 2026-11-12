@@ -3,7 +3,13 @@ import { fail } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 import { requireRole } from '#lib/server/guards.ts';
-import { addCheckin, isMood, MOOD_KEY, setCheckinShared, todaysCheckin } from '#lib/server/checkins.ts';
+import {
+	addCheckin,
+	isMood,
+	MOOD_KEY,
+	setCheckinShared,
+	todaysCheckin
+} from '#lib/server/checkins.ts';
 import { activeParents, familyOf } from '#lib/server/family.ts';
 import { streak, todaysPlan, weekSummary } from '#lib/server/study.ts';
 import { homeworkDueCount, nextLessonFor, toolsSummary } from '#lib/server/student-home.ts';
@@ -41,12 +47,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		checkin: checkin ? { mood: checkin.mood, shared: checkin.sharedWithFamily } : null,
 		checkinId: checkin?.id ?? null,
 		// who would see a shared check-in (their label, or first name)
-		family: family
-			.filter((f) => f.status === 'active')
-			.map((f) => f.label || shortName(f.name)),
+		family: family.filter((f) => f.status === 'active').map((f) => f.label || shortName(f.name)),
 		due,
 		tools,
-		attention: attention.filter((a) => a.kind === 'owe' || a.kind === 'proposal' || a.kind === 'payment_declined')
+		attention: attention.filter(
+			(a) => a.kind === 'owe' || a.kind === 'proposal' || a.kind === 'payment_declined'
+		)
 	};
 };
 

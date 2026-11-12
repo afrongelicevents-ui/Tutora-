@@ -2,6 +2,7 @@ import { error, json } from '@sveltejs/kit';
 import { CRON_SECRET, ORIGIN } from '$app/env/private';
 import type { RequestHandler } from './$types';
 import { sendDueReminders, sendStudyReminders } from '#lib/server/reminders.ts';
+import { sendWeeklyReports } from '#lib/server/weekly.ts';
 import { notifyUser, type NotifyOpts } from '#lib/server/notify.ts';
 
 /** Constant-time comparison. */
@@ -25,5 +26,10 @@ export const POST: RequestHandler = async ({ locals, request, url }) => {
 		console.error('study reminders failed', e);
 		return 0;
 	});
-	return json({ sent, study });
+	// the weekly family report, Sunday from 5 PM (once per parent, child and week)
+	const weekly = await sendWeeklyReports(locals.db, notify).catch((e) => {
+		console.error('weekly reports failed', e);
+		return 0;
+	});
+	return json({ sent, study, weekly });
 };

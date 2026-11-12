@@ -81,7 +81,17 @@ export async function markRead(db: DB, userId: string, ids?: number[]) {
 
 export async function getPrefs(db: DB, userId: string) {
 	const [p] = await db.select().from(notificationPref).where(eq(notificationPref.userId, userId));
-	return p ?? { userId, emailOff: false, remindersOff: false, homeworkOff: false };
+	return (
+		p ?? {
+			userId,
+			emailOff: false,
+			remindersOff: false,
+			homeworkOff: false,
+			studyOff: false,
+			weeklyOff: false,
+			lessonsOff: false
+		}
+	);
 }
 
 export async function setPrefs(

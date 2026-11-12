@@ -1,3 +1,4 @@
+import { cspDirectives } from './src/lib/server/security.ts';
 import { paraglideVitePlugin } from '@inlang/paraglide-js';
 import { defineConfig } from 'vitest/config';
 import adapter from '@sveltejs/adapter-cloudflare';
@@ -15,20 +16,8 @@ export default defineConfig({
 			// Content-Security-Policy. SvelteKit adds hashes/nonces for its own inline scripts.
 			csp: {
 				mode: 'auto',
-				directives: {
-					'default-src': ['self'],
-					'script-src': ['self'],
-					'style-src': ['self', 'unsafe-inline'],
-					'img-src': ['self', 'data:', 'blob:'],
-					'font-src': ['self'],
-					'connect-src': ['self'],
-					'media-src': ['self', 'blob:'],
-					'frame-ancestors': ['none'],
-					'form-action': ['self'],
-					'base-uri': ['self'],
-					'object-src': ['none'],
-					'upgrade-insecure-requests': true
-				}
+				// one source of truth, with tests: src/lib/server/security.ts
+				directives: cspDirectives()
 			}
 		}),
 

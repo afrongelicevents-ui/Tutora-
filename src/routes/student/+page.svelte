@@ -63,7 +63,10 @@
 		<a class="softcard attention full" href={a.link}>
 			{a.kind === 'owe'
 				? m.att_owe({
-						amount: formatMoney(Number(a.text.values.amount), String(a.text.values.currency) as 'USD'),
+						amount: formatMoney(
+							Number(a.text.values.amount),
+							String(a.text.values.currency) as 'USD'
+						),
 						name: String(a.text.values.name)
 					})
 				: t(a.text.key, a.text.values)}
@@ -105,11 +108,15 @@
 				{#each data.plan as p (p.id)}
 					<div>
 						{#if p.state === 'done'}
-							<span class="muted struck">{fmtMinutes(p.startMinute)} {p.subject}{p.topic ? ` · ${p.topic}` : ''}</span>
+							<span class="muted struck"
+								>{fmtMinutes(p.startMinute)} {p.subject}{p.topic ? ` · ${p.topic}` : ''}</span
+							>
 							<span class="ok-t">{m.sh_done()}</span>
 						{:else if p.state === 'now' || p.state === 'next'}
 							<a href="/student/study"
-								><strong>{fmtMinutes(p.startMinute)} {p.subject}{p.topic ? ` · ${p.topic}` : ''}</strong></a
+								><strong
+									>{fmtMinutes(p.startMinute)} {p.subject}{p.topic ? ` · ${p.topic}` : ''}</strong
+								></a
 							>
 							<span class="next-t">{stateLabel[p.state]()}</span>
 						{:else}
@@ -137,12 +144,8 @@
 			{/if}
 			<div class="chips">
 				{#each CHECKIN_MOODS as mood (mood)}
-					<button
-						class="chip"
-						type="submit"
-						name="mood"
-						value={mood}
-						aria-pressed={picked === mood}>{t(`ci_${mood}`)}</button
+					<button class="chip" type="submit" name="mood" value={mood} aria-pressed={picked === mood}
+						>{t(`ci_${mood}`)}</button
 					>
 				{/each}
 			</div>
@@ -167,13 +170,15 @@
 
 	<nav class="rows top side links">
 		<a href="/student/homework"
-			><span><strong>{m.sh_homework_link()}</strong> · {data.due
+			><span
+				><strong>{m.sh_homework_link()}</strong> · {data.due
 					? m.sh_due_week({ n: data.due })
 					: m.sh_nothing_due()}</span
 			><span class="go" aria-hidden="true">›</span></a
 		>
 		<a href="/student/study"
-			><span><strong>{m.sh_study_link()}</strong> · {m.sh_week_done({
+			><span
+				><strong>{m.sh_study_link()}</strong> · {m.sh_week_done({
 					done: data.week.done,
 					planned: data.week.planned
 				})}</span
@@ -186,7 +191,8 @@
 			></a
 		>
 		<a href="/student/tools"
-			><span><strong>{m.sh_tools_link()}</strong> · {data.tools.length
+			><span
+				><strong>{m.sh_tools_link()}</strong> · {data.tools.length
 					? data.tools.join(', ')
 					: m.sh_tools_none()}</span
 			><span class="go" aria-hidden="true">›</span></a

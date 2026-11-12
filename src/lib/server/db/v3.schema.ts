@@ -49,7 +49,10 @@ export const familyInvite = pgTable(
 		revokedAt: ts('revoked_at'),
 		createdAt: created()
 	},
-	(t) => [uniqueIndex('family_invite_hash').on(t.codeHash), index('family_invite_student').on(t.studentId)]
+	(t) => [
+		uniqueIndex('family_invite_hash').on(t.codeHash),
+		index('family_invite_student').on(t.studentId)
+	]
 );
 
 export const LINK_STATUS = ['active', 'pending_guardian'] as const;

@@ -6,7 +6,6 @@
 	let { form, data } = $props();
 	const v = $derived((form?.values ?? {}) as Record<string, string>);
 	const e = $derived((form?.errors ?? {}) as Record<string, string>);
-
 </script>
 
 <svelte:head><title>{m.signup_title()} · Tutora</title></svelte:head>

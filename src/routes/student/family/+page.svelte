@@ -13,7 +13,9 @@
 		<h1>{m.fc3_title()}</h1>
 		<p class="lead">{m.fc3_lead()}</p>
 	</div>
-	{#if form && 'error' in form && form.error}<p class="alert full" role="alert">{t(form.error as string, { minutes: 60 })}</p>{/if}
+	{#if form && 'error' in form && form.error}<p class="alert full" role="alert">
+			{t(form.error as string, { minutes: 60 })}
+		</p>{/if}
 
 	<div class="plumcard code">
 		<span class="eyebrow">{m.fc3_your_code()}</span>
@@ -28,7 +30,9 @@
 			<span class="sub small">{m.fc3_none()}</span>
 		{/if}
 		<form method="POST" action="?/invite">
-			<button class="btn btn-block" type="submit">{data.invite || shown ? m.fc3_new() : m.fc3_make()}</button>
+			<button class="btn btn-block" type="submit"
+				>{data.invite || shown ? m.fc3_new() : m.fc3_make()}</button
+			>
 		</form>
 		{#if data.invite || shown}
 			<form method="POST" action="?/revoke">
@@ -49,15 +53,56 @@
 					<p class="small muted">{m.fc3_sees({ name: f.label ?? shortName(f.name) })}</p>
 					<form method="POST" action="?/share">
 						<input type="hidden" name="parentId" value={f.parentId} />
-						<label class="toggle-row"><span>{m.fc3_progress()}</span><input type="checkbox" name="progress" checked={f.progress || f.locked} disabled={f.locked} /></label>
-						<label class="toggle-row"><span>{m.fc3_lessons()}</span><input type="checkbox" name="lessons" checked={f.lessons || f.locked} disabled={f.locked} /></label>
-						<label class="toggle-row"><span>{m.fc3_homework()}</span><input type="checkbox" name="homework" checked={f.homework || f.locked} disabled={f.locked} /></label>
-						<label class="toggle-row"><span>{m.fc3_study()}</span><input type="checkbox" name="study" checked={f.study || f.locked} disabled={f.locked} /></label>
-						<div class="toggle-row"><span>{m.fc3_checkins()}</span><span class="ok-t small">{m.fc3_you_choose()}</span></div>
-						<div class="toggle-row"><span>{m.fc3_messages()}</span><span class="muted small">{m.fc3_private()}</span></div>
-						<div class="toggle-row"><span>{m.fc3_notes()}</span><span class="muted small">{m.fc3_private()}</span></div>
+						<label class="toggle-row"
+							><span>{m.fc3_progress()}</span><input
+								type="checkbox"
+								name="progress"
+								checked={f.progress || f.locked}
+								disabled={f.locked}
+							/></label
+						>
+						<label class="toggle-row"
+							><span>{m.fc3_lessons()}</span><input
+								type="checkbox"
+								name="lessons"
+								checked={f.lessons || f.locked}
+								disabled={f.locked}
+							/></label
+						>
+						<label class="toggle-row"
+							><span>{m.fc3_homework()}</span><input
+								type="checkbox"
+								name="homework"
+								checked={f.homework || f.locked}
+								disabled={f.locked}
+							/></label
+						>
+						<label class="toggle-row"
+							><span>{m.fc3_study()}</span><input
+								type="checkbox"
+								name="study"
+								checked={f.study || f.locked}
+								disabled={f.locked}
+							/></label
+						>
+						<div class="toggle-row">
+							<span>{m.fc3_checkins()}</span><span class="ok-t small">{m.fc3_you_choose()}</span>
+						</div>
+						<div class="toggle-row">
+							<span>{m.fc3_messages()}</span><span class="muted small">{m.fc3_private()}</span>
+						</div>
+						<div class="toggle-row">
+							<span>{m.fc3_notes()}</span><span class="muted small">{m.fc3_private()}</span>
+						</div>
 						{#if f.locked}<p class="note">{m.fc3_locked()}</p>{/if}
-						<label class="field"><span class="label">{m.fc3_label()}</span><input name="label" value={f.label ?? ''} maxlength="30" placeholder={m.fc3_label_ph()} /></label>
+						<label class="field"
+							><span class="label">{m.fc3_label()}</span><input
+								name="label"
+								value={f.label ?? ''}
+								maxlength="30"
+								placeholder={m.fc3_label_ph()}
+							/></label
+						>
 						<button class="btn btn-ghost btn-sm" type="submit">{m.sw3_save()}</button>
 					</form>
 				{/if}

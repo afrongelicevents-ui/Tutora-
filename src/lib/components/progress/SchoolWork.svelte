@@ -40,7 +40,9 @@
 					? ` · ${m.sw3_textbook({ book: s.textbook })}`
 					: ''}{#if s.currentTopic}. {m.sw3_now()} <strong>{s.currentTopic}</strong>.{/if}
 				<span class="note block"
-					>{s.checkedAt ? m.sw3_checked({ name: s.checkedByName ?? '' }) : m.sw3_not_checked()}</span
+					>{s.checkedAt
+						? m.sw3_checked({ name: s.checkedByName ?? '' })
+						: m.sw3_not_checked()}</span
 				></span
 			>
 		{/each}
@@ -49,20 +51,63 @@
 		<details>
 			<summary class="btn-link">{m.sw3_edit()}</summary>
 			<form method="POST" action="{action}?/school" class="stack form">
-				<label class="field"><span class="label">{m.sw3_school()}</span><input name="school" value={school.school ?? ''} maxlength="120" /></label>
-				<label class="field"><span class="label">{m.sw3_year()}</span><input name="year" value={school.year ?? ''} maxlength="40" placeholder="Form 3" /></label>
+				<label class="field"
+					><span class="label">{m.sw3_school()}</span><input
+						name="school"
+						value={school.school ?? ''}
+						maxlength="120"
+					/></label
+				>
+				<label class="field"
+					><span class="label">{m.sw3_year()}</span><input
+						name="year"
+						value={school.year ?? ''}
+						maxlength="40"
+						placeholder="Form 3"
+					/></label
+				>
 				<button class="btn btn-ghost" type="submit">{m.sw3_save()}</button>
 			</form>
 			{#each [...school.subjects, null] as s, i (s?.id ?? `new-${i}`)}
 				<form method="POST" action="{action}?/subject" class="stack form">
-					{#if s}<input type="hidden" name="id" value={s.id} />{:else}<strong class="small">{m.sw3_add_subject()}</strong>{/if}
-					<label class="field"><span class="label">{m.sw3_subject()}</span><input name="subject" value={s?.subject ?? ''} required maxlength="60" /></label>
-					<label class="field"><span class="label">{m.sw3_syllabus()}</span><input name="syllabus" value={s?.syllabus ?? ''} maxlength="120" placeholder="ZIMSEC" /></label>
-					<label class="field"><span class="label">{m.sw3_textbook_l()}</span><input name="textbook" value={s?.textbook ?? ''} maxlength="120" /></label>
-					<label class="field"><span class="label">{m.sw3_topic()}</span><input name="currentTopic" value={s?.currentTopic ?? ''} maxlength="120" /></label>
+					{#if s}<input type="hidden" name="id" value={s.id} />{:else}<strong class="small"
+							>{m.sw3_add_subject()}</strong
+						>{/if}
+					<label class="field"
+						><span class="label">{m.sw3_subject()}</span><input
+							name="subject"
+							value={s?.subject ?? ''}
+							required
+							maxlength="60"
+						/></label
+					>
+					<label class="field"
+						><span class="label">{m.sw3_syllabus()}</span><input
+							name="syllabus"
+							value={s?.syllabus ?? ''}
+							maxlength="120"
+							placeholder="ZIMSEC"
+						/></label
+					>
+					<label class="field"
+						><span class="label">{m.sw3_textbook_l()}</span><input
+							name="textbook"
+							value={s?.textbook ?? ''}
+							maxlength="120"
+						/></label
+					>
+					<label class="field"
+						><span class="label">{m.sw3_topic()}</span><input
+							name="currentTopic"
+							value={s?.currentTopic ?? ''}
+							maxlength="120"
+						/></label
+					>
 					<div class="row">
 						<button class="btn btn-ghost btn-sm" type="submit">{m.sw3_save()}</button>
-						{#if s}<button class="btn-link small" type="submit" formaction="{action}?/removeSubject">{m.sw3_remove()}</button>{/if}
+						{#if s}<button class="btn-link small" type="submit" formaction="{action}?/removeSubject"
+								>{m.sw3_remove()}</button
+							>{/if}
 					</div>
 				</form>
 			{/each}

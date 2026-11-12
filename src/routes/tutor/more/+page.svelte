@@ -5,7 +5,9 @@
 		[
 			['/tutor/homework', m.v3_nav_marking(), m.tut3_more_marking_hint()],
 			['/tutor/assessments', m.v3_nav_assessments(), m.tut3_more_assess_hint()],
+			['/tutor/resources', m.res3_nav(), m.res3_hint()],
 			['/tutor/tools', m.v3_nav_tools(), m.tut3_more_tools_hint()],
+			['/tutor/school-plus', m.sp3_title(), m.sp3_more_hint()],
 			['/tutor/settings', m.v3_nav_profile(), m.more_settings_hint()],
 			['/tutor/reviews', m.reviews_title(), m.tut3_more_reviews_hint()],
 			data.status === 'active' ? [`/t/${data.slug}`, m.more_public(), m.more_public_hint()] : null,

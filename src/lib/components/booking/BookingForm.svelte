@@ -6,7 +6,6 @@
 
 	interface Site {
 		name: string | null;
-		slug: string;
 		lessonModes: 'online' | 'in_person' | 'both';
 		lessonMinutes: number;
 		currency: 'USD' | 'ZWG';
@@ -40,7 +39,9 @@
 		forName?: string | null;
 	} = $props();
 
-	const modes = $derived(site.lessonModes === 'both' ? ['online', 'in_person'] : [site.lessonModes]);
+	const modes = $derived(
+		site.lessonModes === 'both' ? ['online', 'in_person'] : [site.lessonModes]
+	);
 	let js = $state(false);
 	onMount(() => (js = true));
 	let day = $state('');
@@ -58,7 +59,11 @@
 	const minutes = $derived(intro ? 15 : site.lessonMinutes);
 	const dayLabel = (iso: string) => {
 		const d = fromLocal(iso, 720);
-		return new Intl.DateTimeFormat('en-GB', { timeZone: 'Africa/Harare', weekday: 'short', day: 'numeric' }).format(d);
+		return new Intl.DateTimeFormat('en-GB', {
+			timeZone: 'Africa/Harare',
+			weekday: 'short',
+			day: 'numeric'
+		}).format(d);
 	};
 </script>
 
@@ -81,7 +86,12 @@
 					<div class="chips">
 						{#each site.subjects as s (s.id)}
 							<label class="chip"
-								><input type="radio" name="subjectId" value={s.id} bind:group={subjectId} />{s.name}</label
+								><input
+									type="radio"
+									name="subjectId"
+									value={s.id}
+									bind:group={subjectId}
+								/>{s.name}</label
 							>
 						{/each}
 					</div>
@@ -162,7 +172,9 @@
 		<div class="summary">
 			<span class="muted">{m.bk3_summary()}</span>
 			<strong
-				>{intro ? m.intro_title() : (subj?.name ?? m.book_subject())} · {m.tp3_minutes({ n: minutes })}</strong
+				>{intro ? m.intro_title() : (subj?.name ?? m.book_subject())} · {m.tp3_minutes({
+					n: minutes
+				})}</strong
 			>
 			<span
 				>{chosen ? fmtDayTime(chosen) : m.bk3_pick_time()} · {mode === 'in_person'

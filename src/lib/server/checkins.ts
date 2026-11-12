@@ -62,7 +62,12 @@ export async function setCheckinShared(db: DB, studentId: string, id: number, sh
 /** Only the check-ins the child shared, without any note. Callers check the family link first. */
 export function sharedCheckins(db: DB, studentId: string, since: Date, limit = 10) {
 	return db
-		.select({ id: checkin.id, mood: checkin.mood, subject: checkin.subject, createdAt: checkin.createdAt })
+		.select({
+			id: checkin.id,
+			mood: checkin.mood,
+			subject: checkin.subject,
+			createdAt: checkin.createdAt
+		})
 		.from(checkin)
 		.where(
 			and(

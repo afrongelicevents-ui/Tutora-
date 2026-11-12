@@ -11,6 +11,11 @@ import { and, asc, eq, inArray, isNull, or } from 'drizzle-orm';
 import { homeworkLink, resource } from '#lib/server/db/v3.schema.ts';
 import { enrollment, homework } from '#lib/server/db/app.schema.ts';
 import type { DB } from '#lib/server/db/types.ts';
+import { connections } from '#lib/server/tools/oauth.ts';
+import { pickerConfig, shareFile, verifyPickedFile } from '#lib/server/tools/drive.ts';
+import { toolsEnv } from '#lib/server/tools/env.ts';
+import { addAnswerLink, MaterialFail } from '#lib/server/materials.ts';
+import { user } from '#lib/server/db/auth.schema.ts';
 
 /** Revision resources from this student's own tutors (for everyone, or just for them). */
 async function revisionResources(db: DB, studentId: string) {
@@ -67,6 +72,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const link = (k: string | null, n: string | null) => (k ? fileLink(k, n ?? 'file') : null);
 	return {
 		resources,
+		picker: pickerConfig(toolsEnv(url), (await connections(locals.db, u.id)).drive),
 		items: await Promise.all(
 			items.map(async (h) => ({
 				...h,
@@ -81,6 +87,40 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
+	/** Hand in a file picked from Google Drive (only files the student picks; drive.file). */
+	attachDrive: async ({ locals, url, request }) => {
+		const u = requireRole(locals.user, url, ['student']);
+		const f = formObject(await request.formData());
+		const h = await getHomework(locals.db, Number(f.id) || 0);
+		if (!h || h.userId !== u.id) return fail(404, { error: 'err_not_found', id: f.id });
+		const env = toolsEnv(url);
+		const file = await verifyPickedFile(locals.db, env, u.id, f.fileId ?? '');
+		if (!file) return fail(400, { error: 'tools6_drive_failed', id: f.id });
+		const answer = await handIn(locals.db, u.id, h.id, {
+			note: null,
+			fileKey: null,
+			fileName: null
+		});
+		if (!answer) return fail(404, { error: 'err_not_found', id: f.id });
+		try {
+			await addAnswerLink(locals.db, u.id, answer.id, {
+				kind: 'drive',
+				title: file.name,
+				url: file.url,
+				driveFileId: file.id
+			});
+		} catch (e) {
+			if (e instanceof MaterialFail) return fail(400, { error: e.code, id: f.id });
+			throw e;
+		}
+		const [t] = await locals.db
+			.select({ email: user.email })
+			.from(user)
+			.where(eq(user.id, h.tutorId));
+		await shareFile(locals.db, env, u.id, file.id, t?.email);
+		await notifyTutor(locals.db, h.tutorId, m.email_hw_in_s(), m.email_hw_in_b({ name: u.name }));
+		return { done: true };
+	},
 	handIn: async ({ locals, url, request, platform }) => {
 		const u = requireRole(locals.user, url, ['student']);
 		const limit = await hitLimit(locals.db, 'upload', u.id);

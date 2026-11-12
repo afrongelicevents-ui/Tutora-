@@ -4,6 +4,7 @@ name: Deploy
 #   NEON_API_KEY          finds the database (or creates one), runs migrations
 #   CLOUDFLARE_API_TOKEN  finds the account, creates the free workers.dev address, deploys
 # (DATABASE_URL and CLOUDFLARE_ACCOUNT_ID also work instead, if you prefer.)
+# Optional: Connected Tools secrets (GOOGLE_*, MS_*, TOOLS_KEY), see docs/CONNECTED-TOOLS.md.
 # Everything personal (name, email, prices, WhatsApp, ...) is entered by the tutor on the site.
 # Runs after CI passes on main, or by hand (Actions → Deploy → Run workflow).
 
@@ -128,6 +129,27 @@ jobs:
       - run: pnpm build
         if: steps.check.outputs.ready == 'true'
 
+      - name: Prepare optional Connected Tools secrets
+        if: steps.check.outputs.ready == 'true'
+        # Google / Microsoft OAuth apps (docs/CONNECTED-TOOLS.md). Only the NAMES of the ones
+        # that are set are passed on; empty ones are left out so wrangler does not fail.
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_APP_ID: ${{ secrets.GOOGLE_APP_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          TOOLS_KEY: ${{ secrets.TOOLS_KEY }}
+        run: |
+          {
+            echo "TOOL_SECRETS<<TOOL_SECRETS_END"
+            for n in GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_API_KEY GOOGLE_APP_ID MS_CLIENT_ID MS_CLIENT_SECRET TOOLS_KEY; do
+              if [ -n "${!n}" ]; then echo "$n"; fi
+            done
+            echo "TOOL_SECRETS_END"
+          } >> "$GITHUB_ENV"
+
       - uses: cloudflare/wrangler-action@v3
         if: steps.check.outputs.ready == 'true'
         with:
@@ -138,10 +160,18 @@ jobs:
             DATABASE_URL
             BETTER_AUTH_SECRET
             CRON_SECRET
+            ${{ env.TOOL_SECRETS }}
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
           BETTER_AUTH_SECRET: ${{ env.BETTER_AUTH_SECRET }}
           CRON_SECRET: ${{ env.CRON_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_APP_ID: ${{ secrets.GOOGLE_APP_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          TOOLS_KEY: ${{ secrets.TOOLS_KEY }}
 
       - name: Check the website answers
         if: steps.check.outputs.ready == 'true'
@@ -239,6 +269,27 @@ jobs:
           IF_EMPTY=$IF_EMPTY TEST_SITE=1 node_modules/.bin/tsx scripts/deploy/seed-test.ts
       - run: pnpm build
         if: steps.check.outputs.ready == 'true'
+      - name: Prepare optional Connected Tools secrets
+        if: steps.check.outputs.ready == 'true'
+        # Google / Microsoft OAuth apps (docs/CONNECTED-TOOLS.md). Only the NAMES of the ones
+        # that are set are passed on; empty ones are left out so wrangler does not fail.
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_APP_ID: ${{ secrets.GOOGLE_APP_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          TOOLS_KEY: ${{ secrets.TOOLS_KEY }}
+        run: |
+          {
+            echo "TOOL_SECRETS<<TOOL_SECRETS_END"
+            for n in GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_API_KEY GOOGLE_APP_ID MS_CLIENT_ID MS_CLIENT_SECRET TOOLS_KEY; do
+              if [ -n "${!n}" ]; then echo "$n"; fi
+            done
+            echo "TOOL_SECRETS_END"
+          } >> "$GITHUB_ENV"
+
       - uses: cloudflare/wrangler-action@v3
         if: steps.check.outputs.ready == 'true'
         with:
@@ -251,11 +302,19 @@ jobs:
             BETTER_AUTH_SECRET
             CRON_SECRET
             TEST_PASSWORD
+            ${{ env.TOOL_SECRETS }}
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
           BETTER_AUTH_SECRET: ${{ env.BETTER_AUTH_SECRET }}
           CRON_SECRET: ${{ env.CRON_SECRET }}
           TEST_PASSWORD: ${{ env.TEST_PASSWORD }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_APP_ID: ${{ secrets.GOOGLE_APP_ID }}
+          MS_CLIENT_ID: ${{ secrets.MS_CLIENT_ID }}
+          MS_CLIENT_SECRET: ${{ secrets.MS_CLIENT_SECRET }}
+          TOOLS_KEY: ${{ secrets.TOOLS_KEY }}
       - name: Check the test site answers
         if: steps.check.outputs.ready == 'true'
         run: |

@@ -63,8 +63,8 @@ ON CONFLICT DO NOTHING`,
 SELECT DISTINCT b."tutor_id", b."user_id", c."level"
 FROM "booking" b JOIN "child" c ON c."student_id" = b."user_id"
 WHERE b."status" = 'accepted'
-ON CONFLICT DO NOTHING`,
-]
+ON CONFLICT DO NOTHING`
+];
 
 export async function legacyParentsToFamily(db: DB) {
 	for (const q of LEGACY_FAMILY_SQL) await db.execute(sql.raw(q));

@@ -28,9 +28,19 @@
 		}[l.payState]
 	);
 	const source = (k: string) =>
-		k === 'drive' ? 'Google Drive' : k === 'kahoot' ? 'Kahoot!' : k === 'file' ? m.ld3_file() : m.ld3_link();
+		k === 'drive'
+			? 'Google Drive'
+			: k === 'kahoot'
+				? 'Kahoot!'
+				: k === 'file'
+					? m.ld3_file()
+					: m.ld3_link();
 	const provider = $derived(
-		data.meeting?.provider === 'meet' ? 'Google Meet' : data.meeting?.provider === 'teams' ? 'Microsoft Teams' : null
+		data.meeting?.provider === 'meet'
+			? 'Google Meet'
+			: data.meeting?.provider === 'teams'
+				? 'Microsoft Teams'
+				: null
 	);
 </script>
 
@@ -39,10 +49,13 @@
 <div class="screen">
 	<a class="back" href="/student/lessons" aria-label={m.v3_back()}>←</a>
 	<span class="eyebrow status" class:off={cancelled}
-		>{statusWord} · {day} {fmtTime(l.startsAt)} · {l.mode === 'online' ? m.find3_online() : m.sh_in_person()}</span
+		>{statusWord} · {day}
+		{fmtTime(l.startsAt)} · {l.mode === 'online' ? m.find3_online() : m.sh_in_person()}</span
 	>
 	<h1>
-		{l.kind === 'intro' ? m.sh_intro_with({ tutor: l.tutorName ?? '' }) : m.sh_lesson_with({ subject: l.subjectName ?? '', tutor: l.tutorName ?? '' })}
+		{l.kind === 'intro'
+			? m.sh_intro_with({ tutor: l.tutorName ?? '' })
+			: m.sh_lesson_with({ subject: l.subjectName ?? '', tutor: l.tutorName ?? '' })}
 	</h1>
 	{#if data.topic}<span class="lead"
 			>{data.topic.year
@@ -61,14 +74,13 @@
 					<a class="btn" href={data.meeting.joinUrl} target="_blank" rel="noopener noreferrer"
 						>{data.meeting.provider === 'meet' ? m.ld3_join_meet() : m.ld3_join_teams()}</a
 					>
-					{#if l.roomOpen}<a class="btn btn-ghost" href="/room/{l.id}">{m.ld3_use_room()}</a>{:else}<span
-							class="sub small">{m.ld3_room_fallback()}</span
-						>{/if}
+					{#if l.roomOpen}<a class="btn btn-ghost" href="/room/{l.id}">{m.ld3_use_room()}</a
+						>{:else}<span class="sub small">{m.ld3_room_fallback()}</span>{/if}
 				{:else}
 					<strong>{m.ld3_room_title()}</strong>
 					<span class="sub small">{m.ld3_room_lead()}</span>
-					{#if l.roomOpen}<a class="btn" href="/room/{l.id}">{m.room_join()}</a>{:else}<span class="sub small"
-							>{m.room_opens_10()}</span
+					{#if l.roomOpen}<a class="btn" href="/room/{l.id}">{m.room_join()}</a>{:else}<span
+							class="sub small">{m.room_opens_10()}</span
 						>{/if}
 				{/if}
 			</div>
@@ -95,7 +107,13 @@
 			{/each}
 			<div>
 				<span>{m.ld3_notes()}</span>
-				<span class="muted small">{data.note ? '' : l.past ? m.ld3_no_notes() : m.ld3_after({ time: fmtTime(l.endsAt) })}</span>
+				<span class="muted small"
+					>{data.note
+						? ''
+						: l.past
+							? m.ld3_no_notes()
+							: m.ld3_after({ time: fmtTime(l.endsAt) })}</span
+				>
 			</div>
 		</div>
 		{#if data.note}<p class="prewrap notes">{data.note}</p>{/if}
@@ -103,10 +121,17 @@
 	</section>
 
 	<div class="rows top">
-		<div><span class="muted">{m.ld_price()}</span><strong>{l.priceCents ? formatMoney(l.priceCents, l.currency) : m.pay_free()}</strong></div>
+		<div>
+			<span class="muted">{m.ld_price()}</span><strong
+				>{l.priceCents ? formatMoney(l.priceCents, l.currency) : m.pay_free()}</strong
+			>
+		</div>
 		<div><span class="muted">{m.ld_payment()}</span><strong>{pay}</strong></div>
 	</div>
-	{#if l.payState === 'due'}<a class="btn btn-ghost btn-block" href="/student/payments?tutor={l.tutorSlug}">{m.ld_pay()}</a>{/if}
+	{#if l.payState === 'due'}<a
+			class="btn btn-ghost btn-block"
+			href="/student/payments?tutor={l.tutorSlug}">{m.ld_pay()}</a
+		>{/if}
 
 	{#if l.live && !l.past}
 		<a class="btn btn-ghost btn-block" href="/lessons/{l.id}/ics">{m.add_to_calendar()}</a>
@@ -118,7 +143,9 @@
 					<form method="POST" action="?/cancel">
 						<button class="btn btn-warn btn-block" type="submit">{m.ld3_cancel_lesson()}</button>
 					</form>
-					<a class="btn btn-ghost btn-block" href="/student/book?tutor={l.tutorSlug}">{m.ld_book_other()}</a>
+					<a class="btn btn-ghost btn-block" href="/student/book?tutor={l.tutorSlug}"
+						>{m.ld_book_other()}</a
+					>
 				{:else}
 					<p class="small">
 						{m.cancel_too_late({ hours: l.cancelHours })}{#if l.whatsapp}&nbsp;<a

@@ -27,25 +27,42 @@
 	{#each data.requests as r (r.id)}
 		<div class="card lesson" id="requests">
 			<div class="top">
-				<strong>{r.kind === 'intro' ? m.intro_chat() : r.subjectName}{r.tutorName
+				<strong
+					>{r.kind === 'intro' ? m.intro_chat() : r.subjectName}{r.tutorName
 						? ` ${m.ls3_with({ name: r.tutorName })}`
-						: ''}</strong>
+						: ''}</strong
+				>
 				<span
-					class="pill {r.status === 'declined' ? 'p-no' : r.status === 'proposed' ? 'p-info' : 'p-wait'}"
-					>{status(r.status)}</span
+					class="pill {r.status === 'declined'
+						? 'p-no'
+						: r.status === 'proposed'
+							? 'p-info'
+							: 'p-wait'}">{status(r.status)}</span
 				>
 			</div>
-			<span class="muted small">{fmtDayTime(r.startsAt)} · {r.mode === 'online' ? m.find3_online() : m.sh_in_person()}</span>
+			<span class="muted small"
+				>{fmtDayTime(r.startsAt)} · {r.mode === 'online'
+					? m.find3_online()
+					: m.sh_in_person()}</span
+			>
 			{#if r.tutorMessage}<p class="small quote">“{r.tutorMessage}”</p>{/if}
 			{#if r.status === 'proposed' && r.proposedStartsAt}
 				<p class="small">{m.tutor_suggests({ when: fmtDayTime(r.proposedStartsAt) })}</p>
 				<div class="row">
 					<form method="POST" action="?/respond">
-						<input type="hidden" name="id" value={r.id} /><input type="hidden" name="answer" value="yes" />
+						<input type="hidden" name="id" value={r.id} /><input
+							type="hidden"
+							name="answer"
+							value="yes"
+						/>
 						<button class="btn btn-sm" type="submit">{m.accept_new_time()}</button>
 					</form>
 					<form method="POST" action="?/respond">
-						<input type="hidden" name="id" value={r.id} /><input type="hidden" name="answer" value="no" />
+						<input type="hidden" name="id" value={r.id} /><input
+							type="hidden"
+							name="answer"
+							value="no"
+						/>
 						<button class="btn btn-ghost btn-sm" type="submit">{m.no_thanks()}</button>
 					</form>
 				</div>
@@ -63,17 +80,25 @@
 	{#each data.upcoming as l (l.id)}
 		<div class="card lesson">
 			<div class="top">
-				<strong>{l.subjectName ?? m.intro_chat()}{l.tutorName ? ` ${m.ls3_with({ name: l.tutorName })}` : ''}</strong>
+				<strong
+					>{l.subjectName ?? m.intro_chat()}{l.tutorName
+						? ` ${m.ls3_with({ name: l.tutorName })}`
+						: ''}</strong
+				>
 				<span class="pill p-ok">{l.kind === 'intro' ? m.tag_intro() : m.status_confirmed()}</span>
 			</div>
 			<span class="muted small"
-				>{isToday(l.startsAt) ? m.sh_today() : fmtDay(l.startsAt)} · {fmtTime(l.startsAt)} · {how(l)}</span
+				>{isToday(l.startsAt) ? m.sh_today() : fmtDay(l.startsAt)} · {fmtTime(l.startsAt)} · {how(
+					l
+				)}</span
 			>
 			<a class="btn btn-block" href="/student/lessons/{l.id}">{m.ls3_open()}</a>
 			{#if !l.canCancel}
 				<span class="note"
 					>{m.cancel_too_late({ hours: l.cancelHours })}{#if waOf(l.tutorSlug)}
-						<a href={waLink(waOf(l.tutorSlug)!)} target="_blank" rel="noopener noreferrer">WhatsApp</a>{/if}</span
+						<a href={waLink(waOf(l.tutorSlug)!)} target="_blank" rel="noopener noreferrer"
+							>WhatsApp</a
+						>{/if}</span
 				>
 			{/if}
 		</div>
@@ -90,7 +115,9 @@
 		<div class="rows top">
 			<div>
 				<span><strong>{p.name}</strong>{p.tutorName ? ` · ${p.tutorName}` : ''}</span>
-				<span class="pill p-ok">{m.left_of({ left: p.lessonsTotal - p.lessonsUsed, total: p.lessonsTotal })}</span>
+				<span class="pill p-ok"
+					>{m.left_of({ left: p.lessonsTotal - p.lessonsUsed, total: p.lessonsTotal })}</span
+				>
 			</div>
 		</div>
 	{/each}
@@ -103,9 +130,8 @@
 			<div class="rows">
 				{#each data.past.slice(0, 12) as l (l.id)}
 					<a href="/student/lessons/{l.id}"
-						><span>{l.subjectName ?? m.intro_chat()}{l.tutorName ? ` · ${l.tutorName}` : ''}</span><span
-							class="muted small">{fmtDay(l.startsAt)}</span
-						></a
+						><span>{l.subjectName ?? m.intro_chat()}{l.tutorName ? ` · ${l.tutorName}` : ''}</span
+						><span class="muted small">{fmtDay(l.startsAt)}</span></a
 					>
 				{/each}
 			</div>
@@ -118,10 +144,14 @@
 			<div class="rows">
 				{#each data.tutors as tu (tu.slug)}
 					<div>
-						{#if tu.active}<a href="/student/tutor/{tu.slug}">{tu.name ?? m.tutor_word()}</a>{:else}<span
-								>{tu.name ?? m.tutor_word()} <span class="small muted">({m.tutor_unavailable()})</span></span
+						{#if tu.active}<a href="/student/tutor/{tu.slug}">{tu.name ?? m.tutor_word()}</a
+							>{:else}<span
+								>{tu.name ?? m.tutor_word()}
+								<span class="small muted">({m.tutor_unavailable()})</span></span
 							>{/if}
-						{#if tu.reviewable}<a class="small" href="/student/review?tutor={tu.slug}">{m.leave_review()}</a>{/if}
+						{#if tu.reviewable}<a class="small" href="/student/review?tutor={tu.slug}"
+								>{m.leave_review()}</a
+							>{/if}
 					</div>
 				{/each}
 			</div>

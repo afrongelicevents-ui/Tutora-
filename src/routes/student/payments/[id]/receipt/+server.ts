@@ -6,7 +6,7 @@ import { requireRole } from '#lib/server/guards.ts';
 
 /** A student can download only their own receipts. */
 export const GET: RequestHandler = async ({ locals, url, params }) => {
-	const u = requireRole(locals.user, url, ['student', 'parent']);
+	const u = requireRole(locals.user, url, ['student']);
 	const id = Number(params.id) || 0;
 	const p = await getPayment(locals.db, id);
 	if (!p || p.userId !== u.id) error(404, 'Not found');

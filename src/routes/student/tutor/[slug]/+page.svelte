@@ -4,7 +4,11 @@
 	import { availabilitySummary } from '#lib/availability.ts';
 	let { data } = $props();
 	const s = $derived(data.site);
-	const initial = (n: string) => n.replace(/^(Mr|Mrs|Ms|Miss|Dr)\.?\s+/i, '').charAt(0).toUpperCase();
+	const initial = (n: string) =>
+		n
+			.replace(/^(Mr|Mrs|Ms|Miss|Dr)\.?\s+/i, '')
+			.charAt(0)
+			.toUpperCase();
 	const levels = $derived([
 		...new Set(
 			s.subjects.flatMap((x) =>
@@ -15,7 +19,9 @@
 			)
 		)
 	]);
-	const prices = $derived(s.subjects.map((x) => x.priceCents).filter((x): x is number => x !== null));
+	const prices = $derived(
+		s.subjects.map((x) => x.priceCents).filter((x): x is number => x !== null)
+	);
 	const modes = $derived(
 		s.lessonModes === 'online'
 			? m.find3_online()
@@ -32,9 +38,12 @@
 	<div class="inner">
 		<a class="back" href="/student/find" aria-label={m.v3_back()}>←</a>
 		<span class="avatar"
-			>{#if s.hasPhoto}<img src="/t/{s.slug}/photo?v={s.photoVersion}" alt="" width="84" height="84" />{:else}{initial(
-					s.name ?? '?'
-				)}{/if}</span
+			>{#if s.hasPhoto}<img
+					src="/t/{s.slug}/photo?v={s.photoVersion}"
+					alt=""
+					width="84"
+					height="84"
+				/>{:else}{initial(s.name ?? '?')}{/if}</span
 		>
 		<h1>{s.name}</h1>
 		<span class="meta"
@@ -59,13 +68,21 @@
 					: m.find_ask_price()}</strong
 			>
 		</div>
-		{#if times}<div><span class="muted">{m.tp3_available()}</span><strong>{times}</strong></div>{/if}
-		<div><span class="muted">{m.tp3_length()}</span><strong>{m.tp3_minutes({ n: s.lessonMinutes })}</strong></div>
+		{#if times}<div>
+				<span class="muted">{m.tp3_available()}</span><strong>{times}</strong>
+			</div>{/if}
+		<div>
+			<span class="muted">{m.tp3_length()}</span><strong
+				>{m.tp3_minutes({ n: s.lessonMinutes })}</strong
+			>
+		</div>
 		{#if s.town && s.lessonModes !== 'online'}<div>
 				<span class="muted">{m.tp3_area()}</span><strong>{s.town}</strong>
 			</div>{/if}
 		{#if s.qualifications}<div>
-				<span class="muted">{m.tp3_qualifications()}</span><strong class="r">{s.qualifications}</strong>
+				<span class="muted">{m.tp3_qualifications()}</span><strong class="r"
+					>{s.qualifications}</strong
+				>
 			</div>{/if}
 	</div>
 	{#if s.subjects.length > 1}
@@ -84,7 +101,10 @@
 		<section class="stack-s">
 			<h2 class="h3">{m.tp3_reviews({ n: s.reviews.length })}</h2>
 			{#each s.reviews.slice(0, 3) as r, i (i)}
-				<blockquote class="quote"><p>“{r.text}”</p><footer class="small muted">{r.displayName} · {r.rating}/5</footer></blockquote>
+				<blockquote class="quote">
+					<p>“{r.text}”</p>
+					<footer class="small muted">{r.displayName} · {r.rating}/5</footer>
+				</blockquote>
 			{/each}
 			<a href="/t/{s.slug}/reviews">{m.tp3_all_reviews()}</a>
 		</section>

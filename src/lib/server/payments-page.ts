@@ -67,7 +67,7 @@ export async function paymentsLoad(e: RequestEvent, u: Payer, home: string) {
 		mine,
 		offers
 	};
-};
+}
 
 const paySchema = z.object({
 	amount: z.string(),
@@ -78,104 +78,104 @@ const paySchema = z.object({
 
 export function paymentsActions(resolve: Resolve): Actions {
 	return {
-	pay: async (event) => {
-		const { locals, url, request, platform } = event;
-		const u = await resolve(event);
-		const tutor = await myTutor(locals.db, u.id, url.searchParams.get('tutor'));
-		if (!tutor) return fail(404, { error: 'err_not_found' });
-		const limit = await hitLimit(locals.db, 'upload', u.id);
-		if (!limit.ok)
-			return fail(429, {
-				error: 'err_rate_limited',
-				minutes: Math.ceil(limit.retryAfterSeconds / 60)
+		pay: async (event) => {
+			const { locals, url, request, platform } = event;
+			const u = await resolve(event);
+			const tutor = await myTutor(locals.db, u.id, url.searchParams.get('tutor'));
+			if (!tutor) return fail(404, { error: 'err_not_found' });
+			const limit = await hitLimit(locals.db, 'upload', u.id);
+			if (!limit.ok)
+				return fail(429, {
+					error: 'err_rate_limited',
+					minutes: Math.ceil(limit.retryAfterSeconds / 60)
+				});
+			const data = await request.formData();
+			const p = paySchema.safeParse(formObject(data));
+			const cents = parseMoney(String(data.get('amount') ?? ''));
+			if (!p.success) return fail(400, { error: p.error.issues[0].message });
+			if (!cents) return fail(400, { error: 'err_money' });
+			if (p.data.date > localDate(new Date())) return fail(400, { error: 'err_future_date' });
+			const proof = await readUpload(data.get('proof'), {
+				maxBytes: 3 * MB,
+				allowed: DOC_KINDS,
+				required: true
 			});
-		const data = await request.formData();
-		const p = paySchema.safeParse(formObject(data));
-		const cents = parseMoney(String(data.get('amount') ?? ''));
-		if (!p.success) return fail(400, { error: p.error.issues[0].message });
-		if (!cents) return fail(400, { error: 'err_money' });
-		if (p.data.date > localDate(new Date())) return fail(400, { error: 'err_future_date' });
-		const proof = await readUpload(data.get('proof'), {
-			maxBytes: 3 * MB,
-			allowed: DOC_KINDS,
-			required: true
-		});
-		if (!proof?.ok) return fail(400, { error: proof?.error ?? 'err_file_missing' });
-		const key = newKey(`proofs/${u.id}`, proof.ext);
-		await getStore(platform).put(key, proof.bytes, proof.kind);
-		const row = await submitPayment(locals.db, tutor.tutorId, u.id, {
-			amountCents: cents,
-			method: p.data.method,
-			reference: p.data.reference,
-			paidOn: p.data.date,
-			proofKey: key
-		});
-		await notifyTutor(
-			locals.db,
-			tutor.tutorId,
-			m.email_pay_new_s(),
-			m.email_pay_new_b({
-				name: u.name,
-				amount: formatMoney(cents, row.currency),
+			if (!proof?.ok) return fail(400, { error: proof?.error ?? 'err_file_missing' });
+			const key = newKey(`proofs/${u.id}`, proof.ext);
+			await getStore(platform).put(key, proof.bytes, proof.kind);
+			const row = await submitPayment(locals.db, tutor.tutorId, u.id, {
+				amountCents: cents,
 				method: p.data.method,
-				ref: p.data.reference
-			})
-		);
-		return { done: 'sent' };
-	},
-	cash: async (event) => {
-		const { locals, url, request } = event;
-		const u = await resolve(event);
-		const tutor = await myTutor(locals.db, u.id, url.searchParams.get('tutor'));
-		if (!tutor) return fail(404, { error: 'err_not_found' });
-		const limit = await hitLimit(locals.db, 'upload', u.id);
-		if (!limit.ok)
-			return fail(429, {
-				error: 'err_rate_limited',
-				minutes: Math.ceil(limit.retryAfterSeconds / 60)
+				reference: p.data.reference,
+				paidOn: p.data.date,
+				proofKey: key
 			});
-		// only for tutors who take cash
-		if (tutor.status !== 'active' || !(await getSettings(locals.db, tutor.tutorId)).acceptsCash)
-			return fail(400, { error: 'err_no_cash' });
-		const f = formObject(await request.formData());
-		const cents = parseMoney(f.amount ?? '');
-		if (!cents) return fail(400, { error: 'err_money' });
-		const date =
-			isIsoDate(f.date ?? '') && f.date <= localDate(new Date()) ? f.date : localDate(new Date());
-		const row = await submitPayment(locals.db, tutor.tutorId, u.id, {
-			amountCents: cents,
-			method: 'cash',
-			reference: null,
-			paidOn: date,
-			proofKey: null
-		});
-		await notifyTutor(
-			locals.db,
-			tutor.tutorId,
-			m.email_cash_new_s(),
-			m.email_cash_new_b({ name: u.name, amount: formatMoney(cents, row.currency), date })
-		);
-		return { done: 'cash' };
-	},
-	buy: async (event) => {
-		const { locals, url, request } = event;
-		const u = await resolve(event);
-		const tutor = await myTutor(locals.db, u.id, url.searchParams.get('tutor'));
-		if (!tutor) return fail(404, { error: 'err_not_found' });
-		const f = formObject(await request.formData());
-		try {
-			const sp = await buyPackage(locals.db, tutor.tutorId, u.id, Number(f.id) || 0);
 			await notifyTutor(
 				locals.db,
 				tutor.tutorId,
-				m.email_pkg_s(),
-				m.email_pkg_b({ name: u.name, pkg: sp.name })
+				m.email_pay_new_s(),
+				m.email_pay_new_b({
+					name: u.name,
+					amount: formatMoney(cents, row.currency),
+					method: p.data.method,
+					ref: p.data.reference
+				})
 			);
-		} catch (e) {
-			if (e instanceof BillingFail) return fail(400, { error: e.code });
-			throw e;
+			return { done: 'sent' };
+		},
+		cash: async (event) => {
+			const { locals, url, request } = event;
+			const u = await resolve(event);
+			const tutor = await myTutor(locals.db, u.id, url.searchParams.get('tutor'));
+			if (!tutor) return fail(404, { error: 'err_not_found' });
+			const limit = await hitLimit(locals.db, 'upload', u.id);
+			if (!limit.ok)
+				return fail(429, {
+					error: 'err_rate_limited',
+					minutes: Math.ceil(limit.retryAfterSeconds / 60)
+				});
+			// only for tutors who take cash
+			if (tutor.status !== 'active' || !(await getSettings(locals.db, tutor.tutorId)).acceptsCash)
+				return fail(400, { error: 'err_no_cash' });
+			const f = formObject(await request.formData());
+			const cents = parseMoney(f.amount ?? '');
+			if (!cents) return fail(400, { error: 'err_money' });
+			const date =
+				isIsoDate(f.date ?? '') && f.date <= localDate(new Date()) ? f.date : localDate(new Date());
+			const row = await submitPayment(locals.db, tutor.tutorId, u.id, {
+				amountCents: cents,
+				method: 'cash',
+				reference: null,
+				paidOn: date,
+				proofKey: null
+			});
+			await notifyTutor(
+				locals.db,
+				tutor.tutorId,
+				m.email_cash_new_s(),
+				m.email_cash_new_b({ name: u.name, amount: formatMoney(cents, row.currency), date })
+			);
+			return { done: 'cash' };
+		},
+		buy: async (event) => {
+			const { locals, url, request } = event;
+			const u = await resolve(event);
+			const tutor = await myTutor(locals.db, u.id, url.searchParams.get('tutor'));
+			if (!tutor) return fail(404, { error: 'err_not_found' });
+			const f = formObject(await request.formData());
+			try {
+				const sp = await buyPackage(locals.db, tutor.tutorId, u.id, Number(f.id) || 0);
+				await notifyTutor(
+					locals.db,
+					tutor.tutorId,
+					m.email_pkg_s(),
+					m.email_pkg_b({ name: u.name, pkg: sp.name })
+				);
+			} catch (e) {
+				if (e instanceof BillingFail) return fail(400, { error: e.code });
+				throw e;
+			}
+			return { done: 'package' };
 		}
-		return { done: 'package' };
-	}
 	};
 }

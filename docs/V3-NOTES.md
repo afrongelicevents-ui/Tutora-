@@ -14,15 +14,15 @@ How the v3 code is organised (read with `docs/DECISIONS.md`).
 
 ## Core modules (stable APIs)
 
-| Module | What |
-| --- | --- |
-| `family.ts` | invite codes, links, sharing, guardian permissions, younger children's logins |
-| `checkins.ts` | learning check-ins (`addCheckin`, `sharedCheckins`, `latestForTutor`) |
-| `school.ts` | "My school work" (entered by student/parent, checked by tutor) |
-| `progress.ts` | results (`recordResult`), `topicScores`, `weakTopics`, `overallProgress`, `examReadiness` |
-| `study.ts` | weekly plan, focus sessions, `todaysPlan`, `streak`, `weekSummary` |
-| `after-accept.ts` | runs after a tutor accepts a booking: meeting link + messages to student and family |
-| `tools/*` | Connected Tools (OAuth, encrypted tokens, Meet/Teams/Drive/Kahoot!) |
+| Module            | What                                                                                      |
+| ----------------- | ----------------------------------------------------------------------------------------- |
+| `family.ts`       | invite codes, links, sharing, guardian permissions, younger children's logins             |
+| `checkins.ts`     | learning check-ins (`addCheckin`, `sharedCheckins`, `latestForTutor`)                     |
+| `school.ts`       | "My school work" (entered by student/parent, checked by tutor)                            |
+| `progress.ts`     | results (`recordResult`), `topicScores`, `weakTopics`, `overallProgress`, `examReadiness` |
+| `study.ts`        | weekly plan, focus sessions, `todaysPlan`, `streak`, `weekSummary`                        |
+| `after-accept.ts` | runs after a tutor accepts a booking: meeting link + messages to student and family       |
+| `tools/*`         | Connected Tools (OAuth, encrypted tokens, Meet/Teams/Drive/Kahoot!)                       |
 
 Every number shown comes from rows in these tables; with no rows, screens show an honest empty state.
 

@@ -44,8 +44,14 @@
 
 	{#each data.topics.slice(0, 8) as tp (tp.subject + tp.topic)}
 		<div class="topic">
-			<div class="tl"><span>{tp.topic} <span class="muted small">· {tp.subject}</span></span><strong>{tp.pct}%</strong></div>
-			<div class="meter {tone(tp.pct)}" role="img" aria-label="{tp.topic} {tp.pct}%"><span style="width:{tp.pct}%"></span></div>
+			<div class="tl">
+				<span>{tp.topic} <span class="muted small">· {tp.subject}</span></span><strong
+					>{tp.pct}%</strong
+				>
+			</div>
+			<div class="meter {tone(tp.pct)}" role="img" aria-label="{tp.topic} {tp.pct}%">
+				<span style="width:{tp.pct}%"></span>
+			</div>
 		</div>
 	{/each}
 
@@ -63,15 +69,25 @@
 	<div class="rows">
 		{#each data.exams as e (e.id)}
 			<div>
-				<span>{m.pg3_exam({ title: e.title })}{e.daysLeft !== null ? ` · ${m.pg3_days({ n: e.daysLeft })}` : ''}</span>
-				<strong>{e.total ? m.pg3_ready({ ready: e.ready, total: e.total }) : m.pg3_no_topics()}</strong>
+				<span
+					>{m.pg3_exam({ title: e.title })}{e.daysLeft !== null
+						? ` · ${m.pg3_days({ n: e.daysLeft })}`
+						: ''}</span
+				>
+				<strong
+					>{e.total ? m.pg3_ready({ ready: e.ready, total: e.total }) : m.pg3_no_topics()}</strong
+				>
 			</div>
 		{:else}
 			<div><span>{m.pg3_exam_none()}</span><a href="/student/study">{m.pg3_add_exam()}</a></div>
 		{/each}
 		<div>
 			<span>{m.pg3_sessions()}</span>
-			<strong>{data.week.planned ? m.pg3_of({ done: data.week.done, planned: data.week.planned }) : data.week.done}</strong>
+			<strong
+				>{data.week.planned
+					? m.pg3_of({ done: data.week.done, planned: data.week.planned })
+					: data.week.done}</strong
+			>
 		</div>
 	</div>
 

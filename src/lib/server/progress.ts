@@ -86,7 +86,8 @@ export async function topicScores(
 			max(n)::int as results, max(taken_on)::text as last_on
 		from ranked where rn <= 3
 		group by lower(subject), lower(topic)`);
-	const list = ((rows as unknown as { rows?: unknown[] }).rows ?? (rows as unknown as unknown[])) as {
+	const list = ((rows as unknown as { rows?: unknown[] }).rows ??
+		(rows as unknown as unknown[])) as {
 		subject: string;
 		topic: string;
 		pct: number;
@@ -100,7 +101,9 @@ export async function topicScores(
 		results: Number(r.results),
 		lastOn: r.last_on
 	}));
-	out.sort((a, b) => (opts.weakFirst ? a.pct - b.pct : b.pct - a.pct) || a.topic.localeCompare(b.topic));
+	out.sort(
+		(a, b) => (opts.weakFirst ? a.pct - b.pct : b.pct - a.pct) || a.topic.localeCompare(b.topic)
+	);
 	return out;
 }
 
@@ -166,7 +169,11 @@ export interface ExamReadiness {
 }
 
 /** For each upcoming exam: which of its topics are ready (from real results only). */
-export async function examReadiness(db: DB, studentId: string, now = new Date()): Promise<ExamReadiness[]> {
+export async function examReadiness(
+	db: DB,
+	studentId: string,
+	now = new Date()
+): Promise<ExamReadiness[]> {
 	const today = localDate(now);
 	const exams = await db
 		.select()
@@ -206,7 +213,10 @@ export async function addExam(
 	by: string,
 	v: { subject: string; title: string; examOn: string | null; topics: string[] }
 ) {
-	const topics = [...new Set(v.topics.map((t) => t.trim().slice(0, 80)).filter(Boolean))].slice(0, 20);
+	const topics = [...new Set(v.topics.map((t) => t.trim().slice(0, 80)).filter(Boolean))].slice(
+		0,
+		20
+	);
 	const [row] = await db
 		.insert(exam)
 		.values({
