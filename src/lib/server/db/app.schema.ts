@@ -55,7 +55,8 @@ export const profile = pgTable(
 	(t) => [
 		check(
 			'profile_minor_needs_parent',
-			sql`not ${t.isUnder18} or (${t.parentName} is not null and ${t.parentPhone} is not null)`
+			// a younger child's account made by a guardian is linked to them through Family Connection
+			sql`not ${t.isUnder18} or ${t.managed} or (${t.parentName} is not null and ${t.parentPhone} is not null)`
 		)
 	]
 );

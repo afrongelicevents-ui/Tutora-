@@ -2,6 +2,7 @@
  * Everything that happens after a tutor accepts a booking:
  * the meeting link (if a tool is connected), then messages to the student and their family.
  */
+import { shortName } from '../names.ts';
 import { eq } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { user } from './db/auth.schema.ts';
@@ -24,7 +25,7 @@ export async function afterAccept(
 		link: `/student/lessons/${r.lessonId}`
 	});
 	const [s] = await db.select({ name: user.name }).from(user).where(eq(user.id, r.userId));
-	const child = (s?.name ?? '').trim().split(/\s+/)[0];
+	const child = shortName(s?.name ?? '');
 	for (const parentId of await parentsWhoSee(db, r.userId, 'lessons')) {
 		await notifyUser(
 			db,

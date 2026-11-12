@@ -70,8 +70,10 @@ export async function requestPartnership(
 		.from(user)
 		.leftJoin(profile, eq(profile.userId, user.id))
 		.where(eq(user.id, v.studentId));
-	// for a child under 18 only the guardian can give consent
-	if (kid?.isUnder18 && !access.guardian) throw new PartnershipFail('sp3_err_guardian');
+	// consent for a school child comes from their guardian; an adult student decides for
+	// themselves, so School+ is only for children under 18 with a guardian on Tutora
+	if (!kid?.isUnder18) throw new PartnershipFail('sp3_err_adult');
+	if (!access.guardian) throw new PartnershipFail('sp3_err_guardian');
 	const [tutor] = await db
 		.select({ name: tutorProfile.tutorName })
 		.from(enrollment)

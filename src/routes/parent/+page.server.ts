@@ -9,7 +9,7 @@ import { shortName } from '#lib/names.ts';
 export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 	const u = requireRole(locals.user, url, ['parent']);
 	const { kids, current } = await pickChild(locals.db, u.id, url, cookies);
-	const code = rememberedCode(cookies);
+	const code = await rememberedCode(cookies);
 	const waiting = code ? await previewInvite(locals.db, code) : null;
 	return {
 		name: shortName(u.name),

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { shortName } from '#lib/names.ts';
 	import { m, t } from '#lib/i18n.ts';
 	import {
 		fmtDate,
@@ -23,7 +24,7 @@
 		joinHref?: string;
 		id?: number;
 	};
-	const first = (n: string) => n.trim().split(/\s+/)[0] ?? n;
+	const first = (n: string) => shortName(n) || n;
 	const now = new Date();
 
 	function itemsOn(day: string): Item[] {

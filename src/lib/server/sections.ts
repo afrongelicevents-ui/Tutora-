@@ -1,3 +1,4 @@
+import { newEmailField } from '../validation/auth.ts';
 import { fail, redirect, type Actions, type RequestEvent } from '@sveltejs/kit';
 import { APIError } from 'better-auth/api';
 import { z } from 'zod';
@@ -265,7 +266,7 @@ export function accountActions(): Actions {
 				return fail(429, { errors: { newEmail: 'err_rate_limited' }, retryMinutes: 60 });
 			const parsed = z
 				.object({
-					newEmail: z.string().trim().toLowerCase().pipe(z.email('err_email')),
+					newEmail: newEmailField,
 					password: z.string().max(128).optional()
 				})
 				.safeParse(await form(ev));

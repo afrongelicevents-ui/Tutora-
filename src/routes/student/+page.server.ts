@@ -38,7 +38,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const hour = local(now).minutes / 60;
 	return {
 		now,
-		firstName: u.name.trim().split(/\s+/)[0],
+		firstName: shortName(u.name),
 		partOfDay: hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening',
 		next,
 		plan,
@@ -70,7 +70,7 @@ export const actions: Actions = {
 		});
 		if (shared) {
 			const [me] = await locals.db.select({ name: user.name }).from(user).where(eq(user.id, u.id));
-			const first = (me?.name ?? '').trim().split(/\s+/)[0];
+			const first = shortName(me?.name ?? '');
 			for (const parentId of await activeParents(locals.db, u.id))
 				await notifyUser(
 					locals.db,

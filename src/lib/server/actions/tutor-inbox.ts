@@ -1,3 +1,4 @@
+import { shortName } from '../../names.ts';
 import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { Actions } from '@sveltejs/kit';
@@ -44,7 +45,7 @@ export const inboxActions: Actions = {
 			return {
 				done: 'accepted',
 				meeting: meeting?.provider ?? null,
-				student: (s?.name ?? '').trim().split(/\s+/)[0] ?? '',
+				student: shortName(s?.name ?? ''),
 				family: family.length
 			};
 		} catch (e) {

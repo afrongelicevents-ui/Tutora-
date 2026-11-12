@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { shortName } from '#lib/names.ts';
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay, fmtDayTime, fmtTime, localDate, minutesToHHMM, local } from '#lib/tz.ts';
 	import { formatMoney } from '#lib/money.ts';
@@ -7,7 +8,7 @@
 	import { methodLabel, toolLabel } from '#lib/components/tutor/labels.ts';
 	let { data, form } = $props();
 
-	const first = (n: string) => n.trim().split(/\s+/)[0] ?? n;
+	const first = (n: string) => shortName(n) || n;
 	const accepted = $derived.by(() => {
 		if (form?.done !== 'accepted' || !('student' in form)) return null;
 		const f = form as { student?: string; family?: number; meeting?: string | null };

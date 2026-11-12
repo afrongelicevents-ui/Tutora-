@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import type { Auth } from '../auth-config.ts';
 import type { DB } from '../db/types.ts';
 import { user } from '../db/schema.ts';
-import { emailField, phone as phoneField } from '../../validation/auth.ts';
+import { newEmailField as emailField, phone as phoneField } from '../../validation/auth.ts';
 import { tutorProfile } from '../db/app.schema.ts';
 import { checkSetupCode, useUpSetupCode } from '../setup-code.ts';
 import { createTutorProfile } from '../settings.ts';

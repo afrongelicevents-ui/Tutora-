@@ -13,7 +13,7 @@ import {
 import { getSettings } from '#lib/server/settings.ts';
 import { addTutorByOwner } from '#lib/server/actions/setup.ts';
 import { setPasswordFor, studentByEmail, tempPassword } from '#lib/server/account.ts';
-import { emailField } from '#lib/validation/auth.ts';
+import { newEmailField as emailField } from '#lib/validation/auth.ts';
 import { notifyUser } from '#lib/server/notify.ts';
 import { m } from '#lib/paraglide/messages.js';
 import { formObject } from '#lib/validation/auth.ts';

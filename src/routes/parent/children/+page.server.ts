@@ -51,7 +51,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				guardian: k.guardian,
 				managed: !!k.managed,
 				isUnder18: !!k.isUnder18,
-				username: k.managed ? kidUsername(acc?.email ?? '') : null,
+				username:
+					k.managed && k.guardian && k.status === 'active' ? kidUsername(acc?.email ?? '') : null,
 				perms: k.guardian && k.isUnder18 ? await guardianPermissions(locals.db, k.studentId) : null,
 				pending: pending.map((p: { parentId: string; name: string }) => ({
 					parentId: p.parentId,
@@ -81,7 +82,7 @@ export const actions: Actions = {
 		const limit = await hitLimit(locals.db, 'familyCode', clientIp(request));
 		if (!limit.ok) return fail(429, { error: 'err_rate_limited', code });
 		if (!(await previewInvite(locals.db, code))) return fail(400, { error: 'v3_code_bad', code });
-		rememberCode(cookies, code);
+		await rememberCode(cookies, code);
 		redirect(303, '/code/connect');
 	},
 	createChild: async ({ locals, url, request }) => {

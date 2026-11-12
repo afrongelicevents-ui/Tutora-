@@ -5,7 +5,7 @@ import { makeUser, MONDAY_8AM } from './testing/fixtures.ts';
 import type { DB } from './db/types.ts';
 import { notification, profile } from './db/app.schema.ts';
 import { user } from './db/auth.schema.ts';
-import { createInvite, redeemInvite, setSharing } from './family.ts';
+import { createInvite, redeemInvite, removeLink, setSharing } from './family.ts';
 import { createChildAccount, setChildLogin } from './family-accounts.ts';
 import { addCheckin } from './checkins.ts';
 import { recordResult } from './progress.ts';
@@ -246,6 +246,50 @@ describe.skipIf(!hasTestDb)('parent area: visibility, younger children, School+'
 			postMessage(db, { role: 'tutor', tutorId: T, id: p.id }, 'more')
 		).rejects.toThrow();
 		expect((await logOf(db, p.id)).at(-1)?.body).toContain('stopped');
+	});
+
+	it('School+: not for adult students; ends when the parent is no longer connected', async () => {
+		const adult = await makeUser(db, 'student', 'Grown Up', T);
+		const dad = await makeUser(db, 'parent', 'Dad', null);
+		await link(adult.id, dad.id);
+		const v = {
+			studentId: adult.id,
+			tutorId: T,
+			subject: 'Maths',
+			schoolName: 'S',
+			teacherName: 'T',
+			consentName: 'Dad Person',
+			consent: true
+		};
+		await expect(requestPartnership(db, dad.id, v)).rejects.toThrow('sp3_err_adult');
+		const kid = await makeUser(db, 'student', 'Young One', T);
+		await db
+			.update(profile)
+			.set({ isUnder18: true, parentName: 'P', parentPhone: '+263770000000' })
+			.where(eq(profile.userId, kid.id));
+		const mum = await makeUser(db, 'parent', 'Mum Three', null);
+		await link(kid.id, mum.id, true);
+		const p = await requestPartnership(db, mum.id, {
+			...v,
+			studentId: kid.id,
+			consentName: 'Mum Three'
+		});
+		const { token } = await tutorDecide(db, T, p.id, true);
+		await removeLink(db, { role: 'parent', id: mum.id }, kid.id, mum.id);
+		expect(await byToken(db, token!)).toBeNull();
+	});
+
+	it('reserved addresses cannot be used to sign up', async () => {
+		const { signupSchema } = await import('../validation/auth.ts');
+		const r = signupSchema.safeParse({
+			name: 'Someone',
+			email: 'tari.moyo@kids.tutora.invalid',
+			password: 'a-long-password',
+			accountType: 'student',
+			phone: '0771234567',
+			consent: 'on'
+		});
+		expect(r.success).toBe(false);
 	});
 
 	it('shared check-ins reach parents without the note', async () => {

@@ -2,6 +2,7 @@
  * Study accountability: a weekly plan, focus sessions, streaks and the week's numbers.
  * Everything is counted from the student's own plan and sessions.
  */
+import { shortName } from '../names.ts';
 import { and, asc, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { assessmentResult, studyPlanItem, studySession } from './db/v3.schema.ts';
@@ -275,7 +276,7 @@ export function clock12(min: number) {
 	return `${clockShort(m)} ${m < 720 ? 'AM' : 'PM'}`;
 }
 
-export const firstName = (name: string) => name.trim().split(/\s+/)[0] || name;
+export const firstName = (name: string) => shortName(name) || name;
 
 /**
  * Tell the parents who may see this student's study time that a focus session started or

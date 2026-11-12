@@ -10,6 +10,7 @@ import {
 } from '#lib/server/partnership.ts';
 import { notifyUser } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
+import { toolsEnv } from '#lib/server/tools/env.ts';
 import { shortName } from '#lib/names.ts';
 import { m } from '#lib/paraglide/messages.js';
 
@@ -51,7 +52,7 @@ export const actions: Actions = {
 		const id = Number(f.id) || 0;
 		return handle(async () => {
 			const { token } = await tutorDecide(locals.db, me.id, id, f.accept === '1');
-			const origin = url.origin;
+			const origin = toolsEnv(url).origin;
 			return { id, link: token ? `${origin}/school/${token}` : null, declined: !token };
 		});
 	},

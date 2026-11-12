@@ -16,7 +16,7 @@ export const actions: Actions = {
 			});
 		const preview = await previewInvite(locals.db, code);
 		if (!preview) return fail(400, { code, error: 'v3_code_bad' });
-		rememberCode(cookies, code);
+		await rememberCode(cookies, code);
 		redirect(303, '/code/connect');
 	}
 };

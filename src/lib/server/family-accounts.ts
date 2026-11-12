@@ -60,7 +60,8 @@ export async function createChildAccount(
 	await db.update(user).set({ role: 'student' }).where(eq(user.id, u.id));
 	await db.insert(profile).values({
 		userId: u.id,
-		isUnder18: !!p.phone,
+		// always treated as under 18: the guardian manages permissions
+		isUnder18: true,
 		parentName: p.name,
 		parentPhone: p.phone,
 		parentEmail: p.email,

@@ -2,6 +2,7 @@ import { error, fail } from '@sveltejs/kit';
 import { and, eq } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 import { requireRole } from '#lib/server/guards.ts';
+import { parentAccess } from '#lib/server/family.ts';
 import { logOf, PartnershipFail, stopPartnership } from '#lib/server/partnership.ts';
 import { partnership } from '#lib/server/db/v3.schema.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
@@ -14,7 +15,8 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 		.select()
 		.from(partnership)
 		.where(and(eq(partnership.id, Number(params.id) || 0), eq(partnership.parentId, u.id)));
-	if (!p) error(404, 'Not found');
+	// only while still connected to the child
+	if (!p || !(await parentAccess(locals.db, u.id, p.studentId)).ok) error(404, 'Not found');
 	const { schoolTokenHash: _t, ...rest } = p;
 	return { p: rest, log: await logOf(locals.db, p.id) };
 };

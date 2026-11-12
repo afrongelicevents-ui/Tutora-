@@ -23,12 +23,16 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				.where(and(eq(enrollment.userId, k.studentId), eq(tutorProfile.status, 'active')))
 		}))
 	);
-	const mine = await forParent(locals.db, u.id);
+	// only partnerships for children this parent is still connected to
+	const all = await forParent(locals.db, u.id);
+	const mine = [];
+	for (const r of all) if ((await parentAccess(locals.db, u.id, r.p.studentId)).ok) mine.push(r);
 	return {
 		kids: kids.map((k) => ({
 			id: k.studentId,
 			name: shortName(k.name),
-			canConsent: !k.isUnder18 || k.guardian
+			canConsent: !!k.isUnder18 && k.guardian,
+			adult: !k.isUnder18
 		})),
 		tutors,
 		partnerships: mine.map((r) => ({

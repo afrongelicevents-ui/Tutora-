@@ -61,7 +61,9 @@
 						{#each data.kids as k (k.id)}<option value={k.id}>{k.name}</option>{/each}
 					</select>
 				</label>
-				{#if kid && !kid.canConsent}<p class="note">{m.sp3_err_guardian()}</p>{/if}
+				{#if kid && !kid.canConsent}<p class="note">
+						{kid.adult ? m.sp3_err_adult() : m.sp3_err_guardian()}
+					</p>{/if}
 				{#if tutors.length}
 					<label class="field"
 						><span class="label">{m.sp3_tutor()}</span>

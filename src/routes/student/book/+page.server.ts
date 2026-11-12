@@ -1,3 +1,4 @@
+import { shortName } from '#lib/names.ts';
 import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
@@ -112,7 +113,7 @@ export const actions: Actions = {
 				})
 			);
 			// family who see lessons hear about the request
-			const first = u.name.trim().split(/\s+/)[0];
+			const first = shortName(u.name);
 			for (const parentId of await parentsWhoSee(locals.db, u.id, 'lessons'))
 				await notifyUser(
 					locals.db,

@@ -66,6 +66,10 @@ WHERE b."status" = 'accepted'
 ON CONFLICT DO NOTHING`
 ];
 
+/** From drizzle/0012_managed_minors.sql: younger children's accounts are always under 18. */
+export const MANAGED_MINORS_SQL = `UPDATE "profile" SET "is_under_18" = true WHERE "managed" = true AND "is_under_18" = false`;
+
 export async function legacyParentsToFamily(db: DB) {
 	for (const q of LEGACY_FAMILY_SQL) await db.execute(sql.raw(q));
+	await db.execute(sql.raw(MANAGED_MINORS_SQL));
 }

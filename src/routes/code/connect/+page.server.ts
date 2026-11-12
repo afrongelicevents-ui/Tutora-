@@ -1,3 +1,4 @@
+import { shortName } from '#lib/names.ts';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { FamilyFail, previewInvite, redeemInvite } from '#lib/server/family.ts';
@@ -20,7 +21,7 @@ async function current(db: DB, code: string | null) {
 }
 
 export const load: PageServerLoad = async ({ locals, cookies, url }) => {
-	const invite = await current(locals.db, rememberedCode(cookies));
+	const invite = await current(locals.db, await rememberedCode(cookies));
 	if (!invite) {
 		forgetCode(cookies);
 		redirect(303, '/code');
@@ -49,7 +50,7 @@ async function connect(
 	);
 	if (r.status === 'pending_guardian' && r.guardianId) {
 		const [kid] = await db.select({ name: user.name }).from(user).where(eq(user.id, r.studentId));
-		const child = (kid?.name ?? '').split(/\s+/)[0];
+		const child = shortName(kid?.name ?? '');
 		await notifyUser(
 			db,
 			r.guardianId,
@@ -64,9 +65,12 @@ async function connect(
 export const actions: Actions = {
 	/** Already signed in as a parent: connect now. */
 	connect: async ({ request, locals, cookies }) => {
-		const code = rememberedCode(cookies);
+		const code = await rememberedCode(cookies);
 		if (!locals.user) redirect(303, '/login?next=/code/connect');
 		if (!code) redirect(303, '/code');
+		// connecting is limited too (per parent account), on top of the signed cookie
+		const limit = await hitLimit(locals.db, 'familyCode', `connect:${locals.user.id}`);
+		if (!limit.ok) return fail(429, { error: 'err_rate_limited' });
 		const invite = await previewInvite(locals.db, code);
 		const fd = await request.formData();
 		try {
@@ -88,7 +92,7 @@ export const actions: Actions = {
 	},
 	/** New parent account, then connect. */
 	signup: async ({ request, locals, cookies }) => {
-		const code = rememberedCode(cookies);
+		const code = await rememberedCode(cookies);
 		if (!code) redirect(303, '/code');
 		const input = formObject(await request.formData());
 		const values = { ...input, password: '' };

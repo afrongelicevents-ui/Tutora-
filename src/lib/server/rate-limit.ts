@@ -22,6 +22,8 @@ export const LIMITS = {
 	loginIp: { max: 30, windowSeconds: 10 * 60 },
 	/** Family Connection codes tried from one address (codes have 887 million values) */
 	familyCode: { max: 10, windowSeconds: 60 * 60 },
+	/** a teacher's School+ page (per address and link) */
+	schoolLink: { max: 60, windowSeconds: 60 * 60 },
 	/** invite codes made by one student */
 	familyInvite: { max: 10, windowSeconds: 24 * 60 * 60 },
 	/** lesson-room set-up messages per person per minute */

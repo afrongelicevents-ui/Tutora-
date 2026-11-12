@@ -2,9 +2,10 @@
  * Family Connection: students invite parents with one-time codes; parents follow one or more
  * children and see only what each child shares. Every rule is enforced here on the server.
  */
-import { and, asc, desc, eq, gt, isNull, sql } from 'drizzle-orm';
+import { shortName } from '../names.ts';
+import { and, asc, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
-import { familyInvite, familyLink, guardianPermission } from './db/v3.schema.ts';
+import { familyInvite, familyLink, guardianPermission, partnership } from './db/v3.schema.ts';
 import { profile } from './db/app.schema.ts';
 import { user } from './db/auth.schema.ts';
 
@@ -144,7 +145,7 @@ export async function previewInvite(db: DB, code: string, now = new Date()) {
 		.where(eq(user.id, inv.studentId));
 	if (!s) return null;
 	return {
-		firstName: s.name.trim().split(/\s+/)[0],
+		firstName: shortName(s.name),
 		level: s.level,
 		isUnder18: !!s.isUnder18,
 		expiresAt: inv.expiresAt
@@ -398,6 +399,17 @@ export async function removeLink(
 	if (!row) throw new FamilyFail('err_not_found');
 	if (by.role === 'student' && row.guardian && row.isUnder18)
 		throw new FamilyFail('fam_err_guardian_stays');
+	// a School+ partnership this parent started ends with the connection
+	await db
+		.update(partnership)
+		.set({ status: 'stopped', stoppedAt: new Date(), schoolTokenHash: null })
+		.where(
+			and(
+				eq(partnership.parentId, parentId),
+				eq(partnership.studentId, studentId),
+				inArray(partnership.status, ['requested', 'school_invited', 'active'])
+			)
+		);
 	await db
 		.delete(familyLink)
 		.where(and(eq(familyLink.studentId, studentId), eq(familyLink.parentId, parentId)));

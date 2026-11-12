@@ -39,12 +39,17 @@ export const emailField = z
 	.toLowerCase()
 	.pipe(z.email('err_email'))
 	.pipe(z.string().max(254));
+/**
+ * An address a person may register or change to. Addresses ending in .invalid are reserved
+ * (younger children's username logins use them) and can never receive email.
+ */
+export const newEmailField = emailField.refine((e) => !e.endsWith('.invalid'), 'err_email');
 export const passwordField = z.string().min(10, 'err_password_short').max(128, 'err_too_long');
 
 export const signupSchema = z
 	.object({
 		name: z.string().trim().min(2, 'err_name').max(80, 'err_too_long'),
-		email: emailField,
+		email: newEmailField,
 		password: passwordField,
 		accountType: z.enum(SIGNUP_ROLES, 'err_account_type'),
 		phone,

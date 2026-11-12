@@ -39,7 +39,11 @@ export const load: PageServerLoad = async ({ locals, params, setHeaders }) => {
 
 export const actions: Actions = {
 	respond: async ({ locals, params, request }) => {
-		const limit = await hitLimit(locals.db, 'familyCode', clientIp(request));
+		const limit = await hitLimit(
+			locals.db,
+			'schoolLink',
+			`${clientIp(request)}:${params.token.slice(0, 12)}`
+		);
 		if (!limit.ok) return fail(429, { error: 'err_rate_limited' });
 		const f = formObject(await request.formData());
 		const p = await byToken(locals.db, params.token);
@@ -62,7 +66,11 @@ export const actions: Actions = {
 		return { responded: true };
 	},
 	message: async ({ locals, params, request }) => {
-		const limit = await hitLimit(locals.db, 'familyCode', clientIp(request));
+		const limit = await hitLimit(
+			locals.db,
+			'schoolLink',
+			`${clientIp(request)}:${params.token.slice(0, 12)}`
+		);
 		if (!limit.ok) return fail(429, { error: 'err_rate_limited' });
 		const f = formObject(await request.formData());
 		try {
