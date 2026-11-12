@@ -26,7 +26,12 @@ async function main() {
 				.from(schema.user)
 				.where(notLike(schema.user.email, '%@example.com'))
 				.limit(1);
-			if (seeded && !real) {
+			// v3 fake data (Family Connection etc.) is there too? Otherwise refill the fake data.
+			const [v3] = await db
+				.select({ id: schema.user.id })
+				.from(schema.user)
+				.where(eq(schema.user.id, 'test_sibanda'));
+			if (seeded && !real && v3) {
 				console.log('Test data already there: kept.');
 				return;
 			}
