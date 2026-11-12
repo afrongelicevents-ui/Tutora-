@@ -1,44 +1,26 @@
 <script lang="ts">
-	// Tutors tab: my tutors, to do from tutors, messages, connected tools.
+	// Tutors tab: my tutors, messages, what tutors can help with.
 	// "You don't have a tutor yet" only shows when the student has no tutors.
-	import { m } from '#lib/i18n.ts';
-	import { fmtDay, fmtTime, localDate, addDays } from '#lib/tz.ts';
+	import { m, t } from '#lib/i18n.ts';
+	import { fmtDay, fmtTime } from '#lib/tz.ts';
 	import { ago } from '#lib/ago.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	import Face from '#lib/components/people/Face.svelte';
-	import ToolLogo, { TOOL_NAME, type Tool } from '#lib/components/tools/ToolLogo.svelte';
+	import type { IconName } from '#lib/components/LineIcon.svelte';
 	let { data } = $props();
 
-	const today = $derived(localDate(new Date(data.today)));
-	const tomorrow = $derived(localDate(addDays(new Date(data.today), 1)));
-	function due(d: string | null) {
-		if (!d) return { text: m.tt_no_date(), urgent: false };
-		if (d < today) return { text: m.tt_overdue(), urgent: true };
-		if (d === today) return { text: m.tt_due_today(), urgent: true };
-		if (d === tomorrow) return { text: m.tt_due_tomorrow(), urgent: false };
-		return { text: m.tt_due_on({ date: fmtDay(new Date(d + 'T12:00:00Z')) }), urgent: false };
-	}
 	const photo = (t: { slug: string | null; hasPhoto: boolean; photoVersion: number }) =>
 		t.hasPhoto && t.slug ? `/t/${t.slug}/photo?v=${t.photoVersion}` : null;
 
-	// short names on the small tiles (the full name is on the logo's alt text)
-	const SHORT: Record<Tool, string> = {
-		meet: 'Meet',
-		teams: 'Teams',
-		drive: 'Drive',
-		kahoot: 'Kahoot!'
-	};
-	type Tile = { tool: Tool; state: 'connected' | 'ready' | 'connect'; href?: string };
-	const tiles = $derived<Tile[]>([
-		{ tool: 'meet', state: 'ready' },
-		{ tool: 'teams', state: 'ready' },
-		data.tools.drive
-			? { tool: 'drive', state: 'connected' }
-			: { tool: 'drive', state: 'connect', href: data.tools.driveConnectHref },
-		data.tools.kahoot
-			? { tool: 'kahoot', state: 'connected' }
-			: { tool: 'kahoot', state: 'connect', href: '/student/tools#kahoot' }
-	]);
+	// kinds of help tutors offer (each opens Find a tutor)
+	const HELP: { key: string; icon: IconName }[] = [
+		{ key: 'homework', icon: 'home' },
+		{ key: 'exams', icon: 'trophy' },
+		{ key: 'catchup', icon: 'book' },
+		{ key: 'revision', icon: 'refresh' },
+		{ key: 'skills', icon: 'school' },
+		{ key: 'group', icon: 'tutors' }
+	];
 </script>
 
 <svelte:head><title>{m.tt_title()} · Tutora</title></svelte:head>
@@ -96,47 +78,6 @@
 		{/if}
 	</section>
 
-	<!-- To do from tutors -->
-	{#if data.tutors.length || data.todoTotal}
-		<section aria-labelledby="tt-todo">
-			<div class="sh">
-				<h2 id="tt-todo">{m.tt_todo()}</h2>
-				{#if data.todoTotal}<a class="all" href="/student/homework"
-						>{m.tt_view_all()} <LineIcon name="chevron" size={16} /></a
-					>{/if}
-			</div>
-			{#if data.todo.length}
-				<ul class="box">
-					{#each data.todo as w (w.key)}
-						{@const d = due(w.dueOn)}
-						<li>
-							<a class="row" href={w.href}>
-								<span class="ic"><LineIcon name="clipboard" size={30} /></span>
-								<span class="rbody">
-									<strong>{w.title}</strong>
-									<span class="meta">
-										<span
-											>{[
-												w.kind === 'quiz' ? m.tt_quiz() : '',
-												w.tutorName ? m.tt_from({ name: w.tutorName }) : ''
-											]
-												.filter(Boolean)
-												.join(' • ')}</span
-										>
-										<span class="pill" class:urgent={d.urgent}>{d.text}</span>
-									</span>
-								</span>
-								<LineIcon name="chevron" size={20} />
-							</a>
-						</li>
-					{/each}
-				</ul>
-			{:else}
-				<p class="empty-line">{m.tt_todo_none()}</p>
-			{/if}
-		</section>
-	{/if}
-
 	<!-- Messages -->
 	{#if data.tutors.length || data.messages.length}
 		<section aria-labelledby="tt-msg">
@@ -174,34 +115,18 @@
 		</section>
 	{/if}
 
-	<!-- Connected tools -->
-	<section aria-labelledby="tt-tools">
-		<div class="sh">
-			<h2 id="tt-tools">{m.tt_tools()}</h2>
-			<a class="all" href="/student/tools"
-				>{m.tt_view_all()} <LineIcon name="chevron" size={16} /></a
-			>
-		</div>
-		<ul class="tiles">
-			{#each tiles as tl (tl.tool)}
-				<li class="tile">
-					<ToolLogo tool={tl.tool} size={40} />
-					<span class="tn">{SHORT[tl.tool]}</span>
-					{#if tl.state === 'connected'}
-						<span class="st on">{m.tt_connected()}</span>
-					{:else if tl.state === 'ready'}
-						<span class="st ready" title={m.tt_ready_hint()}>{m.tt_ready()}</span>
-					{:else}
-						<a
-							class="st connect"
-							href={tl.href}
-							aria-label={`${m.tt_connect()} ${TOOL_NAME[tl.tool]}`}>{m.tt_connect()}</a
-						>
-					{/if}
+	<!-- What tutors can help with -->
+	<section aria-labelledby="tt-help">
+		<div class="sh"><h2 id="tt-help">{m.th_title()}</h2></div>
+		<ul class="help">
+			{#each HELP as h (h.key)}
+				<li>
+					<a href="/student/find"
+						><LineIcon name={h.icon} size={30} /><span>{t(`th_${h.key}`)}</span></a
+					>
 				</li>
 			{/each}
 		</ul>
-		<p class="hint">{m.tt_ready_hint()}</p>
 	</section>
 
 	<!-- only when there are no tutors -->
@@ -262,7 +187,7 @@
 	}
 	.list,
 	.box,
-	.tiles {
+	.help {
 		list-style: none;
 		margin: 0;
 		padding: 0;
@@ -380,13 +305,6 @@
 		text-decoration: none;
 		min-height: 64px;
 	}
-	.ic {
-		width: 52px;
-		display: grid;
-		place-items: center;
-		color: var(--navy);
-		flex: none;
-	}
 	.rbody {
 		flex: 1;
 		min-width: 0;
@@ -396,25 +314,6 @@
 	}
 	.rbody strong {
 		color: var(--navy);
-	}
-	.meta {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 6px;
-		color: var(--muted);
-		font-size: 0.875rem;
-	}
-	.pill {
-		border-radius: 99px;
-		padding: 2px 10px;
-		background: var(--ice);
-		color: var(--navy);
-		font-weight: 600;
-	}
-	.pill.urgent {
-		background: #fde4e4;
-		color: #a61b1b;
 	}
 	.snip {
 		color: var(--muted);
@@ -441,58 +340,31 @@
 		margin: 0;
 		color: var(--muted);
 	}
-	.tiles {
+	.help {
+		list-style: none;
+		margin: 0;
+		padding: 0;
 		display: grid;
 		grid-template-columns: repeat(4, minmax(0, 1fr));
 		gap: 8px;
 	}
-	.tile {
-		background: #fff;
-		border: 1px solid var(--border);
-		border-radius: 18px;
-		padding: 12px 4px;
+	.help a {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		justify-content: center;
 		gap: 6px;
 		text-align: center;
-		min-width: 0;
-	}
-	.tn {
-		font-size: 0.75rem;
-		font-weight: 600;
-		color: var(--navy);
-		line-height: 1.2;
-	}
-	.st {
-		font-size: 0.75rem;
-		font-weight: 700;
-		border-radius: 99px;
-		padding: 6px 8px;
-		width: 100%;
-		max-width: 92px;
-		box-sizing: border-box;
-	}
-	.st.on {
-		background: var(--navy);
-		color: #fff;
-	}
-	.st.ready {
-		background: var(--ice);
-		color: var(--navy);
-	}
-	.st.connect {
-		border: 1.5px solid var(--navy);
+		min-height: 96px;
+		padding: 10px 4px;
+		background: #fff;
+		border: 1px solid var(--border);
+		border-radius: 18px;
 		color: var(--navy);
 		text-decoration: none;
-		min-height: 32px;
-		display: grid;
-		place-items: center;
-	}
-	.hint {
-		margin: 0;
 		font-size: 0.8125rem;
-		color: var(--muted);
+		font-weight: 600;
+		line-height: 1.2;
 	}
 	.emptycard {
 		align-items: center;

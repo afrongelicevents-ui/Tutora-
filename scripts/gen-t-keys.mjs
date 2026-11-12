@@ -25,7 +25,8 @@ const PREFIXES = [
 	'ds_line_',
 	'ps_k_',
 	'pr_ins_',
-	'pr_day_'
+	'pr_day_',
+	'th_'
 ];
 
 export function wantedKeys(root = '.') {

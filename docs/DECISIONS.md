@@ -210,3 +210,8 @@ Built from the approved prototype (`Prototype.dc.html`) and `tutora-new-vision.m
 - Reminders: "Plan your day" in the morning (7–10 AM, once) to students who use the planner; "Review your day" from 8 PM, linking to the personal report.
 - My personal report (/student/report, from "View details"): today (plan vs done, tasks ticked, morning and evening check-ins with their reviewed messages, a short summary), this week (days planned/followed, tasks per day, feelings chart, goals reached, one plain-words insight) and past days. Real data only, friendly empty states. The academic Progress tab is unchanged.
 - Family sees the personal report summary (/parent/personal) only if the child says yes on the report; off by default. Never notes; check-ins only if shared.
+
+## D117 — Tutors and Lessons tabs follow the new designs (2026-11-13)
+
+- Tutors: My tutors (round "+" to find a tutor), Messages, and "What tutors can help with" (homework help, exam preparation, catch-up on a topic, revision sessions, study skills, one-to-one or group; each opens Find a tutor). "You don't have a tutor yet" still shows only without tutors.
+- Lessons: Next lesson (Join lesson when the online lesson is open, else View lesson), Upcoming lessons, Homework and tasks (Due today / Late / due date), Lesson materials (shared files and quizzes with the official Drive / Kahoot! logos), and Connected tools (real status). Booking requests stay at the top; packages, past lessons, reviews and favourites stay below.

@@ -18,8 +18,13 @@ import { requireRole } from '#lib/server/guards.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
 import { OPEN_BEFORE_MIN, CLOSE_AFTER_MIN } from '#lib/server/room.ts';
 import { formObject } from '#lib/validation/auth.ts';
-import { fmtDayTime } from '#lib/tz.ts';
+import { fmtDayTime, localDate } from '#lib/tz.ts';
 import { m } from '#lib/paraglide/messages.js';
+import { todoFromTutors } from '#lib/server/student-tutors.ts';
+import { studentToolStatus } from '#lib/server/tool-status.ts';
+import { attendee } from '#lib/server/db/app.schema.ts';
+import { lessonMaterial } from '#lib/server/db/v3.schema.ts';
+import { and, desc, eq } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const u = requireRole(locals.user, url, ['student']);
@@ -31,6 +36,25 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		tutorsForUser(locals.db, u.id),
 		myFavourites(locals.db, u.id)
 	]);
+	const [todo, tools, materials] = await Promise.all([
+		todoFromTutors(locals.db, u.id, now),
+		studentToolStatus(locals.db, u.id, url),
+		// files and quizzes the tutor shared on this student's lessons, newest first
+		locals.db
+			.select({
+				id: lessonMaterial.id,
+				lessonId: lessonMaterial.lessonId,
+				kind: lessonMaterial.kind,
+				title: lessonMaterial.title,
+				createdAt: lessonMaterial.createdAt
+			})
+			.from(lessonMaterial)
+			.innerJoin(attendee, eq(attendee.lessonId, lessonMaterial.lessonId))
+			.where(and(eq(attendee.userId, u.id), eq(attendee.status, 'booked')))
+			.orderBy(desc(lessonMaterial.createdAt))
+			.limit(4)
+	]);
+
 	const meetings = await meetingsFor(
 		locals.db,
 		lessons.map((l) => l.id)
@@ -70,6 +94,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.map(({ tutorId: _t, ...l }) => l)
 			.reverse(),
 		requests,
+		todo: todo.slice(0, 3),
+		todoTotal: todo.length,
+		tools,
+		materials,
+		today: localDate(now),
 		packages: packages
 			.filter((p) => p.lessonsUsed < p.lessonsTotal)
 			.map(({ tutorId: _t, ...p }) => p)

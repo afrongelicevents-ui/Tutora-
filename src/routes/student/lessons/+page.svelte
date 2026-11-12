@@ -2,7 +2,24 @@
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay, fmtDayTime, fmtTime, localDate } from '#lib/tz.ts';
 	import { waLink } from '#lib/whatsapp.ts';
+	import { page } from '$app/state';
+	import LineIcon from '#lib/components/LineIcon.svelte';
+	import ToolLogo from '#lib/components/tools/ToolLogo.svelte';
+	import ToolTiles from '#lib/components/tools/ToolTiles.svelte';
 	let { data, form } = $props();
+	const next = $derived(data.upcoming[0] ?? null);
+	const rest = $derived(data.upcoming.slice(1));
+	const showAll = $derived(page.url.searchParams.get('all') === '1');
+	function due(d: string | null) {
+		if (!d) return null;
+		if (d < data.today) return { text: m.lt_late(), urgent: false, late: true };
+		if (d === data.today) return { text: m.tt_due_today(), urgent: true, late: false };
+		return {
+			text: m.tt_due_on({ date: fmtDay(new Date(d + 'T12:00:00Z')) }),
+			urgent: false,
+			late: false
+		};
+	}
 	const isToday = (d: Date) => localDate(d) === localDate(data.now);
 	const waOf = (slug: string | null) => data.tutors.find((x) => x.slug === slug)?.whatsapp ?? null;
 	const status = (s: string) =>
@@ -11,10 +28,6 @@
 			proposed: m.status_proposed(),
 			declined: m.status_declined()
 		})[s] ?? s;
-	const how = (l: (typeof data.upcoming)[number]) =>
-		l.mode === 'in_person'
-			? `${m.sh_in_person()}${l.address ? `, ${l.address}` : ''}`
-			: `${m.find3_online()} · ${l.meeting === 'meet' ? m.sh_on_meet() : l.meeting === 'teams' ? m.sh_on_teams() : m.sh_on_room()}`;
 </script>
 
 <svelte:head><title>{m.ls3_title()} · Tutora</title></svelte:head>
@@ -77,39 +90,154 @@
 		</div>
 	{/each}
 
-	{#each data.upcoming as l (l.id)}
-		<div class="card lesson">
-			<div class="top">
-				<strong
-					>{l.subjectName ?? m.intro_chat()}{l.tutorName
-						? ` ${m.ls3_with({ name: l.tutorName })}`
-						: ''}</strong
-				>
-				<span class="pill p-ok">{l.kind === 'intro' ? m.tag_intro() : m.status_confirmed()}</span>
+	<!-- next lesson -->
+	{#if next}
+		<section aria-labelledby="lt-next">
+			<h2 id="lt-next" class="sec">{m.lt_next()}</h2>
+			<div class="nextcard">
+				<div class="n-top">
+					<span class="n-ic">
+						{#if next.meeting}<ToolLogo tool={next.meeting} size={34} chip />{:else}<LineIcon
+								name={next.mode === 'online' ? 'video' : 'calendar'}
+								size={30}
+							/>{/if}
+					</span>
+					<span class="n-body">
+						<strong>{next.subjectName ?? m.intro_chat()}</strong>
+						<span
+							>{isToday(next.startsAt) ? m.sh_today() : fmtDay(next.startsAt)} • {fmtTime(
+								next.startsAt
+							)}{next.tutorName ? ` · ${next.tutorName}` : ''}</span
+						>
+					</span>
+					<span class="mode">{next.mode === 'online' ? m.lt_online() : m.lt_in_person()}</span>
+				</div>
+				{#if next.mode === 'online' && next.roomOpen}
+					<a class="btn navy" href="/student/lessons/{next.id}"
+						><LineIcon name="video" size={20} /> {m.lt_join()}</a
+					>
+				{:else}
+					<a class="btn navy" href="/student/lessons/{next.id}">{m.lt_view()}</a>
+				{/if}
+				{#if !next.canCancel}
+					<span class="note"
+						>{m.cancel_too_late({ hours: next.cancelHours })}{#if waOf(next.tutorSlug)}
+							<a href={waLink(waOf(next.tutorSlug)!)} target="_blank" rel="noopener noreferrer"
+								>WhatsApp</a
+							>{/if}</span
+					>
+				{/if}
 			</div>
-			<span class="muted small"
-				>{isToday(l.startsAt) ? m.sh_today() : fmtDay(l.startsAt)} · {fmtTime(l.startsAt)} · {how(
-					l
-				)}</span
-			>
-			<a class="btn btn-block" href="/student/lessons/{l.id}">{m.ls3_open()}</a>
-			{#if !l.canCancel}
-				<span class="note"
-					>{m.cancel_too_late({ hours: l.cancelHours })}{#if waOf(l.tutorSlug)}
-						<a href={waLink(waOf(l.tutorSlug)!)} target="_blank" rel="noopener noreferrer"
-							>WhatsApp</a
-						>{/if}</span
-				>
-			{/if}
+		</section>
+	{:else if !data.requests.length}
+		<div class="empty-state">
+			<p class="lead">{m.no_lessons_yet()}</p>
+			<a class="btn navy" href="/student/find">{m.find_a_tutor()}</a>
 		</div>
-	{:else}
-		{#if !data.requests.length}
-			<div class="empty-state">
-				<p class="lead">{m.no_lessons_yet()}</p>
-				<a class="btn" href="/student/find">{m.find_a_tutor()}</a>
+	{/if}
+
+	<!-- upcoming lessons -->
+	{#if rest.length}
+		<section aria-labelledby="lt-up">
+			<div class="sh">
+				<h2 id="lt-up" class="sec">{m.lt_upcoming()}</h2>
+				{#if rest.length > 3 && !showAll}<a class="all" href="?all=1#lt-up"
+						>{m.tt_view_all()} <LineIcon name="chevron" size={16} /></a
+					>{/if}
 			</div>
+			<ul class="box">
+				{#each showAll ? rest : rest.slice(0, 3) as l (l.id)}
+					<li>
+						<a class="row" href="/student/lessons/{l.id}">
+							<span class="ic"><LineIcon name="calendar" size={24} /></span>
+							<span class="rbody"
+								><strong>{l.subjectName ?? m.intro_chat()}</strong><span class="meta"
+									>{isToday(l.startsAt) ? m.sh_today() : fmtDay(l.startsAt)} • {fmtTime(
+										l.startsAt
+									)}{l.tutorName ? ` · ${l.tutorName}` : ''}</span
+								></span
+							>
+							<span class="mode">{l.mode === 'online' ? m.lt_online() : m.lt_in_person()}</span>
+							<LineIcon name="chevron" size={20} />
+						</a>
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
+
+	<!-- homework and tasks -->
+	<section aria-labelledby="lt-hw">
+		<div class="sh">
+			<h2 id="lt-hw" class="sec">{m.lt_homework()}</h2>
+			<a class="all" href="/student/homework"
+				>{m.tt_view_all()} <LineIcon name="chevron" size={16} /></a
+			>
+		</div>
+		{#if data.todo.length}
+			<ul class="box">
+				{#each data.todo as w (w.key)}
+					{@const d = due(w.dueOn)}
+					<li>
+						<a class="row" href={w.href}>
+							<span class="ic"><LineIcon name="doc" size={26} /></span>
+							<span class="rbody"
+								><strong>{w.title}</strong>{#if w.tutorName}<span class="meta"
+										>{w.kind === 'quiz' ? `${m.tt_quiz()} · ` : ''}{m.tt_from({
+											name: w.tutorName
+										})}</span
+									>{/if}</span
+							>
+							{#if d}<span class="pill-d" class:urgent={d.urgent} class:late={d.late}>{d.text}</span
+								>{/if}
+							<LineIcon name="chevron" size={20} />
+						</a>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="muted">{m.lt_hw_none()}</p>
 		{/if}
-	{/each}
+	</section>
+
+	<!-- lesson materials -->
+	<section aria-labelledby="lt-mat">
+		<div class="sh">
+			<h2 id="lt-mat" class="sec">{m.lt_materials()}</h2>
+			<a class="all" href="/student/homework#resources"
+				>{m.tt_view_all()} <LineIcon name="chevron" size={16} /></a
+			>
+		</div>
+		{#if data.materials.length}
+			<ul class="box">
+				{#each data.materials as mt (mt.id)}
+					<li>
+						<a class="row" href="/student/lessons/{mt.lessonId}">
+							<span class="ic"
+								>{#if mt.kind === 'drive' || mt.kind === 'kahoot'}<ToolLogo
+										tool={mt.kind}
+										size={28}
+									/>{:else}<LineIcon
+										name={mt.kind === 'file' ? 'doc' : 'link'}
+										size={24}
+									/>{/if}</span
+							>
+							<span class="rbody"
+								><strong>{mt.title}</strong><span class="meta"
+									>{m.lt_shared({ date: fmtDay(new Date(mt.createdAt)) })}</span
+								></span
+							>
+							<LineIcon name="chevron" size={20} />
+						</a>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="muted">{m.lt_mat_none()}</p>
+		{/if}
+	</section>
+
+	<ToolTiles tools={data.tools} />
 
 	{#each data.packages as p (p.id)}
 		<div class="rows top">
@@ -170,6 +298,141 @@
 </div>
 
 <style>
+	section {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.sec {
+		margin: 0;
+		font-size: 1.375rem;
+		color: var(--navy);
+	}
+	.sh {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+	}
+	.all {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		color: var(--navy);
+		font-weight: 600;
+		text-decoration: none;
+		padding: 8px 0;
+	}
+	.nextcard {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		background: #fff;
+		border: 1px solid var(--border);
+		border-radius: 22px;
+		padding: 16px;
+		box-shadow: var(--shadow-soft);
+	}
+	.n-top {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+	}
+	.n-ic {
+		width: 52px;
+		height: 52px;
+		border-radius: 14px;
+		background: var(--ocean);
+		color: #fff;
+		display: grid;
+		place-items: center;
+		flex: none;
+	}
+	.n-body {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		color: var(--navy);
+	}
+	.n-body strong {
+		font-size: 1.125rem;
+	}
+	.mode {
+		flex: none;
+		background: var(--ice);
+		color: var(--navy);
+		border-radius: 99px;
+		padding: 4px 12px;
+		font-size: 0.8125rem;
+		font-weight: 700;
+	}
+	.btn.navy {
+		background: var(--navy);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		align-self: center;
+		min-width: 60%;
+	}
+	.box {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		background: #fff;
+		border: 1px solid var(--border);
+		border-radius: 20px;
+		overflow: hidden;
+	}
+	.box li + li {
+		border-top: 1px solid var(--border);
+	}
+	.row {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 12px 14px;
+		color: var(--navy);
+		text-decoration: none;
+		min-height: 60px;
+	}
+	.ic {
+		width: 36px;
+		display: grid;
+		place-items: center;
+		color: var(--ocean);
+		flex: none;
+	}
+	.rbody {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.meta {
+		font-size: 0.8125rem;
+		color: var(--muted);
+	}
+	.pill-d {
+		flex: none;
+		border-radius: 99px;
+		padding: 4px 12px;
+		font-size: 0.8125rem;
+		font-weight: 700;
+		background: var(--ice);
+		color: var(--navy);
+	}
+	.pill-d.urgent {
+		background: #fde4e4;
+		color: #a61b1b;
+	}
+	.pill-d.late {
+		background: #eceff3;
+		color: var(--text);
+	}
 	.lesson {
 		display: flex;
 		flex-direction: column;
