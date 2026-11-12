@@ -5,10 +5,14 @@ import {
 	examReadiness,
 	overallProgress,
 	recentResults,
+	READY_PCT,
 	topicScores,
 	WEAK_PCT
 } from '#lib/server/progress.ts';
-import { planFor, weekSummary } from '#lib/server/study.ts';
+import { planFor, streak, todaysPlan, weekSummary } from '#lib/server/study.ts';
+import { lessonsForUser } from '#lib/server/bookings.ts';
+import { OPEN_BEFORE_MIN, CLOSE_AFTER_MIN } from '#lib/server/room.ts';
+import { local } from '#lib/tz.ts';
 import {
 	removeSchoolSubject,
 	saveSchoolInfo,
@@ -34,7 +38,20 @@ import { user } from '#lib/server/db/auth.schema.ts';
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const u = requireRole(locals.user, url, ['student']);
 	const now = new Date();
-	const [overall, topics, exams, week, school, results, plan, checkin, family] = await Promise.all([
+	const [
+		overall,
+		topics,
+		exams,
+		week,
+		school,
+		results,
+		plan,
+		checkin,
+		family,
+		today,
+		days,
+		lessons
+	] = await Promise.all([
 		overallProgress(locals.db, u.id, now),
 		topicScores(locals.db, u.id),
 		examReadiness(locals.db, u.id, now),
@@ -43,8 +60,41 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		recentResults(locals.db, u.id, 8),
 		planFor(locals.db, u.id),
 		todaysCheckin(locals.db, u.id, now),
-		familyOf(locals.db, u.id)
+		familyOf(locals.db, u.id),
+		todaysPlan(locals.db, u.id, now),
+		streak(locals.db, u.id, now),
+		lessonsForUser(locals.db, u.id)
 	]);
+	// subject scores: the mean of that subject's topic scores (each topic = its latest 3 marks)
+	const bySubject = new Map<string, { name: string; sum: number; n: number; results: number }>();
+	for (const tp of topics) {
+		const k = tp.subject.toLowerCase();
+		const cur = bySubject.get(k) ?? { name: tp.subject, sum: 0, n: 0, results: 0 };
+		cur.sum += tp.pct;
+		cur.n += 1;
+		cur.results += tp.results;
+		bySubject.set(k, cur);
+	}
+	const subjects = [...bySubject.values()]
+		.sort((a, b) => b.results - a.results || a.name.localeCompare(b.name))
+		.map((x) => ({ name: x.name, pct: Math.round(x.sum / x.n) }));
+	const others = subjects.slice(3);
+	const upcoming = lessons
+		.filter((l) => l.endsAt.getTime() + CLOSE_AFTER_MIN * 60_000 > now.getTime())
+		.slice(0, 3)
+		.map((l) => ({
+			id: l.id,
+			subjectName: l.subjectName,
+			tutorName: l.tutorName,
+			kind: l.kind,
+			startsAt: l.startsAt,
+			endsAt: l.endsAt,
+			open:
+				l.mode === 'online' &&
+				now.getTime() >= l.startsAt.getTime() - OPEN_BEFORE_MIN * 60_000 &&
+				now.getTime() <= l.endsAt.getTime() + CLOSE_AFTER_MIN * 60_000
+		}));
+	const hour = local(now).minutes / 60;
 	// the weakest topic, and whether the plan already makes time for it (real data only)
 	const weak = [...topics].sort((a, b) => a.pct - b.pct).find((t) => t.pct < WEAK_PCT) ?? null;
 	const weakExam = weak
@@ -58,6 +108,22 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		? plan.filter((p) => (p.topic ?? '').toLowerCase() === weak.topic.toLowerCase()).length
 		: 0;
 	return {
+		now,
+		firstName: shortName(u.name),
+		partOfDay: hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening',
+		streak: days,
+		today,
+		upcoming,
+		subjectCards: {
+			top: subjects.slice(0, 3),
+			other: others.length
+				? {
+						n: others.length,
+						pct: Math.round(others.reduce((a, x) => a + x.pct, 0) / others.length)
+					}
+				: null
+		},
+		topicsReady: { ready: topics.filter((tp) => tp.pct >= READY_PCT).length, total: topics.length },
 		// learning check-in (moved here from Home): the student decides whether family sees it
 		checkin: checkin ? { mood: checkin.mood, shared: checkin.sharedWithFamily } : null,
 		checkinId: checkin?.id ?? null,
