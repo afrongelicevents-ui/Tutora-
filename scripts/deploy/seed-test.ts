@@ -47,7 +47,12 @@ async function main() {
 				.from(schema.checkin)
 				.where(eq(schema.checkin.kind, 'followup'))
 				.limit(1);
-			if (seeded && !real && v3 && buddies && msgs && fu) {
+			// personal schedule fake data is there too?
+			const [ps] = await db
+				.select({ id: schema.personalActivity.id })
+				.from(schema.personalActivity)
+				.limit(1);
+			if (seeded && !real && v3 && buddies && msgs && fu && ps) {
 				console.log('Test data already there: kept.');
 				return;
 			}

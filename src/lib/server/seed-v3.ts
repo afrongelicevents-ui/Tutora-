@@ -5,6 +5,7 @@
  */
 import { connectByCode, moderate, myCode, saveCard, sendPreset } from './buddies.ts';
 import { sendMessage } from './messages.ts';
+import { addActivity, type ActivityKind } from './schedule.ts';
 import { and, asc, eq, gt, inArray } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { account, user } from './db/auth.schema.ts';
@@ -27,7 +28,7 @@ import {
 import { legacyParentsToFamily } from './legacy-family.ts';
 import { createInvite, normalizeInvite, redeemInvite, setSharing, sha256Hex } from './family.ts';
 import { addExam, recordResult } from './progress.ts';
-import { addDays, addMinutes, fromLocal, local, localDate } from '../tz.ts';
+import { addDays, addMinutes, fromLocal, hhmmToMinutes, local, localDate } from '../tz.ts';
 import type { TestLogin } from './seed.ts';
 
 /** A code anyone can use on the test site to try "Join with code" (Kuda's invite). */
@@ -591,5 +592,28 @@ export async function seedV3(db: DB, hash: string, logins: TestLogin[], now = ne
 	await sendMessage(db, chipo, tm, 'Of course. Try questions 1 to 5 of the worksheet first.');
 	await sendMessage(db, tatenda, tm, 'Done, number 4 was hard.');
 	await sendMessage(db, chipo, tm, 'Great! Let me know if you need help.');
+
+	// Personal schedule (fake): school, meals, breaks, sport, friends, sleep around study time
+	const act = (
+		kind: ActivityKind,
+		label: string | null,
+		days: number[],
+		from: string,
+		to: string
+	) =>
+		addActivity(db, tatenda, {
+			kind,
+			label: label ?? '',
+			days,
+			start: hhmmToMinutes(from)!,
+			end: hhmmToMinutes(to)!
+		});
+	await act('school', null, [1, 2, 3, 4, 5], '07:30', '13:30');
+	await act('meal', 'Lunch', [0, 1, 2, 3, 4, 5, 6], '13:30', '14:15');
+	await act('break', null, [1, 2, 3, 4, 5], '14:15', '15:00');
+	await act('sport', 'Netball practice', [2, 4], '17:00', '18:00');
+	await act('meal', 'Dinner', [0, 1, 2, 3, 4, 5, 6], '19:15', '20:00');
+	await act('friends', 'Time with friends', [6], '14:30', '17:00');
+	await act('sleep', null, [0, 1, 2, 3, 4, 5, 6], '21:30', '24:00');
 	return { invite: TEST_INVITE_CODE };
 }

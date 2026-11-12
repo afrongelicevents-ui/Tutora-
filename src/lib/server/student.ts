@@ -24,6 +24,7 @@ import { account, session, twoFactor, user } from './db/auth.schema.ts';
 import { buddyCode, buddyLink, buddyMessage, studentCard } from './db/buddies.schema.ts';
 import { tutorMessage } from './db/messages.schema.ts';
 import { checkin, checkinPref, daySummarySent } from './db/v3.schema.ts';
+import { personalActivity } from './db/schedule.schema.ts';
 import { balances } from './billing.ts';
 import { addDays, localDate } from '../tz.ts';
 
@@ -310,6 +311,7 @@ export async function deleteMyAccount(db: DB, userId: string) {
 		await tx.delete(checkin).where(eq(checkin.studentId, userId));
 		await tx.delete(checkinPref).where(eq(checkinPref.studentId, userId));
 		await tx.delete(daySummarySent).where(eq(daySummarySent.studentId, userId));
+		await tx.delete(personalActivity).where(eq(personalActivity.studentId, userId));
 		if (keys.length) await tx.delete(fileBlob).where(inArray(fileBlob.key, keys));
 		await tx
 			.update(homeworkAnswer)

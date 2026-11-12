@@ -22,7 +22,8 @@ const PREFIXES = [
 	'cs_',
 	'cf_',
 	'ck_ins_',
-	'ds_line_'
+	'ds_line_',
+	'ps_k_'
 ];
 
 export function wantedKeys(root = '.') {

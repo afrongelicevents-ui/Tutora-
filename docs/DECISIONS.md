@@ -197,3 +197,8 @@ Built from the approved prototype (`Prototype.dc.html`) and `tutora-new-vision.m
 - Tutors see the latest check-ins (up to 3, last 7 days) in the pre-lesson brief; never the note. Parents see only the check-ins the child shared.
 - Not a mental-health tool. After "This is difficult" or "I need more help" on 3 days in a row, a gentle note offers "Talk to someone" (message a tutor, ask a parent to talk, and tell a trusted adult if you ever feel unsafe). It never labels or diagnoses.
 - Deleting a student account now also deletes their check-ins and notes.
+
+## D115 — You page restored; personal daily schedule (2026-11-13)
+
+- The student You page is back to the approved layout (profile card, personal progress, my daily schedule, Family Connection, goals and achievements; no greeting header). The profile card shows the saved photo and bio; "Edit profile" opens the edit screen, which holds all profile fields and a Study buddies row.
+- "My daily schedule" is a personal timetable, not just study: school/classes, meals, breaks, friends, sport, family time, chores, sleep and other, repeating on chosen weekdays (personal_activity), shown together with study-plan slots. /student/schedule manages it one day at a time, with plain-words tips that keep it sensible: overlaps, long study stretches without a break, no meal time, no rest, study ending after 9:30 PM. School subjects and progress stay on Progress.

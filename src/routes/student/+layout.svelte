@@ -17,12 +17,17 @@
 			also: ['/student/find', '/student/book', '/student/tutor', '/student/messages']
 		},
 		{ href: '/student/lessons', label: m.v3_nav_lessons(), icon: 'lessons' },
-		{ href: '/student/progress', label: m.v3_nav_progress(), icon: 'progress' },
+		{
+			href: '/student/progress',
+			label: m.v3_nav_progress(),
+			icon: 'progress',
+			also: ['/student/days', '/student/talk']
+		},
 		{
 			href: '/student/me',
 			label: m.v3_nav_you(),
 			icon: 'user',
-			also: ['/student/family', '/student/buddies']
+			also: ['/student/family', '/student/buddies', '/student/schedule']
 		}
 	]}
 	more={[

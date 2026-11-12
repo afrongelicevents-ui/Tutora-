@@ -8,6 +8,7 @@ import { homework, homeworkAnswer, profile } from '#lib/server/db/app.schema.ts'
 import { schoolInfo } from '#lib/server/db/v3.schema.ts';
 import { shortName } from '#lib/names.ts';
 import { getCard } from '#lib/server/buddies.ts';
+import { todaysBlocks } from '#lib/server/schedule.ts';
 import { addDays, startOfLocalDay } from '#lib/tz.ts';
 
 /**
@@ -36,6 +37,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		topicScores(db, u.id),
 		getCard(db, u.id)
 	]);
+	// today's personal timetable (school, meals, breaks, friends...) with study-plan slots
+	const blocks = await todaysBlocks(db, u.id, now);
 	const hwRows = await db
 		.select({
 			set: sql<number>`count(distinct ${homework.id})::int`,
@@ -68,6 +71,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			subject: s.subject,
 			topic: s.topic,
 			state: s.state
+		})),
+		blocks: blocks.map((b) => ({
+			...b,
+			done: b.kind === 'study' && today.some((s) => `p${s.id}` === b.key && s.state === 'done')
 		})),
 		onTrack: today.length > 0 && !today.some((s) => s.state === 'missed'),
 		family: linked.map((f) => ({ name: f.label || shortName(f.name), guardian: f.guardian })),

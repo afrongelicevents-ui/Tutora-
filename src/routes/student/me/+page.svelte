@@ -1,8 +1,9 @@
 <script lang="ts">
 	// "You": profile, personal progress, today's plan, Family Connection, exams and achievements.
-	import { m } from '#lib/i18n.ts';
+	import { m, t } from '#lib/i18n.ts';
 	import { fmtMinutes } from '#lib/tz.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
+	import { KIND_ICON } from '#lib/components/schedule/kinds.ts';
 	let { data } = $props();
 
 	const initials = $derived(
@@ -115,27 +116,34 @@
 	<section class="panel">
 		<div class="panel-h">
 			<h2><LineIcon name="calendar" />{m.me_schedule()}</h2>
-			<a href="/student/study">{m.me_view_schedule()} <span aria-hidden="true">→</span></a>
+			<a href="/student/schedule">{m.me_view_schedule()} <span aria-hidden="true">→</span></a>
 		</div>
-		{#if data.today.length}
+		{#if data.blocks.length}
 			<div class="sched">
 				<ul>
-					{#each data.today.slice(0, 3) as s (s.id)}
-						<li class:done={s.state === 'done'}>
-							<span class="t">{fmtMinutes(s.startMinute)}</span>
-							<span>{s.subject}{s.topic ? ` · ${s.topic}` : ''}</span>
+					{#each data.blocks.slice(0, 4) as b (b.key)}
+						<li class:done={b.done}>
+							<span class="bi k-{b.kind}"><LineIcon name={KIND_ICON[b.kind]} size={20} /></span>
+							<span class="t">{fmtMinutes(b.start)} – {fmtMinutes(b.end % 1440)}</span>
+							<span
+								>{b.kind === 'study'
+									? `${b.subject}${b.label ? ` · ${b.label}` : ''}`
+									: (b.label ?? t(`ps_k_${b.kind}`))}</span
+							>
 						</li>
 					{/each}
 				</ul>
-				<span class="chip" class:warn={!data.onTrack}
-					>{#if data.onTrack}<LineIcon name="check" size={18} />{/if}{data.onTrack
-						? m.me_on_track()
-						: m.me_missed()}</span
-				>
+				{#if data.today.length}
+					<span class="chip" class:warn={!data.onTrack}
+						>{#if data.onTrack}<LineIcon name="check" size={18} />{/if}{data.onTrack
+							? m.me_on_track()
+							: m.me_missed()}</span
+					>
+				{/if}
 			</div>
 		{:else}
 			<p class="muted empty">
-				{m.me_no_schedule()} <a href="/student/study">{m.me_make_plan()} →</a>
+				{m.me_no_schedule()} <a href="/student/schedule">{m.me_make_schedule()} →</a>
 			</p>
 		{/if}
 	</section>
@@ -397,7 +405,8 @@
 	}
 	.sched li {
 		display: grid;
-		grid-template-columns: 72px minmax(0, 1fr);
+		grid-template-columns: 24px 128px minmax(0, 1fr);
+		align-items: center;
 		gap: 10px;
 		color: var(--navy);
 		font-weight: 600;
@@ -406,6 +415,14 @@
 		color: var(--muted);
 		text-decoration: line-through;
 		font-weight: 400;
+	}
+	.bi {
+		color: var(--ocean);
+		display: grid;
+		place-items: center;
+	}
+	.bi.k-school {
+		color: #e0a100;
 	}
 	.sched .t {
 		color: var(--muted);
