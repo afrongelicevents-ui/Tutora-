@@ -118,7 +118,11 @@ jobs:
 
       - name: Prepare the database tables
         if: steps.check.outputs.ready == 'true'
-        run: pnpm db:migrate
+        run: |
+          # counts only (no names or emails) so the log proves no account was lost
+          node scripts/deploy/count-accounts.mjs before
+          pnpm db:migrate
+          node scripts/deploy/count-accounts.mjs after
 
       - name: Make the one-time owner setup code
         if: steps.check.outputs.ready == 'true'
