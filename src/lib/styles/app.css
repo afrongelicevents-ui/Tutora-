@@ -1,5 +1,5 @@
-/* Tutora design tokens (approved homepage design): warm cream, deep forest green, soft mint,
-   a little ochre. One small serif for headings (25 KB, latin only); body text uses the phone's font. */
+/* Tutora design tokens: warm ivory, deep burgundy (wine) used sparingly, soft blush, charcoal text,
+   muted rose for small accents. One serif for headings (25 KB, latin only); body text uses the phone's font. */
 @font-face {
 	font-family: 'DM Serif Display';
 	font-style: normal;
@@ -12,25 +12,25 @@
 		U+2122;
 }
 :root {
-	--green-700: #1a5640; /* primary, deep forest: 8.4:1 on white */
-	--green-900: #123d2e; /* hover, dark bands: 12:1 */
-	--clay-600: #b4531a; /* accent text: 5.0:1 */
-	--ochre-400: #e3a33b; /* decoration only, never small text on light */
-	--ink-900: #1c2620; /* body text: 15.6:1 */
-	--ink-600: #5b665f; /* secondary text: 6.0:1 */
-	--paper-50: #f8f2e8; /* warm cream page background */
-	--mint-50: #e4efe7; /* soft panels */
-	--card: #fffdf8;
+	--brand-700: #6b1e33; /* primary, deep wine: 11:1 on white */
+	--brand-900: #44111f; /* hover, dark band: 15:1 */
+	--rose-600: #8a3f52; /* accent text: 7:1 */
+	--rose-400: #b9808c; /* muted rose, decoration only (stars), never small text */
+	--ink-900: #231d1e; /* charcoal body text: 16:1 */
+	--ink-600: #5f5658; /* secondary text: 7:1 */
+	--paper-50: #faf6f0; /* warm ivory page background */
+	--blush-50: #f3e8e2; /* soft blush panels */
+	--card: #fffdfa;
 	--white: #fff;
-	--line: #e6e0d6;
+	--line: #e6dbd3;
 	--danger-700: #a3261b; /* 6.6:1 on white */
 	--danger-50: #fbeae7;
 
 	--font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', sans-serif;
 	--font-display: 'DM Serif Display', Georgia, 'Times New Roman', serif;
 
-	--radius: 12px;
-	--radius-lg: 16px;
+	--radius: 8px;
+	--radius-lg: 12px;
 	--tap: 48px; /* touch targets >= 44px */
 	--space-1: 4px;
 	--space-2: 8px;
@@ -40,7 +40,7 @@
 	--space-6: 24px;
 	--space-8: 32px;
 	--maxw: 1080px;
-	--focus: 0 0 0 3px var(--paper-50), 0 0 0 5px var(--green-700);
+	--focus: 0 0 0 3px var(--paper-50), 0 0 0 5px var(--brand-700);
 }
 
 *,
@@ -66,11 +66,11 @@ svg {
 	height: auto;
 }
 a {
-	color: var(--green-700);
+	color: var(--brand-700);
 	text-underline-offset: 2px;
 }
 a:hover {
-	color: var(--green-900);
+	color: var(--brand-900);
 }
 :focus-visible {
 	outline: none;
@@ -85,7 +85,7 @@ h3 {
 	margin: 0 0 var(--space-3);
 	font-weight: 400;
 	letter-spacing: -0.01em;
-	color: var(--green-900);
+	color: var(--brand-900);
 }
 h1 {
 	font-size: clamp(1.75rem, 6vw, 2.5rem);
@@ -121,7 +121,7 @@ p {
 	padding: var(--space-5);
 }
 .panel {
-	background: var(--mint-50);
+	background: var(--blush-50);
 	border-radius: var(--radius);
 	padding: var(--space-4);
 }
@@ -147,8 +147,8 @@ p {
 	padding: 0 22px;
 	/* pill buttons, text centred both ways (approved design) */
 	border-radius: 999px;
-	border: 2px solid var(--green-700);
-	background: var(--green-700);
+	border: 2px solid var(--brand-700);
+	background: var(--brand-700);
 	color: var(--paper-50);
 	font: inherit;
 	font-weight: 700;
@@ -158,17 +158,17 @@ p {
 	cursor: pointer;
 }
 .btn:hover {
-	background: var(--green-900);
-	border-color: var(--green-900);
+	background: var(--brand-900);
+	border-color: var(--brand-900);
 	color: var(--paper-50);
 }
 .btn-secondary {
 	background: var(--white);
-	color: var(--green-700);
+	color: var(--brand-700);
 }
 .btn-secondary:hover {
-	background: var(--mint-50);
-	color: var(--green-900);
+	background: var(--blush-50);
+	color: var(--brand-900);
 }
 .btn-block {
 	width: 100%;
@@ -178,7 +178,7 @@ p {
 	border: none;
 	padding: 0;
 	min-height: var(--tap);
-	color: var(--green-700);
+	color: var(--brand-700);
 	font: inherit;
 	text-decoration: underline;
 	cursor: pointer;
@@ -196,7 +196,7 @@ p {
 .field input:not([type='checkbox']):not([type='radio']):not([type='hidden']) {
 	min-height: var(--tap);
 	padding: 0 var(--space-3);
-	border: 1.5px solid #8a948e; /* 3.3:1 non-text contrast */
+	border: 1.5px solid #9b8f8c; /* 3.3:1 non-text contrast */
 	border-radius: 10px;
 	background: var(--white);
 	font: inherit;
@@ -225,8 +225,8 @@ p {
 .notice {
 	padding: var(--space-3) var(--space-4);
 	border-radius: 10px;
-	background: var(--mint-50);
-	color: var(--green-900);
+	background: var(--blush-50);
+	color: var(--brand-900);
 }
 .check {
 	display: flex;
@@ -240,7 +240,7 @@ p {
 	height: 22px;
 	margin: 0;
 	flex: none;
-	accent-color: var(--green-700);
+	accent-color: var(--brand-700);
 }
 .choice {
 	display: grid;
@@ -253,18 +253,18 @@ p {
 	gap: var(--space-2);
 	min-height: var(--tap);
 	padding: 0 var(--space-3);
-	border: 1.5px solid #8a948e;
+	border: 1.5px solid #9b8f8c;
 	border-radius: 10px;
 	background: var(--white);
 	cursor: pointer;
 	font-weight: 600;
 }
 .choice label:has(input:checked) {
-	border-color: var(--green-700);
-	background: var(--mint-50);
+	border-color: var(--brand-700);
+	background: var(--blush-50);
 }
 .choice input {
-	accent-color: var(--green-700);
+	accent-color: var(--brand-700);
 	width: 20px;
 	height: 20px;
 	margin: 0;
@@ -363,7 +363,7 @@ input[type='number'],
 input[type='url'] {
 	min-height: var(--tap);
 	padding: 8px 12px;
-	border: 1.5px solid #8a948e;
+	border: 1.5px solid #9b8f8c;
 	border-radius: 10px;
 	background: var(--white);
 	font: inherit;
@@ -387,8 +387,8 @@ textarea {
 	white-space: nowrap;
 }
 .p-ok {
-	background: var(--mint-50);
-	color: var(--green-900);
+	background: var(--blush-50);
+	color: var(--brand-900);
 }
 .p-wait {
 	background: #fdf3e1;
@@ -399,7 +399,7 @@ textarea {
 	color: var(--danger-700);
 }
 .p-info {
-	background: #eef2f0;
+	background: #f3ece8;
 	color: var(--ink-600);
 }
 .owe {
@@ -446,7 +446,7 @@ textarea {
 	min-height: 64px;
 	padding: 12px 16px;
 	border-radius: var(--radius);
-	border: 1.5px solid #8a948e;
+	border: 1.5px solid #9b8f8c;
 	background: var(--white);
 	margin-bottom: var(--space-2);
 	font-weight: 700;
@@ -464,20 +464,20 @@ textarea {
 	align-items: center;
 	min-height: 60px;
 	padding: 10px 14px;
-	border: 1.5px solid #8a948e;
+	border: 1.5px solid #9b8f8c;
 	border-radius: var(--radius);
 	background: var(--white);
 	margin-bottom: var(--space-2);
 	cursor: pointer;
 }
 .big-choice:has(input:checked) {
-	border-color: var(--green-700);
-	background: var(--mint-50);
+	border-color: var(--brand-700);
+	background: var(--blush-50);
 }
 .big-choice input {
 	width: 20px;
 	height: 20px;
-	accent-color: var(--green-700);
+	accent-color: var(--brand-700);
 	flex: none;
 }
 .big-choice > span {
@@ -505,7 +505,7 @@ textarea {
 	height: 16px;
 }
 .price {
-	color: var(--clay-600);
+	color: var(--rose-600);
 	font-weight: 700;
 	white-space: nowrap;
 }
@@ -536,25 +536,25 @@ textarea {
 	width: 88px;
 	height: 88px;
 	border-radius: 50%;
-	background: var(--mint-50);
-	border: 3px solid var(--ochre-400);
+	background: var(--blush-50);
+	border: 3px solid var(--rose-400);
 	display: grid;
 	place-items: center;
 	font-family: var(--font-display);
 	font-size: 1.9rem;
-	color: var(--green-900);
+	color: var(--brand-900);
 	object-fit: cover;
 	flex: none;
 }
 .band {
-	background: var(--green-900);
+	background: var(--brand-900);
 	color: var(--paper-50);
 	border-radius: var(--radius);
 	padding: var(--space-4);
 	margin-bottom: var(--space-4);
 }
 .band-label {
-	color: var(--mint-50);
+	color: var(--blush-50);
 	font-size: 0.85rem;
 	font-weight: 600;
 }
@@ -601,7 +601,7 @@ textarea {
 	color: var(--ink-600);
 }
 .review {
-	background: var(--mint-50);
+	background: var(--blush-50);
 	border-radius: var(--radius);
 	padding: var(--space-4);
 	margin: 0 0 var(--space-3);
@@ -610,7 +610,7 @@ textarea {
 	margin: 4px 0;
 }
 .stars {
-	color: var(--clay-600);
+	color: var(--rose-600);
 	letter-spacing: 2px;
 }
 .steps {
@@ -625,7 +625,7 @@ textarea {
 	background: var(--line);
 }
 .steps i.on {
-	background: var(--green-700);
+	background: var(--brand-700);
 }
 .tabs {
 	display: flex;
@@ -648,9 +648,9 @@ textarea {
 }
 .tabs a[aria-current],
 .tab[aria-current] {
-	background: var(--green-700);
+	background: var(--brand-700);
 	color: var(--paper-50);
-	border-color: var(--green-700);
+	border-color: var(--brand-700);
 }
 .slots {
 	display: grid;
@@ -663,15 +663,15 @@ textarea {
 	justify-content: center;
 	align-items: center;
 	min-height: var(--tap);
-	border: 1.5px solid #8a948e;
+	border: 1.5px solid #9b8f8c;
 	border-radius: 10px;
 	background: var(--white);
 	font-weight: 600;
 	cursor: pointer;
 }
 .slots label:has(input:checked) {
-	border-color: var(--green-700);
-	background: var(--mint-50);
+	border-color: var(--brand-700);
+	background: var(--blush-50);
 }
 .slots input {
 	position: absolute;
@@ -703,7 +703,7 @@ details > summary {
 .setup-banner {
 	display: block;
 	text-decoration: none;
-	color: var(--green-900);
+	color: var(--brand-900);
 	margin-bottom: var(--space-3);
 }
 .setup-banner span {
@@ -746,13 +746,13 @@ table.t .n {
 	vertical-align: -1px;
 }
 .legend .l1::before {
-	background: var(--green-700);
+	background: var(--brand-700);
 }
 .legend .l2::before {
-	background: var(--ochre-400);
+	background: var(--rose-400);
 }
 .legend .l3::before {
-	background: #8a948e;
+	background: #9b8f8c;
 }
 .cal-week {
 	display: grid;
@@ -770,8 +770,8 @@ table.t .n {
 	color: inherit;
 }
 .cal-day.today {
-	border-color: var(--green-700);
-	box-shadow: inset 0 0 0 1px var(--green-700);
+	border-color: var(--brand-700);
+	box-shadow: inset 0 0 0 1px var(--brand-700);
 }
 .cal-day .d {
 	display: block;
@@ -801,19 +801,19 @@ table.t .n {
 	font-size: 0.66rem;
 }
 .ev.on {
-	background: var(--mint-50);
-	color: var(--green-900);
-	border-left: 3px solid var(--green-700);
+	background: var(--blush-50);
+	color: var(--brand-900);
+	border-left: 3px solid var(--brand-700);
 }
 .ev.ip {
 	background: #fdf3e1;
 	color: #6b4600;
-	border-left: 3px solid var(--ochre-400);
+	border-left: 3px solid var(--rose-400);
 }
 .ev.own {
-	background: #eef2f0;
+	background: #f3ece8;
 	color: var(--ink-600);
-	border-left: 3px solid #8a948e;
+	border-left: 3px solid #9b8f8c;
 }
 .ev.big {
 	font-size: 0.95rem;
@@ -837,15 +837,15 @@ fieldset > legend {
 /* calendar: waiting requests (dashed) and blocked days; month grid */
 .legend .l4::before {
 	background: transparent;
-	border: 2px dashed var(--clay-600);
+	border: 2px dashed var(--rose-600);
 }
 .legend .l5::before {
 	background: repeating-linear-gradient(45deg, #c9c2b6 0 3px, transparent 3px 6px);
 }
 .ev.pend {
 	background: var(--white);
-	color: var(--clay-600);
-	border: 1px dashed var(--clay-600);
+	color: var(--rose-600);
+	border: 1px dashed var(--rose-600);
 }
 .ev.blk {
 	background: repeating-linear-gradient(45deg, #f1ece3 0 6px, #e8e1d5 6px 12px);
@@ -871,8 +871,8 @@ fieldset > legend {
 	font-size: 0.8rem;
 }
 .mday.today {
-	border-color: var(--green-700);
-	box-shadow: inset 0 0 0 1px var(--green-700);
+	border-color: var(--brand-700);
+	box-shadow: inset 0 0 0 1px var(--brand-700);
 }
 .mday .dots {
 	display: flex;
@@ -883,16 +883,16 @@ fieldset > legend {
 	width: 7px;
 	height: 7px;
 	border-radius: 50%;
-	background: var(--green-700);
+	background: var(--brand-700);
 }
 .mday .dots i.ip {
-	background: var(--ochre-400);
+	background: var(--rose-400);
 }
 .mday .dots i.own {
-	background: #8a948e;
+	background: #9b8f8c;
 }
 .mday .dots i.pend {
-	background: var(--clay-600);
+	background: var(--rose-600);
 }
 .mday .dots i.blk {
 	background: #a69d8f;

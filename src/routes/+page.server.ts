@@ -4,7 +4,7 @@ import { getContent } from '#lib/server/content.ts';
 
 /** Tutora's homepage: what Tutora is, popular (real, approved) tutors, and "Are you a tutor?". */
 export const load: PageServerLoad = async ({ locals }) => {
-	const [tutors, content] = await Promise.all([popularTutors(locals.db), getContent(locals.db)]);
+	const [tutors, content] = await Promise.all([popularTutors(locals.db, 4), getContent(locals.db)]);
 	return {
 		content: {
 			heroTitle: content.heroTitle,
