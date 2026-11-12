@@ -6,7 +6,7 @@ import { requireRole } from '#lib/server/guards.ts';
 import { formObject } from '#lib/validation/auth.ts';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	requireRole(locals.user, url, ['student', 'parent']);
+	requireRole(locals.user, url, ['student']);
 	const u = locals.user!;
 	const tutor = await myTutor(locals.db, u.id, url.searchParams.get('tutor'));
 	if (!tutor) redirect(303, '/student');
@@ -24,7 +24,7 @@ const schema = z.object({
 
 export const actions: Actions = {
 	default: async ({ locals, url, request }) => {
-		const u = requireRole(locals.user, url, ['student', 'parent']);
+		const u = requireRole(locals.user, url, ['student']);
 		const tutor = await myTutor(locals.db, u.id, url.searchParams.get('tutor'));
 		if (!tutor || tutor.status !== 'active') return fail(403, { error: 'err_review_not_allowed' });
 		const p = schema.safeParse(formObject(await request.formData()));

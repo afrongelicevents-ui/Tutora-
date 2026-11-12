@@ -153,6 +153,10 @@ export interface TutorFilter {
 	mode?: 'online' | 'in_person' | '';
 	location?: string;
 	sort?: 'rating' | 'price' | 'newest' | '';
+	/** free text: subject, topic, name or words in the profile */
+	q?: string;
+	/** only tutors whose shown price is at most this (tutors who hide prices are left out) */
+	maxPriceCents?: number | null;
 }
 
 /**
@@ -205,7 +209,8 @@ export async function listTutors(db: DB, f: TutorFilter | string = {}): Promise<
 	const q = {
 		subject: lower(filter.subject),
 		level: lower(filter.level),
-		town: lower(filter.location)
+		town: lower(filter.location),
+		text: lower(filter.q)
 	};
 	let cards: TutorCard[] = tutors.map((t) => {
 		const mine = subs.filter((x) => x.tutorId === t.tutorId);
@@ -247,7 +252,14 @@ export async function listTutors(db: DB, f: TutorFilter | string = {}): Promise<
 			(!q.subject || t.subjects.some((n) => n.toLowerCase().includes(q.subject))) &&
 			(!q.level || t.levels.some((n) => n.toLowerCase().includes(q.level))) &&
 			(!q.town || (t.town ?? '').toLowerCase().includes(q.town)) &&
-			(!filter.mode || t.lessonModes === 'both' || t.lessonModes === filter.mode)
+			(!filter.mode || t.lessonModes === 'both' || t.lessonModes === filter.mode) &&
+			(!filter.maxPriceCents ||
+				(t.fromPriceCents !== null && t.fromPriceCents <= filter.maxPriceCents)) &&
+			(!q.text ||
+				[t.name, t.headline ?? '', t.bio ?? '', t.town ?? '', ...t.subjects, ...t.levels]
+					.join(' ')
+					.toLowerCase()
+					.includes(q.text))
 	);
 	if (filter.sort === 'rating')
 		cards.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0) || b.reviewCount - a.reviewCount);

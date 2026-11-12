@@ -7,16 +7,70 @@ import { DOC_KINDS, MB, newKey, readUpload } from '#lib/server/files.ts';
 import { hitLimit } from '#lib/server/rate-limit.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
+import { and, asc, eq, inArray, isNull, or } from 'drizzle-orm';
+import { homeworkLink, resource } from '#lib/server/db/v3.schema.ts';
+import { enrollment, homework } from '#lib/server/db/app.schema.ts';
+import type { DB } from '#lib/server/db/types.ts';
+
+/** Revision resources from this student's own tutors (for everyone, or just for them). */
+async function revisionResources(db: DB, studentId: string) {
+	const tutors = await db
+		.select({ id: enrollment.tutorId })
+		.from(enrollment)
+		.where(eq(enrollment.userId, studentId));
+	if (!tutors.length) return [];
+	return db
+		.select({
+			id: resource.id,
+			subject: resource.subject,
+			level: resource.level,
+			kind: resource.kind,
+			title: resource.title,
+			url: resource.url
+		})
+		.from(resource)
+		.where(
+			and(
+				inArray(
+					resource.tutorId,
+					tutors.map((t) => t.id)
+				),
+				or(isNull(resource.studentId), eq(resource.studentId, studentId))
+			)
+		)
+		.orderBy(asc(resource.subject), asc(resource.id));
+}
+
+/** Drive files and links attached to this student's homework. */
+function homeworkLinks(db: DB, studentId: string) {
+	return db
+		.select({
+			id: homeworkLink.id,
+			homeworkId: homeworkLink.homeworkId,
+			kind: homeworkLink.kind,
+			title: homeworkLink.title,
+			url: homeworkLink.url
+		})
+		.from(homeworkLink)
+		.innerJoin(homework, eq(homework.id, homeworkLink.homeworkId))
+		.where(eq(homework.userId, studentId));
+}
 import { m } from '#lib/paraglide/messages.js';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	requireRole(locals.user, url, ['student', 'parent']);
-	const items = await homeworkForUser(locals.db, locals.user!.id);
+	const u = requireRole(locals.user, url, ['student']);
+	const [items, resources, links] = await Promise.all([
+		homeworkForUser(locals.db, u.id),
+		revisionResources(locals.db, u.id),
+		homeworkLinks(locals.db, u.id)
+	]);
 	const link = (k: string | null, n: string | null) => (k ? fileLink(k, n ?? 'file') : null);
 	return {
+		resources,
 		items: await Promise.all(
 			items.map(async (h) => ({
 				...h,
+				links: links.filter((l) => l.homeworkId === h.id),
 				fileUrl: await link(h.fileKey, h.fileName),
 				answers: await Promise.all(
 					h.answers.map(async (a) => ({ ...a, fileUrl: await link(a.fileKey, a.fileName) }))
@@ -28,7 +82,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 export const actions: Actions = {
 	handIn: async ({ locals, url, request, platform }) => {
-		const u = requireRole(locals.user, url, ['student', 'parent']);
+		const u = requireRole(locals.user, url, ['student']);
 		const limit = await hitLimit(locals.db, 'upload', u.id);
 		if (!limit.ok)
 			return fail(429, {

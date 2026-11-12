@@ -100,7 +100,7 @@ export async function attentionFor(db: DB, userId: string, now = new Date()) {
 				? {
 						kind: 'proposal',
 						text: { key: 'att_proposal', values: { name: r.name ?? '' } },
-						link: '/student#requests'
+						link: '/student/lessons#requests'
 					}
 				: {
 						kind: 'declined',
@@ -167,7 +167,9 @@ export async function myLesson(db: DB, userId: string, lessonId: number) {
 			endsAt: lesson.endsAt,
 			status: lesson.status,
 			capacity: lesson.capacity,
+			address: lesson.address,
 			subjectName: subject.name,
+			tutorId: lesson.tutorId,
 			tutorName: tutorProfile.tutorName,
 			tutorSlug: tutorProfile.slug,
 			town: tutorProfile.town,

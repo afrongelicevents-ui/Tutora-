@@ -9,7 +9,8 @@ import {
 } from '#lib/server/bookings.ts';
 import { activeTutorBySlug, publicSite, type SiteSettings } from '#lib/server/settings.ts';
 import { myTutor } from '#lib/server/people.ts';
-import { myChildren } from '#lib/server/student.ts';
+import { parentsWhoSee } from '#lib/server/family.ts';
+import { notifyUser } from '#lib/server/notify.ts';
 import { requireRole } from '#lib/server/guards.ts';
 import { hitLimit } from '#lib/server/rate-limit.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
@@ -33,11 +34,11 @@ async function bookingTutor(locals: App.Locals, url: URL): Promise<SiteSettings>
 			if (s) return s;
 		}
 	}
-	redirect(303, '/tutors');
+	redirect(303, '/student/find');
 }
 
 export const load: PageServerLoad = async ({ locals, url }) => {
-	requireRole(locals.user, url, ['student', 'parent']);
+	requireRole(locals.user, url, ['student']);
 	const tutor = await bookingTutor(locals, url);
 	// the free intro chat only when this tutor offers it
 	const intro = url.searchParams.get('intro') === '1' && tutor.offersIntro;
@@ -58,10 +59,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	return {
 		intro,
 		site: pub,
-		children:
-			locals.user!.role === 'parent'
-				? (await myChildren(locals.db, locals.user!.id)).map((c) => ({ id: c.id, name: c.name }))
-				: [],
 		days,
 		groups,
 		subject: Number(url.searchParams.get('subject')) || null
@@ -80,7 +77,7 @@ const schema = z.object({
 
 export const actions: Actions = {
 	default: async ({ locals, url, request }) => {
-		const u = requireRole(locals.user, url, ['student', 'parent']);
+		const u = requireRole(locals.user, url, ['student']);
 		const tutor = await bookingTutor(locals, url);
 		const limit = await hitLimit(locals.db, 'booking', u.id);
 		if (!limit.ok)
@@ -102,7 +99,6 @@ export const actions: Actions = {
 				mode: v.mode,
 				startsAt: v.join ? null : startsAt,
 				joinLessonId: v.join ?? null,
-				childId: v.childId ?? null,
 				note: v.note || null
 			});
 			await notifyTutor(
@@ -115,10 +111,20 @@ export const actions: Actions = {
 					when: fmtDayTime(b.startsAt)
 				})
 			);
+			// family who see lessons hear about the request
+			const first = u.name.trim().split(/\s+/)[0];
+			for (const parentId of await parentsWhoSee(locals.db, u.id, 'lessons'))
+				await notifyUser(
+					locals.db,
+					parentId,
+					m.fam_lesson_requested_s({ child: first }),
+					m.fam_lesson_requested_b({ child: first, when: fmtDayTime(b.startsAt) }),
+					{ kind: 'family_lesson', link: `/parent?child=${encodeURIComponent(u.id)}` }
+				);
 		} catch (e) {
 			if (e instanceof BookingFail) return fail(400, { error: e.code });
 			throw e;
 		}
-		redirect(303, '/student?requested=1');
+		redirect(303, `/student/book/sent?tutor=${encodeURIComponent(tutor.slug)}`);
 	}
 };

@@ -71,7 +71,13 @@ const fmt = (opts: Intl.DateTimeFormatOptions) =>
 const F = {
 	day: fmt({ weekday: 'short', day: 'numeric', month: 'short' }),
 	date: fmt({ day: 'numeric', month: 'long', year: 'numeric' }),
-	time: fmt({ hour: '2-digit', minute: '2-digit', hour12: false }),
+	// "4:00 PM", as in the approved design
+	time: new Intl.DateTimeFormat('en-US', {
+		timeZone: TZ,
+		hour: 'numeric',
+		minute: '2-digit',
+		hour12: true
+	}),
 	month: fmt({ month: 'long', year: 'numeric' }),
 	weekday: fmt({ weekday: 'short' })
 };
@@ -81,3 +87,10 @@ export const fmtTime = (d: Date) => F.time.format(d);
 export const fmtMonth = (d: Date) => F.month.format(d);
 export const fmtWeekday = (d: Date) => F.weekday.format(d);
 export const fmtDayTime = (d: Date) => `${fmtDay(d)} ${fmtTime(d)}`;
+
+/** "4:00 PM" for minutes after midnight (study plan slots, availability). */
+export function fmtMinutes(min: number): string {
+	const h = Math.floor(min / 60) % 24;
+	const mm = String(min % 60).padStart(2, '0');
+	return `${h % 12 === 0 ? 12 : h % 12}:${mm} ${h < 12 ? 'AM' : 'PM'}`;
+}

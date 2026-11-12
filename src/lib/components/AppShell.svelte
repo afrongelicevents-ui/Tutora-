@@ -86,7 +86,7 @@
 		{@render children()}
 	</div>
 
-	<nav class="tabs" aria-label={label} style="grid-template-columns: repeat({tabs.length}, minmax(0, 1fr))">
+	<nav class="tabbar" aria-label={label} style="grid-template-columns: repeat({tabs.length}, minmax(0, 1fr))">
 		{#each tabs as item (item.href)}
 			<a href={item.href} aria-current={isOn(item, all) ? 'page' : undefined}>{item.label}</a>
 		{/each}
@@ -143,7 +143,7 @@
 		top: 4px;
 		right: 0;
 	}
-	.tabs {
+	.tabbar {
 		position: fixed;
 		left: 0;
 		right: 0;
@@ -154,7 +154,7 @@
 		border-top: 1px solid var(--border);
 		padding: 0 2px env(safe-area-inset-bottom);
 	}
-	.tabs a {
+	.tabbar a {
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -167,7 +167,7 @@
 		text-align: center;
 		line-height: 1.15;
 	}
-	.tabs a[aria-current='page'] {
+	.tabbar a[aria-current='page'] {
 		border-top-color: var(--plum);
 		color: var(--plum);
 		font-weight: 700;
@@ -178,7 +178,7 @@
 			grid-template-columns: 240px minmax(0, 1fr);
 			padding-bottom: 0;
 		}
-		.tabs,
+		.tabbar,
 		.topbar {
 			display: none;
 		}

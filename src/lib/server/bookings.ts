@@ -525,6 +525,7 @@ const lessonFields = {
 	endsAt: lesson.endsAt,
 	status: lesson.status,
 	capacity: lesson.capacity,
+	address: lesson.address,
 	subjectName: subject.name,
 	tutorId: lesson.tutorId
 };

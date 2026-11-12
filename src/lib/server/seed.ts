@@ -36,6 +36,7 @@ import {
 import { account, user } from './db/auth.schema.ts';
 import { confirmPayment, recordCash, rejectPayment } from './billing.ts';
 import { addDays, fromLocal, localDate } from '../tz.ts';
+import { seedV3 } from './seed-v3.ts';
 
 export interface TestLogin {
 	role: string;
@@ -669,7 +670,7 @@ export async function seedTestData(
 				kind: 'booking',
 				title: 'Lesson booked',
 				body: 'Your tutor accepted your lesson.',
-				link: '/student'
+				link: '/student/lessons'
 			},
 			{
 				userId: s.id,
@@ -689,6 +690,9 @@ export async function seedTestData(
 			body: 'A student asked for a lesson. Please accept, decline or suggest another time.',
 			link: '/tutor'
 		});
+
+	// v3: Family Connection, study, progress, quizzes and materials
+	await seedV3(db, hash, logins);
 
 	return logins;
 }

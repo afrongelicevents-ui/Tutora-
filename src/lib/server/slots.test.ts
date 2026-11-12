@@ -12,7 +12,7 @@ describe('Zimbabwe time helpers', () => {
 		const d = fromLocal('2026-06-01', 15 * 60);
 		expect(d.toISOString()).toBe('2026-06-01T13:00:00.000Z');
 		expect(local(d).minutes).toBe(15 * 60);
-		expect(fmtTime(d)).toBe('15:00');
+		expect(fmtTime(d)).toBe('3:00 PM');
 		expect(localDate(new Date('2026-06-01T22:30:00Z'))).toBe('2026-06-02');
 	});
 	it('finds the Monday of the week', () => {
@@ -34,10 +34,10 @@ describe('free booking times', () => {
 		const slots = freeSlots(base);
 		// Mon is too soon (12 h notice from 08:00 means after 20:00), so Tue-Fri, plus next Mon
 		expect(slots.map((s) => localDate(s) + ' ' + fmtTime(s)).slice(0, 4)).toEqual([
-			'2026-11-17 15:00',
-			'2026-11-17 16:00',
-			'2026-11-17 17:00',
-			'2026-11-18 15:00'
+			'2026-11-17 3:00 PM',
+			'2026-11-17 4:00 PM',
+			'2026-11-17 5:00 PM',
+			'2026-11-18 3:00 PM'
 		]);
 		expect(slots.every((s) => local(s).minutes >= 900 && local(s).minutes <= 1020)).toBe(true);
 		expect(slots).toHaveLength(15);
@@ -45,13 +45,13 @@ describe('free booking times', () => {
 
 	it('needs at least 12 hours notice', () => {
 		const slots = freeSlots({ ...base, now: zw(1, '04:00') });
-		expect(fmtTime(slots[0])).toBe('16:00'); // Tue 15:00 is only 11 h away
+		expect(fmtTime(slots[0])).toBe('4:00 PM'); // Tue 15:00 is only 11 h away
 	});
 
 	it('skips times that overlap a lesson, an own event or a pending request', () => {
 		const busy = [{ start: zw(1, '15:30'), end: zw(1, '16:30') }];
 		const tue = freeSlots({ ...base, busy }).filter((s) => localDate(s) === '2026-11-17');
-		expect(tue.map(fmtTime)).toEqual(['17:00']);
+		expect(tue.map(fmtTime)).toEqual(['5:00 PM']);
 	});
 
 	it('fits shorter intro chats into the same windows', () => {
