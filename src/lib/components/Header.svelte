@@ -104,7 +104,7 @@
 		height: 18px;
 		padding: 0 4px;
 		border-radius: 9px;
-		background: var(--rose-600);
+		background: var(--clay-600);
 		color: #fff;
 		font-size: 11px;
 		font-weight: 700;
@@ -150,7 +150,7 @@
 		text-align: left;
 	}
 	nav a:hover {
-		background: var(--blush-50);
+		background: var(--mint-50);
 		border-radius: 8px;
 	}
 </style>

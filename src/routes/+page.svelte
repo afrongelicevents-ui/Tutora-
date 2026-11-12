@@ -236,7 +236,7 @@
 		color: inherit;
 	}
 	.tcard:hover {
-		border-color: var(--rose-400);
+		border-color: var(--ochre-400);
 	}
 	.photo {
 		display: block;
@@ -245,7 +245,7 @@
 		object-fit: cover;
 		object-position: 50% 25%;
 		border-radius: 4px;
-		background: var(--blush-50);
+		background: var(--mint-50);
 	}
 	.ph {
 		display: grid;
@@ -279,7 +279,7 @@
 		color: var(--ink-900);
 	}
 	.star {
-		color: var(--brand-700);
+		color: var(--ochre-400);
 	}
 
 	.join {
@@ -301,7 +301,7 @@
 		margin: 0;
 		font-size: 1rem;
 		line-height: 1.55;
-		color: #eadfdc;
+		color: #dfe9e2;
 		max-width: 46ch;
 	}
 	.light {

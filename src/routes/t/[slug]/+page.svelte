@@ -165,6 +165,6 @@
 		padding: 4px 16px;
 	}
 	.star {
-		color: var(--rose-400);
+		color: var(--ochre-400);
 	}
 </style>
