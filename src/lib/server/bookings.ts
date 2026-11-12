@@ -303,7 +303,9 @@ export async function acceptBooking(db: DB, tutorId: string, bookingId: number, 
 					mode: b.mode,
 					startsAt: b.startsAt,
 					endsAt: b.endsAt,
-					capacity
+					capacity,
+					// in-person lessons carry the tutor's lesson address (shown to booked students)
+					address: b.mode === 'in_person' ? (s.lessonAddress ?? s.town ?? null) : null
 				})
 				.returning();
 			lessonId = l.id;

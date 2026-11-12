@@ -11,6 +11,8 @@ import {
 	rejectPayment
 } from '../billing.ts';
 import { notifyUser } from '../notify.ts';
+import { afterAccept } from '../after-accept.ts';
+import { toolsEnv } from '../tools/env.ts';
 import { formObject } from '../../validation/auth.ts';
 import { fmtDayTime, fromLocal, hhmmToMinutes, isIsoDate } from '../../tz.ts';
 import { formatMoney } from '../../money.ts';
@@ -27,14 +29,8 @@ export const inboxActions: Actions = {
 		if (!p.success) return fail(400, { error: 'err_generic' });
 		try {
 			const r = await acceptBooking(locals.db, me.id, p.data.id);
-			await notifyUser(
-				locals.db,
-				r.userId,
-				m.email_booked_s(),
-				m.email_booked_b({ when: fmtDayTime(r.startsAt) }),
-				{ kind: 'booking', link: '/student' }
-			);
-			return { done: 'accepted' };
+			const { meeting } = await afterAccept(locals.db, toolsEnv(url), r);
+			return { done: 'accepted', meeting: meeting?.provider ?? null };
 		} catch (e) {
 			if (e instanceof BookingFail) return fail(400, { error: e.code });
 			throw e;

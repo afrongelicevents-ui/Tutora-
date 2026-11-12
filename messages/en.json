@@ -1088,5 +1088,9 @@
 	"par_approve": "Approve",
 	"par_decline": "Decline",
 	"par_waiting_you": "Waiting for your approval",
-	"par_wants_to_follow": "{name} wants to follow {child}"
+	"par_wants_to_follow": "{name} wants to follow {child}",
+	"fam_lesson_confirmed_s": "{child}'s lesson is confirmed",
+	"fam_lesson_confirmed_b": "{child}'s lesson on {when} is confirmed.",
+	"fam_lesson_requested_s": "{child} asked for a lesson",
+	"fam_lesson_requested_b": "{child} asked for a lesson on {when}. The tutor will confirm it."
 }

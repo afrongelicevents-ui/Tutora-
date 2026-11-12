@@ -52,6 +52,38 @@ export const variables = defineEnvVars({
 		description: 'Optional. Cloudflare Realtime TURN key API token (secret).',
 		schema: optional
 	},
+	GOOGLE_CLIENT_ID: {
+		description:
+			'Optional. Google OAuth client id (Connected Tools: Google Meet links and Google Drive files). See docs/CONNECTED-TOOLS.md.',
+		schema: optional
+	},
+	GOOGLE_CLIENT_SECRET: {
+		description: 'Optional. Google OAuth client secret (secret).',
+		schema: optional
+	},
+	GOOGLE_API_KEY: {
+		description:
+			'Optional. Google API key restricted to the Picker API and this site (used in the browser by the Drive file picker).',
+		schema: optional
+	},
+	GOOGLE_APP_ID: {
+		description: 'Optional. Google Cloud project number (the Drive file picker needs it).',
+		schema: optional
+	},
+	MS_CLIENT_ID: {
+		description:
+			'Optional. Microsoft Entra app (client) id (Connected Tools: Microsoft Teams meetings).',
+		schema: optional
+	},
+	MS_CLIENT_SECRET: {
+		description: 'Optional. Microsoft Entra client secret (secret).',
+		schema: optional
+	},
+	TOOLS_KEY: {
+		description:
+			'Optional. At least 32 random characters used to encrypt connected-tool tokens. If empty, a key is derived from BETTER_AUTH_SECRET.',
+		schema: optional
+	},
 	EMAIL_FROM: {
 		description: 'Sender address for emails, e.g. `Tutora <hello@tutora.co.zw>`.',
 		schema: optional
