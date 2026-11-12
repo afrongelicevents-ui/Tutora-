@@ -13,7 +13,7 @@ _12 Nov 2026. Plan only: nothing new is built until you approve._
 
 We extend these rather than rebuild them. The brand stays cream, forest green, mint and ochre, with the original logo. We add one calm navy (#1F3A5F) for charts, links and information messages. Every pairing passes the accessibility check (AA).
 
-**The four portals** (62 pages are designed for phone and desktop, with empty, loading and error states and arrows showing how pages connect):
+**The four portals** (planned pages; designs will follow the direction you choose):
 
 - **Student:** one clear next step: the next lesson, today's plan and a 5-minute daily check-in.
 - **Parent (new home):** a child switcher, plus six plain answers: attending? completing work? learning what? struggling with? improving? what next?
@@ -75,6 +75,6 @@ Under Zimbabwe's Cyber and Data Protection Act, Tutora probably already needs a 
 - 08 schools, consent and privacy
 - 09 roadmap
 - 10 technical recommendation
-- `blueprint/` (all designs: open `index.html`)
+- `directions/` (three design directions to choose from: open `index.html`; the full page designs come after you choose)
 
 Every price has its source and the date it was checked. Prices we couldn't confirm say "not verified".

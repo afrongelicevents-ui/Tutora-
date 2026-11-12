@@ -1,0 +1,2148 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Tutora — three design directions</title>
+		<style>
+			@font-face {
+				font-family: 'DM Serif Display';
+				src: url('dm-serif.woff2') format('woff2');
+				font-display: swap;
+			}
+			@font-face {
+				font-family: 'Nunito';
+				font-weight: 400;
+				src: url('nunito-400.woff2') format('woff2');
+				font-display: swap;
+			}
+			@font-face {
+				font-family: 'Nunito';
+				font-weight: 800;
+				src: url('nunito-800.woff2') format('woff2');
+				font-display: swap;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			html {
+				-webkit-text-size-adjust: 100%;
+			}
+			body {
+				margin: 0;
+				background: #e9e7e2;
+				color: #1d1d1b;
+				font:
+					16px/1.5 system-ui,
+					-apple-system,
+					'Segoe UI',
+					Roboto,
+					sans-serif;
+			}
+			.page {
+				max-width: 1320px;
+				margin: 0 auto;
+				padding: 20px 14px 80px;
+			}
+			.intro h1 {
+				font:
+					700 26px/1.2 system-ui,
+					sans-serif;
+				margin: 6px 0 8px;
+			}
+			.intro p {
+				margin: 0 0 10px;
+				max-width: 760px;
+				color: #333;
+			}
+			.jump {
+				display: flex;
+				gap: 8px;
+				flex-wrap: wrap;
+				margin: 14px 0 6px;
+			}
+			.jump a {
+				display: inline-flex;
+				align-items: center;
+				min-height: 44px;
+				padding: 0 16px;
+				border-radius: 8px;
+				background: #fff;
+				color: #1d1d1b;
+				font-weight: 700;
+				text-decoration: none;
+				border: 1px solid #ccc;
+			}
+			.dir {
+				background: #fff;
+				border-radius: 14px;
+				padding: 22px 16px 26px;
+				margin: 26px 0;
+			}
+			.dir > header .letter {
+				font: 700 13px system-ui;
+				letter-spacing: 0.12em;
+				text-transform: uppercase;
+				color: #666;
+			}
+			.dir > header h2 {
+				margin: 2px 0 6px;
+				font-size: 30px;
+				line-height: 1.15;
+			}
+			.dir > header .feel {
+				font-size: 18px;
+				margin: 0 0 14px;
+				color: #333;
+				max-width: 760px;
+			}
+			.spec {
+				display: grid;
+				gap: 16px;
+				margin: 0 0 22px;
+			}
+			.spec h3 {
+				font: 700 12px system-ui;
+				letter-spacing: 0.1em;
+				text-transform: uppercase;
+				color: #666;
+				margin: 0 0 8px;
+			}
+			.sw {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 8px;
+			}
+			.sw div {
+				width: 112px;
+				font-size: 12px;
+				line-height: 1.35;
+			}
+			.sw i {
+				display: block;
+				height: 44px;
+				border-radius: 6px;
+				border: 1px solid #0002;
+				margin-bottom: 4px;
+			}
+			.notes {
+				font-size: 14px;
+				color: #333;
+				margin: 0;
+				padding-left: 18px;
+			}
+			.notes li {
+				margin: 2px 0;
+			}
+			.logo-box {
+				display: flex;
+				gap: 10px;
+				flex-wrap: wrap;
+				align-items: center;
+			}
+			.logo-box > div {
+				padding: 14px 18px;
+				border-radius: 8px;
+			}
+			.sub {
+				font: 700 12px system-ui;
+				letter-spacing: 0.1em;
+				text-transform: uppercase;
+				color: #666;
+				margin: 18px 0 8px;
+			}
+			.phones {
+				display: flex;
+				gap: 18px;
+				overflow-x: auto;
+				padding: 4px 2px 12px;
+				scroll-snap-type: x mandatory;
+			}
+			.phone {
+				flex: none;
+				width: 390px;
+				scroll-snap-align: start;
+			}
+			.phone > p {
+				margin: 0 0 6px;
+				font-size: 13px;
+				color: #555;
+				font-weight: 600;
+			}
+			.scr {
+				width: 390px;
+				border: 1px solid #bbb;
+				border-radius: 18px;
+				overflow: hidden;
+				position: relative;
+			}
+			.sample {
+				position: absolute;
+				bottom: 8px;
+				right: 8px;
+				z-index: 5;
+				font: 700 10px system-ui;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				background: #fff;
+				color: #444;
+				border: 1px solid #bbb;
+				padding: 2px 6px;
+				border-radius: 4px;
+			}
+			.desk-wrap {
+				width: 100%;
+				overflow: hidden;
+				border: 1px solid #bbb;
+				border-radius: 12px;
+			}
+			.desk {
+				width: 1280px;
+				transform-origin: 0 0;
+				position: relative;
+			}
+			.why {
+				margin-top: 18px;
+				display: grid;
+				gap: 12px;
+				font-size: 14px;
+			}
+			.why b {
+				display: block;
+			}
+			@media (min-width: 900px) {
+				.page {
+					padding: 28px 28px 80px;
+				}
+				.dir {
+					padding: 30px 32px 34px;
+				}
+				.spec {
+					grid-template-columns: 1.1fr 1fr 1fr;
+				}
+				.why {
+					grid-template-columns: 1fr 1fr;
+				}
+			}
+			.na {
+				color: inherit;
+				text-decoration: none;
+			}
+
+			/* ====================== A · EXERCISE BOOK ====================== */
+			.A {
+				--cream: #f8f2e8;
+				--green: #1a5640;
+				--green9: #123d2e;
+				--ochre: #e3a33b;
+				--clay: #b4531a;
+				--navy: #1f3a5f;
+				--ink: #1c2620;
+				--ink6: #5b665f;
+				--rule: #d9e2ec;
+				background: var(--cream);
+				color: var(--ink);
+				font:
+					16px/1.5 system-ui,
+					-apple-system,
+					'Segoe UI',
+					Roboto,
+					sans-serif;
+			}
+			.A .serif {
+				font-family: 'DM Serif Display', Georgia, serif;
+				font-weight: 400;
+			}
+			.A .top {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 16px 20px 12px;
+				border-bottom: 2px solid var(--green);
+			}
+			.A .top img {
+				width: 104px;
+				display: block;
+			}
+			.A .menu {
+				font-size: 14px;
+				font-weight: 700;
+				color: var(--green);
+			}
+			.A .pg {
+				padding: 0 20px 28px 52px;
+				position: relative;
+				background-image: repeating-linear-gradient(#0000 0 31px, var(--rule) 31px 32px);
+				background-position: 0 6px;
+			}
+			.A .pg::before {
+				content: '';
+				position: absolute;
+				left: 36px;
+				top: 0;
+				bottom: 0;
+				width: 2px;
+				background: #e8b4a0;
+			}
+			.A h1 {
+				font:
+					400 38px/1.05 'DM Serif Display',
+					Georgia,
+					serif;
+				color: var(--green9);
+				margin: 0;
+				padding-top: 22px;
+			}
+			.A .lead {
+				font-size: 17px;
+				line-height: 32px;
+				margin: 6px 0 0;
+				color: var(--ink);
+			}
+			.A .btn {
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				min-height: 48px;
+				padding: 0 22px;
+				border-radius: 3px;
+				background: var(--green);
+				color: #fff;
+				font-weight: 700;
+				font-size: 16px;
+				text-decoration: none;
+			}
+			.A .btn.line {
+				background: none;
+				color: var(--green);
+				padding: 0;
+				min-height: 44px;
+				border-bottom: 2px solid var(--ochre);
+				border-radius: 0;
+			}
+			.A .photo {
+				margin: 20px 0 0 -32px;
+				background: #fff;
+				padding: 8px 8px 6px;
+				box-shadow: 0 1px 0 #0002;
+				transform: rotate(-0.6deg);
+			}
+			.A .photo img {
+				width: 100%;
+				display: block;
+				aspect-ratio: 4/3;
+				object-fit: cover;
+				object-position: 40% 40%;
+			}
+			.A .photo figcaption {
+				font-size: 12px;
+				color: var(--ink6);
+				padding-top: 4px;
+			}
+			.A h2 {
+				font:
+					400 26px/32px 'DM Serif Display',
+					Georgia,
+					serif;
+				color: var(--green9);
+				margin: 32px 0 0;
+			}
+			.A .ruled {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			.A .ruled li {
+				position: relative;
+				min-height: 32px;
+				line-height: 32px;
+				font-size: 16px;
+			}
+			.A .ruled li .n {
+				position: absolute;
+				left: -34px;
+				width: 28px;
+				text-align: right;
+				font:
+					400 18px/32px 'DM Serif Display',
+					serif;
+				color: var(--clay);
+			}
+			.A .ruled li span {
+				color: var(--ink6);
+			}
+			.A .tutor {
+				display: flex;
+				gap: 14px;
+				align-items: center;
+				margin-top: 8px;
+				line-height: 1.4;
+			}
+			.A .tutor .ph {
+				width: 64px;
+				height: 64px;
+				background: #e4efe7;
+				display: grid;
+				place-items: center;
+				font:
+					400 22px 'DM Serif Display',
+					serif;
+				color: var(--green);
+				border: 1px solid #c9d8cd;
+				flex: none;
+			}
+			.A .note-box {
+				margin-top: 32px;
+				background: var(--green9);
+				color: var(--cream);
+				padding: 18px 18px 20px;
+				margin-left: -32px;
+			}
+			.A .note-box h3 {
+				font:
+					400 24px/1.2 'DM Serif Display',
+					serif;
+				margin: 0 0 6px;
+			}
+			.A .note-box p {
+				margin: 0 0 14px;
+				color: #dfe9e2;
+			}
+			.A .note-box .btn {
+				background: var(--cream);
+				color: var(--green9);
+			}
+			.A .foot {
+				padding: 14px 20px 18px;
+				font-size: 13px;
+				color: var(--ink6);
+				border-top: 1px solid #e0d8ca;
+			}
+			.A .date {
+				font-size: 13px;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				color: var(--clay);
+				font-weight: 700;
+				padding-top: 22px;
+				line-height: 20px;
+			}
+			.A .row {
+				display: flex;
+				justify-content: space-between;
+				gap: 12px;
+				line-height: 32px;
+				min-height: 32px;
+			}
+			.A .row b {
+				font-weight: 600;
+			}
+			.A .tick {
+				color: var(--green);
+				font-weight: 800;
+			}
+			.A .warn {
+				color: var(--clay);
+				font-weight: 700;
+			}
+			.A .marks {
+				display: flex;
+				align-items: flex-end;
+				gap: 10px;
+				height: 96px;
+				margin-top: 12px;
+			}
+			.A .marks div {
+				flex: 1;
+				display: grid;
+				justify-items: center;
+				gap: 2px;
+				font-size: 11px;
+				color: var(--ink6);
+			}
+			.A .marks i {
+				display: block;
+				width: 100%;
+				background: var(--navy);
+			}
+			.A .tchr {
+				margin-top: 18px;
+				padding: 10px 0 0 14px;
+				border-left: 3px solid var(--ochre);
+				font-style: italic;
+				line-height: 26px;
+			}
+			.A .chk {
+				display: flex;
+				gap: 12px;
+				align-items: center;
+				min-height: 32px;
+				line-height: 32px;
+			}
+			.A .chk i {
+				width: 20px;
+				height: 20px;
+				border: 2px solid var(--green);
+				flex: none;
+			}
+			.A .chk.done i {
+				background: var(--green);
+				box-shadow: inset 0 0 0 3px var(--cream);
+			}
+			.A .chk.done {
+				color: var(--ink6);
+				text-decoration: line-through;
+				text-decoration-color: var(--ochre);
+				text-decoration-thickness: 2px;
+			}
+			.A .chk span {
+				margin-left: auto;
+				font-size: 13px;
+				color: var(--ink6);
+			}
+			.A .kid {
+				display: flex;
+				gap: 18px;
+				font-size: 15px;
+				padding: 10px 20px 0 52px;
+			}
+			.A .kid a {
+				color: var(--ink6);
+				padding-bottom: 6px;
+			}
+			.A .kid a.on {
+				color: var(--green9);
+				font-weight: 700;
+				border-bottom: 3px solid var(--ochre);
+			}
+			/* desktop A */
+			.A.dk .top {
+				padding: 22px 120px 16px;
+			}
+			.A.dk .top img {
+				width: 132px;
+			}
+			.A.dk .navl {
+				display: flex;
+				gap: 32px;
+				font-weight: 600;
+				color: var(--ink);
+				font-size: 16px;
+			}
+			.A.dk .spread {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 64px;
+				padding: 0 120px 56px 160px;
+				position: relative;
+				background-image: repeating-linear-gradient(#0000 0 31px, var(--rule) 31px 32px);
+				background-position: 0 6px;
+			}
+			.A.dk .spread::before {
+				content: '';
+				position: absolute;
+				left: 136px;
+				top: 0;
+				bottom: 0;
+				width: 2px;
+				background: #e8b4a0;
+			}
+			.A.dk h1 {
+				font-size: 64px;
+				line-height: 1;
+				padding-top: 56px;
+			}
+			.A.dk .lead {
+				font-size: 20px;
+			}
+			.A.dk .photo {
+				margin: 48px 0 0;
+				transform: rotate(1deg);
+			}
+			.A.dk .three {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				gap: 40px;
+				padding: 0 120px 48px 160px;
+			}
+
+			/* ====================== B · SUNRISE ====================== */
+			.B {
+				--ink: #15233b;
+				--ink6: #55606e;
+				--terra: #b83f27;
+				--peach: #fce6da;
+				--leaf: #22704a;
+				--sun: #f2b84b;
+				background: #fff;
+				color: var(--ink);
+				font:
+					400 16px/1.5 'Nunito',
+					system-ui,
+					sans-serif;
+			}
+			.B b,
+			.B strong,
+			.B h1,
+			.B h2,
+			.B h3 {
+				font-weight: 800;
+			}
+			.B .top {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 16px 20px;
+			}
+			.B .logo {
+				font:
+					800 26px/1 'Nunito',
+					sans-serif;
+				color: var(--ink);
+				letter-spacing: -0.02em;
+				display: inline-flex;
+				align-items: baseline;
+			}
+			.B .logo .o {
+				display: inline-block;
+				width: 0.52em;
+				height: 0.52em;
+				border-radius: 50%;
+				background: var(--terra);
+				margin: 0 0.03em;
+				transform: translateY(0.02em);
+			}
+			.B .burger {
+				width: 44px;
+				height: 44px;
+				border-radius: 50%;
+				background: var(--peach);
+				display: grid;
+				place-items: center;
+				font-weight: 800;
+			}
+			.B .hero-ph {
+				margin: 4px 16px 0;
+				border-radius: 28px;
+				overflow: hidden;
+			}
+			.B .hero-ph img {
+				width: 100%;
+				aspect-ratio: 1/1;
+				object-fit: cover;
+				object-position: 35% 45%;
+				display: block;
+			}
+			.B h1 {
+				font-size: 34px;
+				line-height: 1.08;
+				letter-spacing: -0.02em;
+				margin: 22px 20px 8px;
+			}
+			.B h1 em {
+				font-style: normal;
+				color: var(--terra);
+			}
+			.B .lead {
+				margin: 0 20px 18px;
+				font-size: 17px;
+				color: var(--ink6);
+			}
+			.B .btn {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				min-height: 56px;
+				border-radius: 999px;
+				background: var(--terra);
+				color: #fff;
+				font-weight: 800;
+				font-size: 17px;
+				margin: 0 20px;
+				text-decoration: none;
+			}
+			.B .btn.ghost {
+				background: var(--peach);
+				color: var(--ink);
+			}
+			.B .block {
+				background: var(--peach);
+				margin: 28px 0 0;
+				padding: 26px 20px 28px;
+				border-radius: 32px 32px 0 0;
+			}
+			.B h2 {
+				font-size: 24px;
+				letter-spacing: -0.01em;
+				margin: 0 0 14px;
+			}
+			.B .steps {
+				display: grid;
+				gap: 12px;
+			}
+			.B .step {
+				display: flex;
+				gap: 14px;
+				align-items: center;
+				background: #fff;
+				border-radius: 20px;
+				padding: 14px 16px;
+			}
+			.B .step .n {
+				width: 40px;
+				height: 40px;
+				border-radius: 50%;
+				background: var(--ink);
+				color: #fff;
+				display: grid;
+				place-items: center;
+				font-weight: 800;
+				flex: none;
+			}
+			.B .step div span {
+				display: block;
+				color: var(--ink6);
+				font-size: 14px;
+			}
+			.B .tcard {
+				display: flex;
+				gap: 14px;
+				align-items: center;
+				border: 2px solid #eee4dd;
+				border-radius: 22px;
+				padding: 12px;
+				margin: 0 20px;
+			}
+			.B .tcard .ph {
+				width: 72px;
+				height: 72px;
+				border-radius: 18px;
+				background: var(--peach);
+				display: grid;
+				place-items: center;
+				font-weight: 800;
+				font-size: 22px;
+				color: var(--terra);
+				flex: none;
+			}
+			.B .sec {
+				padding: 26px 0 0;
+			}
+			.B .sec h2 {
+				margin: 0 20px 12px;
+			}
+			.B .join {
+				margin: 28px 16px 0;
+				background: var(--ink);
+				color: #fff;
+				border-radius: 28px;
+				padding: 24px 20px;
+			}
+			.B .join p {
+				color: #d5dbe5;
+				margin: 6px 0 16px;
+			}
+			.B .join .btn {
+				margin: 0;
+				background: #fff;
+				color: var(--ink);
+			}
+			.B .foot {
+				padding: 22px 20px;
+				font-size: 14px;
+				color: var(--ink6);
+			}
+			.B .hi {
+				margin: 4px 20px 0;
+				font-size: 15px;
+				color: var(--ink6);
+			}
+			.B .big {
+				font-size: 32px;
+				line-height: 1.1;
+				letter-spacing: -0.02em;
+				margin: 2px 20px 16px;
+			}
+			.B .kids {
+				display: flex;
+				gap: 8px;
+				padding: 0 20px 14px;
+			}
+			.B .kids span {
+				min-height: 44px;
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				padding: 0 16px 0 6px;
+				border-radius: 999px;
+				background: #f3f1ee;
+				font-weight: 800;
+				font-size: 15px;
+			}
+			.B .kids span i {
+				width: 32px;
+				height: 32px;
+				border-radius: 50%;
+				background: #fff;
+				display: grid;
+				place-items: center;
+				font-style: normal;
+			}
+			.B .kids span.on {
+				background: var(--ink);
+				color: #fff;
+			}
+			.B .kids span.on i {
+				color: var(--ink);
+			}
+			.B .status {
+				margin: 0 16px;
+				background: #e5f2ea;
+				border-radius: 24px;
+				padding: 18px;
+			}
+			.B .status b {
+				font-size: 20px;
+				display: block;
+				color: var(--leaf);
+			}
+			.B .status p {
+				margin: 4px 0 0;
+			}
+			.B .tiles {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 10px;
+				margin: 12px 16px 0;
+			}
+			.B .tile {
+				border-radius: 22px;
+				padding: 14px;
+				background: #f6f4f1;
+			}
+			.B .tile b {
+				font-size: 26px;
+				display: block;
+				line-height: 1.1;
+			}
+			.B .tile span {
+				font-size: 14px;
+				color: var(--ink6);
+			}
+			.B .tile.peach {
+				background: var(--peach);
+			}
+			.B .bars {
+				margin: 12px 16px 0;
+				background: #fff;
+				border: 2px solid #f0ebe6;
+				border-radius: 22px;
+				padding: 16px;
+				display: grid;
+				gap: 12px;
+			}
+			.B .bar {
+				display: grid;
+				gap: 4px;
+				font-size: 15px;
+			}
+			.B .bar div {
+				display: flex;
+				justify-content: space-between;
+			}
+			.B .bar i {
+				height: 14px;
+				border-radius: 99px;
+				background: #f1ece7;
+				overflow: hidden;
+				display: block;
+			}
+			.B .bar i b {
+				display: block;
+				height: 100%;
+				border-radius: 99px;
+				background: var(--ink);
+			}
+			.B .next {
+				margin: 12px 16px 0;
+				background: var(--ink);
+				color: #fff;
+				border-radius: 24px;
+				padding: 18px;
+			}
+			.B .next span {
+				color: #c9d2df;
+				font-size: 14px;
+			}
+			.B .next b {
+				display: block;
+				font-size: 22px;
+				margin: 2px 0 12px;
+			}
+			.B .next .btn {
+				margin: 0;
+				background: var(--sun);
+				color: var(--ink);
+			}
+			.B .prog {
+				margin: 14px 16px 0;
+			}
+			.B .prog i {
+				display: block;
+				height: 16px;
+				border-radius: 99px;
+				background: #f1ece7;
+				overflow: hidden;
+			}
+			.B .prog i b {
+				display: block;
+				height: 100%;
+				width: 34%;
+				border-radius: 99px;
+				background: var(--leaf);
+			}
+			.B .prog p {
+				margin: 6px 0 0;
+				font-size: 14px;
+				color: var(--ink6);
+			}
+			.B .task {
+				display: flex;
+				gap: 14px;
+				align-items: center;
+				margin: 10px 16px 0;
+				padding: 16px;
+				border-radius: 22px;
+				background: #f6f4f1;
+				min-height: 72px;
+			}
+			.B .task .c {
+				width: 32px;
+				height: 32px;
+				border-radius: 50%;
+				border: 3px solid var(--ink);
+				flex: none;
+			}
+			.B .task.done {
+				background: #e5f2ea;
+			}
+			.B .task.done .c {
+				background: var(--leaf);
+				border-color: var(--leaf);
+			}
+			.B .task div span {
+				display: block;
+				font-size: 14px;
+				color: var(--ink6);
+			}
+			.B .tab {
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				margin-top: 22px;
+				border-top: 1px solid #eee;
+				font-size: 13px;
+				font-weight: 800;
+				text-align: center;
+			}
+			.B .tab span {
+				padding: 14px 0 16px;
+				color: var(--ink6);
+			}
+			.B .tab span.on {
+				color: var(--terra);
+			}
+			/* desktop B */
+			.B.dk .top {
+				padding: 22px 96px;
+			}
+			.B.dk .navl {
+				display: flex;
+				gap: 10px;
+			}
+			.B.dk .navl span {
+				min-height: 44px;
+				display: inline-flex;
+				align-items: center;
+				padding: 0 18px;
+				border-radius: 999px;
+				font-weight: 800;
+			}
+			.B.dk .navl span.cta {
+				background: var(--peach);
+			}
+			.B.dk .heroB {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 56px;
+				align-items: center;
+				padding: 24px 96px 0;
+			}
+			.B.dk h1 {
+				font-size: 62px;
+				margin: 0 0 16px;
+			}
+			.B.dk .lead {
+				margin: 0 0 26px;
+				font-size: 21px;
+			}
+			.B.dk .btn {
+				margin: 0;
+				display: inline-flex;
+				padding: 0 34px;
+			}
+			.B.dk .hero-ph {
+				margin: 0;
+				border-radius: 40px;
+			}
+			.B.dk .hero-ph img {
+				aspect-ratio: 5/4;
+			}
+			.B.dk .block {
+				margin: 64px 0 0;
+				padding: 48px 96px 56px;
+				border-radius: 48px 48px 0 0;
+			}
+			.B.dk .steps {
+				grid-template-columns: repeat(3, 1fr);
+				gap: 18px;
+			}
+			.B.dk .lower {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 24px;
+				padding: 40px 96px 56px;
+				background: var(--peach);
+			}
+
+			/* ====================== C · PLAIN & PRECISE ====================== */
+			.C {
+				--paper: #fafaf7;
+				--ink: #111;
+				--ink6: #5e5e5a;
+				--cobalt: #1846c8;
+				--cob50: #e8eefc;
+				--hair: #d6d6d0;
+				background: var(--paper);
+				color: var(--ink);
+				font:
+					16px/1.5 'Helvetica Neue',
+					Arial,
+					system-ui,
+					sans-serif;
+			}
+			.C .mono {
+				font-family: ui-monospace, 'SF Mono', Menlo, Consolas, 'Roboto Mono', monospace;
+			}
+			.C .top {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				padding: 16px 20px;
+				border-bottom: 1px solid var(--ink);
+			}
+			.C .logo {
+				font:
+					700 22px/1 'Helvetica Neue',
+					Arial,
+					sans-serif;
+				letter-spacing: -0.03em;
+				display: inline-flex;
+				align-items: baseline;
+				gap: 2px;
+			}
+			.C .logo i {
+				display: inline-block;
+				width: 7px;
+				height: 7px;
+				background: var(--cobalt);
+			}
+			.C .menu {
+				font-size: 13px;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				font-weight: 700;
+			}
+			.C .lbl {
+				font:
+					600 11px/1.4 ui-monospace,
+					Menlo,
+					Consolas,
+					monospace;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				color: var(--ink6);
+			}
+			.C h1 {
+				font:
+					700 40px/1.02 'Helvetica Neue',
+					Arial,
+					sans-serif;
+				letter-spacing: -0.035em;
+				margin: 8px 0 14px;
+			}
+			.C .lead {
+				font-size: 17px;
+				margin: 0 0 20px;
+				color: var(--ink);
+				max-width: 30ch;
+			}
+			.C .pad {
+				padding: 24px 20px;
+			}
+			.C .btn {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				min-height: 52px;
+				padding: 0 16px;
+				background: var(--cobalt);
+				color: #fff;
+				font-weight: 700;
+				font-size: 16px;
+				text-decoration: none;
+				border-radius: 0;
+			}
+			.C .btn.out {
+				background: none;
+				color: var(--ink);
+				border: 1px solid var(--ink);
+			}
+			.C .ph {
+				filter: grayscale(1) contrast(1.05);
+				width: 100%;
+				aspect-ratio: 16/10;
+				object-fit: cover;
+				display: block;
+				object-position: 40% 40%;
+			}
+			.C .cap {
+				display: flex;
+				justify-content: space-between;
+				padding: 6px 20px 0;
+			}
+			.C .idx {
+				border-top: 1px solid var(--ink);
+				margin-top: 8px;
+			}
+			.C .idx > div {
+				display: grid;
+				grid-template-columns: 44px 1fr;
+				gap: 6px;
+				padding: 14px 0;
+				border-bottom: 1px solid var(--hair);
+			}
+			.C .idx .n {
+				font:
+					600 13px ui-monospace,
+					Menlo,
+					monospace;
+				color: var(--cobalt);
+				padding-top: 3px;
+			}
+			.C .idx b {
+				display: block;
+			}
+			.C .idx span {
+				color: var(--ink6);
+				font-size: 15px;
+			}
+			.C h2 {
+				font:
+					700 13px/1.4 ui-monospace,
+					Menlo,
+					monospace;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				margin: 0;
+				display: flex;
+				justify-content: space-between;
+				align-items: baseline;
+			}
+			.C h2 a {
+				color: var(--cobalt);
+				text-transform: none;
+				letter-spacing: 0;
+				font-family: 'Helvetica Neue', Arial, sans-serif;
+				font-size: 15px;
+			}
+			.C .trow {
+				display: grid;
+				grid-template-columns: 56px 1fr auto;
+				gap: 12px;
+				align-items: center;
+				padding: 14px 0;
+				border-top: 1px solid var(--ink);
+				border-bottom: 1px solid var(--hair);
+				margin-top: 10px;
+			}
+			.C .trow .av {
+				width: 56px;
+				height: 56px;
+				background: #e7e7e1;
+				display: grid;
+				place-items: center;
+				font-weight: 700;
+			}
+			.C .trow span {
+				display: block;
+				color: var(--ink6);
+				font-size: 14px;
+			}
+			.C .join {
+				background: var(--ink);
+				color: var(--paper);
+				padding: 24px 20px;
+			}
+			.C .join h3 {
+				font-size: 24px;
+				letter-spacing: -0.02em;
+				margin: 6px 0 6px;
+			}
+			.C .join p {
+				color: #c9c9c3;
+				margin: 0 0 16px;
+			}
+			.C .join .btn {
+				background: var(--paper);
+				color: var(--ink);
+			}
+			.C .foot {
+				padding: 18px 20px;
+				display: flex;
+				gap: 16px;
+				font-size: 13px;
+			}
+			.C .facts {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				border-top: 1px solid var(--ink);
+			}
+			.C .facts > div {
+				padding: 12px 0 14px;
+				border-bottom: 1px solid var(--hair);
+			}
+			.C .facts > div:nth-child(odd) {
+				padding-right: 12px;
+				border-right: 1px solid var(--hair);
+			}
+			.C .facts > div:nth-child(even) {
+				padding-left: 12px;
+			}
+			.C .facts b {
+				display: block;
+				font-size: 30px;
+				letter-spacing: -0.03em;
+				line-height: 1.1;
+			}
+			.C .tabs {
+				display: flex;
+				border-bottom: 1px solid var(--ink);
+				padding: 0 20px;
+				gap: 20px;
+				font-size: 15px;
+			}
+			.C .tabs span {
+				padding: 12px 0;
+			}
+			.C .tabs span.on {
+				font-weight: 700;
+				box-shadow: inset 0 -3px 0 var(--cobalt);
+			}
+			.C .line {
+				display: block;
+				width: 100%;
+				height: 110px;
+			}
+			.C .q {
+				padding: 12px 0;
+				border-bottom: 1px solid var(--hair);
+			}
+			.C .q b {
+				display: block;
+			}
+			.C .q span {
+				color: var(--ink6);
+				font-size: 15px;
+			}
+			.C .flag {
+				display: inline-block;
+				font:
+					600 11px ui-monospace,
+					monospace;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				padding: 2px 6px;
+				margin-left: 6px;
+				vertical-align: 2px;
+			}
+			.C .flag.ok {
+				background: var(--cob50);
+				color: var(--cobalt);
+			}
+			.C .flag.att {
+				background: #111;
+				color: #fff;
+			}
+			.C .sch {
+				border-top: 1px solid var(--ink);
+			}
+			.C .sch > div {
+				display: grid;
+				grid-template-columns: 58px 26px 1fr;
+				gap: 8px;
+				align-items: start;
+				padding: 14px 0;
+				border-bottom: 1px solid var(--hair);
+			}
+			.C .sch .t {
+				font:
+					600 14px ui-monospace,
+					Menlo,
+					monospace;
+				padding-top: 1px;
+			}
+			.C .sch .bx {
+				width: 20px;
+				height: 20px;
+				border: 2px solid var(--ink);
+				margin-top: 1px;
+			}
+			.C .sch .done .bx,
+			.C .sch > div.done .bx {
+				background: var(--ink);
+			}
+			.C .sch > div.done b {
+				text-decoration: line-through;
+				color: var(--ink6);
+			}
+			.C .sch span {
+				display: block;
+				color: var(--ink6);
+				font-size: 14px;
+			}
+			.C .sch .now {
+				background: var(--cob50);
+				margin: 0 -20px;
+				padding: 14px 20px;
+				grid-template-columns: 58px 26px 1fr;
+			}
+			.C .sch .now .bx {
+				border-color: var(--cobalt);
+			}
+			/* desktop C */
+			.C.dk .top {
+				padding: 20px 64px;
+			}
+			.C.dk .navl {
+				display: flex;
+				gap: 32px;
+				font-size: 15px;
+			}
+			.C.dk .grid {
+				display: grid;
+				grid-template-columns: repeat(12, 1fr);
+				column-gap: 24px;
+				padding: 0 64px;
+			}
+			.C.dk h1 {
+				font-size: 88px;
+				line-height: 0.95;
+				letter-spacing: -0.045em;
+				margin: 0;
+			}
+			.C.dk .lead {
+				font-size: 20px;
+				max-width: 34ch;
+			}
+			.C.dk .btn {
+				display: inline-flex;
+				gap: 40px;
+				min-height: 56px;
+				padding: 0 22px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="page">
+			<div class="intro">
+				<img src="wordmark.svg" alt="tutora" width="110" />
+				<h1>Three design directions</h1>
+				<p>
+					Three very different looks for Tutora. Each shows the homepage, a parent's view of their
+					child's progress and a student's plan for today at phone size (390 px), plus the homepage
+					on a laptop. Choose one, or mix parts, and I will then design every page in that style.
+				</p>
+				<p>
+					<b>All names, marks and dates are sample content</b> to show the layout; the live site
+					only ever shows real data. The photo is the one you gave me; each direction uses it
+					differently. Nothing here changes the live site.
+				</p>
+				<div class="jump">
+					<a href="#A">A · Exercise book</a><a href="#B">B · Sunrise</a
+					><a href="#C">C · Plain &amp; precise</a>
+				</div>
+			</div>
+
+			<!-- ============================ A ============================ -->
+			<section class="dir" id="A">
+				<header>
+					<div class="letter">Direction A</div>
+					<h2>Exercise book</h2>
+					<p class="feel">
+						Calm and trusted, like a good teacher's neatly kept exercise book: ruled lines, a red
+						margin, handwritten-style order, no app chrome.
+					</p>
+				</header>
+				<div class="spec">
+					<div>
+						<h3>Colours (today's Tutora colours, used differently)</h3>
+						<div class="sw">
+							<div><i style="background: #f8f2e8"></i>Cream #F8F2E8<br />page</div>
+							<div>
+								<i style="background: #1a5640"></i>Forest green #1A5640<br />buttons, headings
+							</div>
+							<div><i style="background: #e3a33b"></i>Ochre #E3A33B<br />logo "o", underlines</div>
+							<div><i style="background: #b4531a"></i>Clay #B4531A<br />margin numbers</div>
+							<div><i style="background: #1f3a5f"></i>Navy #1F3A5F<br />charts only</div>
+							<div><i style="background: #d9e2ec"></i>Ruled line #D9E2EC<br />decoration</div>
+						</div>
+					</div>
+					<div>
+						<h3>Fonts, buttons, cards</h3>
+						<ul class="notes">
+							<li>
+								DM Serif Display for headings (already on the site, 25 KB); the phone's own font for
+								text.
+							</li>
+							<li>
+								Buttons: square-cornered green blocks; secondary actions are words with an ochre
+								underline.
+							</li>
+							<li>
+								No cards: content sits on ruled lines, numbered in the margin like a notebook.
+							</li>
+							<li>Contrast: green on cream 7.7:1, clay 4.5:1, navy 10.3:1 (all pass AA).</li>
+						</ul>
+					</div>
+					<div>
+						<h3>Logo</h3>
+						<div class="logo-box">
+							<div style="background: #f8f2e8; border: 1px solid #e3dccd">
+								<img src="wordmark.svg" alt="tutora" width="140" />
+							</div>
+						</div>
+						<p class="notes" style="padding: 8px 0 0">
+							Keeps today's wordmark exactly: serif "tutora" with the ochre "o".
+						</p>
+					</div>
+				</div>
+
+				<div class="sub">Phone · 390 px</div>
+				<div class="phones">
+					<div class="phone">
+						<p>Homepage</p>
+						<div class="scr A">
+							<span class="sample">Sample</span>
+							<div class="top">
+								<img src="wordmark.svg" alt="tutora" /><span class="menu">Menu</span>
+							</div>
+							<div class="pg">
+								<h1>Good grades are a great start.</h1>
+								<p class="lead">
+									Let's build on them, with a tutor who knows your child's syllabus.
+								</p>
+								<div style="margin-top: 14px"><a class="btn na">Find a tutor</a></div>
+								<figure class="photo">
+									<img src="hero.webp" alt="" />
+									<figcaption>Homework at the kitchen table, Harare</figcaption>
+								</figure>
+								<h2>How it works</h2>
+								<ol class="ruled">
+									<li><b class="n">1</b>Find a tutor <span>by subject and town</span></li>
+									<li><b class="n">2</b>Book a lesson <span>online or in person</span></li>
+									<li><b class="n">3</b>Practise and see progress</li>
+								</ol>
+								<h2>Popular tutors</h2>
+								<div class="tutor">
+									<span class="ph">TM</span>
+									<div>
+										<b>Mr T. Moyo</b><br /><span style="color: #5b665f">Mathematics · Harare</span
+										><br /><span style="font-size: 14px">★ 4.7 · 3 reviews</span>
+									</div>
+								</div>
+								<div style="margin-top: 6px"><a class="btn line na">See all tutors</a></div>
+								<div class="note-box">
+									<h3>Are you a tutor?</h3>
+									<p>
+										Share your knowledge, reach more students and run your lessons from your phone.
+									</p>
+									<a class="btn na">Join Tutora</a>
+								</div>
+							</div>
+							<div class="foot">Privacy · Terms · Contact</div>
+						</div>
+					</div>
+
+					<div class="phone">
+						<p>Parent dashboard</p>
+						<div class="scr A">
+							<span class="sample">Sample</span>
+							<div class="top">
+								<img src="wordmark.svg" alt="tutora" /><span class="menu">Menu</span>
+							</div>
+							<div class="kid"><a class="on">Rudo</a><a>Tino</a><a>+ Add child</a></div>
+							<div class="pg">
+								<div class="date">October report</div>
+								<h1 style="padding-top: 0; font-size: 32px">Rudo's month</h1>
+								<div class="row">
+									<b>Lessons attended</b><span><span class="tick">✓</span> 7 of 8</span>
+								</div>
+								<div class="row"><b>Homework handed in</b><span>5 of 6</span></div>
+								<div class="row"><b>Study days this week</b><span>5 of 7</span></div>
+								<div class="row"><b>Needs attention</b><span class="warn">Word problems</span></div>
+								<h2>Maths quiz marks</h2>
+								<div class="marks">
+									<div><i style="height: 52px"></i>Sep</div>
+									<div><i style="height: 58px"></i></div>
+									<div><i style="height: 55px"></i></div>
+									<div><i style="height: 66px"></i></div>
+									<div><i style="height: 70px"></i></div>
+									<div><i style="height: 77px"></i>Nov</div>
+								</div>
+								<p class="lead" style="margin-top: 6px">From 55% to 81% since September.</p>
+								<div class="tchr">
+									"Good work on fractions. Practise word problems 15 minutes, three times a week." —
+									Mr Moyo
+								</div>
+								<div style="margin-top: 18px"><a class="btn line na">Read the full report</a></div>
+							</div>
+						</div>
+					</div>
+
+					<div class="phone">
+						<p>Student · today's plan</p>
+						<div class="scr A">
+							<span class="sample">Sample</span>
+							<div class="top">
+								<img src="wordmark.svg" alt="tutora" /><span class="menu">Menu</span>
+							</div>
+							<div class="pg">
+								<div class="date">Tuesday 11 November</div>
+								<h1 style="padding-top: 0; font-size: 32px">Today, Rudo</h1>
+								<div class="chk"><i></i>Maths lesson with Mr Moyo<span>15:00</span></div>
+								<div class="chk"><i></i>Daily check-in: fractions<span>5 min</span></div>
+								<div class="chk"><i></i>Exercise 4B<span>due Thu</span></div>
+								<div class="chk done"><i></i>Read set book, chapter 6<span>20 min</span></div>
+								<div style="margin-top: 16px"><a class="btn na">Join the lesson</a></div>
+								<h2>Your tutor said</h2>
+								<div class="tchr">"Next lesson: unlike denominators. Bring Exercise 4B."</div>
+								<h2>This week</h2>
+								<p class="lead">
+									Check-ins on Monday, Tuesday and Wednesday. Two more to reach your target.
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="sub">Laptop · homepage (scaled to fit)</div>
+				<div class="desk-wrap">
+					<div class="desk A dk">
+						<span class="sample">Sample</span>
+						<div class="top">
+							<img src="wordmark.svg" alt="tutora" />
+							<nav class="navl">
+								<span>Find a tutor</span><span>How it works</span><span>For tutors</span
+								><span>Log in</span>
+							</nav>
+						</div>
+						<div class="spread">
+							<div>
+								<h1>Good grades are a great start.</h1>
+								<p class="lead">
+									Let's build on them. A tutor who knows your child's syllabus, a short daily
+									check-in, and clear progress you can read.
+								</p>
+								<div style="margin-top: 20px; display: flex; gap: 28px; align-items: center">
+									<a class="btn na">Find a tutor</a><a class="btn line na">How it works</a>
+								</div>
+							</div>
+							<figure class="photo">
+								<img src="hero.webp" alt="" />
+								<figcaption>Homework at the kitchen table, Harare</figcaption>
+							</figure>
+						</div>
+						<div class="three">
+							<div>
+								<h2 style="margin-top: 0">1 · Find</h2>
+								<p class="lead">Search by subject, level and town.</p>
+							</div>
+							<div>
+								<h2 style="margin-top: 0">2 · Book</h2>
+								<p class="lead">Online or in person, at a time that suits you.</p>
+							</div>
+							<div>
+								<h2 style="margin-top: 0">3 · Grow</h2>
+								<p class="lead">Practise between lessons and see progress.</p>
+							</div>
+						</div>
+						<div class="foot" style="padding: 18px 120px">Privacy · Terms · Contact</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- ============================ B ============================ -->
+			<section class="dir" id="B">
+				<header>
+					<div class="letter">Direction B</div>
+					<h2>Sunrise</h2>
+					<p class="feel">
+						Warm, encouraging and full of energy, like a friendly coach: big rounded shapes, bold
+						friendly type and one confident warm colour.
+					</p>
+				</header>
+				<div class="spec">
+					<div>
+						<h3>Colours</h3>
+						<div class="sw">
+							<div><i style="background: #ffffff"></i>White<br />page</div>
+							<div>
+								<i style="background: #15233b"></i>Night navy #15233B<br />text, dark blocks
+							</div>
+							<div>
+								<i style="background: #b83f27"></i>Terracotta #B83F27<br />main buttons, logo
+							</div>
+							<div><i style="background: #fce6da"></i>Peach #FCE6DA<br />colour blocks</div>
+							<div><i style="background: #22704a"></i>Leaf #22704A<br />"done", on track</div>
+							<div><i style="background: #f2b84b"></i>Sun #F2B84B<br />one button on navy</div>
+						</div>
+					</div>
+					<div>
+						<h3>Fonts, buttons, cards</h3>
+						<ul class="notes">
+							<li>Nunito, a rounded friendly font (2 weights, 33 KB total).</li>
+							<li>Buttons: tall full-width pills (56 px), easy to tap with a thumb.</li>
+							<li>Cards: soft rounded blocks of solid colour, no shadows, no gradients.</li>
+							<li>
+								Contrast: terracotta on white 5.6:1, on peach 4.6:1, navy on peach 13:1 (pass AA).
+							</li>
+						</ul>
+					</div>
+					<div>
+						<h3>Logo idea</h3>
+						<div class="logo-box">
+							<div style="background: #fff; border: 1px solid #eee" class="B">
+								<span class="logo" style="font-size: 34px">tut<span class="o"></span>ra</span>
+							</div>
+							<div style="background: #15233b" class="B">
+								<span class="logo" style="font-size: 34px; color: #fff"
+									>tut<span class="o" style="background: #f2b84b"></span>ra</span
+								>
+							</div>
+						</div>
+						<p class="notes" style="padding: 8px 0 0">
+							Lowercase rounded "tutora"; the "o" becomes a solid sun-like dot.
+						</p>
+					</div>
+				</div>
+
+				<div class="sub">Phone · 390 px</div>
+				<div class="phones">
+					<div class="phone">
+						<p>Homepage</p>
+						<div class="scr B">
+							<span class="sample">Sample</span>
+							<div class="top">
+								<span class="logo">tut<span class="o"></span>ra</span><span class="burger">☰</span>
+							</div>
+							<div class="hero-ph"><img src="hero.webp" alt="" /></div>
+							<h1>Good grades are a great start. <em>Let's build on them.</em></h1>
+							<p class="lead">
+								Lessons, study habits and progress you can see, online or in person.
+							</p>
+							<a class="btn na">Find a tutor</a>
+							<div class="block">
+								<h2>How it works</h2>
+								<div class="steps">
+									<div class="step">
+										<span class="n">1</span>
+										<div><b>Find a tutor</b><span>By subject, level and town</span></div>
+									</div>
+									<div class="step">
+										<span class="n">2</span>
+										<div><b>Book a lesson</b><span>Online or in person</span></div>
+									</div>
+									<div class="step">
+										<span class="n">3</span>
+										<div><b>Learn and grow</b><span>Practise and see progress</span></div>
+									</div>
+								</div>
+							</div>
+							<div class="sec">
+								<h2>Popular tutors</h2>
+								<div class="tcard">
+									<span class="ph">TM</span>
+									<div>
+										<b>Mr T. Moyo</b><br /><span style="color: #55606e">Mathematics · Harare</span
+										><br /><span style="font-size: 14px">★ 4.7 · 3 reviews</span>
+									</div>
+								</div>
+							</div>
+							<div class="join">
+								<h2 style="margin: 0">Are you a tutor?</h2>
+								<p>Share your knowledge and reach more students.</p>
+								<a class="btn na">Join Tutora</a>
+							</div>
+							<div class="foot">Privacy · Terms · Contact</div>
+						</div>
+					</div>
+
+					<div class="phone">
+						<p>Parent dashboard</p>
+						<div class="scr B">
+							<span class="sample">Sample</span>
+							<div class="top">
+								<span class="logo">tut<span class="o"></span>ra</span><span class="burger">☰</span>
+							</div>
+							<div class="kids">
+								<span class="on"><i>R</i>Rudo</span><span><i>T</i>Tino</span>
+							</div>
+							<p class="hi">This month</p>
+							<h1 class="big">Rudo is on track</h1>
+							<div class="status">
+								<b>Improving in Maths</b>
+								<p>Quiz marks went from 55% to 81% since September.</p>
+							</div>
+							<div class="tiles">
+								<div class="tile"><b>7 of 8</b><span>lessons attended</span></div>
+								<div class="tile"><b>5 of 6</b><span>homework handed in</span></div>
+								<div class="tile peach"><b>5 days</b><span>studied this week</span></div>
+								<div class="tile peach"><b>1 topic</b><span>to practise: word problems</span></div>
+							</div>
+							<div class="bars">
+								<b>Recent marks</b>
+								<div class="bar">
+									<div><span>Maths</span><b>74%</b></div>
+									<i><b style="width: 74%"></b></i>
+								</div>
+								<div class="bar">
+									<div><span>English</span><b>68%</b></div>
+									<i><b style="width: 68%"></b></i>
+								</div>
+							</div>
+							<div class="next">
+								<span>Next lesson · today 15:00</span><b>Maths with Mr Moyo</b
+								><a class="btn na">See lesson</a>
+							</div>
+							<div class="tab">
+								<span class="on">Home</span><span>Progress</span><span>Lessons</span
+								><span>More</span>
+							</div>
+						</div>
+					</div>
+
+					<div class="phone">
+						<p>Student · today's plan</p>
+						<div class="scr B">
+							<span class="sample">Sample</span>
+							<div class="top">
+								<span class="logo">tut<span class="o"></span>ra</span><span class="burger">☰</span>
+							</div>
+							<p class="hi">Tuesday</p>
+							<h1 class="big">Hi Rudo, 3 things today</h1>
+							<div class="next" style="margin-top: 0">
+								<span>Next up · 15:00</span><b>Maths with Mr Moyo</b
+								><a class="btn na">Join lesson</a>
+							</div>
+							<div class="prog">
+								<i><b></b></i>
+								<p>1 of 3 done today</p>
+							</div>
+							<div class="task done">
+								<span class="c"></span>
+								<div><b>Read chapter 6</b><span>English · 20 min</span></div>
+							</div>
+							<div class="task">
+								<span class="c"></span>
+								<div><b>Daily check-in: fractions</b><span>3 questions · 5 min</span></div>
+							</div>
+							<div class="task">
+								<span class="c"></span>
+								<div><b>Exercise 4B</b><span>Maths homework · due Thu</span></div>
+							</div>
+							<div class="status" style="margin-top: 14px; background: #fce6da">
+								<b style="color: #b83f27">From Mr Moyo</b>
+								<p>"Great work on fractions. Bring Exercise 4B."</p>
+							</div>
+							<div class="tab">
+								<span class="on">Today</span><span>Lessons</span><span>Progress</span
+								><span>More</span>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="sub">Laptop · homepage (scaled to fit)</div>
+				<div class="desk-wrap">
+					<div class="desk B dk">
+						<span class="sample">Sample</span>
+						<div class="top">
+							<span class="logo" style="font-size: 32px">tut<span class="o"></span>ra</span>
+							<nav class="navl">
+								<span>Find a tutor</span><span>How it works</span><span>For tutors</span
+								><span class="cta">Log in</span>
+							</nav>
+						</div>
+						<div class="heroB">
+							<div>
+								<h1>Good grades are a great start. <em>Let's build on them.</em></h1>
+								<p class="lead">
+									Lessons with a tutor who knows your child's syllabus, a short daily check-in, and
+									progress you can see.
+								</p>
+								<a class="btn na">Find a tutor</a>
+							</div>
+							<div class="hero-ph"><img src="hero.webp" alt="" /></div>
+						</div>
+						<div class="block">
+							<h2 style="font-size: 34px">How it works</h2>
+							<div class="steps">
+								<div class="step">
+									<span class="n">1</span>
+									<div><b>Find a tutor</b><span>By subject, level and town</span></div>
+								</div>
+								<div class="step">
+									<span class="n">2</span>
+									<div><b>Book a lesson</b><span>Online or in person</span></div>
+								</div>
+								<div class="step">
+									<span class="n">3</span>
+									<div><b>Learn and grow</b><span>Practise and see progress</span></div>
+								</div>
+							</div>
+						</div>
+						<div class="lower">
+							<div class="tcard" style="background: #fff; margin: 0; border-color: #fff">
+								<span class="ph">TM</span>
+								<div>
+									<b>Mr T. Moyo</b><br /><span style="color: #55606e"
+										>Mathematics · Harare · ★ 4.7 (3 reviews)</span
+									>
+								</div>
+							</div>
+							<div class="join" style="margin: 0">
+								<h2 style="margin: 0">Are you a tutor?</h2>
+								<p>Share your knowledge and reach more students.</p>
+								<a class="btn na" style="display: inline-flex; padding: 0 28px">Join Tutora</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- ============================ C ============================ -->
+			<section class="dir" id="C">
+				<header>
+					<div class="letter">Direction C</div>
+					<h2>Plain &amp; precise</h2>
+					<p class="feel">
+						Serious and clear, like a well-made school report or a good bank: black and white, one
+						strong blue, strict lines, nothing extra.
+					</p>
+				</header>
+				<div class="spec">
+					<div>
+						<h3>Colours</h3>
+						<div class="sw">
+							<div><i style="background: #fafaf7"></i>Paper #FAFAF7<br />page</div>
+							<div><i style="background: #111111"></i>Ink #111111<br />text, rules, dark band</div>
+							<div>
+								<i style="background: #1846c8"></i>Cobalt #1846C8<br />the only colour: actions,
+								charts
+							</div>
+							<div><i style="background: #e8eefc"></i>Cobalt 50 #E8EEFC<br />"now", good news</div>
+							<div><i style="background: #5e5e5a"></i>Grey #5E5E5A<br />secondary text</div>
+						</div>
+					</div>
+					<div>
+						<h3>Fonts, buttons, cards</h3>
+						<ul class="notes">
+							<li>
+								The phone's own sans-serif (0 KB to download), set large and tight; a
+								typewriter-style font for times, labels and numbers.
+							</li>
+							<li>Buttons: square cobalt bars with the arrow pushed to the right.</li>
+							<li>
+								No cards: thin black and grey lines, like a printed form. Photos in black and white.
+							</li>
+							<li>Contrast: cobalt on paper 7.3:1, white on cobalt 7.6:1, grey 6.2:1 (pass AA).</li>
+						</ul>
+					</div>
+					<div>
+						<h3>Logo idea</h3>
+						<div class="logo-box">
+							<div style="background: #fafaf7; border: 1px solid #ddd" class="C">
+								<span class="logo" style="font-size: 34px"
+									>tutora<i style="width: 10px; height: 10px"></i
+								></span>
+							</div>
+							<div style="background: #111" class="C">
+								<span class="logo" style="font-size: 34px; color: #fafaf7"
+									>tutora<i style="width: 10px; height: 10px"></i
+								></span>
+							</div>
+						</div>
+						<p class="notes" style="padding: 8px 0 0">
+							Plain bold "tutora" followed by a small cobalt square, like a full stop.
+						</p>
+					</div>
+				</div>
+
+				<div class="sub">Phone · 390 px</div>
+				<div class="phones">
+					<div class="phone">
+						<p>Homepage</p>
+						<div class="scr C">
+							<span class="sample">Sample</span>
+							<div class="top">
+								<span class="logo">tutora<i></i></span><span class="menu">Menu</span>
+							</div>
+							<div class="pad">
+								<div class="lbl">Tutoring in Zimbabwe</div>
+								<h1>Good grades are a great start. Let's build on them.</h1>
+								<p class="lead">
+									Real tutors, a daily study check-in and progress reports in plain words.
+								</p>
+								<a class="btn na">Find a tutor <span>→</span></a>
+							</div>
+							<img class="ph" src="hero.webp" alt="" />
+							<div class="cap">
+								<span class="lbl">Harare</span><span class="lbl">Online or in person</span>
+							</div>
+							<div class="pad">
+								<h2>How it works</h2>
+								<div class="idx">
+									<div>
+										<span class="n">01</span>
+										<div><b>Find a tutor</b><span>Subject, level, town.</span></div>
+									</div>
+									<div>
+										<span class="n">02</span>
+										<div><b>Book a lesson</b><span>Online or in person.</span></div>
+									</div>
+									<div>
+										<span class="n">03</span>
+										<div><b>Learn and grow</b><span>Practise; see progress.</span></div>
+									</div>
+								</div>
+								<h2 style="margin-top: 28px">Popular tutors <a>View all →</a></h2>
+								<div class="trow">
+									<span class="av">TM</span>
+									<div><b>Mr T. Moyo</b><span>Mathematics · Harare</span></div>
+									<span class="mono" style="font-size: 13px">★ 4.7 (3)</span>
+								</div>
+							</div>
+							<div class="join">
+								<div class="lbl" style="color: #b9b9b3">For tutors</div>
+								<h3>Are you a tutor?</h3>
+								<p>Share your knowledge and reach more students.</p>
+								<a class="btn na">Join Tutora <span>→</span></a>
+							</div>
+							<div class="foot"><span>Privacy</span><span>Terms</span><span>Contact</span></div>
+						</div>
+					</div>
+
+					<div class="phone">
+						<p>Parent dashboard</p>
+						<div class="scr C">
+							<span class="sample">Sample</span>
+							<div class="top">
+								<span class="logo">tutora<i></i></span><span class="menu">Menu</span>
+							</div>
+							<div class="tabs">
+								<span class="on">Rudo · Form 2</span><span>Tino · Grade 6</span>
+							</div>
+							<div class="pad">
+								<div class="lbl">1 – 31 October</div>
+								<h1 style="font-size: 32px">Rudo's progress</h1>
+								<div class="facts">
+									<div><span class="lbl">Lessons</span><b>7/8</b></div>
+									<div><span class="lbl">Homework</span><b>5/6</b></div>
+									<div><span class="lbl">Study days</span><b>5/7</b></div>
+									<div><span class="lbl">Maths quiz</span><b>81%</b></div>
+								</div>
+								<h2 style="margin-top: 22px">Maths quiz marks</h2>
+								<svg class="line" viewBox="0 0 350 110" preserveAspectRatio="none">
+									<line x1="0" y1="100" x2="350" y2="100" stroke="#111" />
+									<line x1="0" y1="50" x2="350" y2="50" stroke="#d6d6d0" stroke-dasharray="3 3" />
+									<polyline
+										points="5,62 70,52 140,56 210,40 280,34 345,22"
+										fill="none"
+										stroke="#1846c8"
+										stroke-width="2.5"
+									/>
+									<text x="0" y="46" font-size="10" font-family="monospace" fill="#5e5e5a">
+										50%
+									</text>
+								</svg>
+								<div style="display: flex; justify-content: space-between" class="lbl">
+									<span>Sep</span><span>Nov</span>
+								</div>
+								<h2 style="margin-top: 20px">In plain words</h2>
+								<div class="q">
+									<b>Attending? <span class="flag ok">Yes</span></b
+									><span>1 lesson missed on 21 Oct (sick).</span>
+								</div>
+								<div class="q">
+									<b>Improving? <span class="flag ok">Yes</span></b
+									><span>Maths up from 55% to 81%.</span>
+								</div>
+								<div class="q">
+									<b>Needs help with <span class="flag att">1 topic</span></b
+									><span>Word problems. Tutor suggests 15 min, 3× a week.</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="phone">
+						<p>Student · today's plan</p>
+						<div class="scr C">
+							<span class="sample">Sample</span>
+							<div class="top">
+								<span class="logo">tutora<i></i></span><span class="menu">Menu</span>
+							</div>
+							<div class="pad">
+								<div class="lbl">Tuesday 11.11</div>
+								<h1 style="font-size: 32px">Today</h1>
+								<div class="sch">
+									<div class="done">
+										<span class="t">07:30</span><span class="bx"></span>
+										<div><b>Read chapter 6</b><span>English · 20 min</span></div>
+									</div>
+									<div class="now">
+										<span class="t">15:00</span><span class="bx"></span>
+										<div>
+											<b>Maths lesson · Mr Moyo</b><span>Fractions: unlike denominators</span
+											><a class="btn na" style="margin-top: 10px">Join lesson <span>→</span></a>
+										</div>
+									</div>
+									<div>
+										<span class="t">17:00</span><span class="bx"></span>
+										<div><b>Daily check-in</b><span>Fractions · 3 questions</span></div>
+									</div>
+									<div>
+										<span class="t">Thu</span><span class="bx"></span>
+										<div><b>Exercise 4B due</b><span>Maths homework</span></div>
+									</div>
+								</div>
+								<h2 style="margin-top: 24px">Tutor note</h2>
+								<p style="margin: 8px 0 0">
+									"Great work on fractions. Bring Exercise 4B."
+									<span class="lbl">— T. Moyo, Mon</span>
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="sub">Laptop · homepage (scaled to fit)</div>
+				<div class="desk-wrap">
+					<div class="desk C dk">
+						<span class="sample">Sample</span>
+						<div class="top">
+							<span class="logo" style="font-size: 28px"
+								>tutora<i style="width: 9px; height: 9px"></i
+							></span>
+							<nav class="navl">
+								<span>Find a tutor</span><span>How it works</span><span>For tutors</span
+								><span>Log in</span>
+							</nav>
+						</div>
+						<div class="grid" style="padding-top: 48px">
+							<div style="grid-column: 1 / span 8">
+								<div class="lbl">Tutoring in Zimbabwe</div>
+								<h1 style="margin-top: 12px">
+									Good grades are a great start. Let's build on them.
+								</h1>
+							</div>
+							<div style="grid-column: 9 / span 4; align-self: end">
+								<p class="lead">
+									Real tutors, a daily study check-in and progress reports in plain words.
+								</p>
+								<a class="btn na">Find a tutor <span>→</span></a>
+							</div>
+						</div>
+						<div class="grid" style="padding-top: 40px; padding-bottom: 56px">
+							<div style="grid-column: 1 / span 7"><img class="ph" src="hero.webp" alt="" /></div>
+							<div style="grid-column: 8 / span 5">
+								<h2>How it works</h2>
+								<div class="idx">
+									<div>
+										<span class="n">01</span>
+										<div><b>Find a tutor</b><span>Subject, level, town.</span></div>
+									</div>
+									<div>
+										<span class="n">02</span>
+										<div><b>Book a lesson</b><span>Online or in person.</span></div>
+									</div>
+									<div>
+										<span class="n">03</span>
+										<div><b>Learn and grow</b><span>Practise; see progress.</span></div>
+									</div>
+								</div>
+								<h2 style="margin-top: 28px">Popular tutors <a>View all →</a></h2>
+								<div class="trow">
+									<span class="av">TM</span>
+									<div><b>Mr T. Moyo</b><span>Mathematics · Harare</span></div>
+									<span class="mono" style="font-size: 13px">★ 4.7 (3)</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section class="dir">
+				<header>
+					<div class="letter">To compare</div>
+					<h2>How they differ</h2>
+				</header>
+				<div class="why">
+					<div>
+						<b>A · Exercise book</b>Closest to today's Tutora. Feels like school in a good way:
+						familiar to parents and teachers. Quiet, almost no colour blocks. Risk: may feel less
+						"app-like" to teenagers.
+					</div>
+					<div>
+						<b>B · Sunrise</b>Most friendly and energetic; best for students and younger children.
+						Big tap targets. New colours and logo, so it is the biggest change from today. Adds 33
+						KB of font.
+					</div>
+					<div>
+						<b>C · Plain &amp; precise</b>Most serious and "trustworthy business". Fastest (no font
+						download). Very clear for reports and the admin and tutor tools. Risk: can feel cold for
+						children.
+					</div>
+					<div>
+						<b>All three</b>Pass WCAG AA contrast, use one photo at most per screen, no gradients or
+						shadows, work on cheap phones, and show only real data on the live site. You can mix,
+						for example B's colours with C's layouts.
+					</div>
+				</div>
+			</section>
+		</div>
+		<script>
+			function fit() {
+				document.querySelectorAll('.desk-wrap').forEach((w) => {
+					const d = w.querySelector('.desk');
+					const s = w.clientWidth / 1280;
+					d.style.transform = 'scale(' + s + ')';
+					w.style.height = Math.ceil(d.offsetHeight * s) + 'px';
+				});
+			}
+			addEventListener('load', fit);
+			addEventListener('resize', fit);
+		</script>
+	</body>
+</html>

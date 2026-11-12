@@ -47,7 +47,7 @@ export default defineConfig(
 			'worker-configuration.d.ts',
 			'src/lib/paraglide/**',
 			'drizzle/**',
-			'docs/vision/blueprint/**'
+			'docs/vision/directions/**'
 		]
 	}
 );
