@@ -37,8 +37,9 @@ concurrency:
 
 jobs:
   deploy:
-    # Only deploy code that was pushed to main in this repository (never a fork's pull request,
-    # even one whose branch is also called "main"). Manual runs only from main.
+    # The live site is deployed only after the TEST site deployed and answered (deploy-test).
+    # Only code pushed to main in this repository (never a fork's pull request); manual runs only from main.
+    needs: deploy-test
     if: >-
       ${{
         (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
@@ -199,7 +200,15 @@ jobs:
   # The TEST site: same code, its own database branch ("test") and Worker ("tutora-test"),
   # full of fake data. Never touches the live database.
   deploy-test:
-    needs: deploy
+    # Runs first: the same code goes to the test site before the live site.
+    if: >-
+      ${{
+        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+        (github.event.workflow_run.conclusion == 'success' &&
+         github.event.workflow_run.event == 'push' &&
+         github.event.workflow_run.head_branch == 'main' &&
+         github.event.workflow_run.head_repository.full_name == github.repository)
+      }}
     runs-on: ubuntu-latest
     environment: test
     steps:
