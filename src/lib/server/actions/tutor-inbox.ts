@@ -17,11 +17,16 @@ import { formObject } from '../../validation/auth.ts';
 import { fmtDayTime, fromLocal, hhmmToMinutes, isIsoDate } from '../../tz.ts';
 import { formatMoney } from '../../money.ts';
 import { m } from '../../paraglide/messages.js';
+import { and, eq, ne } from 'drizzle-orm';
+import { user } from '../db/auth.schema.ts';
+import { attendee, lesson } from '../db/app.schema.ts';
+import { parentsWhoSee } from '../family.ts';
+import { setAttendance } from '../people.ts';
 
 const id = z.object({ id: z.coerce.number().int().positive() });
 const message = (v: string | undefined) => (v?.trim() ? v.trim().slice(0, 300) : null);
 
-/** Answer booking requests and payments. Used on Today and on the Money page. */
+/** Answer booking requests and payments, mark attendance. Used on Today, Earnings and Students. */
 export const inboxActions: Actions = {
 	accept: async ({ locals, url, request }) => {
 		const me = requireTutor(locals.user, url);
@@ -30,7 +35,18 @@ export const inboxActions: Actions = {
 		try {
 			const r = await acceptBooking(locals.db, me.id, p.data.id);
 			const { meeting } = await afterAccept(locals.db, toolsEnv(url), r);
-			return { done: 'accepted', meeting: meeting?.provider ?? null };
+			// for the confirmation line: who was told (the student and the family who see lessons)
+			const [s] = await locals.db
+				.select({ name: user.name })
+				.from(user)
+				.where(eq(user.id, r.userId));
+			const family = await parentsWhoSee(locals.db, r.userId, 'lessons');
+			return {
+				done: 'accepted',
+				meeting: meeting?.provider ?? null,
+				student: (s?.name ?? '').trim().split(/\s+/)[0] ?? '',
+				family: family.length
+			};
 		} catch (e) {
 			if (e instanceof BookingFail) return fail(400, { error: e.code });
 			throw e;
@@ -103,6 +119,51 @@ export const inboxActions: Actions = {
 			if (e instanceof BillingFail) return fail(400, { error: e.code });
 			throw e;
 		}
+	},
+	/** After a lesson has started (up to 7 days after): completed or absent, only in MY lessons. */
+	attendance: async ({ locals, url, request }) => {
+		const me = requireTutor(locals.user, url);
+		const f = formObject(await request.formData());
+		const p = z.object({ attendeeId: z.coerce.number().int().positive() }).safeParse(f);
+		if (!p.success) return fail(400, { error: 'err_generic' });
+		const [a] = await locals.db
+			.select({
+				id: attendee.id,
+				userId: attendee.userId,
+				attendance: attendee.attendance,
+				lessonId: lesson.id,
+				startsAt: lesson.startsAt,
+				endsAt: lesson.endsAt
+			})
+			.from(attendee)
+			.innerJoin(lesson, eq(lesson.id, attendee.lessonId))
+			.where(
+				and(
+					eq(attendee.id, p.data.attendeeId),
+					eq(lesson.tutorId, me.id),
+					ne(attendee.status, 'cancelled'),
+					ne(lesson.status, 'cancelled')
+				)
+			);
+		if (!a) return fail(404, { error: 'err_not_found' });
+		if (a.startsAt.getTime() > Date.now()) return fail(400, { error: 'err_not_started' });
+		if (a.endsAt.getTime() < Date.now() - 7 * 86_400_000)
+			return fail(400, { error: 'err_too_late_mark' });
+		const v = f.value === 'completed' || f.value === 'absent' ? f.value : null;
+		await setAttendance(locals.db, me.id, a.id, v);
+		// the student is told when they are marked absent
+		if (v === 'absent' && a.attendance !== 'absent')
+			await notifyUser(
+				locals.db,
+				a.userId,
+				m.absent_s(),
+				m.absent_b({ when: fmtDayTime(a.startsAt) }),
+				{
+					kind: 'lesson',
+					link: `/student/lessons/${a.lessonId}`
+				}
+			);
+		return { done: 'attendance' };
 	},
 	rejectPayment: async ({ locals, url, request }) => {
 		const me = requireTutor(locals.user, url);

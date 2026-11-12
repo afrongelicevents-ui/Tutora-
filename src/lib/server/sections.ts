@@ -98,6 +98,13 @@ export function sectionActions(after: (ev: Ev) => string | null): Actions {
 			const parsed = profileSchema.safeParse(formObject(data));
 			if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
 			const patch: Record<string, unknown> = { ...parsed.data };
+			// where in-person lessons happen (copied onto each new in-person lesson)
+			const addr = data.get('lessonAddress');
+			if (typeof addr === 'string') {
+				if (addr.trim().length > 200)
+					return fail(400, { errors: { lessonAddress: 'err_too_long' } });
+				patch.lessonAddress = addr.trim() || null;
+			}
 			const photo = await readUpload(data.get('photo'), {
 				maxBytes: PHOTO_MAX_BYTES,
 				allowed: IMAGE_KINDS

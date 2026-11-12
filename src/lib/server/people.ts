@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, lt, ne, or, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import {
 	attendee,
@@ -12,6 +12,9 @@ import {
 	tutorProfile
 } from './db/app.schema.ts';
 import { user } from './db/auth.schema.ts';
+import { assessmentResult, lessonFeedback } from './db/v3.schema.ts';
+import { recordResult } from './progress.ts';
+import { localDate } from '../tz.ts';
 
 /* ---------- which students belong to which tutor ---------- */
 
@@ -133,16 +136,20 @@ export function studentLessons(db: DB, tutorId: string, userId: string) {
 			lessonId: lesson.id,
 			attendeeId: attendee.id,
 			startsAt: lesson.startsAt,
+			endsAt: lesson.endsAt,
 			mode: lesson.mode,
 			kind: lesson.kind,
 			lessonStatus: lesson.status,
 			attendeeStatus: attendee.status,
 			subjectName: subject.name,
-			note: attendee.privateNote
+			note: attendee.privateNote,
+			attendance: attendee.attendance,
+			feedback: lessonFeedback.text
 		})
 		.from(attendee)
 		.innerJoin(lesson, eq(lesson.id, attendee.lessonId))
 		.leftJoin(subject, eq(subject.id, lesson.subjectId))
+		.leftJoin(lessonFeedback, eq(lessonFeedback.attendeeId, attendee.id))
 		.where(and(eq(attendee.userId, userId), eq(lesson.tutorId, tutorId)))
 		.orderBy(desc(lesson.startsAt));
 }
@@ -183,6 +190,49 @@ export async function setPrivateNote(
 		);
 }
 
+/**
+ * What the tutor writes for the student after a lesson (the student sees it; the private note
+ * stays private). Only for a place in one of THIS tutor's lessons that has already started,
+ * and only for this student. Empty text removes it. Returns false when not allowed.
+ */
+export async function setLessonFeedback(
+	db: DB,
+	tutorId: string,
+	studentId: string,
+	attendeeId: number,
+	text: string | null,
+	now = new Date()
+) {
+	const [a] = await db
+		.select({ id: attendee.id })
+		.from(attendee)
+		.innerJoin(lesson, eq(lesson.id, attendee.lessonId))
+		.where(
+			and(
+				eq(attendee.id, attendeeId),
+				eq(attendee.userId, studentId),
+				eq(lesson.tutorId, tutorId),
+				ne(attendee.status, 'cancelled'),
+				ne(lesson.status, 'cancelled'),
+				lt(lesson.startsAt, now)
+			)
+		);
+	if (!a) return false;
+	const clean = text?.trim().slice(0, 2000) || null;
+	if (!clean) {
+		await db.delete(lessonFeedback).where(eq(lessonFeedback.attendeeId, a.id));
+		return true;
+	}
+	await db
+		.insert(lessonFeedback)
+		.values({ attendeeId: a.id, text: clean, updatedAt: now })
+		.onConflictDoUpdate({
+			target: lessonFeedback.attendeeId,
+			set: { text: clean, updatedAt: now }
+		});
+	return true;
+}
+
 /* ---------- homework ---------- */
 
 export async function giveHomework(
@@ -195,11 +245,19 @@ export async function giveHomework(
 		dueOn: string | null;
 		fileKey: string | null;
 		fileName: string | null;
+		/** optional: lets a marked answer count towards progress on this topic */
+		subject?: string | null;
+		topic?: string | null;
 	}
 ) {
 	const [row] = await db
 		.insert(homework)
-		.values({ ...v, tutorId })
+		.values({
+			...v,
+			subject: v.subject?.trim().slice(0, 60) || null,
+			topic: v.topic?.trim().slice(0, 80) || null,
+			tutorId
+		})
 		.returning();
 	return row;
 }
@@ -267,6 +325,8 @@ export function answersToCheck(db: DB, tutorId: string) {
 			fileName: homeworkAnswer.fileName,
 			createdAt: homeworkAnswer.createdAt,
 			title: homework.title,
+			subject: homework.subject,
+			topic: homework.topic,
 			userId: homework.userId,
 			studentName: user.name
 		})
@@ -295,6 +355,71 @@ export async function checkAnswer(
 		)
 		.returning({ id: homeworkAnswer.id });
 	return done.length > 0;
+}
+
+/**
+ * The tutor marks an answer: comment, and optionally a score out of a maximum. Only answers
+ * to THIS tutor's homework (checked in SQL). With a score and a homework subject and topic,
+ * the mark also counts as a progress result (source 'homework'); marking again replaces it.
+ * Returns false when the answer is not theirs or the score does not make sense.
+ */
+export async function markAnswer(
+	db: DB,
+	tutorId: string,
+	answerId: number,
+	v: { comment: string | null; score?: number | null; maxScore?: number | null },
+	now = new Date()
+) {
+	const hasScore = v.score !== null && v.score !== undefined && Number.isFinite(v.score);
+	let score: number | null = null;
+	let maxScore: number | null = null;
+	if (hasScore) {
+		maxScore = Math.round(Number(v.maxScore));
+		score = Math.round(Number(v.score));
+		if (!Number.isFinite(maxScore) || maxScore < 1 || maxScore > 1000) return false;
+		if (score < 0 || score > maxScore) return false;
+	}
+	return db.transaction(async (tx) => {
+		const [row] = await tx
+			.update(homeworkAnswer)
+			.set({ feedback: v.comment, checkedAt: now, score, maxScore })
+			.where(
+				and(
+					eq(homeworkAnswer.id, answerId),
+					sql`${homeworkAnswer.homeworkId} in (select ${homework.id} from ${homework} where ${homework.tutorId} = ${tutorId})`
+				)
+			)
+			.returning({ id: homeworkAnswer.id, homeworkId: homeworkAnswer.homeworkId });
+		if (!row) return false;
+		await tx.delete(assessmentResult).where(eq(assessmentResult.homeworkAnswerId, row.id));
+		if (score !== null && maxScore !== null) {
+			const [h] = await tx
+				.select({
+					userId: homework.userId,
+					title: homework.title,
+					subject: homework.subject,
+					topic: homework.topic
+				})
+				.from(homework)
+				.where(and(eq(homework.id, row.homeworkId), eq(homework.tutorId, tutorId)));
+			if (h?.subject && h.topic)
+				await recordResult(tx, {
+					studentId: h.userId,
+					tutorId,
+					source: 'homework',
+					title: h.title,
+					subject: h.subject,
+					topic: h.topic,
+					score,
+					maxScore,
+					feedback: v.comment,
+					homeworkAnswerId: row.id,
+					takenOn: localDate(now),
+					createdBy: tutorId
+				});
+		}
+		return true;
+	});
 }
 
 export async function giveFeedback(

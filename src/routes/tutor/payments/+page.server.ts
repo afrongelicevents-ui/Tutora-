@@ -54,7 +54,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				proofUrl: p.proofKey ? await fileLink(p.proofKey, `proof-${p.id}`) : null
 			}))
 		),
-		recent: recent.map((p) => ({ ...p, receipt: p.receiptNo ? receiptNumber(p.receiptNo) : null })),
+		// pending ones are listed above with their Confirm button
+		recent: recent
+			.filter((p) => p.status !== 'pending')
+			.map((p) => ({ ...p, receipt: p.receiptNo ? receiptNumber(p.receiptNo) : null })),
 		rows,
 		totals: rows.reduce((a, r) => ({ owed: a.owed + r.owed, waiting: a.waiting + r.waiting }), {
 			owed: 0,

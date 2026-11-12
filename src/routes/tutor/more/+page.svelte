@@ -1,31 +1,44 @@
 <script lang="ts">
-	let { data } = $props();
 	import { m } from '#lib/i18n.ts';
+	let { data } = $props();
+	const items = $derived(
+		[
+			['/tutor/homework', m.v3_nav_marking(), m.tut3_more_marking_hint()],
+			['/tutor/assessments', m.v3_nav_assessments(), m.tut3_more_assess_hint()],
+			['/tutor/tools', m.v3_nav_tools(), m.tut3_more_tools_hint()],
+			['/tutor/settings', m.v3_nav_profile(), m.more_settings_hint()],
+			['/tutor/reviews', m.reviews_title(), m.tut3_more_reviews_hint()],
+			data.status === 'active' ? [`/t/${data.slug}`, m.more_public(), m.more_public_hint()] : null,
+			['/notifications', m.notif_title(), m.more_notif_hint()],
+			['/account', m.nav_account(), m.tut3_more_account_hint()],
+			['/account/2fa', m.account_2fa(), m.more_2fa_hint()]
+		].filter((x): x is string[] => !!x)
+	);
 </script>
 
-<svelte:head><title>{m.tnav_more()} · Tutora</title></svelte:head>
+<svelte:head><title>{m.v3_nav_more()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
-	<h1>{m.tnav_more()}</h1>
-	<a class="big-opt" href="/tutor/settings"
-		>{m.settings_title()}<small>{m.more_settings_hint()}</small></a
-	>
-	<a class="big-opt" href="/tutor/setup/1"
-		>{m.setup_wizard_title()}<small>{m.more_wizard_hint()}</small></a
-	>
-	<a class="big-opt" href="/tutor/reviews"
-		>{m.reviews_title()}<small>{m.more_reviews_hint()}</small></a
-	>
-	<a class="big-opt" href="/tutor/homework"
-		>{m.homework_h()}<small>{m.more_homework_hint()}</small></a
-	>
-	<a class="big-opt" href="/notifications">{m.notif_title()}<small>{m.more_notif_hint()}</small></a>
-	{#if data.status === 'active'}<a class="big-opt" href="/t/{data.slug}"
-			>{m.more_public()}<small>{m.more_public_hint()}</small></a
-		>{/if}
-	<a class="big-opt" href="/account">{m.nav_account()}<small>{m.more_account_hint()}</small></a>
-	<a class="big-opt" href="/account/2fa">{m.account_2fa()}<small>{m.more_2fa_hint()}</small></a>
+<section class="screen">
+	<h1>{m.v3_nav_more()}</h1>
+	<nav class="rows top" aria-label={m.v3_nav_more()}>
+		{#each items as [href, title, hint] (href)}
+			<a {href}
+				><span class="item"><span>{title}</span><span class="note">{hint}</span></span><span
+					class="go"
+					aria-hidden="true">›</span
+				></a
+			>
+		{/each}
+	</nav>
 	<form method="POST" action="/logout">
-		<button class="btn btn-secondary btn-block" type="submit">{m.nav_logout()}</button>
+		<button class="btn btn-ghost btn-block" type="submit">{m.nav_logout()}</button>
 	</form>
 </section>
+
+<style>
+	.item {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+</style>

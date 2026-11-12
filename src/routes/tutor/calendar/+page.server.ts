@@ -6,6 +6,9 @@ import { listAvailability } from '#lib/server/settings.ts';
 import { addEvent, eventsBetween, removeEvent } from '#lib/server/calendar.ts';
 import { requireTutor } from '#lib/server/guards.ts';
 import { formObject } from '#lib/validation/auth.ts';
+import { and, eq, inArray } from 'drizzle-orm';
+import { lesson } from '#lib/server/db/app.schema.ts';
+import { lessonMeeting } from '#lib/server/db/v3.schema.ts';
 import {
 	addDays,
 	addMinutes,
@@ -47,6 +50,21 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		pendingRequests(locals.db, t),
 		listAvailability(locals.db, t)
 	]);
+	// in-person addresses and meeting links of THIS tutor's lessons in the range
+	const ids = lessons.map((l) => l.id);
+	const addrs: { id: number; address: string | null }[] = await locals.db
+		.select({ id: lesson.id, address: lesson.address })
+		.from(lesson)
+		.where(and(eq(lesson.tutorId, t), inArray(lesson.id, ids)));
+	const meetings: { lessonId: number; provider: 'meet' | 'teams'; joinUrl: string }[] =
+		await locals.db
+			.select({
+				lessonId: lessonMeeting.lessonId,
+				provider: lessonMeeting.provider,
+				joinUrl: lessonMeeting.joinUrl
+			})
+			.from(lessonMeeting)
+			.where(inArray(lessonMeeting.lessonId, ids));
 	return {
 		view,
 		from,
@@ -54,7 +72,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		today: localDate(new Date()),
 		prev: localDate(prev),
 		next: localDate(next),
-		lessons,
+		lessons: lessons.map((l) => ({
+			...l,
+			address: addrs.find((a) => a.id === l.id)?.address ?? null,
+			meeting: meetings.find((x) => x.lessonId === l.id)?.provider ?? null,
+			joinUrl: meetings.find((x) => x.lessonId === l.id)?.joinUrl ?? null
+		})),
 		events,
 		// waiting requests are shown differently (not yet lessons)
 		requests: requests
@@ -62,7 +85,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.map((r) => ({
 				id: r.id,
 				startsAt: r.startsAt,
-				text: `${r.subjectName ?? 'Intro chat'} · ${r.studentName.split(' ')[0]}`
+				subjectName: r.subjectName,
+				student: r.studentName.split(' ')[0],
+				mode: r.mode
 			})),
 		times: times.map((x) => ({ weekday: x.weekday, start: x.startMinute, end: x.endMinute }))
 	};

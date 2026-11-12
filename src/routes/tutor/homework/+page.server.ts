@@ -2,7 +2,7 @@ import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
 import { requireTutor } from '#lib/server/guards.ts';
-import { answersToCheck, checkAnswer, giveHomework, listStudents } from '#lib/server/people.ts';
+import { answersToCheck, giveHomework, listStudents, markAnswer } from '#lib/server/people.ts';
 import { fileLink, getStore } from '#lib/server/storage.ts';
 import { DOC_KINDS, MB, newKey, readUpload } from '#lib/server/files.ts';
 import { notifyUser } from '#lib/server/notify.ts';
@@ -30,6 +30,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 const schema = z.object({
 	title: z.string().trim().min(2, 'err_required').max(120, 'err_too_long'),
 	note: z.string().trim().max(2000, 'err_too_long').optional(),
+	subject: z.string().trim().max(60, 'err_too_long').optional(),
+	topic: z.string().trim().max(80, 'err_too_long').optional(),
 	dueOn: z
 		.string()
 		.optional()
@@ -62,6 +64,8 @@ export const actions: Actions = {
 				title: p.data.title,
 				note: p.data.note || null,
 				dueOn: p.data.dueOn || null,
+				subject: p.data.subject || null,
+				topic: p.data.topic || null,
 				fileKey,
 				fileName: file?.ok ? file.name : null
 			});
@@ -78,16 +82,31 @@ export const actions: Actions = {
 		}
 		return { sent: to.length };
 	},
+	/** Mark an answer: comment and an optional score (counts towards progress with a topic). */
 	check: async ({ locals, url, request }) => {
 		const t = requireTutor(locals.user, url).id;
 		const f = formObject(await request.formData());
-		const ok = await checkAnswer(
-			locals.db,
-			t,
-			Number(f.id) || 0,
-			f.comment?.trim().slice(0, 1000) || null
-		);
+		const num = (v: string | undefined) => (v?.trim() ? Number(v) : null);
+		const score = num(f.score);
+		const maxScore = num(f.maxScore);
+		if ((score === null) !== (maxScore === null))
+			return fail(400, { error: 'tut3_err_score_both', id: f.id });
+		if (
+			score !== null &&
+			(!Number.isInteger(score) ||
+				!Number.isInteger(maxScore) ||
+				score < 0 ||
+				maxScore! < 1 ||
+				maxScore! > 1000 ||
+				score > maxScore!)
+		)
+			return fail(400, { error: 'tut3_err_score_max', id: f.id });
+		const ok = await markAnswer(locals.db, t, Number(f.id) || 0, {
+			comment: f.comment?.trim().slice(0, 1000) || null,
+			score,
+			maxScore
+		});
 		if (!ok) return fail(404, { error: 'err_not_found' });
-		return { checked: true };
+		return { checked: true, scored: score !== null };
 	}
 };

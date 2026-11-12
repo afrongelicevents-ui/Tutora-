@@ -127,6 +127,15 @@
 			value={v('town')}
 			error={e.town}
 		/>
+		<Field
+			name="lessonAddress"
+			label={m.tut3_lesson_address()}
+			hint={m.tut3_lesson_address_hint()}
+			value={v('lessonAddress')}
+			error={e.lessonAddress}
+			autocomplete="street-address"
+			maxlength={200}
+		/>
 		<button class="btn btn-block" type="submit">{submitLabel}</button>
 	</form>
 {:else if section === 'subjects'}
