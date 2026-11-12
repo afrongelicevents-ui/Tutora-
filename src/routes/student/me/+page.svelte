@@ -37,12 +37,9 @@
 
 <svelte:head><title>{m.me_title()} · Tutora</title></svelte:head>
 
-<div class="me">
-	<div class="me-hero">
-		<h1>{m.me_hello({ name: data.firstName })}</h1>
-		<p>{m.me_sub()}</p>
-	</div>
+<h1 class="sr-only">{m.me_title()}</h1>
 
+<div class="me">
 	<!-- profile -->
 	<section class="profile">
 		<span class="me-avatar" aria-hidden="true">{initials}</span>
@@ -202,32 +199,12 @@
 		flex-direction: column;
 		gap: 16px;
 	}
-	.me-hero {
-		padding: 22px 20px 64px;
-		border-radius: 24px;
-		color: #fff;
-		background:
-			radial-gradient(110% 90% at 100% 0%, rgb(111 179 234 / 0.3), transparent 60%),
-			linear-gradient(160deg, #143a6b, var(--navy) 75%);
-	}
-	.me-hero h1 {
-		margin: 0 0 6px;
-		font-size: 1.875rem;
-		line-height: 1.12;
-		color: #fff;
-	}
-	.me-hero p {
-		margin: 0;
-		color: var(--on-navy);
-		max-width: 30ch;
-	}
-	/* profile card overlaps the hero */
+	/* profile card: the first thing on the page */
 	.profile {
 		display: grid;
 		grid-template-columns: auto minmax(0, 1fr);
 		gap: 14px;
 		align-items: center;
-		margin: -56px 6px 0;
 		padding: 16px;
 		border-radius: 22px;
 		background: rgb(255 255 255 / 0.92);
@@ -585,12 +562,6 @@
 		.me {
 			padding-top: 32px;
 			gap: 20px;
-		}
-		.me-hero {
-			padding: 30px 30px 76px;
-		}
-		.me-hero h1 {
-			font-size: 2.25rem;
 		}
 		.stat strong {
 			font-size: 1.625rem;

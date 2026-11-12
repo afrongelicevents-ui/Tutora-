@@ -60,7 +60,7 @@
 					>{/if}</a
 			>
 			<a href="/account" aria-current={path.startsWith('/account') ? 'page' : undefined}
-				>{m.nav_account()}</a
+				>{m.nav_settings()}</a
 			>
 			<form method="POST" action="/logout">
 				<button type="submit">{m.nav_logout()}</button>
@@ -85,7 +85,7 @@
 						/></svg
 					>{#if unread}<span class="count">{unread > 9 ? '9+' : unread}</span>{/if}</a
 				>
-				<a class="acct" href="/account">{m.nav_account()}</a>
+				<a class="acct" href="/account">{m.nav_settings()}</a>
 			</div>
 		</div>
 		{@render children()}

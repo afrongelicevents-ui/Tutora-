@@ -1999,5 +1999,6 @@
 	"me_exams_none": "None added",
 	"me_ready": "Topics mastered",
 	"me_ready_n": "{n} total",
-	"me_account": "Account and settings"
+	"me_account": "Account and settings",
+	"nav_settings": "Settings"
 }
