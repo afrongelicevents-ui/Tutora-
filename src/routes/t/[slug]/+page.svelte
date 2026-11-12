@@ -4,7 +4,7 @@
 	import SubjectList from '#lib/components/SubjectList.svelte';
 	import ReviewList from '#lib/components/ReviewList.svelte';
 	import Results from '#lib/components/Results.svelte';
-	import { minutesToHHMM } from '#lib/tz.ts';
+	import { fmtMinutes } from '#lib/tz.ts';
 	const weekdayName = (d: number) =>
 		new Intl.DateTimeFormat('en-GB', { weekday: 'long', timeZone: 'UTC' }).format(
 			new Date(Date.UTC(2026, 10, 15 + d))
@@ -121,7 +121,7 @@
 					{#if w.length}<li>
 							<span>{weekdayName(d)}</span><span class="small"
 								>{w
-									.map((x) => `${minutesToHHMM(x.startMinute)}–${minutesToHHMM(x.endMinute)}`)
+									.map((x) => `${fmtMinutes(x.startMinute)}–${fmtMinutes(x.endMinute)}`)
 									.join(', ')}</span
 							>
 						</li>{/if}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m, t } from '#lib/i18n.ts';
-	import { fmtDate, fmtTime, fromLocal, minutesToHHMM } from '#lib/tz.ts';
+	import { fmtDate, fmtMinutes, fmtTime, fromLocal } from '#lib/tz.ts';
 	import SessionTimer from '#lib/components/study/SessionTimer.svelte';
 	let { data, form } = $props();
 
@@ -79,7 +79,7 @@
 						<span
 							class:strike={s.state === 'done'}
 							class:strong={s.state === 'now' || s.state === 'next'}
-							>{minutesToHHMM(s.startMinute)}
+							>{fmtMinutes(s.startMinute)}
 							{s.subject}{s.topic ? ` · ${s.topic}` : ''}
 							<span class="small muted">· {m.st5_min({ n: s.minutes })}</span></span
 						>
@@ -243,7 +243,7 @@
 							{#each slotsOn(d) as s (s.id)}
 								<span class="slot">
 									<span
-										>{minutesToHHMM(s.startMinute)} · {s.subject}{s.topic ? ` · ${s.topic}` : ''}
+										>{fmtMinutes(s.startMinute)} · {s.subject}{s.topic ? ` · ${s.topic}` : ''}
 										<span class="muted">· {m.st5_min({ n: s.minutes })}</span></span
 									>
 									<form method="POST" action="?/removeSlot">
@@ -253,7 +253,7 @@
 											type="submit"
 											aria-label={m.st5_remove_slot({
 												day: dayName(d),
-												time: minutesToHHMM(s.startMinute)
+												time: fmtMinutes(s.startMinute)
 											})}>{m.st5_remove()}</button
 										>
 									</form>

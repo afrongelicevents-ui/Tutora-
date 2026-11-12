@@ -17,3 +17,4 @@ src/lib/paraglide/
 docs/demo/
 project.inlang/
 site/
+src/lib/t-keys.gen.ts

@@ -26,7 +26,8 @@
 		"db:studio": "drizzle-kit studio",
 		"demo": "node scripts/build-demo.mjs",
 		"auth:schema": "auth generate --config scripts/auth-cli.ts --output src/lib/server/db/auth.schema.ts --yes",
-		"i18n": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide"
+		"i18n": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide",
+		"i18n:t": "node scripts/gen-t-keys.mjs"
 	},
 	"devDependencies": {
 		"@better-auth/utils": "0.5.1",

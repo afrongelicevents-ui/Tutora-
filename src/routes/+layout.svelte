@@ -32,7 +32,6 @@
 		'/login',
 		'/signup',
 		'/code',
-		'/join',
 		'/forgot-password',
 		'/reset-password',
 		'/verify-email',

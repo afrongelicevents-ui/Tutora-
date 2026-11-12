@@ -14,7 +14,7 @@ import { examReadiness, overallProgress, weakTopics } from './progress.ts';
 import { planFor, streak, todaysPlan, weekSummary } from './study.ts';
 import { lessonsForUser } from './bookings.ts';
 import { CLOSE_AFTER_MIN } from './room.ts';
-import { addDays, local, localDate, startOfLocalDay } from '../tz.ts';
+import { addDays, fromLocal, local, localDate, startOfLocalDay } from '../tz.ts';
 import { shortName } from '../names.ts';
 
 export type Alert =
@@ -259,7 +259,8 @@ export async function childUpdates(
 			.orderBy(desc(assessmentResult.createdAt));
 		for (const r of results)
 			out.push({
-				at: r.createdAt,
+				// when the work was done (marking can be later)
+				at: r.takenOn < localDate(r.createdAt) ? fromLocal(r.takenOn, 12 * 60) : r.createdAt,
 				kind: r.source === 'daily_check' ? 'check' : 'result',
 				text: {
 					title: r.title,
