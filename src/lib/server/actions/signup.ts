@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { APIError } from 'better-auth/api';
 import type { Auth } from '../auth-config.ts';
 import type { DB } from '../db/types.ts';
-import { child, profile, user } from '../db/schema.ts';
+import { profile, user } from '../db/schema.ts';
 import { signupSchema, fieldErrors } from '../../validation/auth.ts';
 
 export type SignupResult =
@@ -63,9 +63,6 @@ export async function signUp(
 			consentAt: new Date()
 		})
 		.onConflictDoNothing();
-	// a parent's first child (more can be added later in the student area)
-	if (v.accountType === 'parent' && v.childName)
-		await deps.db.insert(child).values({ parentId: userId, name: v.childName });
 
 	return { ok: true, email: v.email, userId, role: v.accountType };
 }

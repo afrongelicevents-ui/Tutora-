@@ -43,6 +43,8 @@ export const profile = pgTable(
 		parentEmail: text('parent_email'),
 		childName: text('child_name'),
 		level: text('level'),
+		/** a younger child's account made by a parent or guardian (logs in with a username) */
+		managed: boolean('managed').notNull().default(false),
 		consentAt: ts('consent_at').notNull(),
 		createdAt: created(),
 		updatedAt: ts('updated_at')
@@ -94,6 +96,8 @@ export const tutorProfile = pgTable(
 		yearsTeaching: integer('years_teaching'),
 		teachingStyle: text('teaching_style'),
 		town: text('town'),
+		/** where in-person lessons happen (shown only to booked students) */
+		lessonAddress: text('lesson_address'),
 		photoKey: text('photo_key'),
 		photoVersion: integer('photo_version').notNull().default(0),
 		// how lessons work
@@ -262,6 +266,8 @@ export const lesson = pgTable(
 		startsAt: ts('starts_at').notNull(),
 		endsAt: ts('ends_at').notNull(),
 		capacity: integer('capacity').notNull().default(1),
+		/** in-person lessons: the address (copied from the tutor's lesson address) */
+		address: text('address'),
 		status: text('status', { enum: ['scheduled', 'cancelled'] })
 			.notNull()
 			.default('scheduled'),
@@ -456,6 +462,8 @@ export const homework = pgTable('homework', {
 		.notNull()
 		.references(() => user.id, { onDelete: 'cascade' }),
 	title: text('title').notNull(),
+	subject: text('subject'),
+	topic: text('topic'),
 	note: text('note'),
 	fileKey: text('file_key'),
 	fileName: text('file_name'),
@@ -474,6 +482,9 @@ export const homeworkAnswer = pgTable('homework_answer', {
 	fileKey: text('file_key'),
 	fileName: text('file_name'),
 	feedback: text('feedback'),
+	/** marks given by the tutor (optional); also recorded as a result for progress */
+	score: integer('score'),
+	maxScore: integer('max_score'),
 	checkedAt: ts('checked_at'),
 	createdAt: created()
 });
@@ -575,6 +586,8 @@ export const child = pgTable(
 		name: text('name').notNull(),
 		level: text('level'),
 		schoolYear: text('school_year'),
+		/** v3: the student account this child became (Family Connection) */
+		studentId: text('student_id').references(() => user.id, { onDelete: 'set null' }),
 		createdAt: created()
 	},
 	(t) => [index('child_parent_idx').on(t.parentId)]
@@ -619,7 +632,13 @@ export const notificationPref = pgTable('notification_pref', {
 		.references(() => user.id, { onDelete: 'cascade' }),
 	emailOff: boolean('email_off').notNull().default(false),
 	remindersOff: boolean('reminders_off').notNull().default(false),
-	homeworkOff: boolean('homework_off').notNull().default(false)
+	homeworkOff: boolean('homework_off').notNull().default(false),
+	/** parents: "study time starts now" and finished sessions */
+	studyOff: boolean('study_off').notNull().default(false),
+	/** parents: the weekly report */
+	weeklyOff: boolean('weekly_off').notNull().default(false),
+	/** parents: lesson booked / confirmed / reminders for their children */
+	lessonsOff: boolean('lessons_off').notNull().default(false)
 });
 
 /** Contact form and reports to the Tutora team. */

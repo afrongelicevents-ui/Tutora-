@@ -10,9 +10,9 @@ export interface GuardUser {
 }
 
 /** Which private area a path belongs to. */
-export type Area = 'owner' | 'tutor' | 'student';
+export type Area = 'owner' | 'tutor' | 'student' | 'parent';
 export function areaOf(pathname: string): Area | null {
-	for (const a of ['owner', 'tutor', 'student'] as const)
+	for (const a of ['owner', 'tutor', 'student', 'parent'] as const)
 		if (pathname === `/${a}` || pathname.startsWith(`/${a}/`)) return a;
 	return null;
 }
@@ -122,7 +122,11 @@ export function areaAccess(
 			return { ok: false, status: 303, location: '/tutor-status' };
 		return { ok: true };
 	}
-	return user.role === 'student' || user.role === 'parent'
-		? { ok: true }
-		: { ok: false, status: 403, area };
+	// each role only ever sees its own environment
+	if (area === 'parent')
+		return user.role === 'parent' ? { ok: true } : { ok: false, status: 403, area };
+	if (user.role === 'student') return { ok: true };
+	// parents used to share the student area; send them to their own
+	if (user.role === 'parent') return { ok: false, status: 303, location: '/parent' };
+	return { ok: false, status: 403, area };
 }

@@ -265,7 +265,7 @@
 				onpointercancel={up}
 			></canvas>
 			<div class="tools" role="toolbar" aria-label={m.room_board()}>
-				{#each ['#1c2620', '#0e6b52', '#b4531a'] as c (c)}
+				{#each ['#1c2620', '#4a1d52', '#b4531a'] as c (c)}
 					<button
 						type="button"
 						aria-pressed={color === c}

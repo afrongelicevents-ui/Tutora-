@@ -1,18 +1,11 @@
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { popularTutors } from '#lib/server/settings.ts';
 import { getContent } from '#lib/server/content.ts';
+import { homeFor } from '#lib/roles.ts';
 
-/** Tutora's homepage: what Tutora is, popular (real, approved) tutors, and "Are you a tutor?". */
+/** Welcome: one photo, the tagline, Get started and Sign in. Signed-in people go to their home. */
 export const load: PageServerLoad = async ({ locals }) => {
-	const [tutors, content] = await Promise.all([popularTutors(locals.db, 4), getContent(locals.db)]);
-	return {
-		content: {
-			heroTitle: content.heroTitle,
-			heroLead: content.heroLead,
-			joinLead: content.joinLead,
-			heroPhotoV: content.heroPhoto ? content.heroPhotoV : null
-		},
-		// only what a card needs (no internal ids)
-		tutors: tutors.map(({ tutorId: _id, bio: _b, ...t }) => t)
-	};
+	if (locals.user) redirect(303, homeFor(locals.user.role));
+	const content = await getContent(locals.db);
+	return { heroPhotoV: content.heroPhoto ? content.heroPhotoV : null };
 };

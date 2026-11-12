@@ -1,6 +1,7 @@
 import { APIError } from 'better-auth/api';
 import type { Auth } from '../auth-config.ts';
 import { loginSchema, fieldErrors } from '../../validation/auth.ts';
+import { loginEmail } from '../family.ts';
 
 export type LoginResult =
 	{ ok: true; twoFactor: boolean } | { ok: false; errors: Record<string, string> };
@@ -10,7 +11,8 @@ export async function logIn(
 	input: Record<string, string>,
 	headers: Headers
 ): Promise<LoginResult> {
-	const parsed = loginSchema.safeParse(input);
+	// younger children log in with a username instead of an email
+	const parsed = loginSchema.safeParse({ ...input, email: loginEmail(input.email ?? '') });
 	if (!parsed.success) return { ok: false, errors: fieldErrors(parsed.error) };
 	try {
 		const res = (await deps.auth.api.signInEmail({

@@ -9,8 +9,9 @@
 
 <svelte:head><title>{m.login_title()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
-	<h1>{m.login_title()}</h1>
+<section class="screen auth">
+	<a class="back" href="/" aria-label={m.v3_back()}>←</a>
+	<h1>{m.v3_welcome_back()}</h1>
 	{#if page.url.searchParams.has('reset')}<p class="notice" role="status">{m.reset_done()}</p>{/if}
 	{#if page.url.searchParams.has('claimed')}<p class="notice" role="status">
 			{m.login_claimed()}
@@ -21,9 +22,9 @@
 	<form method="POST" class="stack" novalidate>
 		<Field
 			name="email"
-			type="email"
-			label={m.field_email()}
-			autocomplete="email"
+			type="text"
+			label={m.v3_login_label()}
+			autocomplete="username"
 			required
 			value={v.email ?? ''}
 			error={e.email}
@@ -43,5 +44,6 @@
 		<button class="btn btn-block" type="submit">{m.login_submit()}</button>
 	</form>
 	<p><a href="/forgot-password">{m.login_forgot()}</a></p>
-	<p class="small">{m.login_no_account()} <a href="/signup">{m.nav_signup()}</a></p>
+	<p class="small">{m.v3_no_account()} <a href="/get-started">{m.v3_get_started()}</a></p>
+	<p class="small">{m.v3_have_code()} <a href="/code">{m.v3_join_with_code()}</a></p>
 </section>

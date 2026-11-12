@@ -1,7 +1,7 @@
 import type { LayoutServerLoad } from './$types';
 import { requireRole } from '#lib/server/guards.ts';
 
-// Students and parents only. Each person will only ever see their own records (enforced in queries).
+// Students only (parents have their own area). Each student only ever sees their own records.
 export const load: LayoutServerLoad = ({ locals, url }) => {
-	requireRole(locals.user, url, ['student', 'parent']);
+	requireRole(locals.user, url, ['student']);
 };

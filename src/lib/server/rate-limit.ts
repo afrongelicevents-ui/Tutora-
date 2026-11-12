@@ -20,6 +20,10 @@ export const LIMITS = {
 	upload: { max: 20, windowSeconds: 60 * 60 },
 	/** whole-site login tries from one address (stops trying one password on many accounts) */
 	loginIp: { max: 30, windowSeconds: 10 * 60 },
+	/** Family Connection codes tried from one address (codes have 887 million values) */
+	familyCode: { max: 10, windowSeconds: 60 * 60 },
+	/** invite codes made by one student */
+	familyInvite: { max: 10, windowSeconds: 24 * 60 * 60 },
 	/** lesson-room set-up messages per person per minute */
 	signal: { max: 150, windowSeconds: 60 }
 } satisfies Record<string, LimitRule>;

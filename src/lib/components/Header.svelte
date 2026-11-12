@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { m } from '#lib/i18n.ts';
-	import wordmark from '#lib/assets/wordmark.svg';
 	import type { Role } from '#lib/roles.ts';
 
 	let { user, unread = 0 }: { user: { name: string; role: Role } | null; unread?: number } =
@@ -9,9 +8,7 @@
 
 <header>
 	<div class="wrap bar">
-		<a href="/" class="logo">
-			<img src={wordmark} alt={m.site_name()} width="110" height="25" />
-		</a>
+		<a href="/" class="wordmark">Tutora</a>
 		{#if user}<a
 				class="bell"
 				href="/notifications"
@@ -46,9 +43,7 @@
 						<a href="/tutor/calendar">{m.tnav_calendar()}</a>
 						<a href="/tutor/settings">{m.settings_title()}</a>
 					{:else}
-						<a href="/student">{m.nav_dashboard()}</a>
-						<a href="/student/payments">{m.payments_title()}</a>
-						<a href="/student/homework">{m.homework_h()}</a>
+						<a href={user.role === 'parent' ? '/parent' : '/student'}>{m.nav_dashboard()}</a>
 					{/if}
 					<a href="/notifications">{m.notif_title()}</a>
 					<a href="/account">{m.nav_account()}</a>
@@ -57,8 +52,8 @@
 					</form>
 				{:else}
 					<a href="/tutors">{m.find_a_tutor()}</a>
-					<a href="/#how">{m.nav_how()}</a>
 					<a href="/login">{m.nav_login()}</a>
+					<a href="/get-started">{m.v3_get_started()}</a>
 				{/if}
 			</nav>
 		</details>

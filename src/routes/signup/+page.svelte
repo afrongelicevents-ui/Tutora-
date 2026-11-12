@@ -7,12 +7,12 @@
 	const v = $derived((form?.values ?? {}) as Record<string, string>);
 	const e = $derived((form?.errors ?? {}) as Record<string, string>);
 
-	const accountType = $derived(v.accountType ?? 'student');
 </script>
 
 <svelte:head><title>{m.signup_title()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="screen auth">
+	<a class="back" href="/get-started" aria-label={m.v3_back()}>←</a>
 	<h1>{m.signup_title()}</h1>
 	{#if data.tutorName}<p class="muted">{m.signup_with_tutor({ name: data.tutorName })}</p>{/if}
 	<p class="muted">{m.signup_lead()}</p>
@@ -23,31 +23,7 @@
 
 	<form method="POST" class="stack" novalidate>
 		<BotTrap />
-		<fieldset>
-			<legend>{m.signup_i_am()}</legend>
-			<div class="choice">
-				<label
-					><input
-						type="radio"
-						name="accountType"
-						value="student"
-						checked={accountType === 'student'}
-					/>
-					{m.signup_student()}</label
-				>
-				<label
-					><input
-						type="radio"
-						name="accountType"
-						value="parent"
-						checked={accountType === 'parent'}
-					/>
-					{m.signup_parent()}</label
-				>
-			</div>
-			{#if e.accountType}<span class="error">{t(e.accountType)}</span>{/if}
-		</fieldset>
-
+		<input type="hidden" name="accountType" value="student" />
 		<Field
 			name="name"
 			label={m.field_name()}
@@ -85,16 +61,6 @@
 			error={e.phone}
 			required
 		/>
-
-		<div class="child">
-			<Field
-				name="childName"
-				label={m.field_child_name()}
-				hint={m.field_child_name_hint()}
-				value={v.childName ?? ''}
-				error={e.childName}
-			/>
-		</div>
 
 		<!-- Shown and hidden with CSS only, so it works without JavaScript. -->
 		<label class="check under18">
@@ -151,22 +117,12 @@
 	.parent {
 		display: none;
 	}
-	form:has(input[value='student']:checked):has(input[name='isUnder18']:checked) .parent {
-		display: block;
-	}
-	form:has(input[value='parent']:checked) .under18 {
-		display: none;
-	}
-	.child {
-		display: none;
-	}
-	form:has(input[value='parent']:checked) .child {
+	form:has(input[name='isUnder18']:checked) .parent {
 		display: block;
 	}
 	/* Older phones without :has() always see the parent section. */
 	@supports not selector(:has(*)) {
-		.parent,
-		.child {
+		.parent {
 			display: block;
 		}
 	}

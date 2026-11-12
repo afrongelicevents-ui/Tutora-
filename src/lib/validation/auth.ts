@@ -60,9 +60,6 @@ export const signupSchema = z
 	})
 	.superRefine((v, ctx) => {
 		if (!v.consent) ctx.addIssue({ code: 'custom', path: ['consent'], message: 'err_consent' });
-		if (v.accountType === 'parent' && !v.childName) {
-			ctx.addIssue({ code: 'custom', path: ['childName'], message: 'err_child_name' });
-		}
 		if (v.accountType === 'student' && v.isUnder18) {
 			if (!v.parentName)
 				ctx.addIssue({ code: 'custom', path: ['parentName'], message: 'err_parent_required' });

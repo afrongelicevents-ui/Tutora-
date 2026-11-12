@@ -8,6 +8,7 @@ import { homeFor } from '#lib/roles.ts';
 import { eq } from 'drizzle-orm';
 import { user } from '#lib/server/db/auth.schema.ts';
 import { endLogin } from '#lib/server/auth-cookies.ts';
+import { loginEmail } from '#lib/server/family.ts';
 
 export const load: PageServerLoad = ({ locals, url }) => {
 	if (locals.user) redirect(303, safeNext(url.searchParams.get('next'), homeFor(locals.user.role)));
@@ -18,7 +19,7 @@ export const actions: Actions = {
 		const input = formObject(await request.formData());
 		const values = { email: input.email ?? '' };
 		// Key the limits on the cleaned-up email, so "a@b.com " and "A@B.com" share one bucket.
-		const email = emailField.safeParse(input.email ?? '');
+		const email = emailField.safeParse(loginEmail(input.email ?? ''));
 		const who = email.success ? email.data : 'invalid';
 		const ip = clientIp(request);
 		const byIp = await hitLimit(locals.db, 'login', `${ip}:${who}`);

@@ -7,7 +7,6 @@ import { looksLikeBot } from '#lib/server/bot.ts';
 import { homeFor } from '#lib/roles.ts';
 import { safeNext } from '#lib/server/guards.ts';
 import { emailEnabled } from '#lib/server/auth.ts';
-import { endLogin } from '#lib/server/auth-cookies.ts';
 import { activeTutorBySlug } from '#lib/server/settings.ts';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -18,7 +17,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals, cookies, url }) => {
+	default: async ({ request, locals, url }) => {
 		const input = formObject(await request.formData());
 		const values = { ...input, password: '' };
 
@@ -33,19 +32,15 @@ export const actions: Actions = {
 			});
 		}
 
-		const result = await signUp({ auth: locals.auth, db: locals.db }, input);
+		// the public sign-up only makes students; parents join with a child's code (/code)
+		const result = await signUp(
+			{ auth: locals.auth, db: locals.db },
+			{ ...input, accountType: 'student' }
+		);
 		if (!result.ok) return fail(400, { values, errors: result.errors });
 
 		// Without an email service there is nothing to confirm: the new account is already logged in.
 		if (!emailEnabled) {
-			// A parent account was set up as "student" a moment ago; log in again so the
-			// login cookie carries the right role.
-			if (result.userId && result.role === 'parent') {
-				await endLogin(locals.db, cookies, result.userId);
-				await locals.auth.api
-					.signInEmail({ body: { email: result.email, password: input.password ?? '' } })
-					.catch(() => {});
-			}
 			// straight on to booking when they came from a tutor's page
 			redirect(303, safeNext(url.searchParams.get('next'), '/student'));
 		}
