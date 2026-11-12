@@ -155,7 +155,7 @@ export async function endSession(
 }
 
 /** Days (Zimbabwe dates) with at least one finished session or daily knowledge check. */
-async function activeDays(db: DB, studentId: string, since: Date) {
+export async function activeDays(db: DB, studentId: string, since: Date) {
 	const r = await db.execute(sql`
 		select distinct to_char((started_at at time zone 'Africa/Harare')::date, 'YYYY-MM-DD') as d
 		from ${studySession}

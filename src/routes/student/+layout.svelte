@@ -18,7 +18,7 @@
 		},
 		{ href: '/student/lessons', label: m.v3_nav_lessons(), icon: 'lessons' },
 		{ href: '/student/progress', label: m.v3_nav_progress(), icon: 'progress' },
-		{ href: '/student/family', label: m.v3_nav_family(), icon: 'family' }
+		{ href: '/student/me', label: m.v3_nav_you(), icon: 'user', also: ['/student/family'] }
 	]}
 	more={[
 		{ href: '/student/homework', label: m.v3_nav_homework() },
