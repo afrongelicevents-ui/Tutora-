@@ -3,6 +3,7 @@
 	import { READY_PCT_CLIENT } from '#lib/progress-ui.ts';
 	import SchoolWork from '#lib/components/progress/SchoolWork.svelte';
 	import CheckinCard from '#lib/components/progress/CheckinCard.svelte';
+	import WeekFeelings from '#lib/components/progress/WeekFeelings.svelte';
 	import LineIcon, { subjectIcon } from '#lib/components/LineIcon.svelte';
 	import { fmtMinutes, fmtTime } from '#lib/tz.ts';
 	let { data, form } = $props();
@@ -259,7 +260,8 @@
 	<!-- everything that was already here, in detail -->
 	<h2 class="details-h" id="topics">{m.pg4_details()}</h2>
 
-	<CheckinCard family={data.family} checkin={data.checkin} checkinId={data.checkinId} {form} />
+	<CheckinCard family={data.family} ck={data.ck} talk={data.talk} {form} />
+	<WeekFeelings days={data.week7.days} insight={data.week7.insight} />
 
 	{#if !data.overall.current}
 		<div class="softcard">

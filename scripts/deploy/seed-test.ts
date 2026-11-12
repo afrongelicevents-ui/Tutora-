@@ -41,7 +41,13 @@ async function main() {
 				.select({ id: schema.tutorMessage.id })
 				.from(schema.tutorMessage)
 				.limit(1);
-			if (seeded && !real && v3 && buddies && msgs) {
+			// follow-up check-ins fake data is there too?
+			const [fu] = await db
+				.select({ id: schema.checkin.id })
+				.from(schema.checkin)
+				.where(eq(schema.checkin.kind, 'followup'))
+				.limit(1);
+			if (seeded && !real && v3 && buddies && msgs && fu) {
 				console.log('Test data already there: kept.');
 				return;
 			}

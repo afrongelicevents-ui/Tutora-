@@ -8,7 +8,7 @@ import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { booking, enrollment, homework, homeworkAnswer } from './db/app.schema.ts';
 import { weakTopics } from './progress.ts';
-import { latestForTutor, type CheckinMood } from './checkins.ts';
+import { latestForTutor, recentForTutor, type CheckinMood } from './checkins.ts';
 import { schoolWork } from './school.ts';
 import { localDate } from '../tz.ts';
 
@@ -17,6 +17,13 @@ export interface Brief {
 	weak: { subject: string; topic: string; pct: number }[];
 	/** the latest check-in shared with tutors (never the private note) */
 	checkin: { mood: CheckinMood; subject: string | null; createdAt: Date } | null;
+	/** the latest check-ins shared with tutors (up to 3, last 7 days), newest first */
+	checkins: {
+		mood: CheckinMood;
+		kind: 'start' | 'followup';
+		subject: string | null;
+		createdAt: Date;
+	}[];
 	/** homework from this tutor that has not been handed in */
 	homework: { open: number; overdue: number; nextDue: string | null };
 	/** what class is on at school in this subject, if entered */
@@ -92,9 +99,10 @@ export async function preLessonBrief(
 ): Promise<Brief | null> {
 	if (!(await maySeeBrief(db, tutorId, studentId))) return null;
 	const today = localDate(opts.now ?? new Date());
-	const [weakAll, ci, hw, school] = await Promise.all([
+	const [weakAll, ci, recent, hw, school] = await Promise.all([
 		weakTopics(db, studentId, 20),
 		latestForTutor(db, studentId),
+		recentForTutor(db, studentId, opts.now ?? new Date()),
 		openHomework(db, tutorId, studentId, today),
 		schoolWork(db, studentId)
 	]);
@@ -114,6 +122,12 @@ export async function preLessonBrief(
 	const brief: Brief = {
 		weak,
 		checkin: ci ? { mood: ci.mood, subject: ci.subject, createdAt: ci.createdAt } : null,
+		checkins: recent.map((r) => ({
+			mood: r.mood,
+			kind: r.kind,
+			subject: r.subject,
+			createdAt: r.createdAt
+		})),
 		homework: hw,
 		school: s?.currentTopic ? { subject: s.subject, topic: s.currentTopic } : null,
 		empty: false

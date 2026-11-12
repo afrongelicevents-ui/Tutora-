@@ -122,9 +122,43 @@ export const checkin = pgTable(
 		note: text('note'),
 		sharedWithFamily: boolean('shared_with_family').notNull().default(false),
 		sharedWithTutor: boolean('shared_with_tutor').notNull().default(true),
+		/** start: "How is learning going?"; followup: "How did it go?" later the same day */
+		kind: text('kind', { enum: ['start', 'followup'] })
+			.notNull()
+			.default('start'),
+		/** the start check-in a follow-up answers */
+		followupOf: integer('followup_of'),
 		createdAt: created()
 	},
 	(t) => [index('checkin_student').on(t.studentId, t.createdAt)]
+);
+
+/** The student's remembered answer to "Share with my parent?" (used for the next check-ins). */
+export const checkinPref = pgTable('checkin_pref', {
+	studentId: text('student_id')
+		.primaryKey()
+		.references(() => user.id, { onDelete: 'cascade' }),
+	shareWithFamily: boolean('share_with_family').notNull().default(false),
+	updatedAt: created()
+});
+
+/** "How did it go?" was sent for this check-in (no repeats). */
+export const checkinFollowupSent = pgTable('checkin_followup_sent', {
+	checkinId: integer('checkin_id')
+		.primaryKey()
+		.references(() => checkin.id, { onDelete: 'cascade' }),
+	createdAt: created()
+});
+
+/** The end-of-day summary was sent to this student for this date (no repeats). */
+export const daySummarySent = pgTable(
+	'day_summary_sent',
+	{
+		studentId: userRef('student_id'),
+		onDate: date('on_date').notNull(),
+		createdAt: created()
+	},
+	(t) => [primaryKey({ columns: [t.studentId, t.onDate] })]
 );
 
 /* ------------------------------------------------------------------ School work */

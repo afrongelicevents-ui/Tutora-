@@ -4,6 +4,7 @@ import type { RequestHandler } from './$types';
 import { sendDueReminders, sendStudyReminders } from '#lib/server/reminders.ts';
 import { sendWeeklyReports } from '#lib/server/weekly.ts';
 import { notifyUser, type NotifyOpts } from '#lib/server/notify.ts';
+import { sendCheckinFollowups, sendDaySummaries } from '#lib/server/checkins.ts';
 
 /** Constant-time comparison. */
 function sameText(a: string, b: string) {
@@ -31,5 +32,14 @@ export const POST: RequestHandler = async ({ locals, request, url }) => {
 		console.error('weekly reports failed', e);
 		return 0;
 	});
-	return json({ sent, study, weekly });
+	// learning check-ins: "How did it go?" and the end-of-day summary
+	const followups = await sendCheckinFollowups(locals.db, notify).catch((e) => {
+		console.error('check-in follow-ups failed', e);
+		return 0;
+	});
+	const days = await sendDaySummaries(locals.db, notify).catch((e) => {
+		console.error('day summaries failed', e);
+		return 0;
+	});
+	return json({ sent, study, weekly, followups, days });
 };

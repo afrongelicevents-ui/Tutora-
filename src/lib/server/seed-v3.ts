@@ -11,6 +11,7 @@ import { account, user } from './db/auth.schema.ts';
 import { attendee, child, enrollment, homework, lesson, profile } from './db/app.schema.ts';
 import {
 	checkin,
+	type CheckinMood,
 	familyInvite,
 	lessonFeedback,
 	lessonMaterial,
@@ -216,32 +217,47 @@ export async function seedV3(db: DB, hash: string, logins: TestLogin[], now = ne
 	for (const d of [1, 2, 3]) await session(tatenda, d, 'Mathematics', 'Fractions', 45);
 	await session(tatenda, 5, 'Physics', 'Forces', 30);
 	if (anesu) for (const d of [1, 2, 3, 4]) await session(anesu, d, 'English', 'Reading', 20);
-	await db.insert(checkin).values([
-		{
-			studentId: tatenda,
-			mood: 'finding_hard',
-			subject: 'Mathematics',
+	// a week of check-ins (fake): how each day started and, on some days, how it ended
+	const ckDay = (daysAgo: number, minute: number) =>
+		fromLocal(localDate(addDays(now, -daysAgo)), minute);
+	const week: [number, CheckinMood, CheckinMood | null, boolean][] = [
+		[6, 'motivated', 'confident', true],
+		[5, 'need_break', null, false],
+		[4, 'finding_hard', 'motivated', true],
+		[3, 'need_break', 'need_break', false],
+		[2, 'finding_hard', 'confident', true],
+		[1, 'finding_hard', null, true]
+	];
+	for (const [ago, startMood, endMood, shared] of week) {
+		const [st] = await db
+			.insert(checkin)
+			.values({
+				studentId: tatenda,
+				mood: startMood,
+				subject: 'Mathematics',
+				sharedWithFamily: shared,
+				note: ago === 3 ? 'Tired after sports (private test note)' : null,
+				createdAt: ckDay(ago, 9 * 60)
+			})
+			.returning({ id: checkin.id });
+		if (endMood)
+			await db.insert(checkin).values({
+				studentId: tatenda,
+				mood: endMood,
+				subject: 'Mathematics',
+				sharedWithFamily: shared,
+				kind: 'followup',
+				followupOf: st.id,
+				createdAt: ckDay(ago, 18 * 60)
+			});
+	}
+	if (anesu)
+		await db.insert(checkin).values({
+			studentId: anesu,
+			mood: 'motivated',
 			sharedWithFamily: true,
 			createdAt: addDays(now, -1)
-		},
-		{
-			studentId: tatenda,
-			mood: 'need_break',
-			note: 'Tired after sports (private test note)',
-			sharedWithFamily: false,
-			createdAt: addDays(now, -3)
-		},
-		...(anesu
-			? [
-					{
-						studentId: anesu,
-						mood: 'motivated' as const,
-						sharedWithFamily: true,
-						createdAt: addDays(now, -1)
-					}
-				]
-			: [])
-	]);
+		});
 
 	// 6. Results (tests, daily checks, homework) and an exam.
 	const result = (

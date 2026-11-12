@@ -21,13 +21,22 @@ import {
 } from '#lib/server/school.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { shortName } from '#lib/names.ts';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
+import { checkin as checkinTable } from '#lib/server/db/v3.schema.ts';
 import {
 	addCheckin,
+	answerShare,
 	isMood,
 	MOOD_KEY,
+	needsTalkSuggestion,
+	setCheckinNote,
 	setCheckinShared,
-	todaysCheckin
+	sharePref,
+	studyingNow,
+	todayState,
+	todaysCheckin,
+	weekPattern,
+	type CheckinMood
 } from '#lib/server/checkins.ts';
 import { activeParents, familyOf } from '#lib/server/family.ts';
 import { notifyUser } from '#lib/server/notify.ts';
@@ -64,6 +73,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		todaysPlan(locals.db, u.id, now),
 		streak(locals.db, u.id, now),
 		lessonsForUser(locals.db, u.id)
+	]);
+	// learning check-in: today's state, what they're studying, the week, the gentle suggestion
+	const [ck, studying, week7, talk] = await Promise.all([
+		todayState(locals.db, u.id, now),
+		studyingNow(locals.db, u.id, now),
+		weekPattern(locals.db, u.id, now),
+		needsTalkSuggestion(locals.db, u.id, now)
 	]);
 	// subject scores: the mean of that subject's topic scores (each topic = its latest 3 marks)
 	const bySubject = new Map<string, { name: string; sum: number; n: number; results: number }>();
@@ -127,6 +143,26 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		// learning check-in (moved here from Home): the student decides whether family sees it
 		checkin: checkin ? { mood: checkin.mood, shared: checkin.sharedWithFamily } : null,
 		checkinId: checkin?.id ?? null,
+		ck: {
+			start: ck.start
+				? {
+						id: ck.start.id,
+						mood: ck.start.mood,
+						shared: ck.start.sharedWithFamily,
+						subject: ck.start.subject,
+						note: ck.start.note,
+						// the subject today's message talks about (from the check-in or the plan)
+						planSubject: ck.start.subject ?? studying
+					}
+				: null,
+			followup: ck.followup
+				? { id: ck.followup.id, mood: ck.followup.mood, shared: ck.followup.sharedWithFamily }
+				: null,
+			askFollowup: ck.askFollowup,
+			studying
+		},
+		week7,
+		talk,
 		family: family.filter((f) => f.status === 'active').map((f) => f.label || shortName(f.name)),
 		overall,
 		topics,
@@ -149,26 +185,54 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
-	/** A learning check-in. The student decides whether family sees it. */
+	/** A learning check-in (or "How did it go?"). Sharing follows the remembered choice. */
 	checkin: async ({ locals, url, request }) => {
 		const u = requireRole(locals.user, url, ['student']);
 		const f = formObject(await request.formData());
 		if (!isMood(f.mood)) return fail(400, { error: 'err_generic' });
-		const shared = f.share === 'on';
-		await addCheckin(locals.db, u.id, { mood: f.mood, shared, note: f.note ?? null });
-		if (shared) {
-			const [me] = await locals.db.select({ name: user.name }).from(user).where(eq(user.id, u.id));
-			const first = shortName(me?.name ?? '');
-			for (const parentId of await activeParents(locals.db, u.id))
-				await notifyUser(
-					locals.db,
-					parentId,
-					m.ci_notify_s({ name: first }),
-					m.ci_notify_b({ mood: t(MOOD_KEY[f.mood]) }),
-					{ kind: 'family', link: `/parent?child=${encodeURIComponent(u.id)}` }
-				);
-		}
+		const now = new Date();
+		const followupOf = Number(f.followupOf) || null;
+		const state = await todayState(locals.db, u.id, now);
+		// a follow-up only answers today's own start check-in
+		const isFollowup = !!followupOf && state.start?.id === followupOf;
+		const shared = await sharePref(locals.db, u.id);
+		const subject = isFollowup
+			? (state.start?.subject ?? null)
+			: await studyingNow(locals.db, u.id, now);
+		await addCheckin(locals.db, u.id, {
+			mood: f.mood,
+			shared,
+			subject,
+			kind: isFollowup ? 'followup' : 'start',
+			followupOf: isFollowup ? followupOf : null
+		});
+		if (shared) await tellFamily(locals.db, u.id, f.mood);
 		return { checked: f.mood, shared };
+	},
+	/** "Share with my parent?" Yes / No: this check-in, and remembered for the next ones. */
+	shareAnswer: async ({ locals, url, request }) => {
+		const u = requireRole(locals.user, url, ['student']);
+		const f = formObject(await request.formData());
+		const id = Number(f.id) || 0;
+		const yes = f.answer === 'yes';
+		const [row] = await locals.db
+			.select({ mood: checkinTable.mood, shared: checkinTable.sharedWithFamily })
+			.from(checkinTable)
+			.where(and(eq(checkinTable.id, id), eq(checkinTable.studentId, u.id)));
+		if (!row) return fail(400, { error: 'err_generic' });
+		await answerShare(locals.db, u.id, id, yes);
+		if (yes && !row.shared) await tellFamily(locals.db, u.id, row.mood);
+		return { shareAnswered: yes ? 'yes' : 'no' };
+	},
+	/** What they're studying and an optional short note, on their own check-in. */
+	note: async ({ locals, url, request }) => {
+		const u = requireRole(locals.user, url, ['student']);
+		const f = formObject(await request.formData());
+		await setCheckinNote(locals.db, u.id, Number(f.id) || 0, {
+			note: f.note ?? '',
+			subject: f.subject ?? ''
+		});
+		return { noteSaved: true };
 	},
 	/** Change your mind about sharing one of your own check-ins. */
 	share: async ({ locals, url, request }) => {
@@ -202,3 +266,17 @@ export const actions: Actions = {
 		return { saved: 'removed' };
 	}
 };
+
+/** Tell the student's active family about a check-in the student chose to share. */
+async function tellFamily(db: App.Locals['db'], studentId: string, mood: CheckinMood) {
+	const [me] = await db.select({ name: user.name }).from(user).where(eq(user.id, studentId));
+	const first = shortName(me?.name ?? '');
+	for (const parentId of await activeParents(db, studentId))
+		await notifyUser(
+			db,
+			parentId,
+			m.ci_notify_s({ name: first }),
+			m.ci_notify_b({ mood: t(MOOD_KEY[mood]) }),
+			{ kind: 'family', link: `/parent?child=${encodeURIComponent(studentId)}` }
+		);
+}

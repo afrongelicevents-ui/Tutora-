@@ -17,7 +17,12 @@ const PREFIXES = [
 	'st5_state_',
 	'err_',
 	'badge_',
-	'bp_'
+	'bp_',
+	'cr_',
+	'cs_',
+	'cf_',
+	'ck_ins_',
+	'ds_line_'
 ];
 
 export function wantedKeys(root = '.') {
