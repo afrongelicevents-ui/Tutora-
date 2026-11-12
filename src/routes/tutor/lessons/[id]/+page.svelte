@@ -64,6 +64,28 @@
 		<DrivePickButton config={data.picker} action="?/attachDrive" />
 		{#if !data.picker}<p class="note">{m.tools6_drive_connect_hint()}</p>{/if}
 		<details class="add">
+			<summary>{m.ld3_add_file()}</summary>
+			<form method="POST" action="?/addFile" enctype="multipart/form-data" class="stack">
+				<label class="field"
+					><span class="label">{m.tools6_link_title()}</span><input
+						name="title"
+						maxlength="160"
+					/></label
+				>
+				<label class="field"
+					><span class="label">{m.ld3_file_pick()}</span><span class="hint"
+						>{m.file_hint_5mb()}</span
+					><input
+						name="file"
+						type="file"
+						accept="image/jpeg,image/png,image/webp,application/pdf"
+						required
+					/></label
+				>
+				<button class="btn btn-ghost" type="submit">{m.ld3_add_file()}</button>
+			</form>
+		</details>
+		<details class="add">
 			<summary>{data.kahootOn ? m.tools6_add_kahoot_or_link() : m.tools6_add_link()}</summary>
 			<form method="POST" action="?/addLink" class="stack">
 				{#if data.kahootOn}

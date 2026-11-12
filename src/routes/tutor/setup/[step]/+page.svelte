@@ -20,7 +20,7 @@
 
 <svelte:head><title>{m.setup_wizard_title()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="screen">
 	<div class="steps" aria-label={m.step_of({ n: data.step + 1, total: last + 1 })}>
 		{#each Array.from({ length: last + 1 }, (_x, k) => k) as i (i)}<i class:on={i <= data.step}
 			></i>{/each}

@@ -15,10 +15,26 @@
 
 <svelte:head><title>{m.settings_title()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="screen">
 	<h1>{m.settings_title()}</h1>
-	{#each items as [key, title, hint] (key)}
-		<a class="big-opt" href="/tutor/settings/{key}">{title}<small>{hint}</small></a>
-	{/each}
-	<a class="btn btn-secondary btn-block" href="/tutor/setup/1">{m.settings_rerun_wizard()}</a>
+	<nav class="rows top">
+		{#each items as [key, title, hint] (key)}
+			<a href="/tutor/settings/{key}"
+				><span><strong>{title}</strong><span class="small muted hint">{hint}</span></span><span
+					class="go"
+					aria-hidden="true">›</span
+				></a
+			>
+		{/each}
+	</nav>
+	<a class="btn btn-ghost btn-block" href="/tutor/setup/1">{m.settings_rerun_wizard()}</a>
 </section>
+
+<style>
+	.rows a {
+		text-decoration: none;
+	}
+	.hint {
+		display: block;
+	}
+</style>

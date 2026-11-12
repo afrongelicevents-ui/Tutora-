@@ -2,6 +2,7 @@ import { error, fail } from '@sveltejs/kit';
 import { and, asc, eq, ilike } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 import { requireRole } from '#lib/server/guards.ts';
+import { fileLink } from '#lib/server/storage.ts';
 import { myLesson } from '#lib/server/student.ts';
 import { OPEN_BEFORE_MIN, CLOSE_AFTER_MIN } from '#lib/server/room.ts';
 import {
@@ -73,7 +74,21 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 			past: +l.endsAt < now
 		},
 		meeting: meeting ? { provider: meeting.provider, joinUrl: meeting.joinUrl } : null,
-		materials,
+		materials: await Promise.all(
+			materials.map(
+				async (x: {
+					id: number;
+					kind: string;
+					title: string;
+					url: string | null;
+					fileKey: string | null;
+				}) => ({
+					...x,
+					url: x.url ?? (x.fileKey ? await fileLink(x.fileKey, x.title) : null),
+					fileKey: undefined
+				})
+			)
+		),
 		note: note?.text ?? null,
 		topic: topic?.topic ? { topic: topic.topic, year: school?.year ?? null } : null
 	};

@@ -1863,5 +1863,7 @@
 	"res3_nav": "Revision resources",
 	"res3_hint": "Notes, past papers and links per subject",
 	"tools6_drive_failed": "That Drive file could not be opened. Please try again.",
-	"sp3_err_adult": "School+ is for children under 18, with the consent of their guardian."
+	"sp3_err_adult": "School+ is for children under 18, with the consent of their guardian.",
+	"ld3_add_file": "Add a file (photo or PDF)",
+	"ld3_file_pick": "File"
 }

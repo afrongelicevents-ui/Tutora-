@@ -18,7 +18,7 @@
 
 <svelte:head><title>{titles[data.section as Section]()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="screen">
 	<a class="btn btn-secondary btn-sm" href="/tutor/settings">← {m.settings_title()}</a>
 	<h1 style="margin-top:12px">{titles[data.section as Section]()}</h1>
 	{#if data.changed}<p class="notice" role="status">{m.set_email_changed()}</p>{/if}

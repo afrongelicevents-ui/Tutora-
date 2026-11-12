@@ -5,6 +5,9 @@ import { setAttendance, setPrivateNote } from '#lib/server/people.ts';
 import { requireTutor } from '#lib/server/guards.ts';
 import { notifyUser } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
+import { fileLink, getStore } from '#lib/server/storage.ts';
+import { DOC_KINDS, MB, newKey, readUpload } from '#lib/server/files.ts';
+import { hitLimit } from '#lib/server/rate-limit.ts';
 import { fmtDayTime } from '#lib/tz.ts';
 import { m } from '#lib/paraglide/messages.js';
 import { toolsEnv } from '#lib/server/tools/env.ts';
@@ -38,7 +41,12 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	return {
 		lesson: l,
 		started: l.startsAt.getTime() <= Date.now(),
-		materials,
+		materials: await Promise.all(
+			materials.map(async (x) => ({
+				...x,
+				href: x.url ?? (x.fileKey ? await fileLink(x.fileKey, x.title) : null)
+			}))
+		),
 		meeting,
 		kahootOn: pref.kahootOn,
 		picker: pickerConfig(toolsEnv(url), conn.drive)
@@ -74,6 +82,31 @@ export const actions: Actions = {
 			? await shareWithAll(locals.db, env, t, file.id, emails)
 			: ('skipped' as const);
 		return { attached: true, share };
+	},
+	/** Upload a small file (photo or PDF, max 5 MB) to the lesson; only this lesson's students can open it. */
+	addFile: async ({ locals, url, request, params, platform }) => {
+		const t = requireTutor(locals.user, url).id;
+		const limit = await hitLimit(locals.db, 'upload', t);
+		if (!limit.ok) return fail(429, { error: 'err_rate_limited' });
+		const data = await request.formData();
+		const file = await readUpload(data.get('file'), {
+			maxBytes: 5 * MB,
+			allowed: DOC_KINDS,
+			required: true
+		});
+		if (!file?.ok) return fail(400, { error: file?.error ?? 'err_file_missing' });
+		const key = newKey(`lessons/${lessonId(params.id)}`, file.ext);
+		try {
+			await addLessonMaterial(locals.db, t, lessonId(params.id), {
+				kind: 'file',
+				title: String(data.get('title') ?? '').trim() || m.ld3_file(),
+				fileKey: key
+			});
+		} catch (e) {
+			return materialFail(e);
+		}
+		await getStore(platform).put(key, file.bytes, file.kind);
+		return { attached: true };
 	},
 	addLink: async ({ locals, url, request, params }) => {
 		const t = requireTutor(locals.user, url).id;

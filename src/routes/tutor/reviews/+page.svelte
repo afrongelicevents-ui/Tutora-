@@ -7,7 +7,7 @@
 
 <svelte:head><title>{m.reviews_title()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="screen">
 	<h1>{m.reviews_title()}</h1>
 	<p class="small muted">{m.reviews_tutor_lead2()}</p>
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}

@@ -30,17 +30,14 @@
 	} = $props();
 
 	const path = $derived(page.url.pathname);
+	const matches = (h: string) => path === h || path.startsWith(h + '/');
+	/** How specifically an item matches this page (longest matching path), or -1. */
+	const score = (item: NavItem) =>
+		Math.max(-1, ...[item.href, ...(item.also ?? [])].filter(matches).map((h) => h.length));
+	// only the most specific item is current ("/tutor/reviews" is More, not Today)
 	function isOn(item: NavItem, all: NavItem[]) {
-		const match = (h: string) => path === h || path.startsWith(h + '/');
-		if (!(match(item.href) || (item.also ?? []).some(match))) return false;
-		// the most specific tab wins ("/student" vs "/student/lessons")
-		return !all.some(
-			(o) =>
-				o !== item &&
-				o.href.length > item.href.length &&
-				match(o.href) &&
-				o.href.startsWith(item.href)
-		);
+		const mine = score(item);
+		return mine >= 0 && all.every((o) => o === item || score(o) <= mine);
 	}
 	const all = $derived([...tabs, ...more]);
 </script>
