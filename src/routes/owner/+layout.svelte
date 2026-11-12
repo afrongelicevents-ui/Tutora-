@@ -9,6 +9,7 @@
 		['/owner/payments', m.on_payments()],
 		['/owner/content', m.on_content()],
 		['/owner/reports', m.on_reports()],
+		['/owner/moderation', m.om_link()],
 		['/owner/audit', m.on_audit()],
 		['/owner/account', m.on_account()]
 	];

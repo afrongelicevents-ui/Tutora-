@@ -182,6 +182,9 @@
 				<a href="/parent/report?child={c.studentId}"
 					><span>{m.par3_weekly()}</span><span class="go">›</span></a
 				>
+				<a href="/parent/buddies?child={c.studentId}"
+					><span>{m.pb_link()}</span><span class="go">›</span></a
+				>
 				<a href="/parent/children"><span>{m.par3_manage()}</span><span class="go">›</span></a>
 			</div>
 			<p class="note">{m.par3_privacy({ name: n })}</p>

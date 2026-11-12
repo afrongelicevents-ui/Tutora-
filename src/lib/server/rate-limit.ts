@@ -27,7 +27,11 @@ export const LIMITS = {
 	/** invite codes made by one student */
 	familyInvite: { max: 10, windowSeconds: 24 * 60 * 60 },
 	/** lesson-room set-up messages per person per minute */
-	signal: { max: 150, windowSeconds: 60 }
+	signal: { max: 150, windowSeconds: 60 },
+	/** buddy codes tried per student: stops guessing */
+	buddyCode: { max: 10, windowSeconds: 60 * 60 },
+	/** profile photos uploaded per student */
+	profilePhoto: { max: 10, windowSeconds: 24 * 60 * 60 }
 } satisfies Record<string, LimitRule>;
 
 export type LimitName = keyof typeof LIMITS;

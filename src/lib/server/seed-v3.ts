@@ -3,6 +3,7 @@
  * school work, study plans and sessions, results, exams, quizzes and lesson materials.
  * Everything is clearly fake (example.com, test names).
  */
+import { connectByCode, moderate, myCode, saveCard, sendPreset } from './buddies.ts';
 import { and, asc, eq, gt, inArray } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { account, user } from './db/auth.schema.ts';
@@ -513,5 +514,58 @@ export async function seedV3(db: DB, hash: string, logins: TestLogin[], now = ne
 			.update(enrollment)
 			.set({ level: 'Grade 7' })
 			.where(and(inArray(enrollment.userId, converted), gt(enrollment.createdAt, new Date(0))));
+
+	// Study Buddies (fake): Tatenda and Kuda are buddies through a one-time code; both profiles are
+	// checked. Kuda's new bio is waiting in the owner's profile-check queue.
+	const born = (yearsAgo: number) => `${now.getUTCFullYear() - yearsAgo}-03-04`;
+	await saveCard(
+		db,
+		tatenda,
+		{
+			displayName: 'Tatenda M.',
+			bio: 'Form 3. I love fractions now (honestly). Aiming for an A in maths.',
+			grade: 'Form 3',
+			school: 'Test High School',
+			subjects: ['Mathematics', 'Physics', 'English'],
+			favouriteSubject: 'Mathematics',
+			goals: 'Get 70% or more in the end-of-term maths test',
+			birthDate: born(15)
+		},
+		now
+	);
+	await moderate(db, tatenda, 'bio', true);
+	await saveCard(
+		db,
+		kuda,
+		{
+			displayName: 'Kuda C.',
+			bio: '',
+			grade: 'Form 2',
+			school: 'Test College',
+			subjects: ['Mathematics', 'Geography'],
+			favouriteSubject: 'Geography',
+			goals: '',
+			birthDate: born(14)
+		},
+		now
+	);
+	const bc = await myCode(db, tatenda, now);
+	await connectByCode(db, kuda, bc.code, { me: 'Kuda C.', other: 'Tatenda M.' }, now);
+	await sendPreset(db, kuda, tatenda, 'good_luck', now);
+	await saveCard(
+		db,
+		kuda,
+		{
+			displayName: 'Kuda C.',
+			bio: 'Geography fan. Revising maths every evening.',
+			grade: 'Form 2',
+			school: 'Test College',
+			subjects: ['Mathematics', 'Geography'],
+			favouriteSubject: 'Geography',
+			goals: '',
+			birthDate: born(14)
+		},
+		now
+	);
 	return { invite: TEST_INVITE_CODE };
 }

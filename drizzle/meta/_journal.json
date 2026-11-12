@@ -92,6 +92,13 @@
       "when": 1794496448898,
       "tag": "0012_managed_minors",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794521635407,
+      "tag": "0013_student_profiles_buddies",
+      "breakpoints": true
     }
   ]
 }

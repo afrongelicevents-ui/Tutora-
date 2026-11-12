@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import {
 	attendee,
@@ -21,6 +21,7 @@ import {
 	tutorProfile
 } from './db/app.schema.ts';
 import { account, session, twoFactor, user } from './db/auth.schema.ts';
+import { buddyCode, buddyLink, buddyMessage, studentCard } from './db/buddies.schema.ts';
 import { balances } from './billing.ts';
 import { addDays, localDate } from '../tz.ts';
 
@@ -287,8 +288,21 @@ export async function deleteMyAccount(db: DB, userId: string) {
 		.from(homeworkAnswer)
 		.innerJoin(homework, eq(homework.id, homeworkAnswer.homeworkId))
 		.where(eq(homework.userId, userId));
-	const keys = [tp?.photoKey, ...answerFiles.map((a) => a.key)].filter((k): k is string => !!k);
+	const [sc] = await db
+		.select({ photoKey: studentCard.photoKey })
+		.from(studentCard)
+		.where(eq(studentCard.userId, userId));
+	const keys = [tp?.photoKey, sc?.photoKey, ...answerFiles.map((a) => a.key)].filter(
+		(k): k is string => !!k
+	);
 	await db.transaction(async (tx) => {
+		// the student's profile, photo, buddy codes, buddy links and buddy messages
+		await tx.delete(studentCard).where(eq(studentCard.userId, userId));
+		await tx.delete(buddyCode).where(eq(buddyCode.studentId, userId));
+		await tx.delete(buddyLink).where(or(eq(buddyLink.aId, userId), eq(buddyLink.bId, userId)));
+		await tx
+			.delete(buddyMessage)
+			.where(or(eq(buddyMessage.fromId, userId), eq(buddyMessage.toId, userId)));
 		if (keys.length) await tx.delete(fileBlob).where(inArray(fileBlob.key, keys));
 		await tx
 			.update(homeworkAnswer)
