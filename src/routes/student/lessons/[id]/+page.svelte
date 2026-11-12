@@ -67,7 +67,7 @@
 
 	{#if l.live && !l.past}
 		{#if l.mode === 'online'}
-			<div class="plumcard">
+			<div class="navycard">
 				<span class="eyebrow">{m.ld3_how_join()}</span>
 				{#if data.meeting}
 					<strong>{m.ld3_link_by({ tool: provider ?? '', name: l.tutorName ?? '' })}</strong>
@@ -85,7 +85,7 @@
 				{/if}
 			</div>
 		{:else}
-			<div class="plumcard">
+			<div class="navycard">
 				<span class="eyebrow">{m.ld3_where()}</span>
 				<strong>{l.address ?? l.town ?? m.ld3_address_ask()}</strong>
 				<span class="sub small">{fmtDayTime(l.startsAt)} · {m.tp3_minutes({ n: l.minutes })}</span>

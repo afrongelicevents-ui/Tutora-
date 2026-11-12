@@ -536,7 +536,7 @@
 		font-weight: 600;
 	}
 	.lesson-link:hover {
-		color: var(--plum);
+		color: var(--navy);
 	}
 	.acts {
 		display: flex;
@@ -549,11 +549,11 @@
 		font: inherit;
 		font-size: 0.875rem;
 		font-weight: 600;
-		color: var(--plum-2);
+		color: var(--ocean);
 		cursor: pointer;
 	}
 	.answer {
-		border-left: 3px solid var(--lilac);
+		border-left: 3px solid var(--ice);
 		padding-left: 12px;
 		display: flex;
 		flex-direction: column;
@@ -578,7 +578,7 @@
 		cursor: pointer;
 		font-weight: 700;
 		padding: 12px 0;
-		color: var(--plum);
+		color: var(--navy);
 	}
 	.fold form {
 		padding-bottom: 14px;

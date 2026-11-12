@@ -16,18 +16,34 @@ import {
 	schoolWork
 } from '#lib/server/school.ts';
 import { formObject } from '#lib/validation/auth.ts';
+import { shortName } from '#lib/names.ts';
+import { eq } from 'drizzle-orm';
+import {
+	addCheckin,
+	isMood,
+	MOOD_KEY,
+	setCheckinShared,
+	todaysCheckin
+} from '#lib/server/checkins.ts';
+import { activeParents, familyOf } from '#lib/server/family.ts';
+import { notifyUser } from '#lib/server/notify.ts';
+import { t } from '#lib/i18n.ts';
+import { m } from '#lib/paraglide/messages.js';
+import { user } from '#lib/server/db/auth.schema.ts';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const u = requireRole(locals.user, url, ['student']);
 	const now = new Date();
-	const [overall, topics, exams, week, school, results, plan] = await Promise.all([
+	const [overall, topics, exams, week, school, results, plan, checkin, family] = await Promise.all([
 		overallProgress(locals.db, u.id, now),
 		topicScores(locals.db, u.id),
 		examReadiness(locals.db, u.id, now),
 		weekSummary(locals.db, u.id, now),
 		schoolWork(locals.db, u.id),
 		recentResults(locals.db, u.id, 8),
-		planFor(locals.db, u.id)
+		planFor(locals.db, u.id),
+		todaysCheckin(locals.db, u.id, now),
+		familyOf(locals.db, u.id)
 	]);
 	// the weakest topic, and whether the plan already makes time for it (real data only)
 	const weak = [...topics].sort((a, b) => a.pct - b.pct).find((t) => t.pct < WEAK_PCT) ?? null;
@@ -42,6 +58,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		? plan.filter((p) => (p.topic ?? '').toLowerCase() === weak.topic.toLowerCase()).length
 		: 0;
 	return {
+		// learning check-in (moved here from Home): the student decides whether family sees it
+		checkin: checkin ? { mood: checkin.mood, shared: checkin.sharedWithFamily } : null,
+		checkinId: checkin?.id ?? null,
+		family: family.filter((f) => f.status === 'active').map((f) => f.label || shortName(f.name)),
 		overall,
 		topics,
 		exams,
@@ -63,6 +83,34 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 };
 
 export const actions: Actions = {
+	/** A learning check-in. The student decides whether family sees it. */
+	checkin: async ({ locals, url, request }) => {
+		const u = requireRole(locals.user, url, ['student']);
+		const f = formObject(await request.formData());
+		if (!isMood(f.mood)) return fail(400, { error: 'err_generic' });
+		const shared = f.share === 'on';
+		await addCheckin(locals.db, u.id, { mood: f.mood, shared, note: f.note ?? null });
+		if (shared) {
+			const [me] = await locals.db.select({ name: user.name }).from(user).where(eq(user.id, u.id));
+			const first = shortName(me?.name ?? '');
+			for (const parentId of await activeParents(locals.db, u.id))
+				await notifyUser(
+					locals.db,
+					parentId,
+					m.ci_notify_s({ name: first }),
+					m.ci_notify_b({ mood: t(MOOD_KEY[f.mood]) }),
+					{ kind: 'family', link: `/parent?child=${encodeURIComponent(u.id)}` }
+				);
+		}
+		return { checked: f.mood, shared };
+	},
+	/** Change your mind about sharing one of your own check-ins. */
+	share: async ({ locals, url, request }) => {
+		const u = requireRole(locals.user, url, ['student']);
+		const f = formObject(await request.formData());
+		await setCheckinShared(locals.db, u.id, Number(f.id) || 0, f.shared === 'on');
+		return null;
+	},
 	school: async ({ locals, url, request }) => {
 		const u = requireRole(locals.user, url, ['student']);
 		const f = formObject(await request.formData());

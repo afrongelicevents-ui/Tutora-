@@ -1,0 +1,54 @@
+<script lang="ts" module>
+	/** One small, consistent line-icon set (24px grid, 1.8 stroke). Only for navigation and
+	 *  subject tiles: Tutora deliberately uses few icons. */
+	export const ICONS = {
+		home: 'M4 10.5 12 4l8 6.5V20h-5.5v-6h-5v6H4z',
+		search: 'M10.5 17a6.5 6.5 0 1 1 0-13 6.5 6.5 0 0 1 0 13Zm4.7-1.8L20 20',
+		lessons: 'M8 5.5v13l10.5-6.5z',
+		progress: 'M5 20V13M10 20V8M15 20v-9M20 20V5',
+		family:
+			'M8.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm7.5-.5a2.5 2.5 0 1 0 0-5M3.5 19.5c.6-3 2.6-4.8 5-4.8s4.4 1.8 5 4.8M15.5 14.8c2.2.1 3.9 1.8 4.4 4.7',
+		// subjects
+		maths: 'M5 4h14v16H5zM8 8h8M9 12.5h0M12 12.5h0M15 12.5h0M9 16h0M12 16h0M15 16h0',
+		language:
+			'M4 5.5c2.6-1 5.3-1 8 .8 2.7-1.8 5.4-1.8 8-.8v13c-2.6-1-5.3-1-8 .8-2.7-1.8-5.4-1.8-8-.8zM12 6.3v13',
+		science:
+			'M9.5 4h5M10.5 4v5.2L5.6 17.6A1.6 1.6 0 0 0 7 20h10a1.6 1.6 0 0 0 1.4-2.4L13.5 9.2V4M8 14.5h8',
+		humanities:
+			'M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM4.5 9.5h15M4.5 14.5h15M12 4c-2.2 2.3-3.2 5-3.2 8s1 5.7 3.2 8c2.2-2.3 3.2-5 3.2-8s-1-5.7-3.2-8Z',
+		computing: 'M4 5h16v10H4zM9 19h6M12 15v4',
+		business: 'M5 19V11M10 19V7M15 19v-5M20 19V4',
+		book: 'M6 4h11a1 1 0 0 1 1 1v15H7a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1Zm-1 14a2 2 0 0 1 2-2h11',
+		more: 'M6 12h0M12 12h0M18 12h0'
+	} as const;
+	export type IconName = keyof typeof ICONS;
+
+	/** Pick the subject icon from the subject's name (unknown subjects get a book). */
+	export function subjectIcon(name: string): IconName {
+		const n = name.toLowerCase();
+		if (/math|algebra|geometr|statist|calculus|arithm/.test(n)) return 'maths';
+		if (/english|shona|ndebele|french|portugu|literat|language|reading|writing|kiswahili/.test(n))
+			return 'language';
+		if (/science|physic|chemi|biolog|agricult/.test(n)) return 'science';
+		if (/histor|geograph|religio|heritage|social/.test(n)) return 'humanities';
+		if (/computer|ict|coding|programm/.test(n)) return 'computing';
+		if (/account|business|commerce|econom/.test(n)) return 'business';
+		return 'book';
+	}
+</script>
+
+<script lang="ts">
+	let { name, size = 22 }: { name: IconName; size?: number } = $props();
+</script>
+
+<svg
+	width={size}
+	height={size}
+	viewBox="0 0 24 24"
+	fill="none"
+	stroke="currentColor"
+	stroke-width={name === 'more' ? 3 : 1.8}
+	stroke-linecap="round"
+	stroke-linejoin="round"
+	aria-hidden="true"><path d={ICONS[name]} /></svg
+>

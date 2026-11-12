@@ -68,10 +68,10 @@
 		margin: 0;
 		font-size: 0.8125rem;
 		line-height: 1.45;
-		color: var(--plum-2);
+		color: var(--ocean);
 	}
 	.p-off {
-		background: #f1ecf2;
+		background: var(--ice);
 		color: var(--muted);
 		font-weight: 600;
 	}

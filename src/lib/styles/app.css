@@ -1,4 +1,4 @@
-/* Tutora v3 design tokens: plum, ivory and soft lilac.
+/* Tutora design tokens: deep navy, ocean blue, sky, icy blue and soft white, with a little glass.
    Fraunces (serif, 600, latin only, 18 KB) for headings; Inter (variable, latin, 48 KB) for text.
    Both are self-hosted and cached for a year; text shows at once in the phone's font while they load. */
 @font-face {
@@ -22,32 +22,36 @@
 		U+2122;
 }
 :root {
-	--plum: #3b1340; /* primary: 14.6:1 on ivory */
-	--plum-2: #4a1d52; /* links, secondary accents: 12.4:1 */
-	--plum-dark: #2b0d30; /* hover */
-	--ivory: #fbf7f3; /* page background */
-	--lilac: #ede3f1; /* soft panels, chips */
-	--text: #2a1630; /* body text: 15.9:1 */
-	--muted: #6e5f73; /* secondary text: 5.9:1 on ivory */
-	--border: #e8dde9; /* thin dividers */
-	--border-strong: #d9c8de; /* chip and secondary-button outlines */
-	--on-plum: #d7c4dd; /* small text on plum */
-	--ok: #2f7a4f; /* "Done", "Confirmed": 5.2:1 */
-	--ok-bg: #e3f1e8;
-	--warn: #8a5a12; /* "Due", "Pending": 6.2:1 */
+	--navy: #0b2545; /* deep navy, primary brand: 14.5:1 on snow */
+	--navy-dark: #071a33; /* hover on navy */
+	--ocean: #1a5fae; /* rich ocean blue: buttons, links, active elements: 6.4:1 with white */
+	--sky: #6fb3ea; /* sky blue: small accents and charts only, never body text */
+	--ice: #e7f0fa; /* icy blue: soft panels, chips */
+	--snow: #f5f8fc; /* soft white page background */
+	--text: #0e1c30; /* body text: 16:1 */
+	--muted: #51627a; /* secondary text: 5.8:1 on snow */
+	--border: #dce6f2; /* thin dividers */
+	--border-strong: #c3d3e6; /* chip and secondary-button outlines */
+	--on-navy: #c3d6ec; /* small text on navy: 10.4:1 */
+	--glass: rgb(255 255 255 / 0.66); /* translucent glass surface (with a light blur) */
+	--glass-border: rgb(255 255 255 / 0.85);
+	--shadow-soft: 0 1px 2px rgb(11 37 69 / 0.05), 0 8px 24px rgb(11 37 69 / 0.07);
+	--ok: #1f7a4d; /* "Done", "Confirmed" */
+	--ok-bg: #e2f2e9;
+	--warn: #8a5a12; /* "Due", "Pending" */
 	--warn-bg: #f7ecd9;
-	--danger-700: #8a2f3a;
-	--danger-50: #f8e8ea;
+	--danger-700: #9b2c2c;
+	--danger-50: #fbeaea;
 
 	/* older names, kept so every existing screen takes the new colours */
-	--brand-700: var(--plum);
-	--brand-900: var(--plum-dark);
-	--clay-600: var(--plum-2);
+	--brand-700: var(--navy);
+	--brand-900: var(--navy-dark);
+	--clay-600: var(--ocean);
 	--ochre-400: #b9852f;
 	--ink-900: var(--text);
 	--ink-600: var(--muted);
-	--paper-50: var(--ivory);
-	--mint-50: var(--lilac);
+	--paper-50: var(--snow);
+	--mint-50: var(--ice);
 	--card: #fff;
 	--white: #fff;
 	--line: var(--border);
@@ -66,7 +70,7 @@
 	--space-6: 24px;
 	--space-8: 32px;
 	--maxw: 1080px;
-	--focus: 0 0 0 3px var(--ivory), 0 0 0 5px var(--plum);
+	--focus: 0 0 0 3px var(--snow), 0 0 0 5px var(--navy);
 }
 
 *,
@@ -83,7 +87,10 @@ body {
 	font-size: 1rem;
 	line-height: 1.5;
 	color: var(--ink-900);
-	background: var(--paper-50);
+	/* soft white with a faint icy wash at the top (one gentle gradient, no images) */
+	background:
+		linear-gradient(180deg, #e9f1fb 0, var(--snow) 360px) no-repeat,
+		var(--snow);
 }
 img,
 svg {
@@ -111,7 +118,7 @@ h3 {
 	margin: 0 0 var(--space-3);
 	font-weight: 600;
 	letter-spacing: -0.01em;
-	color: var(--plum);
+	color: var(--navy);
 }
 h1 {
 	font-size: clamp(1.75rem, 7.5vw, 2.25rem);
@@ -148,7 +155,7 @@ p {
 	padding: var(--space-4);
 }
 .panel {
-	background: var(--lilac);
+	background: var(--ice);
 	border-radius: var(--radius-lg);
 	padding: var(--space-4);
 }
@@ -174,9 +181,9 @@ p {
 	padding: 0 22px;
 	/* pill buttons, text centred both ways (approved design) */
 	border-radius: 999px;
-	border: 2px solid var(--brand-700);
-	background: var(--brand-700);
-	color: var(--paper-50);
+	border: 2px solid var(--ocean);
+	background: var(--ocean);
+	color: #fff;
 	font: inherit;
 	font-weight: 700;
 	line-height: 1.2;
@@ -185,14 +192,14 @@ p {
 	cursor: pointer;
 }
 .btn:hover {
-	background: var(--brand-900);
-	border-color: var(--brand-900);
-	color: var(--paper-50);
+	background: #154f93;
+	border-color: #154f93;
+	color: #fff;
 }
 .btn-secondary {
 	background: var(--white);
-	color: var(--plum);
-	border: 1.5px solid var(--plum);
+	color: var(--ocean);
+	border: 1.5px solid var(--border-strong);
 }
 .btn-secondary:hover {
 	background: var(--mint-50);
@@ -431,7 +438,7 @@ textarea {
 	color: var(--danger-700);
 }
 .p-info {
-	background: #f1ecf2;
+	background: var(--ice);
 	color: var(--ink-600);
 }
 .owe {
@@ -942,7 +949,7 @@ fieldset > legend {
 	font-weight: 700;
 	letter-spacing: 0.04em;
 	text-transform: uppercase;
-	color: var(--plum-2);
+	color: var(--ocean);
 }
 .lead {
 	font-size: 0.9375rem;
@@ -953,53 +960,58 @@ fieldset > legend {
 	font-family: var(--font-display);
 	font-weight: 600;
 	font-size: 1.5rem;
-	color: var(--plum);
+	color: var(--navy);
 	text-decoration: none;
 }
 .tag {
 	font-size: 0.75rem;
 	font-weight: 600;
-	color: var(--plum);
-	background: var(--lilac);
+	color: var(--navy);
+	background: var(--ice);
 	padding: 5px 10px;
 	border-radius: 999px;
 	white-space: nowrap;
 }
-/* the plum feature card: next lesson, how to join, invite code */
-.plumcard {
+/* the navy feature card: next lesson, how to join, invite code */
+.navycard {
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
-	background: var(--plum);
-	color: var(--ivory);
+	/* deep navy with a faint sky light in one corner: the one "glass" feature card */
+	background:
+		radial-gradient(120% 90% at 100% 0%, rgb(111 179 234 / 0.28), transparent 60%),
+		linear-gradient(160deg, #123563, var(--navy) 70%);
+	color: var(--snow);
+	border: 1px solid rgb(255 255 255 / 0.14);
 	border-radius: var(--radius-lg);
+	box-shadow: 0 10px 28px rgb(11 37 69 / 0.22);
 	padding: 18px;
 	text-decoration: none;
 }
-a.plumcard:hover {
-	background: var(--plum-dark);
-	color: var(--ivory);
+a.navycard:hover {
+	background: var(--navy-dark);
+	color: var(--snow);
 }
-.plumcard .eyebrow,
-.plumcard .sub {
-	color: var(--on-plum);
+.navycard .eyebrow,
+.navycard .sub {
+	color: var(--on-navy);
 }
-.plumcard strong {
+.navycard strong {
 	font-size: 1.125rem;
-	color: var(--ivory);
+	color: var(--snow);
 }
-.plumcard .btn {
-	background: var(--ivory);
-	border-color: var(--ivory);
-	color: var(--plum);
+.navycard .btn {
+	background: #d6e8fa; /* light sky button on navy (navy text 11.7:1) */
+	border-color: #d6e8fa;
+	color: var(--navy);
 }
-.plumcard .btn-ghost {
+.navycard .btn-ghost {
 	background: transparent;
-	color: var(--ivory);
-	border: 1px solid rgba(251, 247, 243, 0.45);
+	color: var(--snow);
+	border: 1px solid rgb(255 255 255 / 0.45);
 }
 .softcard {
-	background: var(--lilac);
+	background: var(--ice);
 	border-radius: var(--radius-lg);
 	padding: 16px 18px;
 	display: flex;
@@ -1036,10 +1048,10 @@ a.plumcard:hover {
 }
 a.rows-link:hover,
 .rows > a:hover {
-	color: var(--plum);
+	color: var(--navy);
 }
 .rows .go {
-	color: var(--plum-2);
+	color: var(--ocean);
 }
 .ok-t {
 	color: var(--ok);
@@ -1050,7 +1062,7 @@ a.rows-link:hover,
 	font-weight: 600;
 }
 .next-t {
-	color: var(--plum-2);
+	color: var(--ocean);
 	font-weight: 700;
 }
 /* choice chips (check-ins, subjects, children, times) */
@@ -1077,9 +1089,9 @@ a.rows-link:hover,
 .chip[aria-pressed='true'],
 .chip[aria-current],
 .chip:has(input:checked) {
-	background: var(--plum);
-	border-color: var(--plum);
-	color: var(--ivory);
+	background: var(--navy);
+	border-color: var(--navy);
+	color: var(--snow);
 	font-weight: 600;
 }
 .chip input {
@@ -1092,7 +1104,7 @@ a.rows-link:hover,
 }
 .chip.add {
 	border-style: dashed;
-	border-color: #b9a3c0;
+	border-color: var(--border-strong);
 	color: var(--muted);
 }
 /* three numbers between thin rules */
@@ -1110,7 +1122,7 @@ a.rows-link:hover,
 	font-family: var(--font-display);
 	font-weight: 600;
 	font-size: 1.5rem;
-	color: var(--plum);
+	color: var(--navy);
 	line-height: 1.2;
 }
 .stat3 span {
@@ -1122,23 +1134,23 @@ a.rows-link:hover,
 	font-weight: 600;
 	font-size: 3.25rem;
 	line-height: 1;
-	color: var(--plum);
+	color: var(--navy);
 }
 /* topic bars */
 .meter {
 	height: 8px;
 	border-radius: 99px;
-	background: var(--lilac);
+	background: var(--ice);
 	overflow: hidden;
 }
 .meter > span {
 	display: block;
 	height: 100%;
 	border-radius: 99px;
-	background: var(--plum-2);
+	background: var(--ocean);
 }
 .meter.mid > span {
-	background: #8e6c99;
+	background: var(--ocean);
 }
 .meter.low > span {
 	background: var(--ochre-400);
@@ -1149,7 +1161,7 @@ a.rows-link:hover,
 	min-height: 44px;
 	padding: 0 6px 0 0;
 	font-size: 1.375rem;
-	color: var(--plum);
+	color: var(--navy);
 	text-decoration: none;
 }
 .screen {
@@ -1191,7 +1203,7 @@ a.rows-link:hover,
 .section-h a {
 	font-size: 0.875rem;
 	font-weight: 600;
-	color: var(--plum-2);
+	color: var(--ocean);
 	text-decoration: none;
 	padding: 10px 0;
 }
@@ -1204,7 +1216,7 @@ a.rows-link:hover,
 	font-family: var(--font-display);
 	font-size: 2.25rem;
 	letter-spacing: 4px;
-	color: var(--ivory);
+	color: var(--snow);
 }
 .code-input {
 	font-family: var(--font-display);
@@ -1213,10 +1225,10 @@ a.rows-link:hover,
 	text-align: center;
 	text-transform: uppercase;
 	padding: 16px;
-	border: 1.5px solid var(--plum);
+	border: 1.5px solid var(--navy);
 	border-radius: 16px;
 	background: var(--white);
-	color: var(--plum);
+	color: var(--navy);
 	width: 100%;
 }
 .toggle-row {
@@ -1231,15 +1243,15 @@ a.rows-link:hover,
 .toggle-row input[type='checkbox'] {
 	width: 22px;
 	height: 22px;
-	accent-color: var(--plum);
+	accent-color: var(--navy);
 	flex-shrink: 0;
 }
 .avatar-l {
 	width: 58px;
 	height: 58px;
 	border-radius: 999px;
-	background: var(--lilac);
-	color: var(--plum);
+	background: var(--ice);
+	color: var(--navy);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -1281,12 +1293,12 @@ a.rows-link:hover,
 }
 .btn-ghost {
 	background: transparent;
-	color: var(--plum);
+	color: var(--navy);
 	border: 1.5px solid var(--border-strong);
 }
 .btn-ghost:hover {
-	background: var(--lilac);
-	color: var(--plum);
+	background: var(--ice);
+	color: var(--navy);
 	border-color: var(--border-strong);
 }
 @media (min-width: 900px) {

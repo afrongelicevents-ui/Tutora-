@@ -30,7 +30,7 @@
 	{#if form?.done}<p class="notice" role="status">{t(`st5_done_${form.done}`)}</p>{/if}
 
 	{#if data.running}
-		<section class="plumcard" aria-labelledby="focus-h">
+		<section class="navycard" aria-labelledby="focus-h">
 			<span class="eyebrow" id="focus-h">{m.st5_focus_now()}</span>
 			<strong>{data.running.subject}{data.running.topic ? ` · ${data.running.topic}` : ''}</strong>
 			<SessionTimer endsAt={data.running.endsAt} now={data.now} />
@@ -99,13 +99,19 @@
 			<p class="note">{m.st5_today_empty()}</p>
 		{/if}
 		{#if !data.running}
-			<details class="more" open={form?.form === 'start'}>
+			<details class="more" id="focus" open={form?.form === 'start' || !!data.prefillSubject}>
 				<summary>{m.st5_free_session()}</summary>
 				<form method="POST" action="?/start" class="stack">
 					{#if errFor('start')}<p class="error" role="alert">{errFor('start')}</p>{/if}
 					<div class="field">
 						<label for="fs-subject">{m.st5_subject()}</label>
-						<input id="fs-subject" name="subject" required maxlength="60" />
+						<input
+							id="fs-subject"
+							name="subject"
+							required
+							maxlength="60"
+							value={data.prefillSubject}
+						/>
 					</div>
 					<div class="field">
 						<label for="fs-topic">{m.st5_topic_opt()}</label>
@@ -376,7 +382,7 @@
 	.more summary {
 		cursor: pointer;
 		font-weight: 600;
-		color: var(--plum-2);
+		color: var(--ocean);
 		min-height: 44px;
 		display: flex;
 		align-items: center;

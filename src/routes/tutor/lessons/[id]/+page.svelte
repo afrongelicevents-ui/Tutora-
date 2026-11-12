@@ -30,7 +30,7 @@
 	{#if share === 'failed'}<p class="alert" role="alert">{m.tools6_drive_share_failed()}</p>{/if}
 
 	{#if l.status === 'scheduled'}
-		<div class="plumcard">
+		<div class="navycard">
 			<span class="eyebrow">{m.tools6_how_join()}</span>
 			{#if l.mode === 'online'}
 				{#if data.meeting}
@@ -234,7 +234,7 @@
 	.add summary {
 		cursor: pointer;
 		font-weight: 600;
-		color: var(--plum-2);
+		color: var(--ocean);
 		min-height: 44px;
 		display: flex;
 		align-items: center;

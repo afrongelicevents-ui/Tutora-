@@ -24,7 +24,7 @@ export async function receiptPdf(r: ReceiptData): Promise<Uint8Array> {
 	const font = await doc.embedFont(StandardFonts.Helvetica);
 	const bold = await doc.embedFont(StandardFonts.HelveticaBold);
 	const serif = await doc.embedFont(StandardFonts.TimesRomanBold);
-	const green = rgb(0.055, 0.42, 0.32);
+	const green = rgb(0.043, 0.145, 0.27); // navy (brand)
 	const ink = rgb(0.11, 0.15, 0.13);
 	const grey = rgb(0.36, 0.4, 0.37);
 	const line = rgb(0.9, 0.88, 0.84);

@@ -2,6 +2,7 @@
 	import { m, t } from '#lib/i18n.ts';
 	import { READY_PCT_CLIENT } from '#lib/progress-ui.ts';
 	import SchoolWork from '#lib/components/progress/SchoolWork.svelte';
+	import CheckinCard from '#lib/components/progress/CheckinCard.svelte';
 	let { data, form } = $props();
 	const tone = (p: number) => (p >= READY_PCT_CLIENT ? '' : p >= 50 ? 'mid' : 'low');
 	const change = $derived(
@@ -18,6 +19,8 @@
 	<h1>{m.pg3_title()}</h1>
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
 	{#if form?.saved}<p class="notice" role="status">{m.sw3_saved()}</p>{/if}
+
+	<CheckinCard family={data.family} checkin={data.checkin} checkinId={data.checkinId} {form} />
 
 	{#if data.overall.current}
 		<div class="overall">

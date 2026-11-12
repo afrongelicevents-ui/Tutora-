@@ -76,7 +76,7 @@
 	.choice input[type='radio'] {
 		width: 22px;
 		height: 22px;
-		accent-color: var(--plum);
+		accent-color: var(--navy);
 		flex-shrink: 0;
 	}
 	.choice input:not([type='radio']) {

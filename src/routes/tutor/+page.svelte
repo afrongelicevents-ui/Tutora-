@@ -293,7 +293,7 @@
 		flex-direction: column;
 		gap: 8px;
 		background: var(--white);
-		border: 1.5px solid var(--plum);
+		border: 1.5px solid var(--navy);
 		border-radius: 18px;
 		padding: 16px;
 	}
@@ -312,7 +312,7 @@
 		cursor: pointer;
 		font-size: 0.875rem;
 		font-weight: 600;
-		color: var(--plum-2);
+		color: var(--ocean);
 		padding: 8px 0;
 	}
 	.rows > li.lesson,
@@ -332,7 +332,7 @@
 		text-decoration: none;
 	}
 	.what:hover {
-		color: var(--plum);
+		color: var(--navy);
 	}
 	.next-t,
 	.wa {
@@ -351,7 +351,7 @@
 		font: inherit;
 		font-size: 0.875rem;
 		font-weight: 600;
-		color: var(--plum-2);
+		color: var(--ocean);
 		cursor: pointer;
 	}
 	.line-link {

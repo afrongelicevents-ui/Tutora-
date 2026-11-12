@@ -87,7 +87,7 @@
 	.more summary {
 		cursor: pointer;
 		font-weight: 600;
-		color: var(--plum-2);
+		color: var(--ocean);
 		min-height: 44px;
 		display: flex;
 		align-items: center;

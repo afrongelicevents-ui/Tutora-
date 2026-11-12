@@ -123,7 +123,7 @@
 
 <style>
 	.head {
-		background: var(--lilac);
+		background: var(--ice);
 	}
 	.inner {
 		max-width: 720px;
@@ -140,8 +140,8 @@
 		width: 84px;
 		height: 84px;
 		border-radius: 999px;
-		background: var(--ivory);
-		color: var(--plum);
+		background: var(--snow);
+		color: var(--navy);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -160,7 +160,7 @@
 	}
 	.meta {
 		font-size: 0.9375rem;
-		color: var(--plum-2);
+		color: var(--ocean);
 	}
 	.headline {
 		margin: 0;

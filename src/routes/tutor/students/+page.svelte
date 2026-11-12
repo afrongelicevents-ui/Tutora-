@@ -52,6 +52,6 @@
 		text-decoration: none;
 	}
 	.who:hover strong {
-		color: var(--plum);
+		color: var(--navy);
 	}
 </style>

@@ -25,6 +25,6 @@
 		font-weight: 600;
 		font-size: 2.25rem;
 		line-height: 1.1;
-		color: var(--ivory);
+		color: var(--snow);
 	}
 </style>

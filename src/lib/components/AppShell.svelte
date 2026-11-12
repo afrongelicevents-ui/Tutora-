@@ -2,12 +2,15 @@
 	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import { m } from '#lib/i18n.ts';
+	import LineIcon, { type IconName } from '#lib/components/LineIcon.svelte';
 
 	export interface NavItem {
 		href: string;
 		label: string;
 		/** extra paths that belong to this tab */
 		also?: string[];
+		/** small line icon above the label in the phone tab bar (optional) */
+		icon?: IconName;
 	}
 
 	let {
@@ -94,7 +97,12 @@
 		style="grid-template-columns: repeat({tabs.length}, minmax(0, 1fr))"
 	>
 		{#each tabs as item (item.href)}
-			<a href={item.href} aria-current={isOn(item, all) ? 'page' : undefined}>{item.label}</a>
+			<a
+				href={item.href}
+				class:has-icon={!!item.icon}
+				aria-current={isOn(item, all) ? 'page' : undefined}
+				>{#if item.icon}<LineIcon name={item.icon} />{/if}<span>{item.label}</span></a
+			>
 		{/each}
 	</nav>
 </div>
@@ -128,7 +136,7 @@
 		min-height: 44px;
 		min-width: 44px;
 		justify-content: center;
-		color: var(--plum);
+		color: var(--navy);
 		text-decoration: none;
 		font-size: 0.875rem;
 		font-weight: 600;
@@ -138,8 +146,8 @@
 		min-width: 18px;
 		padding: 1px 5px;
 		border-radius: 99px;
-		background: var(--plum);
-		color: var(--ivory);
+		background: var(--navy);
+		color: var(--snow);
 		font-size: 0.6875rem;
 		font-weight: 700;
 		text-align: center;
@@ -174,9 +182,32 @@
 		line-height: 1.15;
 	}
 	.tabbar a[aria-current='page'] {
-		border-top-color: var(--plum);
-		color: var(--plum);
+		border-top-color: var(--navy);
+		color: var(--navy);
 		font-weight: 700;
+	}
+	/* tabs with an icon: icon over label, a short navy bar under the active one */
+	.tabbar a.has-icon {
+		flex-direction: column;
+		gap: 3px;
+		min-height: 62px;
+		border-top: 0;
+		position: relative;
+		color: var(--muted); /* muted blue-grey: 6.2:1 on white */
+	}
+	.tabbar a.has-icon[aria-current='page'] {
+		color: var(--navy);
+	}
+	.tabbar a.has-icon[aria-current='page']::after {
+		content: '';
+		position: absolute;
+		bottom: 4px;
+		left: 50%;
+		width: 28px;
+		height: 3px;
+		margin-left: -14px;
+		border-radius: 99px;
+		background: var(--ocean);
 	}
 	@media (min-width: 900px) {
 		.shell {
@@ -227,11 +258,11 @@
 		}
 		.side a:hover,
 		.side button:hover {
-			background: var(--ivory);
+			background: var(--snow);
 		}
 		.side a[aria-current='page'] {
-			background: var(--lilac);
-			color: var(--plum);
+			background: var(--ice);
+			color: var(--navy);
 			font-weight: 700;
 		}
 		.side .wordmark {

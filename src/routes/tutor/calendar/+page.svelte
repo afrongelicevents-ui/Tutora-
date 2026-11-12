@@ -289,7 +289,7 @@
 		color: var(--muted);
 	}
 	.avail a {
-		color: var(--plum);
+		color: var(--navy);
 		font-weight: 700;
 	}
 	.bar {
@@ -320,11 +320,11 @@
 		padding: 14px 16px;
 	}
 	.ev-card.pend {
-		border: 1px dashed #b9a3c0;
+		border: 1px dashed var(--border-strong);
 	}
 	.ev-card.blk {
-		background: var(--lilac);
-		border-color: var(--lilac);
+		background: var(--ice);
+		border-color: var(--ice);
 	}
 	.ev-card.own {
 		border-style: solid;
@@ -343,7 +343,7 @@
 		text-decoration: none;
 	}
 	a.ev-title:hover {
-		color: var(--plum);
+		color: var(--navy);
 	}
 	.next-t {
 		text-decoration: none;
@@ -355,7 +355,7 @@
 		font: inherit;
 		font-size: 0.875rem;
 		font-weight: 600;
-		color: var(--plum-2);
+		color: var(--ocean);
 		cursor: pointer;
 	}
 	.fold {

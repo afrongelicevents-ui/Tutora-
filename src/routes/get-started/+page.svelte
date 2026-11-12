@@ -37,13 +37,13 @@
 		border: 1.5px solid var(--border);
 		border-radius: 20px;
 		padding: 20px;
-		color: var(--plum);
+		color: var(--navy);
 		text-decoration: none;
 		font-size: 1.25rem;
 	}
 	.who:hover {
-		border-color: var(--plum);
-		color: var(--plum);
+		border-color: var(--navy);
+		color: var(--navy);
 	}
 	.who > span:first-child {
 		display: flex;
@@ -69,7 +69,7 @@
 	.code a {
 		display: inline-block;
 		padding: 12px 4px;
-		color: var(--plum);
+		color: var(--navy);
 		font-weight: 700;
 	}
 </style>

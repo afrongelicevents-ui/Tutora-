@@ -147,7 +147,7 @@
 	}
 	select {
 		min-height: 44px;
-		border: 1.5px solid #a08ca6;
+		border: 1.5px solid var(--border-strong);
 		border-radius: 14px;
 		padding: 0 12px;
 		background: var(--white);

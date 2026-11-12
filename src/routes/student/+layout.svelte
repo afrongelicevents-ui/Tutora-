@@ -9,11 +9,16 @@
 	label={m.nav_dashboard()}
 	unread={data.unread}
 	tabs={[
-		{ href: '/student', label: m.v3_nav_home() },
-		{ href: '/student/find', label: m.v3_nav_find(), also: ['/student/book', '/student/tutor'] },
-		{ href: '/student/lessons', label: m.v3_nav_lessons() },
-		{ href: '/student/progress', label: m.v3_nav_progress() },
-		{ href: '/student/family', label: m.v3_nav_family() }
+		{ href: '/student', label: m.v3_nav_home(), icon: 'home', also: ['/student/subjects'] },
+		{
+			href: '/student/find',
+			label: m.v3_nav_find(),
+			icon: 'search',
+			also: ['/student/book', '/student/tutor']
+		},
+		{ href: '/student/lessons', label: m.v3_nav_lessons(), icon: 'lessons' },
+		{ href: '/student/progress', label: m.v3_nav_progress(), icon: 'progress' },
+		{ href: '/student/family', label: m.v3_nav_family(), icon: 'family' }
 	]}
 	more={[
 		{ href: '/student/homework', label: m.v3_nav_homework() },

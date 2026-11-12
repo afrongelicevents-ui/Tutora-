@@ -84,7 +84,7 @@
 		text-underline-offset: 3px;
 	}
 	a.title:hover {
-		color: var(--plum);
+		color: var(--navy);
 	}
 	.right {
 		display: flex;

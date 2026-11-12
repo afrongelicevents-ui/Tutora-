@@ -47,7 +47,7 @@
 		padding: 0;
 	}
 	.n {
-		color: var(--plum-2);
+		color: var(--ocean);
 	}
 	.choice {
 		display: flex;
@@ -61,13 +61,13 @@
 		cursor: pointer;
 	}
 	.choice:has(input:checked) {
-		border-color: var(--plum);
-		background: var(--lilac);
+		border-color: var(--navy);
+		background: var(--ice);
 	}
 	.choice input {
 		width: 20px;
 		height: 20px;
-		accent-color: var(--plum);
+		accent-color: var(--navy);
 		flex-shrink: 0;
 	}
 </style>

@@ -184,7 +184,7 @@
 		display: flex;
 		align-items: center;
 		font-weight: 600;
-		color: var(--plum);
+		color: var(--navy);
 		cursor: pointer;
 	}
 	.filters form {
@@ -196,7 +196,7 @@
 		margin: 0;
 	}
 	.go {
-		color: var(--plum);
+		color: var(--navy);
 		font-size: 1.25rem;
 	}
 	.empty-state {

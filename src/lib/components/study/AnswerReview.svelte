@@ -48,6 +48,6 @@
 		font-weight: 600;
 	}
 	.n {
-		color: var(--plum-2);
+		color: var(--ocean);
 	}
 </style>

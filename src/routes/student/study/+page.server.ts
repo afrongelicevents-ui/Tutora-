@@ -41,6 +41,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		checkDoneToday(db, id, now)
 	]);
 	return {
+		// from Home ("Resume lesson") or a subject page: fill in the focus-session subject
+		prefillSubject: (url.searchParams.get('subject') ?? '').trim().slice(0, 60),
 		now,
 		today: localDate(now),
 		plan: plan.map((p) => ({

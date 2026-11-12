@@ -17,7 +17,7 @@
 			{t(form.error as string, { minutes: 60 })}
 		</p>{/if}
 
-	<div class="plumcard code">
+	<div class="navycard code">
 		<span class="eyebrow">{m.fc3_your_code()}</span>
 		{#if shown}
 			<strong class="codebox" aria-live="polite">{shown}</strong>

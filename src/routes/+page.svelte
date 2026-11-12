@@ -30,8 +30,8 @@
 		min-height: 100dvh;
 		display: flex;
 		flex-direction: column;
-		background: var(--plum);
-		color: var(--ivory);
+		background: var(--navy);
+		color: var(--snow);
 		overflow: hidden;
 	}
 	.photo {
@@ -46,15 +46,15 @@
 		object-fit: cover;
 		object-position: 30% center;
 	}
-	/* the only gradient in Tutora: the welcome photo fading into plum */
+	/* the only gradient in Tutora: the welcome photo fading into navy */
 	.fade {
 		position: absolute;
 		inset: 0;
 		background: linear-gradient(
 			180deg,
-			rgba(59, 19, 64, 0.15) 0%,
-			rgba(59, 19, 64, 0.55) 55%,
-			#3b1340 100%
+			rgba(11, 37, 69, 0.12) 0%,
+			rgba(11, 37, 69, 0.55) 55%,
+			#0b2545 100%
 		);
 	}
 	.brand {
@@ -77,33 +77,33 @@
 		margin: 0;
 		font-size: 2.5rem;
 		line-height: 1.05;
-		color: var(--ivory);
+		color: var(--snow);
 	}
 	p {
 		margin: 0;
 		font-size: 1rem;
 		line-height: 1.5;
-		color: #e6d8ea;
+		color: #c9dbef;
 	}
 	.light {
 		margin-top: 8px;
-		background: var(--ivory);
-		border-color: var(--ivory);
-		color: var(--plum);
+		background: var(--snow);
+		border-color: var(--snow);
+		color: var(--navy);
 		min-height: 54px;
 	}
 	.light:hover {
 		background: #fff;
-		color: var(--plum);
+		color: var(--navy);
 	}
 	.outline {
 		background: transparent;
-		color: var(--ivory);
-		border: 1.5px solid rgba(251, 247, 243, 0.5);
+		color: var(--snow);
+		border: 1.5px solid rgba(255, 255, 255, 0.5);
 	}
 	.outline:hover {
-		background: rgba(251, 247, 243, 0.08);
-		color: var(--ivory);
+		background: rgba(255, 255, 255, 0.08);
+		color: var(--snow);
 	}
 	@media (min-width: 900px) {
 		.welcome {
@@ -116,7 +116,7 @@
 			grid-row: 1 / span 2;
 		}
 		.fade {
-			background: linear-gradient(90deg, rgba(59, 19, 64, 0) 60%, #3b1340 100%);
+			background: linear-gradient(90deg, rgba(11, 37, 69, 0) 60%, #0b2545 100%);
 		}
 		.brand {
 			grid-column: 2;

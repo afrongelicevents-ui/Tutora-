@@ -179,7 +179,7 @@
 	}
 	select {
 		min-height: 44px;
-		border: 1.5px solid #a08ca6;
+		border: 1.5px solid var(--border-strong);
 		border-radius: 14px;
 		padding: 0 12px;
 		background: var(--white);
@@ -199,7 +199,7 @@
 	.manual summary {
 		cursor: pointer;
 		font-weight: 600;
-		color: var(--plum-2);
+		color: var(--ocean);
 		min-height: 44px;
 		display: flex;
 		align-items: center;

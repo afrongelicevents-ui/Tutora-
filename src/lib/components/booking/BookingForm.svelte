@@ -251,9 +251,9 @@
 		font-size: 0.9375rem;
 	}
 	.time input:checked + span {
-		background: var(--plum);
-		border-color: var(--plum);
-		color: var(--ivory);
+		background: var(--navy);
+		border-color: var(--navy);
+		color: var(--snow);
 		font-weight: 700;
 	}
 	.time input:focus-visible + span {
