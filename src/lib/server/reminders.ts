@@ -1,9 +1,12 @@
-import { and, eq, gt, isNull, lt } from 'drizzle-orm';
+import { and, eq, gt, gte, isNull, lt } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { attendee, homework, homeworkAnswer, lesson, subject } from './db/app.schema.ts';
 import { user } from './db/auth.schema.ts';
 import type { Notify } from './notify-core.ts';
-import { addDays, fmtDayTime, localDate } from '../tz.ts';
+import { addDays, fmtDayTime, local, localDate } from '../tz.ts';
+import { studyAlertSent, studyPlanItem } from './db/v3.schema.ts';
+import { parentsWhoSee } from './family.ts';
+import { clock12, clockShort, firstName } from './study.ts';
 import { cleanupSignals } from './room.ts';
 import { m } from '../paraglide/messages.js';
 
@@ -107,6 +110,75 @@ export async function sendHomeworkReminders(db: DB, notify: Notify, now = new Da
 			link: '/student/homework'
 		}).catch(() => {});
 		sent++;
+	}
+	return sent;
+}
+
+/**
+ * "Study time at 4:00 PM": for weekly plan slots starting within the next hour (Zimbabwe
+ * time), each parent who may see the child's study time is told once per slot per date.
+ * The study_alert_sent row is claimed first, so overlapping runs never send it twice.
+ */
+export async function sendStudyReminders(db: DB, notify: Notify, now = new Date()) {
+	const { weekday, minutes } = local(now);
+	const today = localDate(now);
+	// [from, to) in minutes of a given weekday, and the date it falls on
+	const windows: { weekday: number; from: number; to: number; date: string }[] = [
+		{ weekday, from: minutes, to: Math.min(1440, minutes + 60), date: today }
+	];
+	if (minutes + 60 > 1440)
+		windows.push({
+			weekday: (weekday + 1) % 7,
+			from: 0,
+			to: minutes + 60 - 1440,
+			date: localDate(addDays(now, 1))
+		});
+	let sent = 0;
+	for (const w of windows) {
+		const slots = await db
+			.select({
+				id: studyPlanItem.id,
+				studentId: studyPlanItem.studentId,
+				startMinute: studyPlanItem.startMinute,
+				minutes: studyPlanItem.minutes,
+				subject: studyPlanItem.subject,
+				name: user.name
+			})
+			.from(studyPlanItem)
+			.innerJoin(user, eq(user.id, studyPlanItem.studentId))
+			.where(
+				and(
+					eq(studyPlanItem.active, true),
+					eq(studyPlanItem.weekday, w.weekday),
+					gte(studyPlanItem.startMinute, w.from),
+					lt(studyPlanItem.startMinute, w.to)
+				)
+			);
+		for (const s of slots) {
+			const parents = await parentsWhoSee(db, s.studentId, 'study');
+			if (!parents.length) continue;
+			const claimed = await db
+				.insert(studyAlertSent)
+				.values({ planItemId: s.id, onDate: w.date })
+				.onConflictDoNothing()
+				.returning({ id: studyAlertSent.planItemId });
+			if (!claimed.length) continue;
+			const name = firstName(s.name);
+			const title = m.st5_rem_s({ time: clock12(s.startMinute) });
+			const body = m.st5_rem_b({
+				name,
+				subject: s.subject,
+				start: clockShort(s.startMinute),
+				end: clockShort(s.startMinute + s.minutes)
+			});
+			for (const p of parents) {
+				await notify(p, title, body, {
+					kind: 'study',
+					link: `/parent?child=${encodeURIComponent(s.studentId)}`
+				}).catch(() => {});
+				sent++;
+			}
+		}
 	}
 	return sent;
 }

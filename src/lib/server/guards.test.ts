@@ -132,7 +132,7 @@ describe('central lock for private areas (also page-data requests)', () => {
 		});
 		expect(areaAccess('/tutor/payments/export', '', tutor)).toEqual({ ok: true });
 	});
-	it('student area is for students and parents only', async () => {
+	it('each role sees only its own area (v3: parents have /parent)', async () => {
 		const { areaAccess } = await import('./guards.ts');
 		expect(areaAccess('/student/__data.json', '', tutor)).toEqual({
 			ok: false,
@@ -140,8 +140,20 @@ describe('central lock for private areas (also page-data requests)', () => {
 			area: 'student'
 		});
 		expect(areaAccess('/student/payments', '', { ...student, role: 'parent' })).toEqual({
-			ok: true
+			ok: false,
+			status: 303,
+			location: '/parent'
 		});
+		expect(areaAccess('/student', '', student)).toEqual({ ok: true });
+		expect(areaAccess('/parent', '', { ...student, role: 'parent' })).toEqual({ ok: true });
+		expect(areaAccess('/parent/__data.json', '', student)).toEqual({
+			ok: false,
+			status: 403,
+			area: 'parent'
+		});
+		expect(areaAccess('/parent/updates', '', tutor)).toMatchObject({ ok: false, status: 403 });
+		expect(areaAccess('/parent', '', undefined)).toMatchObject({ status: 303 });
+		expect(areaAccess('/parents-evening', '', undefined)).toEqual({ ok: true });
 		expect(areaAccess('/students-of-the-month', '', undefined)).toEqual({ ok: true });
 		expect(areaAccess('/tutorial', '', undefined)).toEqual({ ok: true });
 	});

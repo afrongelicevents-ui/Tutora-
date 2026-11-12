@@ -6,6 +6,10 @@ import { and, asc, desc, eq, gte, inArray, lt, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { assessmentResult, studyPlanItem, studySession } from './db/v3.schema.ts';
 import { addDays, local, localDate, startOfLocalDay, startOfLocalWeek } from '../tz.ts';
+import { user } from './db/auth.schema.ts';
+import { parentsWhoSee } from './family.ts';
+import type { Notify } from './notify-core.ts';
+import { m } from '../paraglide/messages.js';
 
 export type SlotState = 'done' | 'now' | 'next' | 'later' | 'missed';
 
@@ -27,7 +31,11 @@ export const planFor = (db: DB, studentId: string) =>
 		.orderBy(asc(studyPlanItem.weekday), asc(studyPlanItem.startMinute));
 
 /** Today's plan with done / now / next / later / missed, from the plan and today's sessions. */
-export async function todaysPlan(db: DB, studentId: string, now = new Date()): Promise<TodaySlot[]> {
+export async function todaysPlan(
+	db: DB,
+	studentId: string,
+	now = new Date()
+): Promise<TodaySlot[]> {
 	const { weekday, minutes } = local(now);
 	const items = (await planFor(db, studentId)).filter((i) => i.weekday === weekday);
 	if (!items.length) return [];
@@ -218,7 +226,13 @@ export async function addPlanItem(
 	db: DB,
 	studentId: string,
 	by: string,
-	v: { weekday: number; startMinute: number; minutes: number; subject: string; topic?: string | null }
+	v: {
+		weekday: number;
+		startMinute: number;
+		minutes: number;
+		subject: string;
+		topic?: string | null;
+	}
 ) {
 	if (v.weekday < 0 || v.weekday > 6) return null;
 	if (v.startMinute < 0 || v.startMinute > 1439) return null;
@@ -244,4 +258,64 @@ export async function removePlanItem(db: DB, studentId: string, id: number) {
 		.update(studyPlanItem)
 		.set({ active: false })
 		.where(and(eq(studyPlanItem.id, id), eq(studyPlanItem.studentId, studentId)));
+}
+
+/* ---------- telling the family (added in phase 5) ---------- */
+
+/** "4:45" (12-hour clock, as people say it in Zimbabwe). */
+export function clockShort(min: number) {
+	const m = ((min % 1440) + 1440) % 1440;
+	const h = Math.floor(m / 60) % 12 || 12;
+	return `${h}:${String(m % 60).padStart(2, '0')}`;
+}
+
+/** "4:45 PM". */
+export function clock12(min: number) {
+	const m = ((min % 1440) + 1440) % 1440;
+	return `${clockShort(m)} ${m < 720 ? 'AM' : 'PM'}`;
+}
+
+export const firstName = (name: string) => name.trim().split(/\s+/)[0] || name;
+
+/**
+ * Tell the parents who may see this student's study time that a focus session started or
+ * finished. A stopped session is never sent. Returns how many parents were told.
+ */
+export async function tellFamilyStudy(
+	db: DB,
+	notify: Notify,
+	studentId: string,
+	session: {
+		subject: string;
+		plannedMinutes: number;
+		startedAt: Date;
+		endedAt?: Date | null;
+		status: string;
+	},
+	event: 'started' | 'finished'
+) {
+	if (event === 'finished' && session.status !== 'done') return 0;
+	const parents = await parentsWhoSee(db, studentId, 'study');
+	if (!parents.length) return 0;
+	const [s] = await db.select({ name: user.name }).from(user).where(eq(user.id, studentId));
+	if (!s) return 0;
+	const name = firstName(s.name);
+	const link = `/parent?child=${encodeURIComponent(studentId)}`;
+	let title: string;
+	let body: string;
+	if (event === 'started') {
+		const end = local(new Date(session.startedAt.getTime() + session.plannedMinutes * 60_000));
+		title = m.st5_n_started_s();
+		body = m.st5_n_started_b({ name, subject: session.subject, time: clockShort(end.minutes) });
+	} else {
+		const ended = session.endedAt ?? new Date();
+		const minutes = Math.max(
+			1,
+			Math.round((ended.getTime() - session.startedAt.getTime()) / 60_000)
+		);
+		title = m.st5_n_finished_s();
+		body = m.st5_n_finished_b({ name, subject: session.subject, minutes });
+	}
+	for (const p of parents) await notify(p, title, body, { kind: 'study', link }).catch(() => {});
+	return parents.length;
 }

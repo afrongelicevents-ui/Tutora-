@@ -1,8 +1,8 @@
 import { error, json } from '@sveltejs/kit';
 import { CRON_SECRET, ORIGIN } from '$app/env/private';
 import type { RequestHandler } from './$types';
-import { sendDueReminders } from '#lib/server/reminders.ts';
-import { notifyUser } from '#lib/server/notify.ts';
+import { sendDueReminders, sendStudyReminders } from '#lib/server/reminders.ts';
+import { notifyUser, type NotifyOpts } from '#lib/server/notify.ts';
 
 /** Constant-time comparison. */
 function sameText(a: string, b: string) {
@@ -17,10 +17,13 @@ export const POST: RequestHandler = async ({ locals, request, url }) => {
 	const given = request.headers.get('authorization') ?? '';
 	if (!CRON_SECRET || CRON_SECRET.length < 24 || !sameText(given, `Bearer ${CRON_SECRET}`))
 		error(404, 'Not found');
-	const sent = await sendDueReminders(
-		locals.db,
-		(userId, subject, body, opts) => notifyUser(locals.db, userId, subject, body, opts),
-		ORIGIN ?? url.origin
-	);
-	return json({ sent });
+	const notify = (userId: string, subject: string, body: string, opts?: NotifyOpts) =>
+		notifyUser(locals.db, userId, subject, body, opts);
+	const sent = await sendDueReminders(locals.db, notify, ORIGIN ?? url.origin);
+	// "Study time at 4:00 PM" for parents; a failure here never stops the lesson reminders
+	const study = await sendStudyReminders(locals.db, notify).catch((e) => {
+		console.error('study reminders failed', e);
+		return 0;
+	});
+	return json({ sent, study });
 };
