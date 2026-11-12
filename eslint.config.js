@@ -42,5 +42,12 @@ export default defineConfig(
 		// Tutora is served from the domain root (no base path), so plain hrefs are fine.
 		rules: { 'svelte/no-navigation-without-resolve': 'off' }
 	},
-	{ ignores: ['worker-configuration.d.ts', 'src/lib/paraglide/**', 'drizzle/**', 'docs/vision/blueprint/**'] }
+	{
+		ignores: [
+			'worker-configuration.d.ts',
+			'src/lib/paraglide/**',
+			'drizzle/**',
+			'docs/vision/blueprint/**'
+		]
+	}
 );
