@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ToolLogo from '#lib/components/tools/ToolLogo.svelte';
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDayTime, fmtTime } from '#lib/tz.ts';
 	import MaterialList from '#lib/components/tools/MaterialList.svelte';
@@ -34,7 +35,12 @@
 			<span class="eyebrow">{m.tools6_how_join()}</span>
 			{#if l.mode === 'online'}
 				{#if data.meeting}
-					<strong>{data.meeting.provider === 'meet' ? 'Google Meet' : 'Microsoft Teams'}</strong>
+					<strong class="withlogo"
+						><ToolLogo tool={data.meeting.provider} size={24} chip />{data.meeting.provider ===
+						'meet'
+							? 'Google Meet'
+							: 'Microsoft Teams'}</strong
+					>
 					<a
 						class="btn btn-block"
 						href={data.meeting.joinUrl}
@@ -193,6 +199,11 @@
 </div>
 
 <style>
+	.withlogo {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
 	.block {
 		display: flex;
 		flex-direction: column;

@@ -5,6 +5,7 @@
 -->
 <script lang="ts">
 	import { m } from '#lib/i18n.ts';
+	import SourceTag from './SourceTag.svelte';
 
 	interface Item {
 		id: number;
@@ -53,7 +54,7 @@
 					<span class="title">{i.title}</span>
 				{/if}
 				<span class="right">
-					<span class="src">{source(i.kind)}</span>
+					<span class="src"><SourceTag kind={i.kind} label={source(i.kind)} /></span>
 					{#if removeAction}
 						<form method="POST" action={removeAction}>
 							<input type="hidden" name={idField} value={i.id} />

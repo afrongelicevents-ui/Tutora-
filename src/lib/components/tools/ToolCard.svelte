@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { m } from '#lib/i18n.ts';
+	import ToolLogo, { type Tool } from './ToolLogo.svelte';
 
 	let {
 		name,
@@ -8,8 +9,11 @@
 		status,
 		use,
 		access,
+		logo,
 		children
 	}: {
+		/** the tool's official logo */
+		logo?: Tool;
 		name: string;
 		/** really connected / switched on (never pretended) */
 		on: boolean;
@@ -23,9 +27,11 @@
 	} = $props();
 </script>
 
-<article class="toolcard">
+<article class="toolcard" id={logo}>
 	<div class="head">
-		<h2>{name}</h2>
+		<h2>
+			{#if logo}<ToolLogo tool={logo} size={28} />{/if}{name}
+		</h2>
 		<span class="pill {on ? 'p-ok' : 'p-off'}"
 			>{status ?? (on ? m.tools6_connected() : m.tools6_not_connected())}</span
 		>
@@ -52,6 +58,9 @@
 		gap: 12px;
 	}
 	h2 {
+		display: flex;
+		align-items: center;
+		gap: 8px;
 		margin: 0;
 		font-family: var(--font);
 		font-size: 1rem;

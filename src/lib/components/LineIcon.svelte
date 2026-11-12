@@ -34,7 +34,13 @@
 		computing: 'M4 5h16v10H4zM9 19h6M12 15v4',
 		business: 'M5 19V11M10 19V7M15 19v-5M20 19V4',
 		book: 'M6 4h11a1 1 0 0 1 1 1v15H7a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1Zm-1 14a2 2 0 0 1 2-2h11',
-		more: 'M6 12h0M12 12h0M18 12h0'
+		more: 'M6 12h0M12 12h0M18 12h0',
+		clipboard: 'M9 3.5h6v3H9zM8 5H5.5v15.5h13V5H16M8.5 13.5 11 16l4.5-5',
+		chat: 'M4 5h11v8H8.5L4 16.5zM9 15.5v1h6.5L20 20V9.5h-2.5',
+		plus: 'M12 5v14M5 12h14',
+		chevron: 'M9.5 6l6 6-6 6',
+		tutors:
+			'M9 11a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 9 11Zm7-.6a2.6 2.6 0 1 0 0-5.2M3 19.5c.6-3.1 2.9-5 6-5s5.4 1.9 6 5M16.2 14.4c2.4.2 4.2 2 4.8 5.1'
 	} as const;
 	export type IconName = keyof typeof ICONS;
 

@@ -36,7 +36,12 @@ async function main() {
 				.select({ id: schema.studentCard.userId })
 				.from(schema.studentCard)
 				.limit(1);
-			if (seeded && !real && v3 && buddies) {
+			// tutor messages fake data is there too?
+			const [msgs] = await db
+				.select({ id: schema.tutorMessage.id })
+				.from(schema.tutorMessage)
+				.limit(1);
+			if (seeded && !real && v3 && buddies && msgs) {
 				console.log('Test data already there: kept.');
 				return;
 			}

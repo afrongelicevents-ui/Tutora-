@@ -4,6 +4,7 @@
  * Everything is clearly fake (example.com, test names).
  */
 import { connectByCode, moderate, myCode, saveCard, sendPreset } from './buddies.ts';
+import { sendMessage } from './messages.ts';
 import { and, asc, eq, gt, inArray } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { account, user } from './db/auth.schema.ts';
@@ -567,5 +568,12 @@ export async function seedV3(db: DB, hash: string, logins: TestLogin[], now = ne
 		},
 		now
 	);
+
+	// Messages (fake): Tatenda and her maths tutor; the last one from the tutor is unread.
+	const tm = { tutorId: chipo, studentId: tatenda };
+	await sendMessage(db, tatenda, tm, 'Hi! Can we go over fractions again on Thursday?');
+	await sendMessage(db, chipo, tm, 'Of course. Try questions 1 to 5 of the worksheet first.');
+	await sendMessage(db, tatenda, tm, 'Done, number 4 was hard.');
+	await sendMessage(db, chipo, tm, 'Great! Let me know if you need help.');
 	return { invite: TEST_INVITE_CODE };
 }

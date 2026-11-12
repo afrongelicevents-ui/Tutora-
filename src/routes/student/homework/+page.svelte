@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SourceTag from '#lib/components/tools/SourceTag.svelte';
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay, fmtWeekday } from '#lib/tz.ts';
 	import { shrink } from '#lib/shrink.ts';
@@ -55,7 +56,9 @@
 							>{/if}
 						{#each h.links as l (l.id)}
 							<a href={l.url} target="_blank" rel="noopener noreferrer"
-								><span>{l.title}</span><span class="muted small">{source(l.kind)}</span></a
+								><span>{l.title}</span><span class="muted small"
+									><SourceTag kind={l.kind} label={source(l.kind)} /></span
+								></a
 							>
 						{/each}
 					</div>
@@ -140,9 +143,13 @@
 			<div class="rows">
 				{#each data.resources.filter((r) => r.subject === s) as r (r.id)}
 					{#if r.url}<a href={r.url} target="_blank" rel="noopener noreferrer"
-							><span>{r.title}</span><span class="muted small">{source(r.kind)}</span></a
+							><span>{r.title}</span><span class="muted small"
+								><SourceTag kind={r.kind} label={source(r.kind)} /></span
+							></a
 						>{:else}<div>
-							<span>{r.title}</span><span class="muted small">{source(r.kind)}</span>
+							<span>{r.title}</span><span class="muted small"
+								><SourceTag kind={r.kind} label={source(r.kind)} /></span
+							>
 						</div>{/if}
 				{/each}
 			</div>

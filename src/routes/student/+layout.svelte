@@ -11,10 +11,10 @@
 	tabs={[
 		{ href: '/student', label: m.v3_nav_home(), icon: 'home', also: ['/student/subjects'] },
 		{
-			href: '/student/find',
-			label: m.v3_nav_find(),
-			icon: 'search',
-			also: ['/student/book', '/student/tutor']
+			href: '/student/tutors',
+			label: m.v3_nav_tutors(),
+			icon: 'tutors',
+			also: ['/student/find', '/student/book', '/student/tutor', '/student/messages']
 		},
 		{ href: '/student/lessons', label: m.v3_nav_lessons(), icon: 'lessons' },
 		{ href: '/student/progress', label: m.v3_nav_progress(), icon: 'progress' },

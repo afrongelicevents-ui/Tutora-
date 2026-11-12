@@ -23,6 +23,7 @@
 		}
 	]}
 	more={[
+		{ href: '/tutor/messages', label: m.msg_tutor_link() },
 		{ href: '/tutor/homework', label: m.v3_nav_marking() },
 		{ href: '/tutor/assessments', label: m.v3_nav_assessments() },
 		{ href: '/tutor/resources', label: m.res3_nav() },

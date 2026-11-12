@@ -1,4 +1,6 @@
 <script lang="ts">
+	import SourceTag from '#lib/components/tools/SourceTag.svelte';
+	import ToolLogo from '#lib/components/tools/ToolLogo.svelte';
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay, fmtDayTime, fmtTime, localDate } from '#lib/tz.ts';
 	import { formatMoney } from '#lib/money.ts';
@@ -70,7 +72,12 @@
 			<div class="navycard">
 				<span class="eyebrow">{m.ld3_how_join()}</span>
 				{#if data.meeting}
-					<strong>{m.ld3_link_by({ tool: provider ?? '', name: l.tutorName ?? '' })}</strong>
+					<strong class="withlogo"
+						><ToolLogo tool={data.meeting.provider} size={24} chip />{m.ld3_link_by({
+							tool: provider ?? '',
+							name: l.tutorName ?? ''
+						})}</strong
+					>
 					<a class="btn" href={data.meeting.joinUrl} target="_blank" rel="noopener noreferrer"
 						>{data.meeting.provider === 'meet' ? m.ld3_join_meet() : m.ld3_join_teams()}</a
 					>
@@ -99,10 +106,16 @@
 			{#each data.materials as mat (mat.id)}
 				{#if mat.url}
 					<a href={mat.url} target="_blank" rel="noopener noreferrer"
-						><span>{mat.title}</span><span class="muted small">{source(mat.kind)}</span></a
+						><span>{mat.title}</span><span class="muted small"
+							><SourceTag kind={mat.kind} label={source(mat.kind)} /></span
+						></a
 					>
 				{:else}
-					<div><span>{mat.title}</span><span class="muted small">{source(mat.kind)}</span></div>
+					<div>
+						<span>{mat.title}</span><span class="muted small"
+							><SourceTag kind={mat.kind} label={source(mat.kind)} /></span
+						>
+					</div>
 				{/if}
 			{/each}
 			<div>
@@ -161,6 +174,11 @@
 </div>
 
 <style>
+	.withlogo {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
 	.status {
 		color: var(--ok);
 	}

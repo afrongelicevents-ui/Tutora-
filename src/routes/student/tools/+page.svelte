@@ -20,6 +20,7 @@
 
 	<ToolCard
 		name="Google Meet"
+		logo="meet"
 		on={true}
 		status={m.tools6_no_account()}
 		use={m.tools6_meet_use_student()}
@@ -28,6 +29,7 @@
 
 	<ToolCard
 		name="Microsoft Teams"
+		logo="teams"
 		on={true}
 		status={m.tools6_no_account()}
 		use={m.tools6_teams_use_student()}
@@ -36,6 +38,7 @@
 
 	<ToolCard
 		name="Google Drive"
+		logo="drive"
 		on={data.drive}
 		use={m.tools6_drive_use_student()}
 		access={data.drive ? m.tools6_drive_access() : undefined}
@@ -56,6 +59,7 @@
 
 	<ToolCard
 		name="Kahoot!"
+		logo="kahoot"
 		on={data.pref.kahootOn}
 		status={data.pref.kahootOn ? m.tools6_on() : m.tools6_off()}
 		use={m.tools6_kahoot_use_student()}

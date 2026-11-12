@@ -31,7 +31,9 @@ export const LIMITS = {
 	/** buddy codes tried per student: stops guessing */
 	buddyCode: { max: 10, windowSeconds: 60 * 60 },
 	/** profile photos uploaded per student */
-	profilePhoto: { max: 10, windowSeconds: 24 * 60 * 60 }
+	profilePhoto: { max: 10, windowSeconds: 24 * 60 * 60 },
+	/** student ↔ tutor messages sent per person */
+	message: { max: 150, windowSeconds: 24 * 60 * 60 }
 } satisfies Record<string, LimitRule>;
 
 export type LimitName = keyof typeof LIMITS;
