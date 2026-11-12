@@ -1,0 +1,64 @@
+name: Delete a tutor (live, permanent)
+
+# Permanently deletes ONE tutor from the LIVE site and everything linked to them (page,
+# subjects, prices, free times, payment details, bookings, lessons, homework, payments,
+# receipts, reviews, files, marks they gave, notifications naming them).
+# Students and parents keep their own accounts. Run by hand only: Actions → this workflow →
+# Run workflow, type the tutor's page address (e.g. mr-n-chidya) twice. Tick "dry run" to see
+# the counts without deleting. The log shows counts only, never names or emails.
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: 'Tutor page address (the part after /t/), e.g. mr-n-chidya'
+        required: true
+        type: string
+      confirm:
+        description: 'Type the same address again to confirm'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run: only count, delete nothing'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  delete:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Find the live database
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          DB: ${{ secrets.DATABASE_URL }}
+          RESET_PASSWORD: 'false'
+        run: |
+          if [ -n "$NEON_API_KEY" ]; then
+            node scripts/deploy/neon.mjs
+          else
+            clean=$(node -e 'const u=new URL(process.argv[1].trim());u.searchParams.delete("channel_binding");console.log(u.toString())' "$DB")
+            echo "::add-mask::$clean"
+            echo "DATABASE_URL=$clean" >> "$GITHUB_ENV"
+          fi
+      - name: Delete the tutor
+        env:
+          SLUG: ${{ inputs.slug }}
+          CONFIRM: ${{ inputs.confirm }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: node scripts/admin/delete-tutor.mjs
