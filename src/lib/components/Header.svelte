@@ -70,15 +70,6 @@
 		justify-content: space-between;
 		min-height: 60px;
 	}
-	.logo {
-		display: flex;
-		align-items: center;
-		min-height: 44px;
-	}
-	.logo img {
-		width: 110px;
-		height: auto;
-	}
 	.menu {
 		position: relative;
 	}
