@@ -15,6 +15,7 @@ import {
 	type CheckinMood
 } from './db/v3.schema.ts';
 import { addDays, local, localDate, startOfLocalDay } from '../tz.ts';
+import { dayTick } from './db/personal.schema.ts';
 import { MOOD_LEVEL, TOUGH, TOUGH_DAYS } from '../checkin-copy.ts';
 import type { Notify } from './notify-core.ts';
 import { todaysPlan } from './study.ts';
@@ -498,19 +499,20 @@ export async function sendCheckinFollowups(db: DB, notify: Notify, now = new Dat
 
 const SUMMARY_MINUTE = 20 * 60; // 8 PM
 
-/** The end-of-day summary note (from 8 PM, once per student and day, if they did anything). */
+/** The evening "review your day" note (from 8 PM, once per student and day, if they did anything). */
 export async function sendDaySummaries(db: DB, notify: Notify, now = new Date()) {
 	if (local(now).minutes < SUMMARY_MINUTE) return 0;
 	const today = localDate(now);
 	const since = startOfLocalDay(now);
-	const [a, b] = await Promise.all([
+	const [a, b, c] = await Promise.all([
 		db.selectDistinct({ id: checkin.studentId }).from(checkin).where(gte(checkin.createdAt, since)),
 		db
 			.selectDistinct({ id: studySession.studentId })
 			.from(studySession)
-			.where(gte(studySession.startedAt, since))
+			.where(gte(studySession.startedAt, since)),
+		db.selectDistinct({ id: dayTick.studentId }).from(dayTick).where(eq(dayTick.onDate, today))
 	]);
-	const ids = [...new Set([...a, ...b].map((x) => x.id))];
+	const ids = [...new Set([...a, ...b, ...c].map((x) => x.id))];
 	if (!ids.length) return 0;
 	const students = await db
 		.select({ id: user.id })
@@ -526,7 +528,7 @@ export async function sendDaySummaries(db: DB, notify: Notify, now = new Date())
 		if (!claimed.length) continue;
 		await notify(s.id, m.ds_notify_s(), m.ds_notify_b(), {
 			kind: 'reminder',
-			link: '/student/days'
+			link: '/student/report'
 		}).catch(() => {});
 		sent++;
 	}

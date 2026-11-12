@@ -5,6 +5,7 @@ import { sendDueReminders, sendStudyReminders } from '#lib/server/reminders.ts';
 import { sendWeeklyReports } from '#lib/server/weekly.ts';
 import { notifyUser, type NotifyOpts } from '#lib/server/notify.ts';
 import { sendCheckinFollowups, sendDaySummaries } from '#lib/server/checkins.ts';
+import { sendPlannerMornings } from '#lib/server/planner.ts';
 
 /** Constant-time comparison. */
 function sameText(a: string, b: string) {
@@ -41,5 +42,10 @@ export const POST: RequestHandler = async ({ locals, request, url }) => {
 		console.error('day summaries failed', e);
 		return 0;
 	});
-	return json({ sent, study, weekly, followups, days });
+	// personal planner: "plan your day" in the morning
+	const mornings = await sendPlannerMornings(locals.db, notify).catch((e) => {
+		console.error('planner mornings failed', e);
+		return 0;
+	});
+	return json({ sent, study, weekly, followups, days, mornings });
 };

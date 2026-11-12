@@ -6,6 +6,9 @@
 import { connectByCode, moderate, myCode, saveCard, sendPreset } from './buddies.ts';
 import { sendMessage } from './messages.ts';
 import { addActivity, type ActivityKind } from './schedule.ts';
+import { addGoal, addTask, itemsFor, setShareReport } from './planner.ts';
+import { dayTick, goalTick, personalGoal, personalTask } from './db/personal.schema.ts';
+import { personalActivity } from './db/schedule.schema.ts';
 import { and, asc, eq, gt, inArray } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { account, user } from './db/auth.schema.ts';
@@ -28,7 +31,15 @@ import {
 import { legacyParentsToFamily } from './legacy-family.ts';
 import { createInvite, normalizeInvite, redeemInvite, setSharing, sha256Hex } from './family.ts';
 import { addExam, recordResult } from './progress.ts';
-import { addDays, addMinutes, fromLocal, hhmmToMinutes, local, localDate } from '../tz.ts';
+import {
+	addDays,
+	addMinutes,
+	fromLocal,
+	hhmmToMinutes,
+	local,
+	localDate,
+	startOfLocalWeek
+} from '../tz.ts';
 import type { TestLogin } from './seed.ts';
 
 /** A code anyone can use on the test site to try "Join with code" (Kuda's invite). */
@@ -615,5 +626,77 @@ export async function seedV3(db: DB, hash: string, logins: TestLogin[], now = ne
 	await act('meal', 'Dinner', [0, 1, 2, 3, 4, 5, 6], '19:15', '20:00');
 	await act('friends', 'Time with friends', [6], '14:30', '17:00');
 	await act('sleep', null, [0, 1, 2, 3, 4, 5, 6], '21:30', '24:00');
+
+	// Personal planner (fake): tasks, weekly goals, a week of ticks; Tatenda shares the summary
+	const task = (title: string, at: string | null, days: number[]) =>
+		addTask(
+			db,
+			tatenda,
+			{ title, minute: at ? hhmmToMinutes(at) : null, days, onlyToday: false },
+			now
+		);
+	const every = [0, 1, 2, 3, 4, 5, 6];
+	await task('Wake up on time', '06:00', [1, 2, 3, 4, 5]);
+	await task('Morning prayer', '06:15', every);
+	await task('Tidy my room', '15:00', every);
+	await task('Read for 20 minutes', '20:00', every);
+	await task('No screens after 8:30 PM', '20:30', every);
+	await task('Help with dishes', '19:15', [0, 3, 6]);
+	// everything on the plan existed for the last two weeks
+	const twoWeeks = addDays(now, -14);
+	await db
+		.update(personalActivity)
+		.set({ createdAt: twoWeeks })
+		.where(eq(personalActivity.studentId, tatenda));
+	await db
+		.update(personalTask)
+		.set({ createdAt: twoWeeks })
+		.where(eq(personalTask.studentId, tatenda));
+	await db
+		.update(studyPlanItem)
+		.set({ createdAt: twoWeeks })
+		.where(eq(studyPlanItem.studentId, tatenda));
+	// ticks for the past 9 days: most things done, a couple of lighter days
+	const pastDates = Array.from({ length: 9 }, (_, i) => localDate(addDays(now, -(i + 1))));
+	const pastItems = await itemsFor(db, tatenda, pastDates);
+	for (const [i, date] of pastDates.entries()) {
+		const items = (pastItems.get(date) ?? []).filter((x) => x.tickable);
+		const share = i === 2 || i === 6 ? 0.4 : 0.8;
+		const take = items.filter((_, k) => k / items.length < share);
+		if (take.length)
+			await db
+				.insert(dayTick)
+				.values(take.map((x) => ({ studentId: tatenda, onDate: date, itemKey: x.key })))
+				.onConflictDoNothing();
+	}
+	// today: the morning things are done
+	const todayItems = (await itemsFor(db, tatenda, [localDate(now)])).get(localDate(now)) ?? [];
+	const morning = todayItems.filter((x) => x.tickable && (x.start ?? 9999) < 8 * 60);
+	if (morning.length)
+		await db
+			.insert(dayTick)
+			.values(morning.map((x) => ({ studentId: tatenda, onDate: localDate(now), itemKey: x.key })))
+			.onConflictDoNothing();
+	await addGoal(db, tatenda, 'Go to bed by 9:30 PM', 5);
+	await addGoal(db, tatenda, 'Exercise for 30 minutes', 3);
+	const myGoals = await db
+		.select({ id: personalGoal.id })
+		.from(personalGoal)
+		.where(eq(personalGoal.studentId, tatenda))
+		.orderBy(asc(personalGoal.id));
+	// last week both goals were reached; this week the bedtime goal is on its way
+	const lastMonday = addDays(startOfLocalWeek(now), -7);
+	const goalDays = (from: Date, n: number) =>
+		Array.from({ length: n }, (_, i) => localDate(addDays(from, i)));
+	const goalTicks: { goalId: number; onDate: string }[] = [
+		...goalDays(lastMonday, 5).map((d) => ({ goalId: myGoals[0].id, onDate: d })),
+		...goalDays(lastMonday, 3).map((d) => ({ goalId: myGoals[1].id, onDate: d })),
+		...goalDays(
+			startOfLocalWeek(now),
+			Math.min(3, local(now).weekday === 0 ? 6 : local(now).weekday)
+		).map((d) => ({ goalId: myGoals[0].id, onDate: d }))
+	].filter((x) => x.onDate <= localDate(now));
+	if (goalTicks.length) await db.insert(goalTick).values(goalTicks).onConflictDoNothing();
+	await setShareReport(db, tatenda, true);
 	return { invite: TEST_INVITE_CODE };
 }

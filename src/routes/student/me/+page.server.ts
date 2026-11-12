@@ -1,14 +1,15 @@
-import { and, eq, gte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import type { PageServerLoad } from './$types';
 import { requireRole } from '#lib/server/guards.ts';
 import { activeDays, streak, todaysPlan, weekSummary } from '#lib/server/study.ts';
 import { examReadiness, READY_PCT, topicScores } from '#lib/server/progress.ts';
 import { familyOf } from '#lib/server/family.ts';
 import { homework, homeworkAnswer, profile } from '#lib/server/db/app.schema.ts';
-import { schoolInfo } from '#lib/server/db/v3.schema.ts';
+import { checkin, schoolInfo } from '#lib/server/db/v3.schema.ts';
 import { shortName } from '#lib/names.ts';
 import { getCard } from '#lib/server/buddies.ts';
 import { todaysBlocks } from '#lib/server/schedule.ts';
+import { goals, today as plannerToday, weekStats } from '#lib/server/planner.ts';
 import { addDays, startOfLocalDay } from '#lib/tz.ts';
 
 /**
@@ -39,6 +40,18 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	]);
 	// today's personal timetable (school, meals, breaks, friends...) with study-plan slots
 	const blocks = await todaysBlocks(db, u.id, now);
+	// personal progress: today's plan, tasks, goals reached, today's feeling, this week
+	const [pt, pg, pw, feelRows] = await Promise.all([
+		plannerToday(db, u.id, now),
+		goals(db, u.id, now),
+		weekStats(db, u.id, now),
+		db
+			.select({ mood: checkin.mood })
+			.from(checkin)
+			.where(and(eq(checkin.studentId, u.id), gte(checkin.createdAt, startOfLocalDay(now))))
+			.orderBy(desc(checkin.createdAt))
+			.limit(1)
+	]);
 	const hwRows = await db
 		.select({
 			set: sql<number>`count(distinct ${homework.id})::int`,
@@ -72,6 +85,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			topic: s.topic,
 			state: s.state
 		})),
+		personal: {
+			pct: pt.stats.pct,
+			tasksDone: pt.stats.tasksDone,
+			tasksTotal: pt.stats.tasksTotal,
+			achievements: pg.reached,
+			feel: feelRows[0]?.mood ?? null,
+			consistency: pw.consistency
+		},
 		blocks: blocks.map((b) => ({
 			...b,
 			done: b.kind === 'study' && today.some((s) => `p${s.id}` === b.key && s.state === 'done')

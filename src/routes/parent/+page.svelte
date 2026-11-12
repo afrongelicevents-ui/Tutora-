@@ -188,6 +188,9 @@
 				<a href="/parent/messages?child={c.studentId}"
 					><span>{m.msg_parent_link()}</span><span class="go">›</span></a
 				>
+				<a href="/parent/personal?child={c.studentId}"
+					><span>{m.pp_link()}</span><span class="go">›</span></a
+				>
 				<a href="/parent/children"><span>{m.par3_manage()}</span><span class="go">›</span></a>
 			</div>
 			<p class="note">{m.par3_privacy({ name: n })}</p>

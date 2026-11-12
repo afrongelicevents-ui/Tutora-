@@ -27,7 +27,13 @@
 			href: '/student/me',
 			label: m.v3_nav_you(),
 			icon: 'user',
-			also: ['/student/family', '/student/buddies', '/student/schedule']
+			also: [
+				'/student/family',
+				'/student/buddies',
+				'/student/schedule',
+				'/student/planner',
+				'/student/report'
+			]
 		}
 	]}
 	more={[

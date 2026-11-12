@@ -120,6 +120,13 @@
       "when": 1794525176313,
       "tag": "0016_personal_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794527002573,
+      "tag": "0017_personal_planner",
+      "breakpoints": true
     }
   ]
 }

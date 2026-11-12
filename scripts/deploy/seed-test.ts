@@ -52,7 +52,12 @@ async function main() {
 				.select({ id: schema.personalActivity.id })
 				.from(schema.personalActivity)
 				.limit(1);
-			if (seeded && !real && v3 && buddies && msgs && fu && ps) {
+			// personal planner fake data is there too?
+			const [pt] = await db
+				.select({ id: schema.personalTask.id })
+				.from(schema.personalTask)
+				.limit(1);
+			if (seeded && !real && v3 && buddies && msgs && fu && ps && pt) {
 				console.log('Test data already there: kept.');
 				return;
 			}

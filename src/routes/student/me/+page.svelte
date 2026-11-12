@@ -14,9 +14,7 @@
 			.map((w) => w[0]!.toUpperCase())
 			.join('')
 	);
-	const planPct = $derived(
-		data.week.planned ? Math.min(100, Math.round((100 * data.week.done) / data.week.planned)) : null
-	);
+	const dayPct = $derived(data.personal.pct);
 	const C = 2 * Math.PI * 42;
 	const names = $derived(
 		data.family.length <= 1
@@ -64,59 +62,74 @@
 	<section class="panel">
 		<div class="panel-h">
 			<h2><LineIcon name="trophy" />{m.me_progress()}</h2>
-			<a href="/student/progress">{m.me_view_details()} <span aria-hidden="true">→</span></a>
+			<a href="/student/report">{m.me_view_details()} <span aria-hidden="true">→</span></a>
 		</div>
 		<div class="stats">
 			<div class="stat">
-				<svg
-					viewBox="0 0 100 100"
-					class="ring"
-					role="img"
-					aria-label="{m.me_week_plan()} {planPct ?? '—'}%"
-				>
-					<defs
-						><linearGradient id="meg" x1="0" y1="0" x2="1" y2="1"
-							><stop offset="0" stop-color="#6fb3ea" /><stop
-								offset="1"
-								stop-color="#1a5fae"
-							/></linearGradient
-						></defs
-					>
-					<circle cx="50" cy="50" r="42" class="track" />
-					{#if planPct}<circle
-							cx="50"
-							cy="50"
-							r="42"
-							class="bar"
-							stroke-dasharray="{(C * planPct) / 100} {C}"
-						/>{/if}
-					<text x="50" y="57" text-anchor="middle">{planPct !== null ? `${planPct}%` : '—'}</text>
-				</svg>
-				<span class="label">{planPct !== null ? m.me_week_plan() : m.me_no_plan()}</span>
+				{#if dayPct !== null}
+					<a class="ringlink" href="/student/planner">
+						<svg
+							viewBox="0 0 100 100"
+							class="ring"
+							role="img"
+							aria-label="{m.me_day_planned()} {dayPct}%"
+						>
+							<defs
+								><linearGradient id="meg" x1="0" y1="0" x2="1" y2="1"
+									><stop offset="0" stop-color="#6fb3ea" /><stop
+										offset="1"
+										stop-color="#1a5fae"
+									/></linearGradient
+								></defs
+							>
+							<circle cx="50" cy="50" r="42" class="track" />
+							{#if dayPct}<circle
+									cx="50"
+									cy="50"
+									r="42"
+									class="bar"
+									stroke-dasharray="{(C * dayPct) / 100} {C}"
+								/>{/if}
+							<text x="50" y="57" text-anchor="middle">{dayPct}%</text>
+						</svg>
+					</a>
+					<span class="label">{m.me_day_planned()}</span>
+				{:else}
+					<a class="plan-btn" href="/student/planner">{m.me_plan_day()}</a>
+				{/if}
 			</div>
-			<div class="stat">
+			<a class="stat" href="/student/planner#tasks">
 				<span class="ic"><LineIcon name="check" /></span>
-				<strong>{data.homework.handed} / {data.homework.set}</strong>
-				<span class="label">{m.me_homework()}</span>
-			</div>
-			<div class="stat">
-				<span class="ic flame"><LineIcon name="flame" /></span>
-				<strong>{data.streak}</strong>
-				<span class="label">{m.me_streak()}</span>
-			</div>
-			<div class="stat" title={m.me_consistency_note()}>
-				<span class="ic"><LineIcon name="calendar" /></span>
-				<strong>{data.consistency}%</strong>
-				<span class="label">{m.me_consistency()}</span>
-			</div>
+				<strong>{data.personal.tasksDone} / {data.personal.tasksTotal}</strong>
+				<span class="label">{m.me_tasks_done()}</span>
+			</a>
+			<a class="stat" href="/student/planner#goals">
+				<span class="ic gold"><LineIcon name="trophy" /></span>
+				<strong>{data.personal.achievements}</strong>
+				<span class="label">{m.me_achievements()}</span>
+			</a>
+			<a class="stat" href="/student/report#checkin">
+				<span class="ic"><LineIcon name="eye" /></span>
+				{#if data.personal.feel}
+					<strong class="feel">{t(`ci_${data.personal.feel}`)}</strong>
+				{:else}
+					<strong class="feel cta">{m.me_check_in()}</strong>
+				{/if}
+				<span class="label">{m.me_feel()}</span>
+			</a>
 		</div>
+		<p class="consist">
+			{data.personal.consistency !== null
+				? m.me_consistency_line({ pct: data.personal.consistency })
+				: m.me_consistency_none()}
+		</p>
 	</section>
 
 	<!-- today's plan -->
 	<section class="panel">
 		<div class="panel-h">
 			<h2><LineIcon name="calendar" />{m.me_schedule()}</h2>
-			<a href="/student/schedule">{m.me_view_schedule()} <span aria-hidden="true">→</span></a>
+			<a href="/student/planner">{m.me_view_schedule()} <span aria-hidden="true">→</span></a>
 		</div>
 		{#if data.blocks.length}
 			<div class="sched">
@@ -143,7 +156,7 @@
 			</div>
 		{:else}
 			<p class="muted empty">
-				{m.me_no_schedule()} <a href="/student/schedule">{m.me_make_schedule()} →</a>
+				{m.me_no_schedule()} <a href="/student/planner">{m.me_make_schedule()} →</a>
 			</p>
 		{/if}
 	</section>
@@ -354,8 +367,44 @@
 	.stat .ic {
 		color: var(--ocean);
 	}
-	.stat .flame {
-		color: #c46a12;
+	.stat .gold {
+		color: #c48a00;
+	}
+	a.stat {
+		text-decoration: none;
+		color: inherit;
+	}
+	.ringlink {
+		display: block;
+		line-height: 0;
+	}
+	.feel {
+		font-size: 0.875rem !important;
+		line-height: 1.2 !important;
+	}
+	.feel.cta {
+		color: var(--ocean) !important;
+	}
+	.plan-btn {
+		display: grid;
+		place-items: center;
+		text-align: center;
+		width: 72px;
+		height: 72px;
+		border-radius: 50%;
+		background: var(--navy);
+		color: #fff;
+		font-size: 0.75rem;
+		font-weight: 700;
+		line-height: 1.15;
+		text-decoration: none;
+		padding: 6px;
+	}
+	.consist {
+		margin: 10px 0 0;
+		font-size: 0.75rem;
+		color: var(--muted);
+		text-align: center;
 	}
 	.stat strong {
 		font-size: 1.25rem;

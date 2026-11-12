@@ -25,6 +25,7 @@ import { buddyCode, buddyLink, buddyMessage, studentCard } from './db/buddies.sc
 import { tutorMessage } from './db/messages.schema.ts';
 import { checkin, checkinPref, daySummarySent } from './db/v3.schema.ts';
 import { personalActivity } from './db/schedule.schema.ts';
+import { dayTick, personalGoal, personalPref, personalTask } from './db/personal.schema.ts';
 import { balances } from './billing.ts';
 import { addDays, localDate } from '../tz.ts';
 
@@ -312,6 +313,11 @@ export async function deleteMyAccount(db: DB, userId: string) {
 		await tx.delete(checkinPref).where(eq(checkinPref.studentId, userId));
 		await tx.delete(daySummarySent).where(eq(daySummarySent.studentId, userId));
 		await tx.delete(personalActivity).where(eq(personalActivity.studentId, userId));
+		// personal planner: tasks, ticks, goals (goal ticks go with the goals), report sharing
+		await tx.delete(personalTask).where(eq(personalTask.studentId, userId));
+		await tx.delete(dayTick).where(eq(dayTick.studentId, userId));
+		await tx.delete(personalGoal).where(eq(personalGoal.studentId, userId));
+		await tx.delete(personalPref).where(eq(personalPref.studentId, userId));
 		if (keys.length) await tx.delete(fileBlob).where(inArray(fileBlob.key, keys));
 		await tx
 			.update(homeworkAnswer)
