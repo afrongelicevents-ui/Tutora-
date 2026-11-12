@@ -23,6 +23,6 @@
 	.reply {
 		margin: 6px 0 0;
 		padding-left: 10px;
-		border-left: 3px solid var(--mint-50);
+		border-left: 3px solid var(--blush-50);
 	}
 </style>

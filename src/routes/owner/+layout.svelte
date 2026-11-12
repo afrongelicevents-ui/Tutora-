@@ -33,13 +33,13 @@
 		padding: 8px 12px;
 		min-height: 40px;
 		border-radius: 999px;
-		background: var(--mint-50);
+		background: var(--blush-50);
 		text-decoration: none;
 		font-weight: 600;
 		font-size: 0.9rem;
 	}
 	.ownernav a[aria-current='page'] {
-		background: var(--green-700);
+		background: var(--brand-700);
 		color: var(--paper-50);
 	}
 </style>

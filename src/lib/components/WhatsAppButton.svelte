@@ -35,14 +35,14 @@
 		min-height: 52px;
 		padding: 0 20px 0 16px;
 		border-radius: 999px;
-		background: var(--green-700);
+		background: var(--brand-700);
 		color: var(--paper-50);
 		font-weight: 700;
 		text-decoration: none;
 		box-shadow: 0 4px 12px rgb(0 0 0 / 0.2);
 	}
 	.wa:hover {
-		background: var(--green-900);
+		background: var(--brand-900);
 		color: var(--paper-50);
 	}
 </style>

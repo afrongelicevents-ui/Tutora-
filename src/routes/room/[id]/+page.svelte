@@ -265,7 +265,7 @@
 				onpointercancel={up}
 			></canvas>
 			<div class="tools" role="toolbar" aria-label={m.room_board()}>
-				{#each ['#1c2620', '#0e6b52', '#b4531a'] as c (c)}
+				{#each ['#1c2620', '#6b1e33', '#1f5fa8'] as c (c)}
 					<button
 						type="button"
 						aria-pressed={color === c}
@@ -360,7 +360,7 @@
 
 <style>
 	.room {
-		background: #14201a;
+		background: #1d191a;
 		color: #fff;
 		border-radius: var(--radius);
 		overflow: hidden;
@@ -387,11 +387,11 @@
 	}
 	.sig i {
 		width: 4px;
-		background: #5fd4a8;
+		background: #e2a8b4;
 		border-radius: 1px;
 	}
 	.sig i.off {
-		background: #3c4a43;
+		background: #4a4243;
 	}
 	.knock {
 		background: var(--amber-50, #fdf3e1);
@@ -412,7 +412,7 @@
 		display: flex;
 		align-items: center;
 		gap: 6px;
-		background: #22322a;
+		background: #2c2627;
 		border-radius: 99px;
 		padding: 4px 10px 4px 4px;
 		font-size: 0.85rem;
@@ -421,7 +421,7 @@
 		width: 28px;
 		height: 28px;
 		border-radius: 50%;
-		background: var(--green-700);
+		background: var(--brand-700);
 		display: grid;
 		place-items: center;
 		font-weight: 700;
@@ -430,7 +430,7 @@
 		display: block;
 		width: 100%;
 		max-height: 240px;
-		background: #0b1310;
+		background: #121011;
 	}
 	.video.mine {
 		max-height: 120px;
@@ -450,7 +450,7 @@
 		gap: 6px;
 		padding: 8px;
 		flex-wrap: wrap;
-		background: #1d2b24;
+		background: #262022;
 	}
 	.tools button {
 		min-height: 44px;
@@ -458,14 +458,14 @@
 		padding: 0 12px;
 		border-radius: 10px;
 		border: 0;
-		background: #2e4037;
+		background: #3d3436;
 		color: #fff;
 		font: inherit;
 		font-weight: 600;
 		cursor: pointer;
 	}
 	.tools button[aria-pressed='true'] {
-		background: var(--ochre-400);
+		background: var(--rose-400);
 		color: var(--ink-900);
 	}
 	.tools .end {

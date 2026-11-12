@@ -33,12 +33,12 @@
 	<link rel="icon" href={favicon} type="image/svg+xml" />
 	<link rel="manifest" href="/manifest.webmanifest" />
 	<link rel="apple-touch-icon" href="/icon-192.png" />
-	<meta name="theme-color" content="#0E6B52" />
+	<meta name="theme-color" content="#6B1E33" />
 </svelte:head>
 
 <a class="sr-only skip" href="#main">{m.skip_to_content()}</a>
 {#if data.testSite}<div class="testbar" role="note">{m.test_site_bar()}</div>{/if}
-<Header user={data.user} unread={data.unread} overlay={page.url.pathname === '/'} />
+<Header user={data.user} unread={data.unread} />
 <main id="main">
 	{@render children()}
 </main>

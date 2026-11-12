@@ -49,6 +49,6 @@
 		text-decoration: none;
 	}
 	a[aria-current='page'] {
-		color: var(--green-700);
+		color: var(--brand-700);
 	}
 </style>

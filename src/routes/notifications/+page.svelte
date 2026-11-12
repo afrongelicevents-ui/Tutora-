@@ -25,6 +25,6 @@
 
 <style>
 	.unread {
-		border-left: 4px solid var(--ochre-400);
+		border-left: 4px solid var(--rose-400);
 	}
 </style>

@@ -61,18 +61,18 @@
 <style>
 	.status {
 		margin-top: 12px;
-		border-color: var(--ochre-400);
+		border-color: var(--rose-400);
 	}
 	.bar {
 		height: 10px;
 		border-radius: 99px;
-		background: var(--mint-50);
+		background: var(--blush-50);
 		overflow: hidden;
 	}
 	.bar span {
 		display: block;
 		height: 100%;
-		background: var(--green-700);
+		background: var(--brand-700);
 	}
 	.plain {
 		margin: 0;
