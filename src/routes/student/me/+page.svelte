@@ -1,229 +1,593 @@
 <script lang="ts">
-	// The student's own profile. Photo and name first, then bio, stats, buddies, Edit profile.
+	// "You": profile, personal progress, today's plan, Family Connection, exams and achievements.
 	import { m } from '#lib/i18n.ts';
-	import ProfileCard, {
-		avatarColour,
-		initialsOf
-	} from '#lib/components/profile/ProfileCard.svelte';
+	import { fmtMinutes } from '#lib/tz.ts';
+	import LineIcon from '#lib/components/LineIcon.svelte';
 	let { data } = $props();
-	const p = $derived(data.profile);
-	const photo = $derived(p.photoVersion ? `/profile-photo/${data.id}?v=${p.photoVersion}` : null);
-	const bioNote = $derived(
-		p.bio && p.bioStatus === 'pending'
-			? m.pf_bio_pending()
-			: p.bio && p.bioStatus === 'rejected'
-				? m.pf_bio_rejected()
-				: ''
+
+	const initials = $derived(
+		data.name
+			.split(/\s+/)
+			.filter(Boolean)
+			.slice(0, 2)
+			.map((w) => w[0]!.toUpperCase())
+			.join('')
+	);
+	const planPct = $derived(
+		data.week.planned ? Math.min(100, Math.round((100 * data.week.done) / data.week.planned)) : null
+	);
+	const C = 2 * Math.PI * 42;
+	const names = $derived(
+		data.family.length <= 1
+			? (data.family[0]?.name ?? '')
+			: `${data.family
+					.slice(0, -1)
+					.map((f) => f.name)
+					.join(', ')} ${m.and_word()} ${data.family.at(-1)!.name}`
+	);
+	const sees = $derived(
+		[
+			data.sees.progress && m.me_see_progress(),
+			data.sees.lessons && m.me_see_lessons(),
+			data.sees.homework && m.me_see_homework(),
+			data.sees.study && m.me_see_study()
+		].filter(Boolean) as string[]
 	);
 </script>
 
-<svelte:head><title>{m.pf_title()} · Tutora</title></svelte:head>
+<svelte:head><title>{m.me_title()} · Tutora</title></svelte:head>
+
+<h1 class="sr-only">{m.me_title()}</h1>
 
 <div class="me">
-	<ProfileCard
-		photoUrl={photo}
-		displayName={p.displayName}
-		grade={p.grade}
-		bio={p.bio}
-		{bioNote}
-		streak={p.streak}
-		badges={p.badges}
-		subjects={p.subjects}
-		favourite={p.favouriteSubject}
-	>
-		{#if p.photoStatus === 'pending' && p.photoVersion}<p class="note">{m.pf_photo_pending()}</p>
-		{:else if p.photoStatus === 'rejected'}<p class="note">{m.pf_photo_rejected()}</p>{/if}
-		{#if !p.bio}<p class="muted small">{m.pf_no_bio()}</p>{/if}
-	</ProfileCard>
-
-	{#if !p.badges.length}<p class="muted small center">{m.pf_no_badges()}</p>{/if}
-
-	<section class="panel">
-		<h2>{m.pf_goal()}</h2>
-		<p>{p.goals ?? m.pf_no_goal()}</p>
+	<!-- profile -->
+	<section class="profile">
+		{#if data.photoUrl}
+			<img class="me-avatar" src={data.photoUrl} alt="" width="76" height="76" />
+		{:else}
+			<span class="me-avatar" aria-hidden="true">{initials}</span>
+		{/if}
+		<div class="who">
+			<h2>{data.name}</h2>
+			<ul>
+				<li><LineIcon name="user" size={18} />{m.me_student()}</li>
+				{#if data.school}<li><LineIcon name="school" size={18} />{data.school}</li>{/if}
+				{#if data.email}<li class="mail"><LineIcon name="mail" size={18} />{data.email}</li>{/if}
+			</ul>
+			{#if data.bio}<p class="bio">{data.bio}</p>{/if}
+		</div>
+		<a class="edit" href="/student/me/edit"><LineIcon name="pencil" size={16} />{m.me_edit()}</a>
 	</section>
 
+	<!-- personal progress -->
 	<section class="panel">
 		<div class="panel-h">
-			<h2>{m.pf_buddies()}</h2>
-			<a href="/student/buddies">{m.pf_buddies_all()} <span aria-hidden="true">→</span></a>
+			<h2><LineIcon name="trophy" />{m.me_progress()}</h2>
+			<a href="/student/progress">{m.me_view_details()} <span aria-hidden="true">→</span></a>
 		</div>
-		{#if data.buddies.length}
-			<ul class="buddies">
-				{#each data.buddies as b (b.id)}
-					<li>
-						<a href="/student/buddies/{b.id}">
-							{#if b.photoVersion}<img
-									src="/profile-photo/{b.id}?v={b.photoVersion}"
-									alt=""
-									width="56"
-									height="56"
-								/>{:else}<span class="ini" style="background:{avatarColour(b.displayName)}"
-									>{initialsOf(b.displayName)}</span
-								>{/if}
-							<span class="bn">{b.displayName}</span>
-							<span class="muted small">{m.bd_streak({ n: b.streak })}</span>
-						</a>
-					</li>
-				{/each}
-			</ul>
+		<div class="stats">
+			<div class="stat">
+				<svg
+					viewBox="0 0 100 100"
+					class="ring"
+					role="img"
+					aria-label="{m.me_week_plan()} {planPct ?? '—'}%"
+				>
+					<defs
+						><linearGradient id="meg" x1="0" y1="0" x2="1" y2="1"
+							><stop offset="0" stop-color="#6fb3ea" /><stop
+								offset="1"
+								stop-color="#1a5fae"
+							/></linearGradient
+						></defs
+					>
+					<circle cx="50" cy="50" r="42" class="track" />
+					{#if planPct}<circle
+							cx="50"
+							cy="50"
+							r="42"
+							class="bar"
+							stroke-dasharray="{(C * planPct) / 100} {C}"
+						/>{/if}
+					<text x="50" y="57" text-anchor="middle">{planPct !== null ? `${planPct}%` : '—'}</text>
+				</svg>
+				<span class="label">{planPct !== null ? m.me_week_plan() : m.me_no_plan()}</span>
+			</div>
+			<div class="stat">
+				<span class="ic"><LineIcon name="check" /></span>
+				<strong>{data.homework.handed} / {data.homework.set}</strong>
+				<span class="label">{m.me_homework()}</span>
+			</div>
+			<div class="stat">
+				<span class="ic flame"><LineIcon name="flame" /></span>
+				<strong>{data.streak}</strong>
+				<span class="label">{m.me_streak()}</span>
+			</div>
+			<div class="stat" title={m.me_consistency_note()}>
+				<span class="ic"><LineIcon name="calendar" /></span>
+				<strong>{data.consistency}%</strong>
+				<span class="label">{m.me_consistency()}</span>
+			</div>
+		</div>
+	</section>
+
+	<!-- today's plan -->
+	<section class="panel">
+		<div class="panel-h">
+			<h2><LineIcon name="calendar" />{m.me_schedule()}</h2>
+			<a href="/student/study">{m.me_view_schedule()} <span aria-hidden="true">→</span></a>
+		</div>
+		{#if data.today.length}
+			<div class="sched">
+				<ul>
+					{#each data.today.slice(0, 3) as s (s.id)}
+						<li class:done={s.state === 'done'}>
+							<span class="t">{fmtMinutes(s.startMinute)}</span>
+							<span>{s.subject}{s.topic ? ` · ${s.topic}` : ''}</span>
+						</li>
+					{/each}
+				</ul>
+				<span class="chip" class:warn={!data.onTrack}
+					>{#if data.onTrack}<LineIcon name="check" size={18} />{/if}{data.onTrack
+						? m.me_on_track()
+						: m.me_missed()}</span
+				>
+			</div>
 		{:else}
-			<p class="muted">{m.pf_buddies_none()}</p>
-			<a class="btn btn-secondary" href="/student/buddies">{m.bd_add()}</a>
+			<p class="muted empty">
+				{m.me_no_schedule()} <a href="/student/study">{m.me_make_plan()} →</a>
+			</p>
 		{/if}
-		{#if data.pendingCount}<p class="small muted">{m.bd_pending()}: {data.pendingCount}</p>{/if}
 	</section>
 
-	<section class="panel private">
-		<h2>{m.pf_private()}</h2>
-		<ul>
-			{#if p.age !== null}<li>{m.pf_age({ n: p.age })}</li>{/if}
-			{#if p.school}<li>{p.school}</li>{/if}
-		</ul>
+	<!-- Family Connection -->
+	<section class="panel family">
+		<div class="fam-main">
+			<h2><LineIcon name="family" size={26} />{m.me_family()}</h2>
+			<p class="muted">
+				{data.family.length ? m.me_family_with({ names }) : m.me_family_none()}
+			</p>
+			<a class="btn" href="/student/family"
+				>{data.family.length ? m.me_family_manage() : `+ ${m.me_family_add()}`}</a
+			>
+		</div>
+		<div class="fam-side">
+			<LineIcon name="eye" />
+			{#if data.family.length}
+				<span>{m.me_they_view()}</span>
+				<span>{sees.length ? sees.join(', ') : m.me_they_nothing()}</span>
+			{:else}
+				<span>{m.me_they_choose()}</span>
+				<span>{m.me_they_choose_list()}</span>
+			{/if}
+		</div>
 	</section>
 
-	<a class="btn edit" href="/student/me/edit">{m.pf_edit()}</a>
+	<!-- exams and achievements -->
+	<section class="panel">
+		<div class="panel-h">
+			<h2><LineIcon name="target" />{m.me_goals()}</h2>
+			<a href="/student/progress">{m.me_view_all()} <span aria-hidden="true">→</span></a>
+		</div>
+		<div class="goals">
+			<a href="/student/study">
+				<span class="gi"><LineIcon name="target" size={26} /></span>
+				<span
+					><strong>{m.me_exams()}</strong><span
+						>{data.examsAhead ? m.me_exams_n({ n: data.examsAhead }) : m.me_exams_none()}</span
+					></span
+				>
+				<span class="chev" aria-hidden="true">›</span>
+			</a>
+			<a href="/student/progress#topics">
+				<span class="gi gold"><LineIcon name="trophy" size={26} /></span>
+				<span
+					><strong>{m.me_ready()}</strong><span class="ok"
+						>{m.me_ready_n({ n: data.topicsReady })}</span
+					></span
+				>
+				<span class="chev" aria-hidden="true">›</span>
+			</a>
+		</div>
+	</section>
 
-	<nav class="rows-nav">
-		<a href="/student/family"
-			><span
-				><strong>{m.pf_family()}</strong><span class="muted small">{m.pf_family_sub()}</span></span
-			><span aria-hidden="true">›</span></a
-		>
-		<a href="/account"
-			><span
-				><strong>{m.pf_settings()}</strong><span class="muted small">{m.pf_settings_sub()}</span
-				></span
-			><span aria-hidden="true">›</span></a
-		>
-	</nav>
+	<a class="account" href="/account">{m.me_account()} <span aria-hidden="true">›</span></a>
 </div>
 
 <style>
 	.me {
-		max-width: 640px;
+		max-width: 760px;
 		margin: 0 auto;
 		width: 100%;
-		padding: 20px 18px 32px;
+		padding: 8px 16px 32px;
 		display: flex;
 		flex-direction: column;
 		gap: 16px;
 	}
-	.note {
-		margin: 4px 0 0;
-		font-size: 0.8125rem;
-		color: var(--warn);
+	/* profile card: the first thing on the page */
+	.profile {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr);
+		gap: 14px;
+		align-items: center;
+		padding: 16px;
+		border-radius: 22px;
+		background: rgb(255 255 255 / 0.92);
+		border: 1px solid var(--glass-border);
+		box-shadow: var(--shadow-soft);
+		-webkit-backdrop-filter: blur(10px);
+		backdrop-filter: blur(10px);
+		position: relative;
 	}
-	.center {
-		text-align: center;
-		margin: -6px 0 0;
+	.me-avatar {
+		display: grid;
+		place-items: center;
+		width: 76px;
+		height: 76px;
+		border-radius: 50%;
+		background: linear-gradient(160deg, #dcebfa, #b9d6f3);
+		box-shadow:
+			0 0 0 3px #fff,
+			0 0 0 5px var(--ocean);
+		color: var(--navy);
+		font: 600 1.625rem var(--font-display);
 	}
+	img.me-avatar {
+		object-fit: cover;
+		background: #fff;
+	}
+	.bio {
+		margin: 6px 0 0;
+		font-size: 0.875rem;
+		line-height: 1.45;
+		color: var(--text);
+		overflow-wrap: anywhere;
+	}
+	.who h2 {
+		margin: 0 0 4px;
+		font-size: 1.375rem;
+		color: var(--navy);
+		padding-right: 4px;
+	}
+	.who ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		font-size: 0.875rem;
+		color: var(--text);
+	}
+	.who li {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-width: 0;
+	}
+	.who li :global(svg) {
+		color: var(--ocean);
+		flex: none;
+	}
+	.mail {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.edit {
+		grid-column: 1 / -1;
+		justify-self: start;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		min-height: 40px;
+		padding: 0 14px;
+		border-radius: 99px;
+		background: var(--ice);
+		color: var(--ocean);
+		font-size: 0.875rem;
+		font-weight: 600;
+		text-decoration: none;
+	}
+	/* panels */
 	.panel {
 		padding: 16px;
-		border-radius: 18px;
+		border-radius: 20px;
 		background: #fff;
 		border: 1px solid var(--border);
 	}
-	.panel h2 {
-		margin: 0 0 6px;
+	.panel-h {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 12px;
+	}
+	.panel-h h2,
+	.fam-main h2 {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin: 0;
 		font-family: var(--font);
 		font-size: 1rem;
 		font-weight: 700;
 		color: var(--navy);
 	}
-	.panel p {
-		margin: 0;
-	}
-	.panel-h {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		margin-bottom: 8px;
-	}
 	.panel-h a {
-		font-size: 0.875rem;
+		font-size: 0.8125rem;
 		font-weight: 600;
 		color: var(--ocean);
 		text-decoration: none;
+		white-space: nowrap;
 		padding: 8px 0;
 	}
-	.panel .btn {
-		margin-top: 10px;
+	.empty {
+		margin: 0;
+		font-size: 0.9375rem;
 	}
-	.buddies {
+	.stats {
+		display: grid;
+		grid-template-columns: 1.15fr repeat(3, minmax(0, 1fr));
+	}
+	.stat {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 4px;
+		padding: 0 4px;
+		text-align: center;
+		min-width: 0;
+	}
+	.stat + .stat {
+		border-left: 1px solid var(--border);
+	}
+	.stat .ic {
+		color: var(--ocean);
+	}
+	.stat .flame {
+		color: #c46a12;
+	}
+	.stat strong {
+		font-size: 1.25rem;
+		color: var(--navy);
+		line-height: 1.1;
+	}
+	.label {
+		font-size: 0.6875rem;
+		line-height: 1.25;
+		color: var(--muted);
+	}
+	.ring {
+		width: 70px;
+		height: 70px;
+	}
+	.ring .track {
+		fill: none;
+		stroke: var(--ice);
+		stroke-width: 9;
+	}
+	.ring .bar {
+		fill: none;
+		stroke: url(#meg);
+		stroke-width: 9;
+		stroke-linecap: round;
+		transform: rotate(-90deg);
+		transform-origin: 50% 50%;
+	}
+	.ring text {
+		font: 700 20px var(--font);
+		fill: var(--navy);
+	}
+	.sched {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 12px;
+	}
+	.sched ul {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 10px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		font-size: 0.9375rem;
 	}
-	.buddies a {
+	.sched li {
+		display: grid;
+		grid-template-columns: 72px minmax(0, 1fr);
+		gap: 10px;
+		color: var(--navy);
+		font-weight: 600;
+	}
+	.sched li.done {
+		color: var(--muted);
+		text-decoration: line-through;
+		font-weight: 400;
+	}
+	.sched .t {
+		color: var(--muted);
+		font-weight: 400;
+		font-variant-numeric: tabular-nums;
+		font-size: 0.8125rem;
+		padding-top: 2px;
+	}
+	.chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 8px 12px;
+		border-radius: 99px;
+		background: var(--ok-bg);
+		color: var(--ok);
+		font-size: 0.8125rem;
+		font-weight: 700;
+		white-space: nowrap;
+	}
+	.chip.warn {
+		background: var(--warn-bg);
+		color: var(--warn);
+	}
+	/* family */
+	.family {
+		display: grid;
+		grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+		gap: 14px;
+		align-items: center;
+	}
+	.fam-main {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		align-items: flex-start;
+	}
+	.fam-main h2 :global(svg) {
+		color: var(--ocean);
+	}
+	.fam-main p {
+		margin: 0;
+		font-size: 0.875rem;
+	}
+	.fam-main .btn {
+		min-height: 46px;
+		background: var(--navy);
+		border-color: var(--navy);
+	}
+	.fam-side {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 4px;
+		gap: 2px;
+		padding-left: 12px;
+		border-left: 1px solid var(--border);
+		text-align: center;
+		font-size: 0.75rem;
+		color: var(--muted);
+	}
+	.fam-side :global(svg) {
+		color: var(--navy);
+		margin-bottom: 4px;
+	}
+	/* goals */
+	.goals {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 10px;
+	}
+	.goals a {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 10px;
+		padding: 12px;
+		border-radius: 16px;
+		background: var(--snow);
+		border: 1px solid var(--border);
 		text-decoration: none;
 		color: var(--text);
-		text-align: center;
 	}
-	.buddies img,
-	.ini {
-		width: 56px;
-		height: 56px;
-		border-radius: 50%;
-		object-fit: cover;
-	}
-	.ini {
-		display: grid;
-		place-items: center;
-		color: #fff;
-		font: 600 1.25rem var(--font-display);
-	}
-	.bn {
-		font-weight: 600;
-		font-size: 0.875rem;
-	}
-	.private {
-		background: var(--snow);
-		border-style: dashed;
-	}
-	.private h2 {
-		font-size: 0.8125rem;
-		color: var(--muted);
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-	}
-	.private ul {
-		margin: 0;
-		padding-left: 18px;
-	}
-	.edit {
-		align-self: center;
-		min-width: 180px;
-	}
-	.rows-nav {
+	.goals a > span:nth-child(2) {
 		display: flex;
 		flex-direction: column;
-		background: #fff;
-		border: 1px solid var(--border);
-		border-radius: 18px;
+		font-size: 0.8125rem;
 	}
-	.rows-nav a {
+	.goals strong {
+		color: var(--navy);
+	}
+	.goals a > span:nth-child(2) > span {
+		color: var(--ocean);
+		font-weight: 700;
+		font-size: 0.9375rem;
+	}
+	.goals .ok {
+		color: var(--ok) !important;
+	}
+	.gi {
+		color: var(--ocean);
+	}
+	.gi.gold {
+		color: #b9852f;
+	}
+	.chev {
+		color: var(--muted);
+		font-size: 1.25rem;
+	}
+	.account {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		gap: 10px;
-		min-height: 60px;
-		padding: 8px 16px;
+		min-height: 52px;
+		padding: 0 16px;
+		border-radius: 16px;
+		background: #fff;
+		border: 1px solid var(--border);
 		color: var(--text);
+		font-weight: 600;
 		text-decoration: none;
 	}
-	.rows-nav a + a {
-		border-top: 1px solid var(--border);
+	@media (max-width: 520px) {
+		.family {
+			grid-template-columns: 1fr;
+		}
+		.fam-side {
+			flex-direction: row;
+			flex-wrap: wrap;
+			justify-content: flex-start;
+			gap: 6px;
+			padding: 10px 0 0;
+			border-left: 0;
+			border-top: 1px solid var(--border);
+			text-align: left;
+		}
+		.fam-side :global(svg) {
+			margin: 0;
+		}
+		.goals {
+			grid-template-columns: 1fr;
+		}
 	}
-	.rows-nav a > span:first-child {
-		display: flex;
-		flex-direction: column;
+	@media (max-width: 380px) {
+		.stats {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			row-gap: 12px;
+		}
+		.stat:nth-child(3) {
+			border-left: 0;
+		}
+		.family,
+		.goals {
+			grid-template-columns: 1fr;
+		}
+		.fam-side {
+			border-left: 0;
+			padding-left: 0;
+		}
+	}
+	@media (min-width: 600px) {
+		.profile {
+			grid-template-columns: auto minmax(0, 1fr) auto;
+		}
+		.edit {
+			grid-column: auto;
+			align-self: start;
+		}
+	}
+	@media (min-width: 900px) {
+		.me {
+			padding-top: 32px;
+			gap: 20px;
+		}
+		.stat strong {
+			font-size: 1.625rem;
+		}
+		.label {
+			font-size: 0.8125rem;
+		}
+		.ring {
+			width: 92px;
+			height: 92px;
+		}
 	}
 </style>

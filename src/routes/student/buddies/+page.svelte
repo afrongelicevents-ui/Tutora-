@@ -8,7 +8,7 @@
 <svelte:head><title>{m.bd_title()} · Tutora</title></svelte:head>
 
 <div class="screen">
-	<a class="back" href="/student/me">← {m.pf_title()}</a>
+	<a class="back" href="/student/me/edit">← {m.me_edit()}</a>
 	<h1>{m.bd_title()}</h1>
 	<p class="lead">{m.bd_lead()}</p>
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}

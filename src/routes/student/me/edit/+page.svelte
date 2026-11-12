@@ -196,6 +196,35 @@
 			<input id="pe-grade" name="grade" maxlength="40" value={v.grade ?? p.grade ?? ''} />
 		</div>
 		<div class="field">
+			<label for="pe-birth">{m.pe_birth()}</label>
+			{#if p.birthDate}
+				<input type="hidden" name="birthDate" value={p.birthDate} />
+				<p class="small muted" id="pe-birth">
+					{m.pe_birth_locked({ date: fmtDay(new Date(p.birthDate + 'T12:00:00Z')) })}
+				</p>
+			{:else}
+				<input
+					id="pe-birth"
+					name="birthDate"
+					type="date"
+					value={v.birthDate ?? ''}
+					aria-describedby="pe-birth-h"
+				/>
+				<span class="hint" id="pe-birth-h">{m.pe_birth_hint()}</span>
+			{/if}
+		</div>
+		<div class="field">
+			<label for="pe-school">{m.pe_school()}</label>
+			<input
+				id="pe-school"
+				name="school"
+				maxlength="80"
+				value={v.school ?? p.school ?? ''}
+				aria-describedby="pe-school-h"
+			/>
+			<span class="hint" id="pe-school-h">{m.pe_school_hint()}</span>
+		</div>
+		<div class="field">
 			<label for="pe-subjects">{m.pe_subjects()}</label>
 			<input
 				id="pe-subjects"
@@ -222,35 +251,13 @@
 			>
 			<span class="hint" id="pe-goals-h">{m.pe_goals_hint()}</span>
 		</div>
-		<div class="field">
-			<label for="pe-school">{m.pe_school()}</label>
-			<input
-				id="pe-school"
-				name="school"
-				maxlength="80"
-				value={v.school ?? p.school ?? ''}
-				aria-describedby="pe-school-h"
-			/>
-			<span class="hint" id="pe-school-h">{m.pe_school_hint()}</span>
-		</div>
-		<div class="field">
-			<label for="pe-birth">{m.pe_birth()}</label>
-			{#if p.birthDate}
-				<input type="hidden" name="birthDate" value={p.birthDate} />
-				<p class="small muted" id="pe-birth">
-					{m.pe_birth_locked({ date: fmtDay(new Date(p.birthDate + 'T12:00:00Z')) })}
-				</p>
-			{:else}
-				<input
-					id="pe-birth"
-					name="birthDate"
-					type="date"
-					value={v.birthDate ?? ''}
-					aria-describedby="pe-birth-h"
-				/>
-				<span class="hint" id="pe-birth-h">{m.pe_birth_hint()}</span>
-			{/if}
-		</div>
+		<a class="buddyrow" href="/student/buddies">
+			<span
+				><strong>{m.pf_buddies()}</strong><span class="small muted">{m.pe_buddies_row()}</span
+				></span
+			>
+			<span aria-hidden="true">›</span>
+		</a>
 		<div class="acts">
 			<button class="btn" type="submit">{m.pe_save()}</button>
 			<a class="btn btn-secondary" href="/student/me">{m.pe_cancel()}</a>
@@ -287,6 +294,24 @@
 		color: #fff;
 		font: 600 3rem var(--font-display);
 		cursor: default;
+	}
+	.buddyrow {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 14px 16px;
+		border: 1px solid var(--border);
+		border-radius: 16px;
+		color: var(--navy);
+		text-decoration: none;
+		font-size: 1.25rem;
+	}
+	.buddyrow > span:first-child {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		font-size: 1rem;
 	}
 	.acts {
 		display: flex;

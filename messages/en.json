@@ -2054,7 +2054,7 @@
 	"pe_subjects_hint": "Separate with commas, e.g. Maths, English, Physics",
 	"pe_fav": "Favourite subject",
 	"pe_fav_none": "None",
-	"pe_goals": "Learning goals",
+	"pe_goals": "Current goal",
 	"pe_goals_hint": "Up to 200 characters, e.g. Get 70% in my maths test",
 	"pe_birth": "Date of birth (private)",
 	"pe_birth_hint": "Only used to keep study buddies safe and age-appropriate. No one else sees it, and it can't be changed after saving.",
@@ -2203,5 +2203,6 @@
 	"msg_read_only": "Read only: you can see your child's messages with their tutors, but not send any.",
 	"msg_parent_link": "Messages with tutors",
 	"msg_open": "Message",
-	"msg_tutor_link": "Messages"
+	"msg_tutor_link": "Messages",
+	"pe_buddies_row": "Your buddy code, add a buddy, your buddies"
 }
