@@ -583,7 +583,7 @@
 		height: 96px;
 		border-radius: 50%;
 		object-fit: cover;
-		border: 3px solid var(--rose-400);
+		border: 3px solid var(--ochre-400);
 	}
 	.summary-row {
 		display: flex;
@@ -605,7 +605,7 @@
 	.dayrow input[type='time'] {
 		min-height: 44px;
 		padding: 0 6px;
-		border: 1.5px solid #9b8f8c;
+		border: 1.5px solid #8a948e;
 		border-radius: 10px;
 		font: inherit;
 		background: var(--white);

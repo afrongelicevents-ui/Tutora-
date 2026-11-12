@@ -33,7 +33,7 @@
 		padding: 8px 12px;
 		min-height: 40px;
 		border-radius: 999px;
-		background: var(--blush-50);
+		background: var(--mint-50);
 		text-decoration: none;
 		font-weight: 600;
 		font-size: 0.9rem;

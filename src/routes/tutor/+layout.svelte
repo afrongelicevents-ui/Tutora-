@@ -61,12 +61,12 @@
 <style>
 	.status {
 		margin-top: 12px;
-		border-color: var(--rose-400);
+		border-color: var(--ochre-400);
 	}
 	.bar {
 		height: 10px;
 		border-radius: 99px;
-		background: var(--blush-50);
+		background: var(--mint-50);
 		overflow: hidden;
 	}
 	.bar span {

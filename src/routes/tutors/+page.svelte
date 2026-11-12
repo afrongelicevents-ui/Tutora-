@@ -155,12 +155,12 @@
 	.ph {
 		display: grid;
 		place-items: center;
-		background: var(--blush-50);
+		background: var(--mint-50);
 		font-family: var(--font-display);
 		font-size: 1.5rem;
 		color: var(--brand-700);
 	}
 	.star {
-		color: var(--rose-400);
+		color: var(--ochre-400);
 	}
 </style>
