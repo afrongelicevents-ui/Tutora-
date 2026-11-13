@@ -40,14 +40,9 @@ jobs:
     # The live site is deployed only after the TEST site deployed and answered (deploy-test).
     # Only code pushed to main in this repository (never a fork's pull request); manual runs only from main.
     needs: deploy-test
-    if: >-
-      ${{
-        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
-        (github.event.workflow_run.conclusion == 'success' &&
-         github.event.workflow_run.event == 'push' &&
-         github.event.workflow_run.head_branch == 'main' &&
-         github.event.workflow_run.head_repository.full_name == github.repository)
-      }}
+    # LIVE only when started by hand (Actions → Deploy → Run workflow) while the wiring
+    # work is checked on the test site; pushes to main still update the TEST site.
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
     steps:
