@@ -65,10 +65,10 @@
 
 	<div class="frow">
 		<button class="btn btn-secondary fbtn" type="button" onclick={() => sheet?.showModal()}
-			>{m.find3_filters()}{#if active}<span class="count">{active}</span>{/if}</button
+			>{m.find3_filters_btn()}{#if active}<span class="count">{active}</span>{/if}</button
 		>
 		{#if data.f.service}<a class="chip on" href={withParam('service', '')}
-				>{t(`th_${data.f.service}`)} <span aria-hidden="true">×</span><span class="sr-only"
+				>{t(`th_${data.f.service}`)}&nbsp;<span aria-hidden="true">×</span><span class="sr-only"
 					>{m.find3_clear()}</span
 				></a
 			>{/if}
