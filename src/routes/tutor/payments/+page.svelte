@@ -43,6 +43,50 @@
 		</p>{/if}
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
 
+	{#if data.pending.length}
+		<section class="confirm-box" id="confirm" aria-labelledby="cf-h">
+			<h2 id="cf-h">{m.er_to_confirm({ n: data.pending.length })}</h2>
+			<p class="small">{m.er_to_confirm_lead()}</p>
+			<ul class="rows">
+				{#each data.pending as p (p.id)}
+					<li class="col">
+						<div class="line">
+							<span>{p.studentName} · {methodLabel(p.method)}</span>
+							<form method="POST" action="?/confirmPayment">
+								<input type="hidden" name="id" value={p.id} />
+								<button class="confirm" type="submit"
+									>{m.tut3_confirm_amount({ amount: money(p.amountCents) })}</button
+								>
+							</form>
+						</div>
+						<span class="note"
+							>{fmtDay(new Date(p.paidOn + 'T12:00:00Z'))}{p.reference
+								? ` · ${m.ref()} ${p.reference}`
+								: ''}{#if p.proofUrl}&nbsp;· <a href={p.proofUrl} target="_blank" rel="noopener"
+									>{m.see_proof()}</a
+								>{:else if p.method === 'cash'}&nbsp;· {m.student_says_cash()}{/if}</span
+						>
+						<details class="rej">
+							<summary>{m.reject()}</summary>
+							<form method="POST" action="?/rejectPayment" class="stack">
+								<input type="hidden" name="id" value={p.id} />
+								<div class="field">
+									<label for="rr-{p.id}">{m.reject_reason()}</label><input
+										id="rr-{p.id}"
+										name="reason"
+										type="text"
+										maxlength="300"
+									/>
+								</div>
+								<button class="btn btn-warn btn-sm" type="submit">{m.reject_confirm()}</button>
+							</form>
+						</details>
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
+
 	<nav class="period" aria-label={m.er_period()}>
 		{#each [['week', m.er_week()], ['month', m.er_month()], ['year', m.er_year()]] as [k, label] (k)}
 			<a href="?period={k}" aria-current={data.period === k ? 'true' : undefined}>{label}</a>
@@ -120,41 +164,6 @@
 
 	<div class="section-h"><h2>{m.er_transactions()}</h2></div>
 	<ul class="rows">
-		{#each data.pending as p (p.id)}
-			<li class="col">
-				<div class="line">
-					<span>{p.studentName} · {methodLabel(p.method)}</span>
-					<form method="POST" action="?/confirmPayment">
-						<input type="hidden" name="id" value={p.id} />
-						<button class="confirm" type="submit"
-							>{m.tut3_confirm_amount({ amount: money(p.amountCents) })}</button
-						>
-					</form>
-				</div>
-				<span class="note"
-					>{fmtDay(new Date(p.paidOn + 'T12:00:00Z'))}{p.reference
-						? ` · ${m.ref()} ${p.reference}`
-						: ''}{#if p.proofUrl}&nbsp;· <a href={p.proofUrl} target="_blank" rel="noopener"
-							>{m.see_proof()}</a
-						>{:else if p.method === 'cash'}&nbsp;· {m.student_says_cash()}{/if}</span
-				>
-				<details class="rej">
-					<summary>{m.reject()}</summary>
-					<form method="POST" action="?/rejectPayment" class="stack">
-						<input type="hidden" name="id" value={p.id} />
-						<div class="field">
-							<label for="rr-{p.id}">{m.reject_reason()}</label><input
-								id="rr-{p.id}"
-								name="reason"
-								type="text"
-								maxlength="300"
-							/>
-						</div>
-						<button class="btn btn-warn btn-sm" type="submit">{m.reject_confirm()}</button>
-					</form>
-				</details>
-			</li>
-		{/each}
 		{#each data.recent as p (p.id)}
 			<li>
 				<span
@@ -174,7 +183,7 @@
 				{/if}
 			</li>
 		{/each}
-		{#if !data.pending.length && !data.recent.length}
+		{#if !data.recent.length}
 			<li class="note">{m.tut3_no_payments()}</li>
 		{/if}
 	</ul>
@@ -244,6 +253,23 @@
 </section>
 
 <style>
+	.confirm-box {
+		background: #fff;
+		border: 1.5px solid var(--navy);
+		border-radius: 22px;
+		padding: 16px;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.confirm-box h2 {
+		margin: 0;
+		font-size: 1.25rem;
+		color: var(--navy);
+	}
+	.confirm-box p {
+		margin: 0;
+	}
 	.period {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));

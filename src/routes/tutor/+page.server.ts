@@ -6,11 +6,9 @@ import { requireTutor } from '#lib/server/guards.ts';
 import { SubmitFail, submitForApproval } from '#lib/server/tutor.ts';
 import type { Actions, PageServerLoad } from './$types';
 import { lessonsBetween, pendingRequests } from '#lib/server/bookings.ts';
-import { pendingPayments } from '#lib/server/billing.ts';
 import { conversations } from '#lib/server/messages.ts';
 import { OPEN_BEFORE_MIN } from '#lib/server/room.ts';
 import { getSettings, listAvailability, listSubjects } from '#lib/server/settings.ts';
-import { fileLink } from '#lib/server/storage.ts';
 import { inboxActions } from '#lib/server/actions/tutor-inbox.ts';
 import { briefsForRequests } from '#lib/server/brief.ts';
 import { attendee, lesson, profile } from '#lib/server/db/app.schema.ts';
@@ -23,17 +21,15 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const now = new Date();
 	const day = startOfLocalDay(now);
 	const week = startOfLocalWeek(now);
-	const [lessons, weekLessons, requests, payments, s, subjects, times, students] =
-		await Promise.all([
-			lessonsBetween(db, t, day, addDays(day, 1)),
-			lessonsBetween(db, t, week, addDays(week, 7)),
-			pendingRequests(db, t),
-			pendingPayments(db, t),
-			getSettings(db, t),
-			listSubjects(db, t),
-			listAvailability(db, t),
-			countStudents(db, t)
-		]);
+	const [lessons, weekLessons, requests, s, subjects, times, students] = await Promise.all([
+		lessonsBetween(db, t, day, addDays(day, 1)),
+		lessonsBetween(db, t, week, addDays(week, 7)),
+		pendingRequests(db, t),
+		getSettings(db, t),
+		listSubjects(db, t),
+		listAvailability(db, t),
+		countStudents(db, t)
+	]);
 	// the next lesson that hasn't finished (today or in the next two weeks), and messages
 	const [soon, convs] = await Promise.all([
 		lessonsBetween(db, t, day, addDays(day, 15)),
@@ -139,12 +135,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		}),
 		requests,
 		briefs: await briefsForRequests(db, t, requests, now),
-		payments: await Promise.all(
-			payments.map(async (p) => ({
-				...p,
-				proofUrl: p.proofKey ? await fileLink(p.proofKey, `proof-${p.id}`) : null
-			}))
-		),
 		missing,
 		toCheck: (await answersToCheck(db, t)).length,
 		activity: (await myNotifications(db, t, 5)).map((n) => ({

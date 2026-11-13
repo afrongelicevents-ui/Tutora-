@@ -2630,5 +2630,7 @@
 	"tp3_languages": "Languages",
 	"sc2_one_lesson": "1 lesson",
 	"mo_one_lesson_today": "1 lesson today",
-	"st2_add_short": "Add"
+	"st2_add_short": "Add",
+	"er_to_confirm": "Payments to confirm ({n})",
+	"er_to_confirm_lead": "Students say they paid. Check your bank, EcoCash or cash, then confirm or reject."
 }

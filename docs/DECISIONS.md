@@ -262,3 +262,5 @@ Following the teacher design references, without hero photos (plain headers, lik
 - Earnings: this week / month / year, change vs the period before, lessons done, average per lesson, waiting to confirm, a 6-month trend, transactions, payment details. Tutora never holds money, so there is no payout date; the page says so instead of inventing one.
 - More = teaching centre: profile card (verified badge only when approved, rating from real reviews, subjects, Edit profile, Preview my page), stats, My teaching day (new /tutor/day: lessons, marking/payment reminders, the tutor's own tasks with times and weekly goals, same planner as students), Student success (students whose marks with this tutor went up, first three vs latest three results) and good reviews, My achievements (consistency, lessons milestones, regular routine, on-time marking, tasks done, reviews: each from real data, with what's still needed when not earned), teaching tools, and Account and settings as its own page.
 - New profile field: Languages you teach in, shown on the public page.
+
+- Payments to confirm moved from Today to the top of Earnings (Today keeps booking requests and homework only).

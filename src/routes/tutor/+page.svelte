@@ -2,10 +2,9 @@
 	import { shortName } from '#lib/names.ts';
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay, fmtDayTime, fmtTime, localDate, minutesToHHMM, local } from '#lib/tz.ts';
-	import { formatMoney } from '#lib/money.ts';
 	import { waLink } from '#lib/whatsapp.ts';
 	import BriefLine from '#lib/components/tutor/BriefLine.svelte';
-	import { methodLabel, toolLabel } from '#lib/components/tutor/labels.ts';
+	import { toolLabel } from '#lib/components/tutor/labels.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	import { ago } from '#lib/ago.ts';
 	let { data, form } = $props();
@@ -125,11 +124,6 @@
 			<a href="/tutor/homework"
 				><LineIcon name="clipboard" size={26} /><strong>{data.toCheck}</strong><span
 					>{m.tt2_homework()}</span
-				></a
-			>
-			<a href="#payments"
-				><LineIcon name="wallet" size={26} /><strong>{data.payments.length}</strong><span
-					>{m.tt2_payments()}</span
 				></a
 			>
 		</div>
@@ -334,52 +328,6 @@
 		>
 	{/if}
 
-	{#if data.payments.length}
-		<div class="section-h" id="payments"><h2>{m.today_payments_h()}</h2></div>
-		<ul class="rows">
-			{#each data.payments as p (p.id)}
-				<li class="pay">
-					<div class="line">
-						<span
-							>{p.studentName} · {methodLabel(p.method)}{p.reference
-								? ` · ${m.ref()} ${p.reference}`
-								: ''}</span
-						>
-						<strong>{formatMoney(p.amountCents, p.currency)}</strong>
-					</div>
-					<span class="note"
-						>{fmtDay(new Date(p.paidOn + 'T12:00:00Z'))}{#if p.proofUrl}&nbsp;· <a
-								href={p.proofUrl}
-								target="_blank"
-								rel="noopener">{m.see_proof()}</a
-							>{:else if p.method === 'cash'}&nbsp;· {m.student_says_cash()}{/if}</span
-					>
-					<div class="att">
-						<form method="POST" action="?/confirmPayment">
-							<input type="hidden" name="id" value={p.id} />
-							<button class="btn btn-sm" type="submit">{m.confirm()}</button>
-						</form>
-						<details class="more grow">
-							<summary>{m.reject()}</summary>
-							<form method="POST" action="?/rejectPayment" class="stack">
-								<input type="hidden" name="id" value={p.id} />
-								<div class="field">
-									<label for="rr-{p.id}">{m.reject_reason()}</label><input
-										id="rr-{p.id}"
-										name="reason"
-										type="text"
-										maxlength="300"
-									/>
-								</div>
-								<button class="btn btn-warn btn-sm" type="submit">{m.reject_confirm()}</button>
-							</form>
-						</details>
-					</div>
-				</li>
-			{/each}
-		</ul>
-	{/if}
-
 	{#if data.activity.length}
 		<div class="section-h">
 			<h2>{m.today_activity()}</h2>
@@ -564,7 +512,7 @@
 	}
 	.att3 {
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 	.att3 a {
 		display: flex;
@@ -667,8 +615,7 @@
 		color: var(--ocean);
 		padding: 8px 0;
 	}
-	.rows > li.lesson,
-	.rows > li.pay {
+	.rows > li.lesson {
 		flex-direction: column;
 		align-items: stretch;
 		gap: 4px;
