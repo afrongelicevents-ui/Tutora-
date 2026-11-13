@@ -4,8 +4,10 @@
  * Do not import `$app/*` modules here.
  */
 import { betterAuth, type BetterAuthPlugin } from 'better-auth';
-import { eq } from 'drizzle-orm';
-import { user as userTable } from './db/auth.schema.ts';
+import { and, eq } from 'drizzle-orm';
+import { account as accountTable, user as userTable } from './db/auth.schema.ts';
+import { createAuthMiddleware } from 'better-auth/api';
+import { hashPassword, isOldHash, verifyPassword } from './password.ts';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { twoFactor } from 'better-auth/plugins';
 import type { DB } from './db/types.ts';
@@ -45,6 +47,8 @@ export function createAuth(deps: AuthDeps) {
 		}),
 		emailAndPassword: {
 			enabled: true,
+			// fast native hashing: the default goes over the Workers CPU limit (see password.ts)
+			password: { hash: hashPassword, verify: verifyPassword },
 			requireEmailVerification: emailOn,
 			minPasswordLength: 10,
 			maxPasswordLength: 128,
@@ -135,6 +139,24 @@ export function createAuth(deps: AuthDeps) {
 		advanced: {
 			useSecureCookies: deps.production ?? false,
 			ipAddress: { ipAddressHeaders: ['cf-connecting-ip', 'x-forwarded-for'] }
+		},
+		hooks: {
+			// an old (slow) password hash is replaced after a successful sign-in
+			after: createAuthMiddleware(async (ctx) => {
+				if (ctx.path !== '/sign-in/email') return;
+				const userId = ctx.context.newSession?.user.id;
+				const password = (ctx.body as { password?: unknown } | undefined)?.password;
+				if (!userId || typeof password !== 'string') return;
+				const [acc] = await deps.db
+					.select({ id: accountTable.id, password: accountTable.password })
+					.from(accountTable)
+					.where(and(eq(accountTable.userId, userId), eq(accountTable.providerId, 'credential')));
+				if (acc && isOldHash(acc.password))
+					await deps.db
+						.update(accountTable)
+						.set({ password: await hashPassword(password) })
+						.where(eq(accountTable.id, acc.id));
+			})
 		},
 		plugins: [twoFactor({ issuer: 'Tutora' }), ...(deps.plugins ?? [])]
 	});

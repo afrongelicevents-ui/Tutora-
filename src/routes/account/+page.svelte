@@ -24,7 +24,13 @@
 		<p class="small">{m.account_role()}: <strong>{roleLabel}</strong></p>
 		<p class="small">
 			{m.account_2fa()}:
-			<strong>{data.account.twoFactorEnabled ? m.account_2fa_on() : m.account_2fa_off()}</strong>
+			<strong
+				>{data.account.twoFactorTestSkip
+					? m.account_2fa_test_skip()
+					: data.account.twoFactorEnabled
+						? m.account_2fa_on()
+						: m.account_2fa_off()}</strong
+			>
 		</p>
 		<div class="btn-row">
 			<a class="btn btn-secondary" href="/account/password">{m.nav_password()}</a>

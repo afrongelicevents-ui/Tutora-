@@ -16,6 +16,7 @@ import { m } from '#lib/paraglide/messages.js';
 import { APIError } from 'better-auth/api';
 import { fieldErrors, formObject, newEmailField, phone } from '#lib/validation/auth.ts';
 import { requireUser } from '#lib/server/guards.ts';
+import { TEST_SITE } from '$app/env/private';
 import { homeFor } from '#lib/roles.ts';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -33,12 +34,19 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		.select({ phone: profile.phone })
 		.from(profile)
 		.where(eq(profile.userId, user.id));
+	// the test site skips the authenticator step: say so instead of showing "On"
+	const [real] = await locals.db
+		.select({ on: userTable.twoFactorEnabled })
+		.from(userTable)
+		.where(eq(userTable.id, user.id));
+	const testSkip = TEST_SITE === '1' && !real?.on;
 	return {
 		account: {
 			name: user.name,
 			email: user.email,
 			role: user.role,
 			twoFactorEnabled: user.twoFactorEnabled,
+			twoFactorTestSkip: testSkip,
 			phone: prof?.phone ?? null,
 			// younger children sign in with a username: their parent manages that login
 			canChangeEmail: !user.email.endsWith('.invalid')

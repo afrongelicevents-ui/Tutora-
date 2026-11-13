@@ -2706,5 +2706,6 @@
 	"ev_paid_by": "{child} (paid by {parent})",
 	"msg_parent_adult": "Messages of a child who is 18 or older stay private.",
 	"msg_parent_guardian": "Only this child's guardian can read their messages.",
-	"oc_subjects_none": "No subjects yet. Add the first one below."
+	"oc_subjects_none": "No subjects yet. Add the first one below.",
+	"account_2fa_test_skip": "Skipped on the test site (the real site asks for a code)"
 }
