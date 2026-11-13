@@ -38,8 +38,10 @@ test('booking to receipt, across student and tutor', async ({ browser }) => {
 		`select count(*)::int n from notification where user_id = 'test_nyasha' and created_at > now() - interval '5 minutes'`
 	);
 	expect(n.n).toBeGreaterThan(0);
-	await student.goto('/student/lessons');
-	await expect(student.locator(`a[href="/student/lessons/${l.id}"]`).first()).toBeVisible();
+	// (the Lessons tab lists only the next few; earlier test runs may have left lessons today)
+	const page = await student.goto(`/student/lessons/${l.id}`);
+	expect(page?.status()).toBe(200);
+	await expect(student.locator('main')).toContainText('Chipo');
 
 	// 3. time moves on: the lesson starts now; both can join the room
 	await sql(
