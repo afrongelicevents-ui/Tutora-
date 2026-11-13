@@ -18,6 +18,9 @@ export default defineConfig({
 	use: {
 		baseURL: process.env.E2E_BASE ?? 'http://localhost:5173',
 		trace: 'off',
+		// a stuck click fails fast with its own line instead of the whole test timing out
+		actionTimeout: 15_000,
+		navigationTimeout: 30_000,
 		// use a browser that is already installed when one is given
 		launchOptions: process.env.E2E_CHROMIUM
 			? { executablePath: process.env.E2E_CHROMIUM }

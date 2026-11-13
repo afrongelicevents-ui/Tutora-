@@ -13,8 +13,8 @@ test('booking to receipt, across student and tutor', async ({ browser }) => {
 	await student.goto('/student/book?tutor=chipo-moyo');
 	const subj = student.locator('input[name=subjectId][type=radio]');
 	if (await subj.count()) await pick(student, 'input[name=subjectId][type=radio]');
-	await pick(student, 'input[name=slot]');
-	await press(student, 'form button[type=submit]');
+	await pick(student, '.day:not([hidden]) input[name=slot]');
+	await press(student, 'form.stack > button.big[type=submit]');
 	await expect(student).toHaveURL(/\/student\/book\/sent/);
 
 	// 2. the tutor sees the request on Today and accepts it

@@ -27,7 +27,11 @@ export async function as(browser: Browser, login: string): Promise<Page> {
 
 /** Submit the form that contains this button (waits for the page to come back). */
 export async function press(page: Page, selector: string) {
-	await Promise.all([page.waitForLoadState('load'), page.locator(selector).first().click()]);
+	const el = page.locator(selector).first();
+	await el.waitFor({ state: 'visible', timeout: 15_000 }).catch((e) => {
+		throw new Error(`press: "${selector}" not visible on ${page.url()}\n${String(e)}`);
+	});
+	await Promise.all([page.waitForLoadState('load'), el.click()]);
 	await page.waitForLoadState('networkidle').catch(() => {});
 }
 
