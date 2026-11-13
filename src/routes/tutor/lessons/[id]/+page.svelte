@@ -24,6 +24,9 @@
 			{t(form.error as string)}
 		</p>{/if}
 	{#if form && 'saved' in form}<p class="notice" role="status">{m.saved()}</p>{/if}
+	{#if data.roomClosed && !data.roomOpen}<p class="alert" role="alert">
+			{m.room_not_open({ before: 10, after: 120 })}
+		</p>{/if}
 	{#if share === 'shared'}<p class="notice" role="status">{m.tools6_drive_shared()}</p>{/if}
 	{#if share === 'skipped'}<p class="notice" role="status">
 			{m.tools6_drive_share_yourself()}
@@ -48,10 +51,13 @@
 						rel="noopener noreferrer"
 						>{data.meeting.provider === 'meet' ? m.tools6_join_meet() : m.tools6_join_teams()}</a
 					>
-					<a class="btn btn-ghost btn-block" href="/room/{l.id}">{m.tools6_use_room()}</a>
+					{#if data.roomOpen}<a class="btn btn-ghost btn-block" href="/room/{l.id}"
+							>{m.tools6_use_room()}</a
+						>{:else}<span class="small">{m.ld3_room_fallback()}</span>{/if}
 				{:else}
 					<strong>{m.tools6_room()}</strong>
-					<a class="btn btn-block" href="/room/{l.id}">{m.room_start()}</a>
+					{#if data.roomOpen}<a class="btn btn-block" href="/room/{l.id}">{m.room_start()}</a
+						>{:else}<span class="small">{m.room_opens_10()}</span>{/if}
 				{/if}
 			{:else}
 				<strong>{m.mode_in_person()}</strong>

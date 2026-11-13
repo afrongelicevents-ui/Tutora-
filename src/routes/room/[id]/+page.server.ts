@@ -1,4 +1,4 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireUser } from '#lib/server/guards.ts';
 import {
@@ -20,7 +20,15 @@ export const load: PageServerLoad = async ({ locals, url, params, fetch }) => {
 	const u = requireUser(locals.user, url);
 	const id = Number(params.id) || 0;
 	const access = await roomAccess(locals.db, u, id);
-	if (!access) error(404, m.room_not_open({ before: OPEN_BEFORE_MIN, after: CLOSE_AFTER_MIN }));
+	if (!access) {
+		// someone's own lesson outside the open window: back to the lesson, with an honest note
+		const own = await lessonWithPeople(locals.db, id);
+		if (own && u.role === 'tutor' && own.tutorId === u.id)
+			redirect(303, `/tutor/lessons/${id}?room=closed`);
+		if (own && u.role === 'student' && own.people.some((p) => p.userId === u.id))
+			redirect(303, `/student/lessons/${id}`);
+		error(404, m.room_not_open({ before: OPEN_BEFORE_MIN, after: CLOSE_AFTER_MIN }));
+	}
 	await enter(locals.db, access, u.id);
 	const l = await lessonWithPeople(locals.db, id);
 	return {

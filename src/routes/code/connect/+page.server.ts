@@ -92,7 +92,7 @@ export const actions: Actions = {
 			forgetCode(cookies);
 			redirect(
 				303,
-				`/parent?${r.status === 'active' ? 'connected' : 'pending'}=${encodeURIComponent(invite?.firstName ?? '')}`
+				`/parent?child=${encodeURIComponent(r.studentId)}&${r.status === 'active' ? 'connected' : 'pending'}=${encodeURIComponent(invite?.firstName ?? '')}`
 			);
 		} catch (e) {
 			if (e instanceof FamilyFail) return fail(400, { error: e.code });
@@ -139,7 +139,7 @@ export const actions: Actions = {
 			forgetCode(cookies);
 			redirect(
 				303,
-				`/parent?${r.status === 'active' ? 'connected' : 'pending'}=${encodeURIComponent(invite.firstName)}`
+				`/parent?child=${encodeURIComponent(r.studentId)}&${r.status === 'active' ? 'connected' : 'pending'}=${encodeURIComponent(invite.firstName)}`
 			);
 		} catch (e) {
 			// the account exists and is signed in: show why the code did not connect, here

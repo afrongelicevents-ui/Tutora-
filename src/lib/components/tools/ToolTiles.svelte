@@ -4,21 +4,34 @@
 	import { m } from '#lib/i18n.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	import ToolLogo, { TOOL_NAME, type Tool } from './ToolLogo.svelte';
-	let { tools }: { tools: { drive: boolean; kahoot: boolean; driveConnectHref: string } } =
-		$props();
+	let {
+		tools
+	}: {
+		tools: {
+			meet: boolean;
+			teams: boolean;
+			driveAvailable: boolean;
+			drive: boolean;
+			kahoot: boolean;
+			driveConnectHref: string;
+		};
+	} = $props();
 	const SHORT: Record<Tool, string> = {
 		meet: 'Meet',
 		teams: 'Teams',
 		drive: 'Drive',
 		kahoot: 'Kahoot!'
 	};
-	type Tile = { tool: Tool; state: 'connected' | 'ready' | 'connect'; href?: string };
+	type Tile = { tool: Tool; state: 'connected' | 'ready' | 'connect' | 'soon'; href?: string };
+	// "Not yet" when Tutora has no keys for that service: the same answer as on the tools pages
 	const tiles = $derived<Tile[]>([
-		{ tool: 'meet', state: 'ready' },
-		{ tool: 'teams', state: 'ready' },
+		{ tool: 'meet', state: tools.meet ? 'ready' : 'soon' },
+		{ tool: 'teams', state: tools.teams ? 'ready' : 'soon' },
 		tools.drive
 			? { tool: 'drive', state: 'connected' }
-			: { tool: 'drive', state: 'connect', href: tools.driveConnectHref },
+			: tools.driveAvailable
+				? { tool: 'drive', state: 'connect', href: tools.driveConnectHref }
+				: { tool: 'drive', state: 'soon' },
 		// Kahoot! has no account link: "on" only means quiz links are shown, so it is "Ready"
 		tools.kahoot
 			? { tool: 'kahoot', state: 'ready' }
@@ -38,6 +51,8 @@
 				<span class="tn">{SHORT[tl.tool]}</span>
 				{#if tl.state === 'connected'}
 					<span class="st on">{m.tt_connected()}</span>
+				{:else if tl.state === 'soon'}
+					<span class="st" title={m.tools6_not_ready()}>{m.tt_soon()}</span>
 				{:else if tl.state === 'ready'}
 					<span class="st ready" title={m.tt_ready_hint()}>{m.tt_ready()}</span>
 				{:else}

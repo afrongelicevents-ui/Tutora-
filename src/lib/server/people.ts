@@ -78,7 +78,7 @@ export async function listStudents(db: DB, tutorId: string, q?: string) {
 		.where(
 			and(
 				eq(enrollment.tutorId, tutorId),
-				inArray(user.role, ['student', 'parent']),
+				eq(user.role, 'student'),
 				search
 					? or(
 							ilike(user.name, `%${escapeLike(search)}%`),
@@ -112,13 +112,7 @@ export async function getStudent(db: DB, tutorId: string, id: string) {
 		.from(enrollment)
 		.innerJoin(user, eq(user.id, enrollment.userId))
 		.leftJoin(profile, eq(profile.userId, user.id))
-		.where(
-			and(
-				eq(enrollment.tutorId, tutorId),
-				eq(user.id, id),
-				inArray(user.role, ['student', 'parent'])
-			)
-		);
+		.where(and(eq(enrollment.tutorId, tutorId), eq(user.id, id), eq(user.role, 'student')));
 	return s ?? null;
 }
 
@@ -335,6 +329,28 @@ export function answersToCheck(db: DB, tutorId: string) {
 		.innerJoin(user, eq(user.id, homework.userId))
 		.where(and(eq(homework.tutorId, tutorId), sql`${homeworkAnswer.checkedAt} is null`))
 		.orderBy(desc(homeworkAnswer.createdAt));
+}
+
+/** Homework this tutor set that has no answer yet (newest first). */
+export function homeworkWaiting(db: DB, tutorId: string, limit = 30) {
+	return db
+		.select({
+			id: homework.id,
+			title: homework.title,
+			dueOn: homework.dueOn,
+			createdAt: homework.createdAt,
+			studentName: user.name
+		})
+		.from(homework)
+		.innerJoin(user, eq(user.id, homework.userId))
+		.where(
+			and(
+				eq(homework.tutorId, tutorId),
+				sql`not exists (select 1 from homework_answer a where a.homework_id = ${homework.id})`
+			)
+		)
+		.orderBy(desc(homework.createdAt))
+		.limit(limit);
 }
 
 /** The tutor marks an answer checked, with an optional comment (only answers to THEIR homework). */

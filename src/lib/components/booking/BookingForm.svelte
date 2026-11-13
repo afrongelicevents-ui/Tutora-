@@ -89,7 +89,7 @@
 								><input
 									type="radio"
 									name="subjectId"
-									value={s.id}
+									value={String(s.id)}
 									bind:group={subjectId}
 								/>{s.name}</label
 							>
@@ -201,6 +201,8 @@
 		border: none;
 		padding: 0;
 		margin: 0;
+		/* a fieldset is as wide as its content by default: keep the day row scrolling inside */
+		min-width: 0;
 		display: flex;
 		flex-direction: column;
 		gap: 10px;

@@ -68,6 +68,25 @@
 		{/each}
 	</ul>
 
+	{#if data.waiting.length}
+		<div class="section-h"><h2>{m.hw_waiting_h({ n: data.waiting.length })}</h2></div>
+		<ul class="rows">
+			{#each data.waiting as w (w.id)}
+				<li class="col">
+					<div class="line">
+						<strong>{w.title}</strong>
+						<span class="note"
+							>{w.dueOn
+								? m.hw_due_on({ date: fmtDay(new Date(w.dueOn + 'T12:00:00Z')) })
+								: fmtDay(new Date(w.createdAt))}</span
+						>
+					</div>
+					<span class="note">{w.studentName} · {m.hw_not_handed_in()}</span>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+
 	<div class="section-h"><h2>{m.hw_send_h()}</h2></div>
 	{#if data.students.length}
 		<form method="POST" action="?/send" enctype="multipart/form-data" class="stack" novalidate>

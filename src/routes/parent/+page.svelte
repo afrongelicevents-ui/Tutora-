@@ -3,7 +3,7 @@
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay, fmtMinutes, fmtTime, localDate } from '#lib/tz.ts';
 	import ChildSwitcher from '#lib/components/parent/ChildSwitcher.svelte';
-	let { data } = $props();
+	let { data, form } = $props();
 	const connected = $derived(page.url.searchParams.get('connected'));
 	const pending = $derived(page.url.searchParams.get('pending'));
 	const c = $derived(data.child);
@@ -45,6 +45,10 @@
 		<h1>{m.par_hello({ name: data.name })}</h1>
 		{#if connected}<p class="notice" role="status">{m.par_connected({ name: connected })}</p>{/if}
 		{#if pending}<p class="notice" role="status">{m.par_pending({ name: pending })}</p>{/if}
+		{#if form?.responded}<p class="notice" role="status">
+				{form.responded === 'yes' ? m.par3_req_yes() : m.par3_req_no()}
+			</p>{/if}
+		{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
 		{#if page.url.searchParams.has('booked')}<p class="notice" role="status">
 				{m.par3_booked()}
 			</p>{/if}
@@ -116,7 +120,8 @@
 					<strong
 						>{c.week
 							? c.week.planned
-								? `${c.week.done}/${c.week.planned}`
+								? // planned sessions done out of planned; extra sessions show as "+n"
+									`${Math.min(c.week.done, c.week.planned)}/${c.week.planned}${c.week.done > c.week.planned ? ` +${c.week.done - c.week.planned}` : ''}`
 								: c.week.done
 							: '—'}</strong
 					>
@@ -145,6 +150,55 @@
 		</div>
 
 		<div class="side stackish">
+			{#if data.requests.length}
+				<section>
+					<div class="section-h"><h2>{m.par3_requests()}</h2></div>
+					<div class="rows">
+						{#each data.requests as r (r.id)}
+							<div class="req">
+								<span
+									>{r.subjectName ?? m.intro_chat()}{r.tutorName ? ` · ${r.tutorName}` : ''}</span
+								>
+								{#if r.status === 'proposed' && r.proposedStartsAt}
+									<span class="muted small"
+										>{m.par3_req_proposed({
+											when: `${fmtDay(r.proposedStartsAt)} ${fmtTime(r.proposedStartsAt)}`
+										})}</span
+									>
+									{#if r.tutorMessage}<span class="muted small">“{r.tutorMessage}”</span>{/if}
+									<span class="req-actions">
+										<form method="POST" action="?/respond">
+											<input type="hidden" name="id" value={r.id} />
+											<input type="hidden" name="child" value={c.studentId} />
+											<input type="hidden" name="answer" value="yes" />
+											<button class="btn btn-sm" type="submit">{m.accept_new_time()}</button>
+										</form>
+										<form method="POST" action="?/respond">
+											<input type="hidden" name="id" value={r.id} />
+											<input type="hidden" name="child" value={c.studentId} />
+											<input type="hidden" name="answer" value="no" />
+											<button class="btn btn-ghost btn-sm" type="submit">{m.no_thanks()}</button>
+										</form>
+									</span>
+								{:else if r.status === 'requested'}
+									<span class="muted small"
+										>{fmtDay(r.startsAt)} {fmtTime(r.startsAt)} · {m.par3_req_waiting()}</span
+									>
+								{:else}
+									<span class="muted small"
+										>{m.par3_req_declined()}{#if r.tutorSlug}
+											· <a
+												href="/parent/book?child={encodeURIComponent(
+													c.studentId
+												)}&tutor={encodeURIComponent(r.tutorSlug)}">{m.choose_another_time()}</a
+											>{/if}</span
+									>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				</section>
+			{/if}
 			{#if c.upcoming.length}
 				<section>
 					<div class="section-h"><h2>{m.par3_upcoming()}</h2></div>
@@ -199,6 +253,16 @@
 </div>
 
 <style>
+	.rows .req {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 4px;
+	}
+	.req-actions {
+		display: flex;
+		gap: 8px;
+		flex-wrap: wrap;
+	}
 	h1 {
 		margin: 0;
 		font-size: 1.75rem;

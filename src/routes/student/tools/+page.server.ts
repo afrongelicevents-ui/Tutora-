@@ -26,6 +26,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		driveEmail: c.google?.email ?? null,
 		googleConnected: !!c.google,
 		ready: providerConfigured(toolsEnv(url), 'google'),
+		teamsReady: providerConfigured(toolsEnv(url), 'microsoft'),
 		allowed: await toolsAllowedFor(locals.db, s),
 		pref: await getToolPref(locals.db, s),
 		flashError: err && flashKeys.has(err) ? err : null,

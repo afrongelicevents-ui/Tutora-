@@ -4,10 +4,10 @@
 	const v = $derived(
 		((form as { values?: Record<string, string> } | null)?.values ?? {}) as Record<string, string>
 	);
-	let child = $state('');
-	$effect.pre(() => {
-		if (!child) child = v.child ?? data.selected ?? data.kids[0]?.id ?? '';
-	});
+	// chosen on the server too (an $effect never runs there): the page is right before any script
+	const first = () => v.child ?? data.selected ?? data.kids[0]?.id ?? '';
+	let picked = $state('');
+	const child = $derived(picked || first());
 	const tutors = $derived(data.tutors.find((x) => x.childId === child)?.list ?? []);
 	const kid = $derived(data.kids.find((k) => k.id === child));
 	const statusText = (s: string) => t(`sp3_status_${s}`);
@@ -57,7 +57,7 @@
 			<form method="POST" action="?/request" class="stack">
 				<label class="field"
 					><span class="label">{m.sp3_child()}</span>
-					<select name="child" bind:value={child}>
+					<select name="child" value={child} onchange={(e) => (picked = e.currentTarget.value)}>
 						{#each data.kids as k (k.id)}<option value={k.id}>{k.name}</option>{/each}
 					</select>
 				</label>

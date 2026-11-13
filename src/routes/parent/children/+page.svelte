@@ -25,6 +25,7 @@
 		<h1>{m.par_children_title()}</h1>
 		<p class="lead">{m.par_children_lead()}</p>
 	</div>
+	{#if data.nopay}<p class="notice full" role="status">{m.par_no_payments()}</p>{/if}
 	{#if f?.error}<p class="alert full" role="alert">{t(f.error, { minutes: 60 })}</p>{/if}
 	{#if f?.created}<p class="notice full" role="status">
 			{m.par3_created({ username: f.created })}

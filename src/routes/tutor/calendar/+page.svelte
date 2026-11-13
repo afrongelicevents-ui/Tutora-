@@ -51,7 +51,11 @@
 				cls: l.mode === 'online' ? 'on' : 'ip',
 				href: `/tutor/lessons/${l.id}`,
 				joinHref:
-					l.mode === 'online' && l.endsAt > now ? (l.joinUrl ?? `/room/${l.id}`) : undefined,
+					l.mode === 'online' &&
+					l.endsAt > now &&
+					(l.joinUrl || l.startsAt.getTime() - 10 * 60_000 <= now.getTime())
+						? (l.joinUrl ?? `/room/${l.id}`)
+						: undefined,
 				msgHref:
 					l.people.length === 1 && l.endsAt > now
 						? `/tutor/messages/${l.people[0].userId}`

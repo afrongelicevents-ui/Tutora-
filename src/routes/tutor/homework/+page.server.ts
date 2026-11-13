@@ -3,7 +3,13 @@ import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
 import { homeworkMarked, homeworkSet } from '#lib/server/events.ts';
 import { requireTutor } from '#lib/server/guards.ts';
-import { answersToCheck, giveHomework, listStudents, markAnswer } from '#lib/server/people.ts';
+import {
+	answersToCheck,
+	giveHomework,
+	homeworkWaiting,
+	listStudents,
+	markAnswer
+} from '#lib/server/people.ts';
 import { fileLink, getStore } from '#lib/server/storage.ts';
 import { DOC_KINDS, MB, newKey, readUpload } from '#lib/server/files.ts';
 import { formObject } from '#lib/validation/auth.ts';
@@ -11,11 +17,13 @@ import { isIsoDate } from '#lib/tz.ts';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const t = requireTutor(locals.user, url).id;
-	const [students, answers] = await Promise.all([
+	const [students, answers, waiting] = await Promise.all([
 		listStudents(locals.db, t),
-		answersToCheck(locals.db, t)
+		answersToCheck(locals.db, t),
+		homeworkWaiting(locals.db, t)
 	]);
 	return {
+		waiting,
 		students: students.map((s) => ({ id: s.id, name: s.name, childName: s.childName })),
 		answers: await Promise.all(
 			answers.map(async (a) => ({

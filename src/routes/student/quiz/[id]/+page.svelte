@@ -36,7 +36,11 @@
 		</div>
 		<a class="btn btn-secondary" href="/student/study">{m.st5_back_study()}</a>
 	{:else if q.questions.length}
-		<p class="lead">{m.st5_quiz_lead({ n: q.questions.length })}</p>
+		<p class="lead">
+			{q.questions.length === 1
+				? m.st5_quiz_lead_one()
+				: m.st5_quiz_lead({ n: q.questions.length })}
+		</p>
 		<form method="POST" class="stack">
 			<QuestionList questions={q.questions} />
 			<button class="btn btn-block" type="submit">{m.st5_quiz_submit()}</button>

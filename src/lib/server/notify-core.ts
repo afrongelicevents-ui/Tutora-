@@ -49,7 +49,7 @@ export async function saveNotification(
 ): Promise<{ email: string; name: string; sendEmail: boolean } | null> {
 	const kind = opts.kind ?? 'booking';
 	const [u] = await db
-		.select({ email: user.email, name: user.name })
+		.select({ email: user.email, name: user.name, role: user.role })
 		.from(user)
 		.where(eq(user.id, userId));
 	if (!u) return null;
@@ -62,12 +62,20 @@ export async function saveNotification(
 	if (pref && kind === 'study' && pref.studyOff) return null;
 	if (pref && kind === 'weekly' && pref.weeklyOff) return null;
 	if (pref && kind === 'family_lesson' && pref.lessonsOff) return null;
-	await db
-		.insert(notification)
-		.values({ userId, kind, title: subject, body, link: opts.link ?? null });
+	await db.insert(notification).values({
+		userId,
+		kind,
+		title: subject,
+		body,
+		link: u.role === 'parent' ? parentSafeLink(opts.link ?? null) : (opts.link ?? null)
+	});
 	// placeholder addresses (younger children's accounts) never get email
 	const deliverable = !u.email.endsWith('.invalid');
-	return { ...u, sendEmail: deliverable && !(pref?.emailOff && optional(kind)) };
+	return {
+		email: u.email,
+		name: u.name,
+		sendEmail: deliverable && !(pref?.emailOff && optional(kind))
+	};
 }
 
 export type Notify = (
@@ -76,3 +84,15 @@ export type Notify = (
 	body: string,
 	opts?: NotifyOpts
 ) => Promise<void>;
+
+/**
+ * A parent never lands on a student page (it would only send them back home): a student link
+ * in a notice to a parent (e.g. a booking or payment the parent made) becomes the parent page.
+ */
+export function parentSafeLink(link: string | null) {
+	if (!link || !link.startsWith('/student')) return link;
+	if (link.startsWith('/student/payments'))
+		return link.replace('/student/payments', '/parent/payments');
+	if (link.startsWith('/student/buddies')) return '/parent/buddies';
+	return '/parent';
+}

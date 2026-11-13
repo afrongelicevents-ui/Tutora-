@@ -6,7 +6,7 @@
  *
  * It DELETES ALL DATA first, so callers must only use it on the test site.
  */
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { Auth } from './auth-config.ts';
 import type { DB } from './db/types.ts';
 import {
@@ -325,7 +325,7 @@ export async function seedTestData(
 		},
 		{ name: 'Vimbai Hove', email: 'vimbai@example.com', role: 'student', tutors: [] }
 	];
-	const students: { id: string; name: string; tutors: number[] }[] = [];
+	const students: { id: string; name: string; tutors: number[]; role: string }[] = [];
 	for (const [k, s] of studentDefs.entries()) {
 		const id = await person(s.name, s.email, s.role);
 		await db.insert(profile).values({
@@ -337,13 +337,14 @@ export async function seedTestData(
 			childName: s.child ?? null,
 			consentAt: new Date()
 		});
-		for (const t of s.tutors)
+		// a parent is never a learner: their children get enrolled from their lessons (v3)
+		for (const t of s.role === 'parent' ? [] : s.tutors)
 			await db.insert(enrollment).values({
 				tutorId: tutors[t].id,
 				userId: id,
 				level: ['Form 2', 'Form 3', 'Form 4', 'Grade 7', 'Lower 6'][k % 5]
 			});
-		students.push({ id, name: s.name, tutors: s.tutors });
+		students.push({ id, name: s.name, tutors: s.tutors, role: s.role });
 	}
 	// parents' children (Mrs Zulu books for two)
 	const kids = new Map<string, number>();
@@ -361,7 +362,8 @@ export async function seedTestData(
 				.values({ parentId: s.id, name: 'Tafara Zulu', level: 'Grade 7', schoolYear: 'Grade 7' });
 	}
 	const kidOf = (userId: string) => kids.get(userId) ?? null;
-	const of = (t: number) => students.filter((s) => s.tutors.includes(t));
+	// learners only: a parent account never takes lessons itself (it books for a child's account)
+	const of = (t: number) => students.filter((s) => s.role !== 'parent' && s.tutors.includes(t));
 
 	// 3. Lessons: past and upcoming, one-to-one and groups, each with its charge
 	let absentOnce = 4;
@@ -462,6 +464,7 @@ export async function seedTestData(
 			{
 				tutorId: tutors[t].id,
 				userId: last.id,
+				childId: kidOf(last.id),
 				kind: 'lesson',
 				subjectId: tutors[t].subjects[0],
 				mode: t === 2 ? 'in_person' : 'online',
@@ -473,6 +476,7 @@ export async function seedTestData(
 			{
 				tutorId: tutors[t].id,
 				userId: s[0].id,
+				childId: kidOf(s[0].id),
 				kind: 'lesson',
 				subjectId: tutors[t].subjects[1],
 				mode: t === 2 ? 'in_person' : 'online',
@@ -486,6 +490,7 @@ export async function seedTestData(
 			{
 				tutorId: tutors[t].id,
 				userId: s[1].id,
+				childId: kidOf(s[1].id),
 				kind: 'intro',
 				subjectId: null,
 				mode: 'online',
@@ -615,7 +620,7 @@ export async function seedTestData(
 	const texts = [
 		[5, 'Very patient and explains everything clearly. My marks went up a lot.'],
 		[4, 'Good lessons and useful homework. Sometimes the connection was slow.'],
-		[5, 'My child now enjoys the subject. Thank you!']
+		[5, 'I actually enjoy the subject now. Thank you!']
 	] as const;
 	for (let t = 0; t < 3; t++) {
 		for (const [k, st] of of(t).slice(0, 3).entries()) {
@@ -663,7 +668,13 @@ export async function seedTestData(
 			status: 'done'
 		}
 	]);
-	for (const s of students.slice(0, 6)) {
+	// only students, and a receipt notice only for someone who really has a confirmed payment
+	const paid = new Set(
+		(
+			await db.select({ id: payment.userId }).from(payment).where(eq(payment.status, 'confirmed'))
+		).map((r) => r.id)
+	);
+	for (const s of students.filter((x) => x.role === 'student').slice(0, 6)) {
 		await db.insert(notification).values([
 			{
 				userId: s.id,
@@ -672,14 +683,18 @@ export async function seedTestData(
 				body: 'Your tutor accepted your lesson.',
 				link: '/student/lessons'
 			},
-			{
-				userId: s.id,
-				kind: 'payment',
-				title: 'Payment confirmed',
-				body: 'Your tutor confirmed your payment. Your receipt is ready.',
-				link: '/student/payments?tab=history',
-				readAt: new Date()
-			}
+			...(paid.has(s.id)
+				? [
+						{
+							userId: s.id,
+							kind: 'payment',
+							title: 'Payment confirmed',
+							body: 'Your tutor confirmed your payment. Your receipt is ready.',
+							link: '/student/payments?tab=history',
+							readAt: new Date()
+						}
+					]
+				: [])
 		]);
 	}
 	for (const t of tutors)

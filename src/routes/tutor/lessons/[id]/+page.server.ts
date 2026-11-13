@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { BookingFail, cancelLesson, lessonWithPeople } from '#lib/server/bookings.ts';
 import { setAttendance, setPrivateNote } from '#lib/server/people.ts';
 import { requireTutor } from '#lib/server/guards.ts';
+import { CLOSE_AFTER_MIN, OPEN_BEFORE_MIN } from '#lib/server/room.ts';
 import { alsoTellFamily, materialShared, parentLink } from '#lib/server/events.ts';
 import { notifyUser } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
@@ -42,6 +43,11 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	return {
 		lesson: l,
 		started: l.startsAt.getTime() <= Date.now(),
+		// the lesson room is open from 10 minutes before until 2 hours after the lesson
+		roomOpen:
+			Date.now() >= l.startsAt.getTime() - OPEN_BEFORE_MIN * 60_000 &&
+			Date.now() <= l.endsAt.getTime() + CLOSE_AFTER_MIN * 60_000,
+		roomClosed: url.searchParams.has('room'),
 		materials: await Promise.all(
 			materials.map(async (x) => ({
 				...x,

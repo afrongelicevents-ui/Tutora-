@@ -64,7 +64,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			};
 		})
 	);
-	return { kids: details };
+	return { kids: details, nopay: url.searchParams.has('nopay') };
 };
 
 const fam = async (fn: () => Promise<unknown>) => {

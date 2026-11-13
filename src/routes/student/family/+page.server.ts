@@ -12,6 +12,7 @@ import {
 	setSharing
 } from '#lib/server/family.ts';
 import { profile } from '#lib/server/db/app.schema.ts';
+import { readingParents } from '#lib/server/messages.ts';
 import { hitLimit } from '#lib/server/rate-limit.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { notifyUser } from '#lib/server/notify.ts';
@@ -26,6 +27,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		.from(profile)
 		.where(eq(profile.userId, u.id));
 	const minor = !!prof?.isUnder18;
+	// who can read this student's messages with tutors (guardians of an under-18; see D123)
+	const readers = new Set(await readingParents(locals.db, u.id));
 	return {
 		minor,
 		invite: invite ? { hint: invite.hint, expiresAt: invite.expiresAt } : null,
@@ -37,6 +40,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			status: f.status,
 			// a guardian of a child under 18 always sees the basics
 			locked: f.guardian && minor,
+			readsMessages: readers.has(f.parentId),
 			progress: f.shareProgress,
 			lessons: f.shareLessons,
 			homework: f.shareHomework,

@@ -20,9 +20,11 @@
 	>
 	<h1>{s.title}</h1>
 	<p class="note">
-		{s.topic}{s.level ? ` · ${s.level}` : ''} · {m.st5_n_questions({
-			n: data.questions.length
-		})}{s.dailyChecks ? ` · ${m.st5_in_daily()}` : ''}
+		{s.topic}{s.level ? ` · ${s.level}` : ''} · {data.questions.length === 1
+			? m.st5_n_questions_one()
+			: m.st5_n_questions({ n: data.questions.length })}{s.dailyChecks
+			? ` · ${m.st5_in_daily()}`
+			: ''}
 	</p>
 	{#if form?.done}<p class="notice" role="status">{t(`st5_done_${form.done}`)}</p>{/if}
 

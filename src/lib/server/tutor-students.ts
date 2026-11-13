@@ -2,12 +2,12 @@
  * The tutor's Students tab: one card per student (subjects, last and next lesson, status) and
  * a few insights. Only this tutor's own students and records; nothing is guessed.
  *   active   – a lesson in the last 30 days or one booked ahead
- *   pending  – no lesson yet, or a booking request waiting for the tutor
+ *   pending  – no lesson yet (e.g. only a booking request waiting for the tutor)
  *   inactive – had lessons, but none in the last 30 days and none booked
  */
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
-import { attendee, booking, lesson, review, subject } from './db/app.schema.ts';
+import { attendee, lesson, review, subject } from './db/app.schema.ts';
 import { assessmentResult } from './db/v3.schema.ts';
 import { listStudents } from './people.ts';
 import { balances } from './billing.ts';
@@ -19,7 +19,7 @@ export async function studentCards(db: DB, tutorId: string, q = '', now = new Da
 	const people = await listStudents(db, tutorId, q);
 	const ids = people.map((p) => p.id);
 	if (!ids.length) return { cards: [], insights: null };
-	const [lessons, requests, results, bal] = await Promise.all([
+	const [lessons, results, bal] = await Promise.all([
 		db
 			.select({
 				userId: attendee.userId,
@@ -40,16 +40,6 @@ export async function studentCards(db: DB, tutorId: string, q = '', now = new Da
 				)
 			),
 		db
-			.select({ userId: booking.userId })
-			.from(booking)
-			.where(
-				and(
-					eq(booking.tutorId, tutorId),
-					inArray(booking.status, ['requested', 'proposed']),
-					inArray(booking.userId, ids)
-				)
-			),
-		db
 			.select({
 				studentId: assessmentResult.studentId,
 				score: assessmentResult.score,
@@ -66,12 +56,12 @@ export async function studentCards(db: DB, tutorId: string, q = '', now = new Da
 		const mine = lessons.filter((l) => l.userId === p.id);
 		const past = mine.filter((l) => l.endsAt <= now).sort((a, b) => +b.startsAt - +a.startsAt);
 		const ahead = mine.filter((l) => l.endsAt > now).sort((a, b) => +a.startsAt - +b.startsAt);
-		const status: StudentStatus =
-			requests.some((r) => r.userId === p.id) || !mine.length
-				? 'pending'
-				: ahead.length || (past[0] && past[0].startsAt >= monthAgo)
-					? 'active'
-					: 'inactive';
+		// a new request from someone who already has lessons doesn't make them "pending" again
+		const status: StudentStatus = !mine.length
+			? 'pending'
+			: ahead.length || (past[0] && past[0].startsAt >= monthAgo)
+				? 'active'
+				: 'inactive';
 		const subjects = [...new Set(mine.map((l) => l.subject).filter((x): x is string => !!x))];
 		const res = results.filter((r) => r.studentId === p.id);
 		const pct = (xs: typeof res) =>

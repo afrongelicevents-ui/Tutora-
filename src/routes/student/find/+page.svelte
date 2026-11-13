@@ -151,7 +151,7 @@
 	</dialog>
 
 	{#if data.tutors.length}
-		<p class="note">{m.find3_count({ n: data.total })}</p>
+		<p class="note">{data.total === 1 ? m.find3_count_one() : m.find3_count({ n: data.total })}</p>
 		{#each data.tutors as tu (tu.slug)}
 			<a class="tutorcard" href="/student/tutor/{tu.slug}">
 				<span class="avatar-l"

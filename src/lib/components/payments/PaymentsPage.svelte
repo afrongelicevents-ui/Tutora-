@@ -21,6 +21,8 @@
 		extra?: string;
 		title?: string | null;
 	} = $props();
+	// still to pay: what is owed minus payments already waiting for the tutor (same as on Home)
+	const toPay = $derived(Math.max(0, data.balance.owed - data.balance.waiting));
 	const money = (c: number) => formatMoney(c, data.currency);
 	const cur = $derived(data.currency === 'ZWG' ? 'ZiG' : 'USD');
 	const d = $derived(data.details);
@@ -65,7 +67,7 @@
 		<div><b>{money(data.balance.paid)}</b><span>{m.paid()}</span></div>
 		<div><b>{money(data.balance.waiting)}</b><span>{m.waiting()}</span></div>
 		<div>
-			<b class:owe={data.balance.owed > 0}>{money(data.balance.owed)}</b><span>{m.owed()}</span>
+			<b class:owe={toPay > 0}>{money(toPay)}</b><span>{m.owed()}</span>
 		</div>
 	</div>
 	{#if data.balance.credit > 0}<p class="small">
@@ -112,7 +114,7 @@
 					name="amount"
 					inputmode="decimal"
 					required
-					defaultValue={data.balance.owed ? (data.balance.owed / 100).toFixed(2) : ''}
+					defaultValue={toPay ? (toPay / 100).toFixed(2) : ''}
 				/>
 			</div>
 			<fieldset>
@@ -186,10 +188,9 @@
 				<li>
 					<span
 						><b>{money(p.amountCents)}</b> · {method(p.method)}<span class="small muted block"
-							>{fmtDay(p.createdAt)}{p.reference ? ` · ${p.reference}` : ''}{p.status ===
-								'rejected' && p.rejectReason
-								? ` · ${p.rejectReason}`
-								: ''}</span
+							>{fmtDay(p.paidOn ? new Date(p.paidOn + 'T12:00:00Z') : p.createdAt)}{p.reference
+								? ` · ${p.reference}`
+								: ''}{p.status === 'rejected' && p.rejectReason ? ` · ${p.rejectReason}` : ''}</span
 						></span
 					>
 					{#if p.receipt}<a

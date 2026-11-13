@@ -9,7 +9,7 @@ import { checkin, schoolInfo } from '#lib/server/db/v3.schema.ts';
 import { shortName } from '#lib/names.ts';
 import { getCard } from '#lib/server/buddies.ts';
 import { todaysBlocks } from '#lib/server/schedule.ts';
-import { goals, today as plannerToday, weekStats } from '#lib/server/planner.ts';
+import { goals, today as plannerToday, weekStats, type PlanItem } from '#lib/server/planner.ts';
 import { addDays, startOfLocalDay } from '#lib/tz.ts';
 
 /**
@@ -96,10 +96,29 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			feel: feelRows[0]?.mood ?? null,
 			consistency: pw.consistency
 		},
-		blocks: blocks.map((b) => ({
-			...b,
-			done: b.kind === 'study' && today.some((s) => `p${s.id}` === b.key && s.state === 'done')
-		})),
+		// the timetable plus today's own planner tasks (timed ones in order, the rest at the end)
+		blocks: [
+			...blocks.map((b) => ({
+				key: b.key,
+				kind: b.kind as string,
+				label: b.label,
+				subject: b.subject,
+				start: b.start as number | null,
+				end: b.end as number | null,
+				done: b.kind === 'study' && today.some((s) => `p${s.id}` === b.key && s.state === 'done')
+			})),
+			...pt.items
+				.filter((i: PlanItem) => i.kind === 'task')
+				.map((i: PlanItem) => ({
+					key: i.key,
+					kind: 'task',
+					label: i.title,
+					subject: null,
+					start: i.start,
+					end: null,
+					done: i.done
+				}))
+		].sort((a, b) => (a.start ?? 1441) - (b.start ?? 1441)),
 		onTrack: today.length > 0 && !today.some((s) => s.state === 'missed'),
 		family: linked.map((f) => ({ name: f.label || shortName(f.name), guardian: f.guardian })),
 		sees: {

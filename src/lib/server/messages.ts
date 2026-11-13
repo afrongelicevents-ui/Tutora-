@@ -68,6 +68,18 @@ export async function sendMessage(
 	if (!(await enrolled(db, pair.tutorId, pair.studentId)))
 		return { ok: false, error: 'msg_err_not_allowed' };
 	await db.insert(tutorMessage).values({ ...pair, fromId, body });
+	// replying means the other side's messages have been seen
+	await db
+		.update(tutorMessage)
+		.set({ readAt: new Date() })
+		.where(
+			and(
+				eq(tutorMessage.tutorId, pair.tutorId),
+				eq(tutorMessage.studentId, pair.studentId),
+				ne(tutorMessage.fromId, fromId),
+				isNull(tutorMessage.readAt)
+			)
+		);
 	return { ok: true, toId: fromId === pair.tutorId ? pair.studentId : pair.tutorId };
 }
 

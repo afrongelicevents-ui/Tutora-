@@ -136,8 +136,16 @@
 				<ul>
 					{#each data.blocks.slice(0, 4) as b (b.key)}
 						<li class:done={b.done}>
-							<span class="bi k-{b.kind}"><LineIcon name={KIND_ICON[b.kind]} size={20} /></span>
-							<span class="t">{fmtMinutes(b.start)} – {fmtMinutes(b.end % 1440)}</span>
+							<span class="bi k-{b.kind}"
+								><LineIcon name={KIND_ICON[b.kind] ?? 'check'} size={20} /></span
+							>
+							<span class="t"
+								>{b.start == null
+									? m.me_any_time()
+									: b.end == null
+										? fmtMinutes(b.start)
+										: `${fmtMinutes(b.start)} – ${fmtMinutes(b.end % 1440)}`}</span
+							>
 							<span
 								>{b.kind === 'study'
 									? `${b.subject}${b.label ? ` · ${b.label}` : ''}`

@@ -3,7 +3,7 @@ import { requireRole } from '#lib/server/guards.ts';
 import { pickChild } from '#lib/server/parent-child.ts';
 import { goals, shareReport, weekStats } from '#lib/server/planner.ts';
 import { sharedCheckins } from '#lib/server/checkins.ts';
-import { addDays } from '#lib/tz.ts';
+import { startOfLocalWeek } from '#lib/tz.ts';
 
 /**
  * Family Connection: the child's personal report summary, ONLY if the child chose to share
@@ -20,7 +20,8 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 	const [w, g, checks] = await Promise.all([
 		weekStats(locals.db, current, now),
 		goals(locals.db, current, now),
-		sharedCheckins(locals.db, current, addDays(now, -7), 10)
+		// "this week" means since Monday (Zimbabwe time), like the rest of the page
+		sharedCheckins(locals.db, current, startOfLocalWeek(now), 10)
 	]);
 	return {
 		kids,

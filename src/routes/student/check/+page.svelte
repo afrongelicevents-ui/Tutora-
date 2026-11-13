@@ -30,7 +30,11 @@
 		</div>
 		<a class="btn btn-secondary" href="/student/study">{m.st5_back_study()}</a>
 	{:else if data.questions.length && data.token}
-		<p class="lead">{m.st5_check_lead({ n: data.questions.length })}</p>
+		<p class="lead">
+			{data.questions.length === 1
+				? m.st5_check_lead_one()
+				: m.st5_check_lead({ n: data.questions.length })}
+		</p>
 		<form method="POST" class="stack">
 			<input type="hidden" name="token" value={data.token} />
 			<QuestionList questions={data.questions} />

@@ -96,7 +96,9 @@
 							<span>{m.fc3_checkins()}</span><span class="ok-t small">{m.fc3_you_choose()}</span>
 						</div>
 						<div class="toggle-row">
-							<span>{m.fc3_messages()}</span><span class="muted small">{m.fc3_private()}</span>
+							<span>{m.fc3_messages()}</span><span class="muted small"
+								>{f.readsMessages ? m.fc3_can_read() : m.fc3_private()}</span
+							>
 						</div>
 						<div class="toggle-row">
 							<span>{m.fc3_notes()}</span><span class="muted small">{m.fc3_private()}</span>
@@ -125,7 +127,11 @@
 				<div><span>{m.fc3_progress()}</span><span class="ok-t">{m.fc3_shared()}</span></div>
 				<div><span>{m.fc3_lessons()}</span><span class="ok-t">{m.fc3_shared()}</span></div>
 				<div><span>{m.fc3_checkins()}</span><span class="ok-t">{m.fc3_shared()}</span></div>
-				<div><span>{m.fc3_messages()}</span><span class="muted">{m.fc3_private()}</span></div>
+				<div>
+					<span>{m.fc3_messages()}</span><span class="muted"
+						>{data.minor ? m.fc3_guardian_reads() : m.fc3_private()}</span
+					>
+				</div>
 			</div>
 			<p class="note">{m.fc3_defaults()}</p>
 		{/each}

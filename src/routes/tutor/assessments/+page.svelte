@@ -26,7 +26,9 @@
 							></a
 						>
 						<span class="small muted"
-							>{m.st5_n_questions({ n: s.questions })}{s.dailyChecks
+							>{s.questions === 1
+								? m.st5_n_questions_one()
+								: m.st5_n_questions({ n: s.questions })}{s.dailyChecks
 								? ` · ${m.st5_in_daily()}`
 								: ''}</span
 						>
