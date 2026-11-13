@@ -14,6 +14,7 @@
 	{#if data.required && !data.enabled}<p class="notice">{m.twofa_required()}</p>{/if}
 	{#if e.form}<p class="alert" role="alert">{t(e.form, { minutes: 1 })}</p>{/if}
 
+	{#if data.testSkip}<p class="note">{m.account_2fa_test_skip()}</p>{/if}
 	{#if data.enabled && !setup}
 		<p class="notice" role="status">{m.twofa_enabled()}</p>
 		{#if data.isTutor}

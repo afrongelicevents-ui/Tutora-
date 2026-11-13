@@ -111,6 +111,7 @@
 			{:else if !family.length}
 				<span class="small muted">{m.sh_checkin_saved()} {m.sh_no_family_note()}</span>
 			{/if}
+			<span class="small muted">{m.ck_tutor_sees()}</span>
 		</div>
 
 		<!-- 3. what they're studying + an optional short note -->

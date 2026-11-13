@@ -9,6 +9,8 @@ test('family code connects a parent who sees only shared areas', async ({ browse
 	// setup: Ruth is not yet connected to Nyasha (so the flow can run again)
 	await sql(`delete from family_link where student_id = 'test_nyasha' and parent_id = 'test_ruth'`);
 	await sql(`delete from rate_limit where key like '%test_nyasha%' or id like '%test_nyasha%'`);
+	// the site's own limit on new family codes (action_limit) would stop a second run
+	await sql(`delete from action_limit where key like 'familyInvite:%test_nyasha%'`);
 	const student = await as(browser, 'nyasha@example.com');
 	const parent = await as(browser, 'ruth@example.com');
 

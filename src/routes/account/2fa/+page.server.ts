@@ -4,6 +4,9 @@ import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
 import type { DB } from '#lib/server/db/types.ts';
 import { requireUser } from '#lib/server/guards.ts';
+import { TEST_SITE } from '$app/env/private';
+import { eq } from 'drizzle-orm';
+import { user as userTable } from '#lib/server/db/auth.schema.ts';
 import { hitLimit, clientIp } from '#lib/server/rate-limit.ts';
 import { qrDataUrl, totpSecret } from '#lib/server/qr.ts';
 import { fieldErrors, formObject, totpCodeSchema } from '#lib/validation/auth.ts';
@@ -16,10 +19,16 @@ const setupSchema = z.object({
 	backupCodes: z.string().max(2000)
 });
 
-export const load: PageServerLoad = ({ locals, url }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const user = requireUser(locals.user, url);
+	// the test site lets everyone in without a code; show what is really set up
+	const [real] = await locals.db
+		.select({ on: userTable.twoFactorEnabled })
+		.from(userTable)
+		.where(eq(userTable.id, user.id));
 	return {
-		enabled: user.twoFactorEnabled,
+		enabled: !!real?.on,
+		testSkip: TEST_SITE === '1' && !real?.on,
 		isTutor: user.role === 'tutor',
 		required: url.searchParams.has('required')
 	};

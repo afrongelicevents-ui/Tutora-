@@ -891,7 +891,7 @@
 	"att_mark_done": "Completed",
 	"att_mark_absent": "Student absent",
 	"err_not_started": "You can mark this after the lesson has started.",
-	"hw_sent": "Homework sent to {n} student(s).",
+	"hw_sent": "Homework sent. Students told: {n}.",
 	"hw_to_check": "To check ({n})",
 	"hw_comment": "Comment for the student (optional)",
 	"hw_mark_checked": "Mark as checked",
@@ -1202,7 +1202,7 @@
 	"ls3_title": "My lessons",
 	"ls3_with": "with {name}",
 	"ls3_open": "Open lesson",
-	"ls3_how_note": "Online lessons use Google Meet, Microsoft Teams or Tutora's low-data room. In-person lessons show the address.",
+	"ls3_how_note": "Online lessons happen in Tutora's low-data lesson room (Google Meet or Microsoft Teams when your tutor uses them). In-person lessons show the address.",
 	"ld3_topic": "Topic: {topic}, from your school work",
 	"ld3_topic_year": "Topic: {topic}, from your {year} school work",
 	"ld3_cancelled": "Lesson cancelled. Your tutor has been told.",
@@ -2715,7 +2715,7 @@
 	"par3_req_proposed": "The tutor suggested {when}",
 	"par3_req_waiting": "waiting for the tutor",
 	"par3_req_declined": "The tutor couldn't take this time",
-	"par3_req_yes": "Done. The tutor will confirm the new time.",
+	"par3_req_yes": "Done. The new time is booked and the tutor has been told.",
 	"par3_req_no": "Done. The tutor has been told.",
 	"par_no_payments": "Nothing to pay yet: this child has no tutor on Tutora. Payments appear here after their first lesson is booked.",
 	"me_any_time": "Any time",
@@ -2726,5 +2726,6 @@
 	"st5_n_questions_one": "1 question",
 	"st5_check_lead_one": "1 question from your tutors. Pick one answer.",
 	"st5_quiz_lead_one": "1 question. Pick one answer, then hand it in. You can hand it in once.",
-	"tools6_unavailable": "Not available yet"
+	"tools6_unavailable": "Not available yet",
+	"ck_tutor_sees": "Your tutors see how you feel and the subject, so they can help in lessons. Your note stays private."
 }

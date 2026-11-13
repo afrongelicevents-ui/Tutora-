@@ -59,7 +59,8 @@
 					<a
 						class="st connect"
 						href={tl.href}
-						aria-label={`${m.tt_connect()} ${TOOL_NAME[tl.tool]}`}>{m.tt_connect()}</a
+						aria-label={`${tl.tool === 'kahoot' ? m.twofa_confirm() : m.tt_connect()} ${TOOL_NAME[tl.tool]}`}
+						>{tl.tool === 'kahoot' ? m.twofa_confirm() : m.tt_connect()}</a
 					>
 				{/if}
 			</li>

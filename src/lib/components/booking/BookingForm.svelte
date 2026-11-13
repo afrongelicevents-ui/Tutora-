@@ -221,6 +221,10 @@
 	.days .chip {
 		flex-shrink: 0;
 	}
+	/* the browser's [hidden] must win over display:flex, or every day shows at once */
+	.day[hidden] {
+		display: none;
+	}
 	.day {
 		display: flex;
 		flex-direction: column;

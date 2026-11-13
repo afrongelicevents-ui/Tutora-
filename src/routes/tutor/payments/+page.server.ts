@@ -62,7 +62,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			name: x.name,
 			...(bal.get(x.id) ?? { paid: 0, waiting: 0, owed: 0, credit: 0, charged: 0 })
 		}))
-		.filter((r) => r.charged || r.paid || r.waiting);
+		.filter((r) => r.charged || r.paid || r.waiting)
+		// "owes" = not paid and not reported yet: the same figure the student and parent see
+		// (a payment waiting for the tutor's OK is shown on its own as "waiting")
+		.map((r) => ({ ...r, owed: Math.max(0, r.owed - r.waiting) }));
 	// confirmed payments in this period and the one before (tutor's own currency)
 	const sumBetween = async (from: Date, to: Date) => {
 		const [x] = await locals.db
