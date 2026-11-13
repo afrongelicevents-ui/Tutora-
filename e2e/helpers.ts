@@ -56,3 +56,23 @@ export async function closeDb() {
 }
 
 export const uniq = () => Math.random().toString(36).slice(2, 7);
+
+/**
+ * Run the hourly job (reminders, check-in notes, summaries) the way the scheduler does.
+ * Uses CRON_SECRET from the environment or the local .env (never printed). Returns null when
+ * the secret is not set up locally, so a test can say the step was not run.
+ */
+export async function runCron(page: Page): Promise<Record<string, number> | null> {
+	let secret = process.env.CRON_SECRET ?? '';
+	if (!secret) {
+		const fs = await import('node:fs');
+		const text = fs.existsSync('.env') ? fs.readFileSync('.env', 'utf8') : '';
+		secret = /^CRON_SECRET=["']?([^"'\n]+)/m.exec(text)?.[1] ?? '';
+	}
+	if (secret.length < 24) return null;
+	const r = await page.request.post('/api/cron/reminders', {
+		headers: { authorization: `Bearer ${secret}` }
+	});
+	if (r.status() !== 200) return null;
+	return (await r.json()) as Record<string, number>;
+}
