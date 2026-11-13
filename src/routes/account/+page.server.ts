@@ -11,6 +11,8 @@ import { endLogin } from '#lib/server/auth-cookies.ts';
 import { clientIp, hitLimit } from '#lib/server/rate-limit.ts';
 import { emailEnabled } from '#lib/server/auth.ts';
 import { changeEmailNow } from '#lib/server/account.ts';
+import { notifyUser } from '#lib/server/notify.ts';
+import { m } from '#lib/paraglide/messages.js';
 import { APIError } from 'better-auth/api';
 import { fieldErrors, formObject, newEmailField, phone } from '#lib/validation/auth.ts';
 import { requireUser } from '#lib/server/guards.ts';
@@ -79,15 +81,24 @@ export const actions: Actions = {
 		if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
 		if (parsed.data.newEmail.toLowerCase() === u.email.toLowerCase())
 			return fail(400, { errors: { newEmail: 'err_email_same' } });
+		// always prove it's you: a phone left logged in must not be enough to move the login
+		const okPw = await locals.auth.api
+			.verifyPassword({
+				body: { password: parsed.data.password ?? '' },
+				headers: request.headers
+			})
+			.then(() => true)
+			.catch(() => false);
+		if (!okPw) return fail(400, { errors: { password: 'err_password_wrong' } });
+		// tell the current address (in-app, and by email when that is on)
+		await notifyUser(
+			locals.db,
+			u.id,
+			m.acc_email_alert_s(),
+			m.acc_email_alert_b({ email: parsed.data.newEmail }),
+			{ kind: 'account', link: '/account' }
+		);
 		if (!emailEnabled) {
-			const okPw = await locals.auth.api
-				.verifyPassword({
-					body: { password: parsed.data.password ?? '' },
-					headers: request.headers
-				})
-				.then(() => true)
-				.catch(() => false);
-			if (!okPw) return fail(400, { errors: { password: 'err_password_wrong' } });
 			const r = await changeEmailNow(locals.db, u.id, parsed.data.newEmail);
 			if (r === 'same') return fail(400, { errors: { newEmail: 'err_email_same' } });
 			if (r === 'taken') return fail(400, { errors: { newEmail: 'err_email_taken' } });

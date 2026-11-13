@@ -128,6 +128,8 @@ export const checkin = pgTable(
 			.default('start'),
 		/** the start check-in a follow-up answers */
 		followupOf: integer('followup_of'),
+		/** family was told about this shared check-in (sent after a short undo window) */
+		familyNotifiedAt: ts('family_notified_at'),
 		createdAt: created()
 	},
 	(t) => [index('checkin_student').on(t.studentId, t.createdAt)]

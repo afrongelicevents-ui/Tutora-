@@ -63,7 +63,12 @@ export async function itemsFor(db: DB, studentId: string, dates: string[]) {
 		db
 			.select()
 			.from(personalActivity)
-			.where(and(eq(personalActivity.studentId, studentId), eq(personalActivity.active, true))),
+			.where(
+				and(
+					eq(personalActivity.studentId, studentId),
+					or(eq(personalActivity.active, true), gte(personalActivity.removedAt, fromLocal(first)))
+				)
+			),
 		db
 			.select()
 			.from(studyPlanItem)
@@ -74,7 +79,7 @@ export async function itemsFor(db: DB, studentId: string, dates: string[]) {
 			.where(
 				and(
 					eq(personalTask.studentId, studentId),
-					eq(personalTask.active, true),
+					or(eq(personalTask.active, true), gte(personalTask.removedAt, fromLocal(first))),
 					or(
 						isNull(personalTask.onDate),
 						and(gte(personalTask.onDate, first), lte(personalTask.onDate, last))
@@ -104,8 +109,12 @@ export async function itemsFor(db: DB, studentId: string, dates: string[]) {
 		const end = endOf(date);
 		const ticked = new Set(ticks.filter((t) => t.onDate === date).map((t) => t.itemKey));
 		const items: PlanItem[] = [];
+		// on the plan that day: made before the day ended and not removed until a later day
+		// (removing something today takes it off today too)
+		const alive = (x: { createdAt: Date; removedAt: Date | null }) =>
+			x.createdAt < end && (!x.removedAt || x.removedAt >= end);
 		for (const a of acts)
-			if (a.days.includes(wd) && a.createdAt < end)
+			if (a.days.includes(wd) && alive(a))
 				items.push({
 					key: `a${a.id}`,
 					kind: a.kind,
@@ -133,7 +142,7 @@ export async function itemsFor(db: DB, studentId: string, dates: string[]) {
 					id: null
 				});
 		for (const t of tasks)
-			if ((t.onDate ? t.onDate === date : (t.days ?? []).includes(wd)) && t.createdAt < end)
+			if ((t.onDate ? t.onDate === date : (t.days ?? []).includes(wd)) && alive(t))
 				items.push({
 					key: `t${t.id}`,
 					kind: 'task',
@@ -231,7 +240,7 @@ export async function addTask(
 export async function removeTask(db: DB, studentId: string, id: number) {
 	await db
 		.update(personalTask)
-		.set({ active: false })
+		.set({ active: false, removedAt: new Date() })
 		.where(and(eq(personalTask.id, id), eq(personalTask.studentId, studentId)));
 }
 
@@ -299,9 +308,13 @@ export async function goals(db: DB, studentId: string, now = new Date()) {
 				.select({ goalId: goalTick.goalId, onDate: goalTick.onDate })
 				.from(goalTick)
 				.where(
-					inArray(
-						goalTick.goalId,
-						all.map((g) => g.id)
+					and(
+						inArray(
+							goalTick.goalId,
+							all.map((g) => g.id)
+						),
+						// achievements count the last year of weeks
+						gte(goalTick.onDate, localDate(addDays(now, -371)))
 					)
 				)
 		: [];

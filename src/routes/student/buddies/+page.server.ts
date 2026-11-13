@@ -51,6 +51,8 @@ export const actions: Actions = {
 	},
 	newCode: async ({ locals, url }) => {
 		const u = requireRole(locals.user, url, ['student']);
+		if (!(await hitLimit(locals.db, 'buddyNewCode', u.id)).ok)
+			return fail(429, { error: 'err_rate_limited' });
 		await newCode(locals.db, u.id);
 		return { fresh: true };
 	},

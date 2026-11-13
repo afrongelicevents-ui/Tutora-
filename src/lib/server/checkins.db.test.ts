@@ -110,11 +110,11 @@ describe.skipIf(!hasTestDb)('learning check-ins (real database)', () => {
 		expect(st.followup?.id).toBe(fu.id);
 		expect(st.askFollowup).toBe(false);
 		// family sees shared check-ins only, never the note
-		const shared = await sharedCheckins(db, s.id, at(16, 0));
+		const shared = await sharedCheckins(db, s.id, at(16, 0), 10, at(17, 0));
 		expect(shared.map((x) => x.mood).sort()).toEqual(['confident', 'finding_hard']);
 		expect(JSON.stringify(shared)).not.toContain('private words');
 		await answerShare(db, s.id, fu.id, false);
-		expect((await sharedCheckins(db, s.id, at(16, 0))).map((x) => x.mood)).toEqual([
+		expect((await sharedCheckins(db, s.id, at(16, 0), 10, at(17, 0))).map((x) => x.mood)).toEqual([
 			'finding_hard'
 		]);
 

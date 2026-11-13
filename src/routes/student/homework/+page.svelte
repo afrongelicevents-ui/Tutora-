@@ -136,7 +136,7 @@
 		>
 	</div>
 
-	<section class="side">
+	<section class="side" id="resources">
 		<div class="section-h"><h2>{m.hw3_revision()}</h2></div>
 		{#each subjects as s (s)}
 			<p class="small muted subj">{s}</p>

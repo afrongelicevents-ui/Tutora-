@@ -2460,5 +2460,7 @@
 	"acc_email_btn": "Change login email",
 	"acc_email_pw_hint": "For your safety, type your current password.",
 	"acc_email_sent": "We sent a confirmation link to {email}. Open it to finish the change. Until then you keep logging in with your current email.",
-	"acc_email_changed": "Done. You now log in with {email}."
+	"acc_email_changed": "Done. You now log in with {email}.",
+	"acc_email_alert_s": "Your login email is being changed",
+	"acc_email_alert_b": "Someone asked to change your Tutora login email to {email}. If this wasn't you, change your password now and tell the Tutora team."
 }

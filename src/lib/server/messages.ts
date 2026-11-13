@@ -5,18 +5,36 @@
 import { and, desc, eq, inArray, isNull, ne, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { user } from './db/auth.schema.ts';
-import { enrollment, profile, tutorProfile } from './db/app.schema.ts';
+import { attendee, enrollment, lesson, profile, tutorProfile } from './db/app.schema.ts';
 import { familyLink } from './db/v3.schema.ts';
 import { tutorMessage } from './db/messages.schema.ts';
 
 export const MESSAGE_MAX = 1000;
 
 export async function enrolled(db: DB, tutorId: string, studentId: string) {
+	// only student accounts (never a parent account that booked or paid)
+	const [stu] = await db.select({ role: user.role }).from(user).where(eq(user.id, studentId));
+	if (stu?.role !== 'student') return false;
 	const [r] = await db
 		.select({ t: enrollment.tutorId })
 		.from(enrollment)
 		.where(and(eq(enrollment.tutorId, tutorId), eq(enrollment.userId, studentId)));
-	return !!r;
+	if (r) return true;
+	// lessons booked with this tutor also make them this student's tutor (same rule as the
+	// Tutors tab), e.g. lessons a parent booked before Family Connection
+	const [l] = await db
+		.select({ id: attendee.id })
+		.from(attendee)
+		.innerJoin(lesson, eq(lesson.id, attendee.lessonId))
+		.where(
+			and(
+				eq(attendee.userId, studentId),
+				eq(attendee.status, 'booked'),
+				eq(lesson.tutorId, tutorId)
+			)
+		)
+		.limit(1);
+	return !!l;
 }
 
 /** Parents who may read an under-18 student's conversations. */

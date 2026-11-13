@@ -3,6 +3,7 @@ import { freshDb, hasTestDb } from './testing/db.ts';
 import { makeUser } from './testing/fixtures.ts';
 import type { DB } from './db/types.ts';
 import { personalTask } from './db/personal.schema.ts';
+import { eq } from 'drizzle-orm';
 import { addActivity } from './schedule.ts';
 import {
 	addGoal,
@@ -82,8 +83,13 @@ describe.skipIf(!hasTestDb)('personal planner (real database)', () => {
 		expect(tue.items.filter((i) => i.kind === 'task').map((i) => i.title)).toEqual([
 			'Wake up on time'
 		]);
-		// removing a task stops it from now on
+		// removing a task stops it from that day on; earlier days keep it
 		await removeTask(db, s.id, wake.id!);
+		await db
+			.update(personalTask)
+			.set({ removedAt: at(17, 8) })
+			.where(eq(personalTask.id, wake.id!));
+		expect((await today(db, s.id, at(16, 22))).stats).toMatchObject({ planned: 3, done: 1 });
 		expect(
 			(await today(db, s.id, at(17, 8))).items.some((i) => i.title === 'Wake up on time')
 		).toBe(false);
@@ -120,6 +126,5 @@ describe.skipIf(!hasTestDb)('personal planner (real database)', () => {
 		expect(await shareReport(db, s.id)).toBe(false);
 		await setShareReport(db, s.id, true);
 		expect(await shareReport(db, s.id)).toBe(true);
-		void personalTask;
 	});
 });

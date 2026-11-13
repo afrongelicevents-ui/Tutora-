@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { requireRole } from '#lib/server/guards.ts';
 import { conversations, type Conversation } from '#lib/server/messages.ts';
 import { enrollment } from '#lib/server/db/app.schema.ts';
@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.select({ id: user.id, name: user.name })
 			.from(enrollment)
 			.innerJoin(user, eq(user.id, enrollment.userId))
-			.where(eq(enrollment.tutorId, t))
+			.where(and(eq(enrollment.tutorId, t), eq(user.role, 'student')))
 	]);
 	const start = students.filter(
 		(s: { id: string; name: string }) => !convs.some((c: Conversation) => c.otherId === s.id)

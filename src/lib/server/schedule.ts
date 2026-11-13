@@ -95,9 +95,17 @@ export async function addActivity(
 }
 
 export async function removeActivity(db: DB, studentId: string, id: number) {
+	// kept (inactive) so past days in the personal report stay as they were
 	await db
-		.delete(personalActivity)
-		.where(and(eq(personalActivity.id, id), eq(personalActivity.studentId, studentId)));
+		.update(personalActivity)
+		.set({ active: false, removedAt: new Date() })
+		.where(
+			and(
+				eq(personalActivity.id, id),
+				eq(personalActivity.studentId, studentId),
+				eq(personalActivity.active, true)
+			)
+		);
 }
 
 /** Plain-words tips for one day's timetable. Keys are messages ps_tip_*. */

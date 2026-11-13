@@ -1,5 +1,6 @@
 /** Turns Study Buddies events into in-app notifications (with email where the person allows). */
 import { eq } from 'drizzle-orm';
+import { hitLimit } from './rate-limit.ts';
 import type { DB } from './db/types.ts';
 import { user } from './db/auth.schema.ts';
 import type { Notice } from './buddies.ts';
@@ -23,8 +24,12 @@ export async function sendNotices(db: DB, notices: Notice[]) {
 	}
 }
 
-/** Tell the Tutora owner(s) that something is waiting in the profile-check queue. */
-export async function tellOwners(db: DB) {
+/**
+ * Tell the Tutora owner(s) that something is waiting in the profile-check queue. Throttled
+ * per student (`from`), so nobody can flood the owner's inbox; the queue itself still fills.
+ */
+export async function tellOwners(db: DB, from?: string) {
+	if (from && !(await hitLimit(db, 'ownerNotice', from)).ok) return;
 	const owners: { id: string }[] = await db
 		.select({ id: user.id })
 		.from(user)

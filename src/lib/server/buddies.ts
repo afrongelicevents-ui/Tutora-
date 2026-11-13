@@ -125,12 +125,19 @@ export async function ageBand(db: DB, userId: string, now = new Date()): Promise
 			.from(profile)
 			.where(eq(profile.userId, userId))
 	]);
+	// The account's own flags win over a typed birthday in the safe direction:
+	// - a child account (under 18 or parent-managed) can never become 'adult' by typing a date;
+	//   if the date says adult, it is treated as under 13 (needs a parent's approval);
+	// - an adult account can never become a 'teen' or 'under13' by typing a recent date, so
+	//   adults can never reach children through Study Buddies.
+	const minorAccount = !!(prof?.managed || prof?.under18);
+	if (!minorAccount) return 'adult';
 	if (card?.birthDate) {
 		const a = ageOn(card.birthDate, now);
-		return a < 13 ? 'under13' : a < 18 ? 'teen' : 'adult';
+		if (a < 13) return 'under13';
+		if (a < 18) return 'teen';
 	}
-	if (prof?.managed || prof?.under18) return 'under13';
-	return 'adult';
+	return 'under13';
 }
 
 const isMinor = (b: AgeBand) => b !== 'adult';

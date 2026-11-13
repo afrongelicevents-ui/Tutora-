@@ -138,7 +138,7 @@
 		{/if}
 	</a>
 
-	<section class="part">
+	<section id="quizzes" class="part">
 		<div class="section-h"><h2>{m.st5_quizzes()}</h2></div>
 		{#if data.quizzes.length}
 			<ul class="rows">

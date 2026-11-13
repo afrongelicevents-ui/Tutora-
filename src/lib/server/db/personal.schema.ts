@@ -39,6 +39,8 @@ export const personalTask = pgTable(
 		days: jsonb('days').$type<number[]>(),
 		onDate: date('on_date'),
 		active: boolean('active').notNull().default(true),
+		/** when it was removed: past days before this still show it */
+		removedAt: ts('removed_at'),
 		createdAt: created()
 	},
 	(t) => [

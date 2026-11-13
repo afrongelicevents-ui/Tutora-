@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 export const actions: Actions = {
 	parent: async ({ locals, url }) => {
 		const u = requireRole(locals.user, url, ['student']);
-		if (!(await hitLimit(locals.db, 'message', u.id)).ok) return { asked: true };
+		if (!(await hitLimit(locals.db, 'talkParent', u.id)).ok) return { asked: true };
 		const [me] = await locals.db.select({ name: user.name }).from(user).where(eq(user.id, u.id));
 		const name = shortName(me?.name ?? '');
 		for (const p of await activeParents(locals.db, u.id))

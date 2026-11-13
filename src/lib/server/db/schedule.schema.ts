@@ -45,6 +45,8 @@ export const personalActivity = pgTable(
 		startMinute: integer('start_minute').notNull(),
 		endMinute: integer('end_minute').notNull(),
 		active: boolean('active').notNull().default(true),
+		/** when it was removed: past days before this still show it */
+		removedAt: timestamp('removed_at', { withTimezone: true }),
 		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
 	},
 	(t) => [

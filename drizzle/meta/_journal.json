@@ -134,6 +134,20 @@
       "when": 1794528042822,
       "tag": "0018_tutor_services",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794529448833,
+      "tag": "0019_checkin_family_notified",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794529498911,
+      "tag": "0020_planner_removed_at",
+      "breakpoints": true
     }
   ]
 }

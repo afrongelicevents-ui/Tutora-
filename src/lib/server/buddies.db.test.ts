@@ -237,6 +237,21 @@ describe.skipIf(!hasTestDb)('Study Buddies permissions (real database)', () => {
 		expect((await listBuddies(db, child.id, now)).active).toHaveLength(0);
 	});
 
+	it('typed birthdays never move an account across the child/adult line', async () => {
+		// a child account typing an adult birthday is treated as under 13 (parent approval)
+		const kid = await student('Lindiwe Moyo', '1995-01-01');
+		expect(await buddies.ageBand(db, kid.id, now)).toBe('under13');
+		// an adult account typing a teen birthday stays an adult (can't reach children)
+		const grown = await student('Peter Adult', '2011-01-01', false);
+		expect(await buddies.ageBand(db, grown.id, now)).toBe('adult');
+		const teen = await student('Teen Real', '2011-01-01');
+		const c = await myCode(db, teen.id, now);
+		expect(await connectByCode(db, grown.id, c.code, { me: '' }, now)).toEqual({
+			ok: false,
+			error: 'buddy_age_mismatch'
+		});
+	});
+
 	it('a birthday cannot be changed once saved (no "ageing up")', async () => {
 		const s = await student('Vimbai Hove', '2015-01-01');
 		await saveCard(db, s.id, card({ displayName: 'Vimbai H.', birthDate: '2000-01-01' }), now);

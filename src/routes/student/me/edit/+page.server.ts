@@ -40,7 +40,7 @@ export const actions: Actions = {
 		if (!r.ok)
 			return fail(400, { error: r.error, values: Object.fromEntries(f) as Record<string, string> });
 		const after = await ownProfile(locals.db, u.id);
-		if (after.bio && after.bio !== before.bio) await tellOwners(locals.db);
+		if (after.bio && after.bio !== before.bio) await tellOwners(locals.db, u.id);
 		redirect(303, '/student/me');
 	},
 	photo: async ({ locals, url, request, platform }) => {
@@ -64,7 +64,7 @@ export const actions: Actions = {
 		await store.put(key, up.bytes, up.kind);
 		const old = await setPhoto(locals.db, u.id, key);
 		if (old) await store.delete(old).catch(() => {});
-		await tellOwners(locals.db);
+		await tellOwners(locals.db, u.id);
 		return { photo: 'saved' };
 	},
 	removePhoto: async ({ locals, url, platform }) => {

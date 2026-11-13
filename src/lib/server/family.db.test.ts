@@ -139,7 +139,13 @@ describe.skipIf(!hasTestDb)('Family Connection', () => {
 		// check-ins: only shared ones, never the note
 		await addCheckin(db, amina.id, { mood: 'finding_hard', shared: true, note: 'secret words' });
 		await addCheckin(db, amina.id, { mood: 'need_break', shared: false });
-		const shared = await sharedCheckins(db, amina.id, addDays(new Date(), -1));
+		const shared = await sharedCheckins(
+			db,
+			amina.id,
+			addDays(new Date(), -1),
+			10,
+			addDays(new Date(), 1)
+		);
 		expect(shared.map((c) => c.mood)).toEqual(['finding_hard']);
 		expect(JSON.stringify(shared)).not.toContain('secret words');
 

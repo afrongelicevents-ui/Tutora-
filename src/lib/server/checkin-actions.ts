@@ -82,7 +82,7 @@ export const checkinActions = {
 			kind: isFollowup ? 'followup' : 'start',
 			followupOf: isFollowup ? followupOf : null
 		});
-		if (shared) await tellFamily(locals.db, u.id, f.mood);
+		// family hears about a shared check-in only after a short undo window (hourly job)
 		return { checked: f.mood, shared };
 	},
 	/** "Share with my parent?" Yes / No: this check-in, and remembered for the next ones. */
@@ -97,7 +97,6 @@ export const checkinActions = {
 			.where(and(eq(checkinTable.id, id), eq(checkinTable.studentId, u.id)));
 		if (!row) return fail(400, { error: 'err_generic' });
 		await answerShare(locals.db, u.id, id, yes);
-		if (yes && !row.shared) await tellFamily(locals.db, u.id, row.mood);
 		return { shareAnswered: yes ? 'yes' : 'no' };
 	},
 	/** What they're studying and an optional short note, on their own check-in. */
@@ -120,7 +119,7 @@ export const checkinActions = {
 };
 
 /** Tell the student's active family about a check-in the student chose to share. */
-async function tellFamily(db: DB, studentId: string, mood: CheckinMood) {
+export async function tellFamily(db: DB, studentId: string, mood: CheckinMood) {
 	const [me] = await db.select({ name: user.name }).from(user).where(eq(user.id, studentId));
 	const first = shortName(me?.name ?? '');
 	for (const parentId of await activeParents(db, studentId))

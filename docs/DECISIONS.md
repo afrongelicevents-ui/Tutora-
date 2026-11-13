@@ -230,3 +230,17 @@ Built from the approved prototype (`Prototype.dc.html`) and `tutora-new-vision.m
 - "Set up or manage" is now "Set up two-step verification" (or "Manage two-step verification" when it is on). Save buttons are filled primary; Password and two-step buttons sit side by side at equal widths (`.btn-row`).
 - Every role can change their login email on /account. With the email service on, a confirmation link goes to the new address and nothing changes until it's opened. Without an email service no link can be sent, so the current password is asked instead (same rule tutors already had). Accounts that log in with a username (younger children) don't see this: their parent manages that login. Rate-limited.
 - The confusing "tutors change them in Settings" line is gone. Phone hint: "Include your country code, e.g. +263 77 123 4567".
+
+## D120 — Bug hunt and independent review fixes (2026-11-13)
+
+An independent reviewer and an automated walkthrough (5 roles × phone and desktop) found these; all fixed:
+
+- Study Buddies age safety: a typed birthday can no longer move an account across the child/adult line. Child accounts (under 18 or parent-managed) are never "adult" (an adult date counts as under 13, so a parent must approve); adult accounts are always "adult" and can never connect with children.
+- Rate limits: buddy reports (10/day), new buddy codes (10/day), owner alerts about profiles to check (5/hour per student, the queue still fills), "ask my parent to talk" (3/day).
+- Messages: a tutor you have lessons with counts for messaging too (same rule as the Tutors tab); tutors can only message student accounts, never parent accounts.
+- Removing a planner task or timetable item no longer rewrites past days (kept with a removed date).
+- Changing the login email always asks for the current password, and the current address is told about the request.
+- Shared check-ins: the remembered "Share with my parent?" still applies, but family only sees it after a 10-minute undo window, and the notification goes out with the hourly job. Check-ins shared before this change are marked as already sent.
+- Account deletion now also removes blocks and reports about or by the student, reminder records, and a tutor's own messages.
+- Links to page sections now land (#resources, #quizzes), and message threads open at the newest message.
+- Walkthrough false alarms (closed sections, screen-reader labels) were checked by eye and are fine.

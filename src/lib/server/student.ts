@@ -21,11 +21,24 @@ import {
 	tutorProfile
 } from './db/app.schema.ts';
 import { account, session, twoFactor, user } from './db/auth.schema.ts';
-import { buddyCode, buddyLink, buddyMessage, studentCard } from './db/buddies.schema.ts';
+import {
+	buddyBlock,
+	buddyCode,
+	buddyLink,
+	buddyMessage,
+	buddyReport,
+	studentCard
+} from './db/buddies.schema.ts';
 import { tutorMessage } from './db/messages.schema.ts';
 import { checkin, checkinPref, daySummarySent } from './db/v3.schema.ts';
 import { personalActivity } from './db/schedule.schema.ts';
-import { dayTick, personalGoal, personalPref, personalTask } from './db/personal.schema.ts';
+import {
+	dayTick,
+	personalGoal,
+	personalPref,
+	personalTask,
+	plannerReminderSent
+} from './db/personal.schema.ts';
 import { balances } from './billing.ts';
 import { addDays, localDate } from '../tz.ts';
 
@@ -307,7 +320,16 @@ export async function deleteMyAccount(db: DB, userId: string) {
 		await tx
 			.delete(buddyMessage)
 			.where(or(eq(buddyMessage.fromId, userId), eq(buddyMessage.toId, userId)));
-		await tx.delete(tutorMessage).where(eq(tutorMessage.studentId, userId));
+		await tx
+			.delete(tutorMessage)
+			.where(or(eq(tutorMessage.studentId, userId), eq(tutorMessage.tutorId, userId)));
+		await tx
+			.delete(buddyBlock)
+			.where(or(eq(buddyBlock.blockerId, userId), eq(buddyBlock.blockedId, userId)));
+		await tx
+			.delete(buddyReport)
+			.where(or(eq(buddyReport.reporterId, userId), eq(buddyReport.reportedId, userId)));
+		await tx.delete(plannerReminderSent).where(eq(plannerReminderSent.studentId, userId));
 		// learning check-ins (and their notes), the share choice and summary records
 		await tx.delete(checkin).where(eq(checkin.studentId, userId));
 		await tx.delete(checkinPref).where(eq(checkinPref.studentId, userId));

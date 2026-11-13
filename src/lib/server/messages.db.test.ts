@@ -85,6 +85,12 @@ describe.skipIf(!hasTestDb)('student ↔ tutor messages (real database)', () => 
 			.values({ parentId: parent.id, studentId: adult.id, guardian: false, status: 'active' });
 		expect(await thread(db, { id: parent.id, role: 'parent' }, apair)).toBeNull();
 
+		// tutors can't message parent accounts, even enrolled ones
+		const par = await makeUser(db, 'parent', 'Enrolled Parent', tutor.id);
+		expect(
+			(await sendMessage(db, tutor.id, { tutorId: tutor.id, studentId: par.id }, 'hi')).ok
+		).toBe(false);
+
 		// a tutor who is no longer enrolled loses access; the student keeps the history
 		await db
 			.delete(enrollment)

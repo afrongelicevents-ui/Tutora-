@@ -90,8 +90,17 @@ export async function setCheckinShared(db: DB, studentId: string, id: number, sh
 		.where(and(eq(checkin.id, id), eq(checkin.studentId, studentId)));
 }
 
+/** Minutes a child has to change their mind before family sees a shared check-in. */
+export const SHARE_DELAY_MIN = 10;
+
 /** Only the check-ins the child shared, without any note. Callers check the family link first. */
-export function sharedCheckins(db: DB, studentId: string, since: Date, limit = 10) {
+export function sharedCheckins(
+	db: DB,
+	studentId: string,
+	since: Date,
+	limit = 10,
+	now = new Date()
+) {
 	return db
 		.select({
 			id: checkin.id,
@@ -104,7 +113,9 @@ export function sharedCheckins(db: DB, studentId: string, since: Date, limit = 1
 			and(
 				eq(checkin.studentId, studentId),
 				eq(checkin.sharedWithFamily, true),
-				gte(checkin.createdAt, since)
+				gte(checkin.createdAt, since),
+				// the undo window: not shown to family in the first minutes
+				lt(checkin.createdAt, new Date(now.getTime() - SHARE_DELAY_MIN * 60_000))
 			)
 		)
 		.orderBy(desc(checkin.createdAt))
@@ -533,4 +544,29 @@ export async function sendDaySummaries(db: DB, notify: Notify, now = new Date())
 		sent++;
 	}
 	return sent;
+}
+
+/**
+ * Tell family about check-ins the child shared, once the undo window has passed. Hourly; each
+ * check-in once. Only the feeling word goes out, never a note.
+ */
+export async function sendSharedCheckinNotes(
+	db: DB,
+	tell: (studentId: string, mood: CheckinMood) => Promise<void>,
+	now = new Date()
+) {
+	const due = await db
+		.update(checkin)
+		.set({ familyNotifiedAt: now })
+		.where(
+			and(
+				eq(checkin.sharedWithFamily, true),
+				isNull(checkin.familyNotifiedAt),
+				lt(checkin.createdAt, new Date(now.getTime() - SHARE_DELAY_MIN * 60_000)),
+				gte(checkin.createdAt, addDays(now, -2))
+			)
+		)
+		.returning({ studentId: checkin.studentId, mood: checkin.mood });
+	for (const d of due) await tell(d.studentId, d.mood).catch(() => {});
+	return due.length;
 }

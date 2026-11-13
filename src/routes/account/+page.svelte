@@ -73,17 +73,15 @@
 				required
 				autocomplete="email"
 			/>
-			{#if !data.emailOn}
-				<Field
-					name="password"
-					type="password"
-					label={m.set_current_password()}
-					hint={m.acc_email_pw_hint()}
-					error={e.password}
-					required
-					autocomplete="current-password"
-				/>
-			{/if}
+			<Field
+				name="password"
+				type="password"
+				label={m.set_current_password()}
+				hint={m.acc_email_pw_hint()}
+				error={e.password}
+				required
+				autocomplete="current-password"
+			/>
 			<button class="btn btn-block" type="submit">{m.acc_email_btn()}</button>
 		</form>
 	{/if}

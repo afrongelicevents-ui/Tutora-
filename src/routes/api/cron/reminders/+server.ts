@@ -4,7 +4,12 @@ import type { RequestHandler } from './$types';
 import { sendDueReminders, sendStudyReminders } from '#lib/server/reminders.ts';
 import { sendWeeklyReports } from '#lib/server/weekly.ts';
 import { notifyUser, type NotifyOpts } from '#lib/server/notify.ts';
-import { sendCheckinFollowups, sendDaySummaries } from '#lib/server/checkins.ts';
+import {
+	sendCheckinFollowups,
+	sendDaySummaries,
+	sendSharedCheckinNotes
+} from '#lib/server/checkins.ts';
+import { tellFamily } from '#lib/server/checkin-actions.ts';
 import { sendPlannerMornings } from '#lib/server/planner.ts';
 
 /** Constant-time comparison. */
@@ -47,5 +52,12 @@ export const POST: RequestHandler = async ({ locals, request, url }) => {
 		console.error('planner mornings failed', e);
 		return 0;
 	});
-	return json({ sent, study, weekly, followups, days, mornings });
+	// check-ins a child shared, after the undo window
+	const shared = await sendSharedCheckinNotes(locals.db, (sid, mood) =>
+		tellFamily(locals.db, sid, mood)
+	).catch((e) => {
+		console.error('shared check-in notes failed', e);
+		return 0;
+	});
+	return json({ sent, study, weekly, followups, days, mornings, shared });
 };

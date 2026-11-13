@@ -13,6 +13,7 @@ import {
 	sendPreset
 } from '#lib/server/buddies.ts';
 import { tellOwners } from '#lib/server/buddy-notify.ts';
+import { hitLimit } from '#lib/server/rate-limit.ts';
 import { buddyLink } from '#lib/server/db/buddies.schema.ts';
 
 /** A buddy's profile: only the buddy whitelist, read-only, with Report and Block. */
@@ -36,6 +37,8 @@ export const actions: Actions = {
 	},
 	report: async ({ locals, url, params, request }) => {
 		const u = requireRole(locals.user, url, ['student']);
+		if (!(await hitLimit(locals.db, 'buddyReport', u.id)).ok)
+			return fail(429, { error: 'err_rate_limited' });
 		const f = await request.formData();
 		const what = String(f.get('what'));
 		if (!['photo', 'bio', 'behaviour', 'other'].includes(what))
@@ -48,7 +51,7 @@ export const actions: Actions = {
 			String(f.get('note') ?? '')
 		);
 		if (!ok) return fail(400, { error: 'buddy_not_allowed' });
-		await tellOwners(locals.db);
+		await tellOwners(locals.db, u.id);
 		return { reported: true };
 	},
 	block: async ({ locals, url, params }) => {

@@ -33,7 +33,15 @@ export const LIMITS = {
 	/** profile photos uploaded per student */
 	profilePhoto: { max: 10, windowSeconds: 24 * 60 * 60 },
 	/** student ↔ tutor messages sent per person */
-	message: { max: 150, windowSeconds: 24 * 60 * 60 }
+	message: { max: 150, windowSeconds: 24 * 60 * 60 },
+	/** reports about buddies per student */
+	buddyReport: { max: 10, windowSeconds: 24 * 60 * 60 },
+	/** new buddy codes made per student */
+	buddyNewCode: { max: 10, windowSeconds: 24 * 60 * 60 },
+	/** "something to check" notes sent to the owner, per student */
+	ownerNotice: { max: 5, windowSeconds: 60 * 60 },
+	/** "ask my parent to talk" per student */
+	talkParent: { max: 3, windowSeconds: 24 * 60 * 60 }
 } satisfies Record<string, LimitRule>;
 
 export type LimitName = keyof typeof LIMITS;
