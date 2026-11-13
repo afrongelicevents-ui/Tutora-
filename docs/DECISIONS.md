@@ -244,3 +244,9 @@ An independent reviewer and an automated walkthrough (5 roles × phone and deskt
 - Account deletion now also removes blocks and reports about or by the student, reminder records, and a tutor's own messages.
 - Links to page sections now land (#resources, #quizzes), and message threads open at the newest message.
 - Walkthrough false alarms (closed sections, screen-reader labels) were checked by eye and are fine.
+
+## D121 — Overnight batch shipped (2026-11-13)
+
+- All six tasks passed on the test site: 225 automated tests, type check and lint clean; 18 permission checks; an automated walkthrough of 482 page views (student, under-13 student, parent with two children, tutor, owner; phone 390 px and desktop) with no real errors; an independent review whose findings are fixed (D120).
+- The automatic live step of the deploy is restored: pushes to main again go to the test site, then live.
+- Before/after screenshots: docs/screenshots/before and docs/screenshots/after (fake test data).
