@@ -12,7 +12,15 @@ import { personalActivity } from './db/schedule.schema.ts';
 import { and, asc, eq, gt, inArray } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { account, user } from './db/auth.schema.ts';
-import { attendee, child, enrollment, homework, lesson, profile } from './db/app.schema.ts';
+import {
+	attendee,
+	child,
+	enrollment,
+	homework,
+	lesson,
+	profile,
+	tutorProfile
+} from './db/app.schema.ts';
 import {
 	checkin,
 	type CheckinMood,
@@ -698,5 +706,15 @@ export async function seedV3(db: DB, hash: string, logins: TestLogin[], now = ne
 	].filter((x) => x.onDate <= localDate(now));
 	if (goalTicks.length) await db.insert(goalTick).values(goalTicks).onConflictDoNothing();
 	await setShareReport(db, tatenda, true);
+
+	// What tutors can help with (fake)
+	await db
+		.update(tutorProfile)
+		.set({ services: ['homework', 'exams', 'catchup', 'revision'] })
+		.where(eq(tutorProfile.tutorId, chipo));
+	await db
+		.update(tutorProfile)
+		.set({ services: ['skills', 'group', 'exams'] })
+		.where(eq(tutorProfile.tutorId, tendai));
 	return { invite: TEST_INVITE_CODE };
 }

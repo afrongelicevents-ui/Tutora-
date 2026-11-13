@@ -5,6 +5,7 @@
 	import { minutesToHHMM } from '#lib/tz.ts';
 	import { formatMoney } from '#lib/money.ts';
 	import type { Section } from '#lib/server/sections.ts';
+	import { SERVICES } from '#lib/services.ts';
 
 	type Data = {
 		settings: Record<string, unknown> & {
@@ -245,6 +246,21 @@
 							defaultChecked={s.lessonModes === val}
 						/>
 						{label}</label
+					>
+				{/each}
+			</div>
+		</fieldset>
+		<fieldset>
+			<legend>{m.set_services()}</legend>
+			<div class="svc">
+				{#each SERVICES as sv (sv)}
+					<label class="check"
+						><input
+							type="checkbox"
+							name="services"
+							value={sv}
+							defaultChecked={((s.services as string[] | undefined) ?? []).includes(sv)}
+						/> <span>{t(`th_${sv}`)}</span></label
 					>
 				{/each}
 			</div>

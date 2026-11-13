@@ -4,7 +4,15 @@
  */
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
-import { enrollment, homework, homeworkAnswer, subject, tutorProfile } from './db/app.schema.ts';
+import {
+	attendee,
+	enrollment,
+	homework,
+	homeworkAnswer,
+	lesson,
+	subject,
+	tutorProfile
+} from './db/app.schema.ts';
 import { questionSet, quizAssignment } from './db/v3.schema.ts';
 import { lessonsForUser } from './bookings.ts';
 import { CLOSE_AFTER_MIN } from './room.ts';
@@ -24,6 +32,21 @@ export async function myTutors(db: DB, studentId: string, now = new Date()) {
 		.innerJoin(tutorProfile, eq(tutorProfile.tutorId, enrollment.tutorId))
 		.where(eq(enrollment.userId, studentId))
 		.orderBy(asc(enrollment.createdAt));
+	// tutors this student has lessons with but no enrolment row (e.g. booked by a parent
+	// before Family Connection): they are still this student's tutors
+	const viaLessons = await db
+		.selectDistinct({
+			tutorId: tutorProfile.tutorId,
+			name: tutorProfile.tutorName,
+			slug: tutorProfile.slug,
+			photoKey: tutorProfile.photoKey,
+			photoVersion: tutorProfile.photoVersion
+		})
+		.from(attendee)
+		.innerJoin(lesson, eq(lesson.id, attendee.lessonId))
+		.innerJoin(tutorProfile, eq(tutorProfile.tutorId, lesson.tutorId))
+		.where(and(eq(attendee.userId, studentId), eq(attendee.status, 'booked')));
+	for (const v of viaLessons) if (!rows.some((r) => r.tutorId === v.tutorId)) rows.push(v);
 	if (!rows.length) return [];
 	const ids = rows.map((r) => r.tutorId);
 	const [subs, lessons, unread] = await Promise.all([

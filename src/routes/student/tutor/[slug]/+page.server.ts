@@ -4,6 +4,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { activeTutorBySlug, publicSite, type PublicSite } from '#lib/server/settings.ts';
 import { favourite } from '#lib/server/db/app.schema.ts';
 import { requireRole } from '#lib/server/guards.ts';
+import { together } from '#lib/server/together.ts';
 
 /** A tutor's profile inside the app (approved tutors only). */
 export const load: PageServerLoad = async ({ locals, url, params }) => {
@@ -18,7 +19,16 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 			.where(and(eq(favourite.userId, u.id), eq(favourite.tutorId, s.tutorId)))
 	]);
 	const { tutorId: _id, whatsapp: _w, phone: _p, email: _e, ...pub } = site as PublicSite;
-	return { site: pub, saved: !!fav };
+	// "you and this tutor": only when they really are (or were) this student's tutor
+	const us = await together(locals.db, u.id, s.tutorId);
+	return {
+		site: pub,
+		services: s.services ?? [],
+		saved: !!fav,
+		together: us,
+		// the message link needs the tutor's id; only for their own students
+		messageId: us ? s.tutorId : null
+	};
 };
 
 export const actions: Actions = {

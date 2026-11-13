@@ -127,6 +127,13 @@
       "when": 1794527002573,
       "tag": "0017_personal_planner",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794528042822,
+      "tag": "0018_tutor_services",
+      "breakpoints": true
     }
   ]
 }

@@ -6,6 +6,7 @@ import {
 	date,
 	index,
 	integer,
+	jsonb,
 	pgTable,
 	serial,
 	text,
@@ -103,6 +104,8 @@ export const tutorProfile = pgTable(
 		photoVersion: integer('photo_version').notNull().default(0),
 		// how lessons work
 		lessonModes: text('lesson_modes', { enum: LESSON_MODES }).notNull().default('online'),
+		/** kinds of help offered (see src/lib/services.ts) */
+		services: jsonb('services').$type<string[]>().notNull().default([]),
 		groupMode: text('group_mode', { enum: GROUP_MODES }).notNull().default('one_to_one'),
 		maxGroupSize: integer('max_group_size').notNull().default(4),
 		lessonMinutes: integer('lesson_minutes').notNull().default(60),

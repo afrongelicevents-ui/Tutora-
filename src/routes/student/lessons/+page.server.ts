@@ -23,7 +23,9 @@ import { m } from '#lib/paraglide/messages.js';
 import { todoFromTutors } from '#lib/server/student-tutors.ts';
 import { studentToolStatus } from '#lib/server/tool-status.ts';
 import { attendee } from '#lib/server/db/app.schema.ts';
-import { lessonMaterial } from '#lib/server/db/v3.schema.ts';
+import { lessonMaterial, lessonMeeting } from '#lib/server/db/v3.schema.ts';
+import { homework, homeworkAnswer } from '#lib/server/db/app.schema.ts';
+import { gte } from 'drizzle-orm';
 import { and, desc, eq } from 'drizzle-orm';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -36,7 +38,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		tutorsForUser(locals.db, u.id),
 		myFavourites(locals.db, u.id)
 	]);
-	const [todo, tools, materials] = await Promise.all([
+	const upcomingLessons = lessons.filter(
+		(l) => l.endsAt.getTime() + CLOSE_AFTER_MIN * 60_000 > now.getTime()
+	);
+	const nextId = upcomingLessons[0]?.id ?? null;
+	const [todo, tools, materials, nextMeeting, handedIn] = await Promise.all([
 		todoFromTutors(locals.db, u.id, now),
 		studentToolStatus(locals.db, u.id, url),
 		// files and quizzes the tutor shared on this student's lessons, newest first
@@ -52,7 +58,27 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.innerJoin(attendee, eq(attendee.lessonId, lessonMaterial.lessonId))
 			.where(and(eq(attendee.userId, u.id), eq(attendee.status, 'booked')))
 			.orderBy(desc(lessonMaterial.createdAt))
-			.limit(4)
+			.limit(4),
+		// the next lesson's Meet / Teams link (shown only on this student's own lesson)
+		nextId
+			? locals.db
+					.select({ provider: lessonMeeting.provider, joinUrl: lessonMeeting.joinUrl })
+					.from(lessonMeeting)
+					.where(eq(lessonMeeting.lessonId, nextId))
+			: Promise.resolve([]),
+		// homework handed in during the last 7 days
+		locals.db
+			.select({ id: homework.id, title: homework.title, at: homeworkAnswer.createdAt })
+			.from(homeworkAnswer)
+			.innerJoin(homework, eq(homework.id, homeworkAnswer.homeworkId))
+			.where(
+				and(
+					eq(homework.userId, u.id),
+					gte(homeworkAnswer.createdAt, new Date(now.getTime() - 7 * 86_400_000))
+				)
+			)
+			.orderBy(desc(homeworkAnswer.createdAt))
+			.limit(3)
 	]);
 
 	const meetings = await meetingsFor(
@@ -98,6 +124,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		todoTotal: todo.length,
 		tools,
 		materials,
+		nextJoin: nextMeeting[0]?.joinUrl?.startsWith('https://') ? nextMeeting[0] : null,
+		handedIn,
 		today: localDate(now),
 		packages: packages
 			.filter((p) => p.lessonsUsed < p.lessonsTotal)

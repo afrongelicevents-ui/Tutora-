@@ -112,12 +112,29 @@
 					</span>
 					<span class="mode">{next.mode === 'online' ? m.lt_online() : m.lt_in_person()}</span>
 				</div>
-				{#if next.mode === 'online' && next.roomOpen}
-					<a class="btn navy" href="/student/lessons/{next.id}"
-						><LineIcon name="video" size={20} /> {m.lt_join()}</a
+				{#if next.mode === 'in_person'}
+					<p class="addr">
+						<LineIcon name="home" size={18} />{next.address ?? m.ld3_address_ask()}
+					</p>
+				{/if}
+				{#if next.mode === 'online' && data.nextJoin && next.roomOpen}
+					<a
+						class="btn navy big"
+						href={data.nextJoin.joinUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						><LineIcon name="video" size={22} />
+						{data.nextJoin.provider === 'meet' ? m.ld3_join_meet() : m.ld3_join_teams()}</a
+					>
+					<a class="small center" href="/room/{next.id}">{m.ld3_use_room()}</a>
+				{:else if next.mode === 'online' && next.roomOpen}
+					<a class="btn navy big" href="/room/{next.id}"
+						><LineIcon name="video" size={22} /> {m.lt_join()}</a
 					>
 				{:else}
-					<a class="btn navy" href="/student/lessons/{next.id}">{m.lt_view()}</a>
+					<a class="btn navy big" href="/student/lessons/{next.id}">{m.lt_view()}</a>
+					{#if next.mode === 'online'}<span class="small center muted">{m.lt_join_soon()}</span
+						>{/if}
 				{/if}
 				{#if !next.canCancel}
 					<span class="note"
@@ -154,7 +171,9 @@
 								><strong>{l.subjectName ?? m.intro_chat()}</strong><span class="meta"
 									>{isToday(l.startsAt) ? m.sh_today() : fmtDay(l.startsAt)} • {fmtTime(
 										l.startsAt
-									)}{l.tutorName ? ` · ${l.tutorName}` : ''}</span
+									)}{l.tutorName ? ` · ${l.tutorName}` : ''}{l.mode === 'in_person' && l.address
+										? ` · ${l.address}`
+										: ''}</span
 								></span
 							>
 							<span class="mode">{l.mode === 'online' ? m.lt_online() : m.lt_in_person()}</span>
@@ -198,6 +217,17 @@
 		{:else}
 			<p class="muted">{m.lt_hw_none()}</p>
 		{/if}
+		{#if data.handedIn.length}
+			<ul class="done-list">
+				{#each data.handedIn as h (h.id)}
+					<li>
+						<LineIcon name="check" size={18} />{h.title}
+						<span class="pill-d done">{m.lt_done()}</span>
+					</li>
+				{/each}
+			</ul>
+		{/if}
+		<a class="btn btn-secondary" href="/student/homework">{m.lt_upload()}</a>
 	</section>
 
 	<!-- lesson materials -->
@@ -259,7 +289,11 @@
 				{#each data.past.slice(0, 12) as l (l.id)}
 					<a href="/student/lessons/{l.id}"
 						><span>{l.subjectName ?? m.intro_chat()}{l.tutorName ? ` · ${l.tutorName}` : ''}</span
-						><span class="muted small">{fmtDay(l.startsAt)}</span></a
+						><span class="muted small"
+							>{fmtDay(l.startsAt)} · {fmtTime(l.startsAt)} · {l.mode === 'online'
+								? m.lt_online()
+								: m.lt_in_person()}</span
+						></a
 					>
 				{/each}
 			</div>
@@ -367,6 +401,38 @@
 		padding: 4px 12px;
 		font-size: 0.8125rem;
 		font-weight: 700;
+	}
+	.addr {
+		margin: 0;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		color: var(--text);
+	}
+	.big {
+		min-height: 56px;
+		font-size: 1.0625rem;
+	}
+	.center {
+		text-align: center;
+	}
+	.done-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.done-list li {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		color: var(--muted);
+	}
+	.pill-d.done {
+		background: var(--ice);
+		color: var(--navy);
 	}
 	.btn.navy {
 		background: var(--navy);

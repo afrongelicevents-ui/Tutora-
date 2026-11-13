@@ -1,3 +1,4 @@
+import { together } from '#lib/server/together.ts';
 import { error, fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
@@ -69,9 +70,12 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 		recentResults(locals.db, s.id, 10),
 		schoolWork(locals.db, s.id)
 	]);
+	// what this tutor and student have done together (lessons, paid, homework, marks)
+	const us = await together(locals.db, s.id, t);
 	const link = (k: string | null, n: string | null) => (k ? fileLink(k, n ?? 'file') : null);
 	return {
 		student: s,
+		together: us,
 		now: new Date(),
 		checkin,
 		scores,

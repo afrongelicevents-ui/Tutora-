@@ -136,6 +136,7 @@ export interface TutorCard {
 	subjects: string[];
 	levels: string[];
 	lessonModes: SiteSettings['lessonModes'];
+	services: string[];
 	/** cheapest lesson price shown publicly, or null for "Ask for price" */
 	fromPriceCents: number | null;
 	currency: SiteSettings['currency'];
@@ -157,6 +158,8 @@ export interface TutorFilter {
 	q?: string;
 	/** only tutors whose shown price is at most this (tutors who hide prices are left out) */
 	maxPriceCents?: number | null;
+	/** only tutors who offer this kind of help (src/lib/services.ts) */
+	service?: string;
 }
 
 /**
@@ -244,11 +247,13 @@ export async function listTutors(db: DB, f: TutorFilter | string = {}): Promise<
 			rating: r && r.n > 0 ? Math.round(r.avg * 10) / 10 : null,
 			reviewCount: r?.n ?? 0,
 			lessonCount: lessonRows.find((x) => x.tutorId === t.tutorId)?.n ?? 0,
-			createdAt: t.createdAt
+			createdAt: t.createdAt,
+			services: t.services ?? []
 		};
 	});
 	cards = cards.filter(
 		(t) =>
+			(!filter.service || t.services.includes(filter.service)) &&
 			(!q.subject || t.subjects.some((n) => n.toLowerCase().includes(q.subject))) &&
 			(!q.level || t.levels.some((n) => n.toLowerCase().includes(q.level))) &&
 			(!q.town || (t.town ?? '').toLowerCase().includes(q.town)) &&

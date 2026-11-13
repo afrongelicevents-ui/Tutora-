@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { m } from '#lib/i18n.ts';
+	import { m, t } from '#lib/i18n.ts';
+	import { SERVICES } from '#lib/services.ts';
 	import { formatMoney } from '#lib/money.ts';
 	let { data } = $props();
 	const initial = (n: string) =>
@@ -15,7 +16,13 @@
 		u.searchParams.delete('n');
 		return u.pathname + u.search;
 	};
-	const filtered = $derived(!!(data.f.level || data.f.mode || data.f.location || data.f.max));
+	const filtered = $derived(
+		!!(data.f.level || data.f.mode || data.f.location || data.f.max || data.f.service)
+	);
+	const active = $derived(
+		[data.f.level, data.f.mode, data.f.location, data.f.max, data.f.service].filter(Boolean).length
+	);
+	let sheet = $state<HTMLDialogElement | null>(null);
 	const modeText = (mo: string, town: string | null) =>
 		mo === 'online'
 			? m.find3_online()
@@ -40,6 +47,7 @@
 		{#if data.f.mode}<input type="hidden" name="mode" value={data.f.mode} />{/if}
 		{#if data.f.location}<input type="hidden" name="location" value={data.f.location} />{/if}
 		{#if data.f.max}<input type="hidden" name="max" value={data.f.max} />{/if}
+		{#if data.f.service}<input type="hidden" name="service" value={data.f.service} />{/if}
 	</form>
 
 	{#if data.subjects.length}
@@ -52,19 +60,40 @@
 					>{s}</a
 				>
 			{/each}
-			<a
-				class="chip"
-				href={withParam('mode', data.f.mode === 'online' ? '' : 'online')}
-				aria-current={data.f.mode === 'online' ? 'true' : undefined}>{m.find3_online()}</a
-			>
 		</div>
 	{/if}
 
-	<details class="filters" open={filtered}>
-		<summary>{m.find3_filters()}</summary>
+	<div class="frow">
+		<button class="btn btn-secondary fbtn" type="button" onclick={() => sheet?.showModal()}
+			>{m.find3_filters()}{#if active}<span class="count">{active}</span>{/if}</button
+		>
+		{#if data.f.service}<a class="chip on" href={withParam('service', '')}
+				>{t(`th_${data.f.service}`)} <span aria-hidden="true">×</span><span class="sr-only"
+					>{m.find3_clear()}</span
+				></a
+			>{/if}
+	</div>
+	{#if data.serviceFallback}<p class="note">
+			{m.find3_service_none({ service: t(`th_${data.f.service}`) })}
+		</p>{/if}
+
+	<dialog class="sheet" bind:this={sheet} aria-label={m.find3_filters()}>
+		<button class="close" type="button" onclick={() => sheet?.close()} aria-label={m.find3_close()}
+			>×</button
+		>
 		<form method="GET" class="stack">
+			<h2 class="h3">{m.find3_filters()}</h2>
 			<input type="hidden" name="q" value={data.f.q} />
 			<input type="hidden" name="subject" value={data.f.subject} />
+			<label class="field"
+				><span class="label">{m.find3_service()}</span>
+				<select name="service">
+					<option value="">{m.find3_any()}</option>
+					{#each SERVICES as sv (sv)}<option value={sv} selected={data.f.service === sv}
+							>{t(`th_${sv}`)}</option
+						>{/each}
+				</select></label
+			>
 			<label class="field"
 				><span class="label">{m.find3_level()}</span>
 				<input name="level" value={data.f.level} placeholder={m.find3_level_ph()} /></label
@@ -115,10 +144,10 @@
 			>
 			<div class="row">
 				<button class="btn grow" type="submit">{m.find3_apply()}</button>
-				<a class="btn btn-ghost" href="/student/find">{m.find3_clear()}</a>
+				<a class="btn btn-secondary grow" href="/student/find">{m.find3_clear()}</a>
 			</div>
 		</form>
-	</details>
+	</dialog>
 
 	{#if data.tutors.length}
 		<p class="note">{m.find3_count({ n: data.total })}</p>
@@ -179,16 +208,64 @@
 		background: #fff;
 		font: inherit;
 	}
-	.filters summary {
-		min-height: 44px;
+	.frow {
 		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
 		align-items: center;
-		font-weight: 600;
+	}
+	.fbtn {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+	}
+	.count {
+		background: var(--navy);
+		color: #fff;
+		border-radius: 99px;
+		min-width: 22px;
+		height: 22px;
+		display: grid;
+		place-items: center;
+		font-size: 0.75rem;
+	}
+	.chip.on {
+		background: var(--navy);
+		color: #fff;
+	}
+	/* filters open as a sheet from the bottom of the screen */
+	.sheet {
+		position: fixed;
+		inset: auto 0 0 0;
+		margin: 0 auto;
+		width: 100%;
+		max-width: 560px;
+		max-height: 88vh;
+		overflow-y: auto;
+		border: 0;
+		border-radius: 24px 24px 0 0;
+		padding: 22px 20px calc(24px + env(safe-area-inset-bottom));
+		background: #fff;
+		box-shadow: 0 -10px 40px rgb(11 37 69 / 0.2);
+	}
+	.sheet::backdrop {
+		background: rgb(11 37 69 / 0.4);
+	}
+	.close {
+		position: absolute;
+		top: 12px;
+		right: 12px;
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		border: 1px solid var(--border);
+		background: #fff;
+		font-size: 1.25rem;
 		color: var(--navy);
 		cursor: pointer;
 	}
-	.filters form {
-		padding: 8px 0 4px;
+	.sheet select {
+		width: 100%;
 	}
 	fieldset {
 		border: none;

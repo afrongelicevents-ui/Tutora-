@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m, t } from '#lib/i18n.ts';
-	import { fmtDay, fmtDate } from '#lib/tz.ts';
+	import { fmtMonth, fmtDay, fmtDate } from '#lib/tz.ts';
 	import { formatMoney } from '#lib/money.ts';
 	import { waLink } from '#lib/whatsapp.ts';
 	import { shrink } from '#lib/shrink.ts';
@@ -56,6 +56,30 @@
 
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
 	{#if doneText}<p class="notice" role="status">{doneText}</p>{/if}
+
+	{#if data.together}
+		{@const g = data.together}
+		<div class="softcard tg">
+			<span class="eyebrow">{m.tg_tutor_title()}</span>
+			<span class="note"
+				>{g.since ? m.tg_tutor_since({ date: fmtMonth(new Date(g.since)) }) : ''}{g.months
+					? ` · ${m.tg_months({ n: g.months })}`
+					: ''}</span
+			>
+			<span
+				>{m.tg_tutor_line({
+					lessons: g.lessonsDone,
+					paid: g.paidLessons,
+					charged: g.chargedLessons,
+					handed: g.homework.handed,
+					set: g.homework.set
+				})}</span
+			>
+			{#if g.marks && g.marks.first !== null && g.marks.latest !== null}<strong
+					>{m.tg_tutor_marks({ first: g.marks.first, latest: g.marks.latest })}</strong
+				>{/if}
+		</div>
+	{/if}
 
 	<!-- how learning feels: only what the student shares with tutors -->
 	<div class="softcard">

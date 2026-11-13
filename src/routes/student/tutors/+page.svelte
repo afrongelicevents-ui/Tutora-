@@ -121,7 +121,7 @@
 		<ul class="help">
 			{#each HELP as h (h.key)}
 				<li>
-					<a href="/student/find"
+					<a href="/student/find?service={h.key}"
 						><LineIcon name={h.icon} size={30} /><span>{t(`th_${h.key}`)}</span></a
 					>
 				</li>

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { m } from '#lib/i18n.ts';
+	import { m, t } from '#lib/i18n.ts';
+	import { fmtMonth } from '#lib/tz.ts';
 	import { formatMoney } from '#lib/money.ts';
 	import { availabilitySummary } from '#lib/availability.ts';
 	let { data } = $props();
@@ -55,6 +56,38 @@
 </div>
 
 <div class="screen">
+	{#if data.together}
+		{@const g = data.together}
+		<section class="us" aria-labelledby="us-h">
+			<h2 id="us-h" class="h3">{m.tg_title({ name: s.name ?? '' })}</h2>
+			{#if g.since}<p class="small muted">
+					{m.tg_since({ date: fmtMonth(new Date(g.since)) })}{g.months
+						? ` · ${m.tg_months({ n: g.months })}`
+						: ''}
+				</p>{/if}
+			<div class="us-grid">
+				<div><strong>{g.lessonsDone}</strong><span>{m.tg_lessons()}</span></div>
+				<div>
+					<strong>{g.paidLessons}{g.chargedLessons ? ` / ${g.chargedLessons}` : ''}</strong><span
+						>{m.tg_paid()}</span
+					>
+				</div>
+				<div>
+					<strong>{g.homework.handed} / {g.homework.set}</strong><span>{m.tg_homework()}</span>
+				</div>
+				<div><strong>{g.topics}</strong><span>{m.tg_topics()}</span></div>
+			</div>
+			{#if g.marks && g.marks.first !== null && g.marks.latest !== null}
+				<p class="marks">
+					{m.tg_marks({ first: g.marks.first, latest: g.marks.latest })}
+					{#if g.marks.latest > g.marks.first}<span class="up">{m.tg_up()}</span>{/if}
+				</p>
+			{:else if g.results}
+				<p class="small muted">{m.tg_marks_soon()}</p>
+			{/if}
+			{#if g.upcoming}<p class="small">{m.tg_upcoming({ n: g.upcoming })}</p>{/if}
+		</section>
+	{/if}
 	{#if s.headline}<p class="headline">{s.headline}</p>{/if}
 	{#if s.bio}<p class="bio">{s.bio}</p>{/if}
 	<div class="rows top">
@@ -97,6 +130,14 @@
 			{/each}
 		</div>
 	{/if}
+	{#if data.services.length}
+		<section class="stack-s">
+			<h2 class="h3">{m.th_title()}</h2>
+			<ul class="svc">
+				{#each data.services as sv (sv)}<li>{t(`th_${sv}`)}</li>{/each}
+			</ul>
+		</section>
+	{/if}
 	{#if s.reviews.length}
 		<section class="stack-s">
 			<h2 class="h3">{m.tp3_reviews({ n: s.reviews.length })}</h2>
@@ -111,7 +152,14 @@
 	{:else}
 		<p class="note">{m.tp3_reviews_after()}</p>
 	{/if}
-	<a class="btn btn-block big" href="/student/book?tutor={s.slug}">{m.home_book()}</a>
+	<div class="acts">
+		{#if data.messageId}<a class="btn btn-secondary" href="/student/messages/{data.messageId}"
+				>{m.msg_open()}</a
+			>{/if}
+		<a class="btn" href="/student/book?tutor={s.slug}"
+			>{data.together ? m.tg_book_again() : m.home_book()}</a
+		>
+	</div>
 	{#if s.offersIntro}<a class="btn btn-ghost btn-block" href="/student/book?tutor={s.slug}&intro=1"
 			>{m.tp3_intro()}</a
 		>{/if}
@@ -122,6 +170,73 @@
 </div>
 
 <style>
+	.us {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		background: #fff;
+		border: 1px solid var(--border);
+		border-radius: 20px;
+		padding: 16px;
+	}
+	.us h2 {
+		margin: 0;
+	}
+	.us p {
+		margin: 0;
+	}
+	.us-grid {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		text-align: center;
+	}
+	.us-grid div {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: 0 4px;
+	}
+	.us-grid div + div {
+		border-left: 1px solid var(--border);
+	}
+	.us-grid strong {
+		font-size: 1.25rem;
+		color: var(--navy);
+	}
+	.us-grid span {
+		font-size: 0.6875rem;
+		color: var(--muted);
+		line-height: 1.25;
+	}
+	.marks {
+		font-weight: 600;
+		color: var(--navy);
+	}
+	.up {
+		color: var(--ok);
+		margin-left: 4px;
+	}
+	.svc {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	.svc li {
+		background: var(--ice);
+		color: var(--navy);
+		border-radius: 99px;
+		padding: 6px 12px;
+		font-size: 0.8125rem;
+		font-weight: 600;
+	}
+	.acts {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+		gap: 10px;
+	}
 	.head {
 		background: var(--ice);
 	}
@@ -174,9 +289,6 @@
 	}
 	.r {
 		text-align: right;
-	}
-	.big {
-		min-height: 54px;
 	}
 	.stack-s {
 		display: flex;

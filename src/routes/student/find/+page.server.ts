@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { listTutors, subjectOptions } from '#lib/server/settings.ts';
 import { requireRole } from '#lib/server/guards.ts';
+import { isService } from '#lib/services.ts';
 
 const PAGE = 10;
 
@@ -16,12 +17,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		level: p('level'),
 		mode: (mode === 'online' || mode === 'in_person' ? mode : '') as '' | 'online' | 'in_person',
 		location: p('location'),
-		maxPriceCents: Number.isFinite(max) && max > 0 ? Math.round(max * 100) : null
+		maxPriceCents: Number.isFinite(max) && max > 0 ? Math.round(max * 100) : null,
+		service: isService(p('service')) ? p('service') : ''
 	};
 	const shown = Math.min(Math.max(Number(url.searchParams.get('n')) || PAGE, PAGE), 200);
-	const [all, subjects] = await Promise.all([listTutors(locals.db, f), subjectOptions(locals.db)]);
+	const [found, subjects] = await Promise.all([
+		listTutors(locals.db, f),
+		subjectOptions(locals.db)
+	]);
+	// no tutor lists that kind of help yet: say so and show the other matches instead
+	const serviceFallback = !!f.service && !found.length;
+	const all = serviceFallback ? await listTutors(locals.db, { ...f, service: '' }) : found;
 	return {
 		f: { ...f, max: f.maxPriceCents ? f.maxPriceCents / 100 : '' },
+		serviceFallback,
 		subjects: subjects.slice(0, 8),
 		total: all.length,
 		shown,

@@ -215,3 +215,12 @@ Built from the approved prototype (`Prototype.dc.html`) and `tutora-new-vision.m
 
 - Tutors: My tutors (round "+" to find a tutor), Messages, and "What tutors can help with" (homework help, exam preparation, catch-up on a topic, revision sessions, study skills, one-to-one or group; each opens Find a tutor). "You don't have a tutor yet" still shows only without tutors.
 - Lessons: Next lesson (Join lesson when the online lesson is open, else View lesson), Upcoming lessons, Homework and tasks (Due today / Late / due date), Lesson materials (shared files and quizzes with the official Drive / Kahoot! logos), and Connected tools (real status). Booking requests stay at the top; packages, past lessons, reviews and favourites stay below.
+
+## D118 — Overnight batch: Tutors/Lessons completed, "you and your tutor", services (2026-11-13)
+
+- Tutors: "What tutors can help with" opens Find a tutor filtered by that kind of help. Tutors choose their kinds of help in Settings → Teaching (new `services` list). If no tutor has listed that help yet, Find says so and shows the other matches instead of an empty page (safest: never a dead end).
+- "You don't have a tutor yet": a student's tutors now include tutors they have lessons with even without an enrolment row (e.g. lessons booked by a parent before Family Connection). The empty card shows only when there are none.
+- Tutor profile (student side): services, Message and Book again, and "You and <tutor>": tutor since, lessons done, lessons paid (lesson charges fully covered by confirmed payments), homework handed in, topics worked on, and average mark at the start vs now (first three vs latest three results, only with 4+ results). The tutor sees the same "You and this student" summary on the student's page. Real records only.
+- Lessons: the big Join button goes straight to Google Meet / Teams when the tutor made a link, else to the low-data room; it appears 10 minutes before. In-person lessons show the address. Homework shows recent hand-ins as Done and an Upload work button. Past lessons show time and online/in person.
+- Find a tutor: subject chips only; "Online" and every other filter (kind of help, level, max price, how, area) are in a Filters sheet. The page loads its small script so the sheet opens.
+- Deploys: during the overnight batch, pushes update the TEST site only; LIVE is started by hand once the whole batch and the bug hunt pass. The automatic live step is restored afterwards.

@@ -37,6 +37,7 @@ import { requireRole, requireTutor } from './guards.ts';
 import { hitLimit, clientIp } from './rate-limit.ts';
 import { emailEnabled } from './auth.ts';
 import { changeEmailNow } from './account.ts';
+import { isService } from '../services.ts';
 
 export const SECTIONS = [
 	'profile',
@@ -136,9 +137,11 @@ export function sectionActions(after: (ev: Ev) => string | null): Actions {
 		},
 		teaching: async (ev) => {
 			const t = guard(ev).id;
-			const parsed = teachingSchema.safeParse(await form(ev));
+			const fd = await ev.request.formData();
+			const parsed = teachingSchema.safeParse(formObject(fd));
 			if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
-			await updateSettings(ev.locals.db, t, parsed.data);
+			const services = [...new Set(fd.getAll('services').filter(isService))];
+			await updateSettings(ev.locals.db, t, { ...parsed.data, services });
 			return done(ev);
 		},
 		prices: async (ev) => {
