@@ -29,7 +29,7 @@
 	"field_password_new": "New password",
 	"field_password_confirm": "Type the new password again",
 	"field_phone": "Phone (WhatsApp if possible)",
-	"field_phone_hint": "With country code, e.g. +263 77 123 4567 (a number starting with 0 is taken as Zimbabwe).",
+	"field_phone_hint": "Include your country code, e.g. +263 77 123 4567",
 	"field_under18": "I am under 18",
 	"parent_section_title": "Parent or guardian contact",
 	"parent_section_lead": "Required for students under 18. We only use it for lessons, payments and safety.",
@@ -73,7 +73,7 @@
 	"account_2fa": "Two-step verification",
 	"account_2fa_on": "On",
 	"account_2fa_off": "Off",
-	"account_2fa_manage": "Set up or manage",
+	"account_2fa_manage": "Manage two-step verification",
 	"twofa_setup_title": "Two-step verification",
 	"twofa_required": "The tutor area needs two-step verification. This protects students' details and payments.",
 	"twofa_setup_lead": "You will need an authenticator app such as Google Authenticator or Microsoft Authenticator (free).",
@@ -2451,5 +2451,14 @@
 	"tg_tutor_marks": "Average mark: {first}% at the start → {latest}% now",
 	"lt_done": "Done",
 	"lt_upload": "Upload work",
-	"lt_join_soon": "The Join button appears 10 minutes before the lesson."
+	"lt_join_soon": "The Join button appears 10 minutes before the lesson.",
+	"account_2fa_setup": "Set up two-step verification",
+	"account_2fa_manage_on": "Manage two-step verification",
+	"acc_email_h": "Login email",
+	"acc_email_now": "You log in with {email}.",
+	"acc_email_new": "New email address",
+	"acc_email_btn": "Change login email",
+	"acc_email_pw_hint": "For your safety, type your current password.",
+	"acc_email_sent": "We sent a confirmation link to {email}. Open it to finish the change. Until then you keep logging in with your current email.",
+	"acc_email_changed": "Done. You now log in with {email}."
 }

@@ -224,3 +224,9 @@ Built from the approved prototype (`Prototype.dc.html`) and `tutora-new-vision.m
 - Lessons: the big Join button goes straight to Google Meet / Teams when the tutor made a link, else to the low-data room; it appears 10 minutes before. In-person lessons show the address. Homework shows recent hand-ins as Done and an Upload work button. Past lessons show time and online/in person.
 - Find a tutor: subject chips only; "Online" and every other filter (kind of help, level, max price, how, area) are in a Filters sheet. The page loads its small script so the sheet opens.
 - Deploys: during the overnight batch, pushes update the TEST site only; LIVE is started by hand once the whole batch and the bug hunt pass. The automatic live step is restored afterwards.
+
+## D119 — Settings page (2026-11-13)
+
+- "Set up or manage" is now "Set up two-step verification" (or "Manage two-step verification" when it is on). Save buttons are filled primary; Password and two-step buttons sit side by side at equal widths (`.btn-row`).
+- Every role can change their login email on /account. With the email service on, a confirmation link goes to the new address and nothing changes until it's opened. Without an email service no link can be sent, so the current password is asked instead (same rule tutors already had). Accounts that log in with a username (younger children) don't see this: their parent manages that login. Rate-limited.
+- The confusing "tutors change them in Settings" line is gone. Phone hint: "Include your country code, e.g. +263 77 123 4567".

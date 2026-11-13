@@ -1329,3 +1329,16 @@ a.rows-link:hover,
 .screen.auth > h1 {
 	font-size: 2rem;
 }
+
+/* two or more buttons side by side in a card: same width */
+.btn-row {
+	display: grid;
+	grid-auto-flow: column;
+	grid-auto-columns: minmax(0, 1fr);
+	gap: 10px;
+}
+@media (max-width: 380px) {
+	.btn-row {
+		grid-auto-flow: row;
+	}
+}

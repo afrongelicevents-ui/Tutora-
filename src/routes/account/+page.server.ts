@@ -8,8 +8,11 @@ import { user as userTable } from '#lib/server/db/auth.schema.ts';
 import { getPrefs, setPrefs } from '#lib/server/notify.ts';
 import { deleteMyAccount } from '#lib/server/student.ts';
 import { endLogin } from '#lib/server/auth-cookies.ts';
-import { hitLimit } from '#lib/server/rate-limit.ts';
-import { fieldErrors, formObject, phone } from '#lib/validation/auth.ts';
+import { clientIp, hitLimit } from '#lib/server/rate-limit.ts';
+import { emailEnabled } from '#lib/server/auth.ts';
+import { changeEmailNow } from '#lib/server/account.ts';
+import { APIError } from 'better-auth/api';
+import { fieldErrors, formObject, newEmailField, phone } from '#lib/validation/auth.ts';
 import { requireUser } from '#lib/server/guards.ts';
 import { homeFor } from '#lib/roles.ts';
 
@@ -34,8 +37,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			email: user.email,
 			role: user.role,
 			twoFactorEnabled: user.twoFactorEnabled,
-			phone: prof?.phone ?? null
+			phone: prof?.phone ?? null,
+			// younger children sign in with a username: their parent manages that login
+			canChangeEmail: !user.email.endsWith('.invalid')
 		},
+		emailOn: emailEnabled,
+		changed: url.searchParams.has('changed'),
 		prefs: await getPrefs(locals.db, user.id)
 	};
 };
@@ -57,6 +64,45 @@ export const actions: Actions = {
 				.set({ phone: p.data.phone || null })
 				.where(eq(profile.userId, u.id));
 		return { saved: 'details' };
+	},
+	/** Change the login email (any role). With an email service, a confirmation link goes to
+	 *  the new address and the change happens when it's opened; without one, the current
+	 *  password proves it's you. */
+	email: async ({ locals, url, request }) => {
+		const u = requireUser(locals.user, url);
+		if (u.email.endsWith('.invalid')) return fail(403, { errors: { newEmail: 'err_generic' } });
+		const limit = await hitLimit(locals.db, 'passwordReset', `${clientIp(request)}:${u.id}:email`);
+		if (!limit.ok) return fail(429, { errors: { newEmail: 'err_rate_limited' } });
+		const parsed = z
+			.object({ newEmail: newEmailField, password: z.string().max(128).optional() })
+			.safeParse(formObject(await request.formData()));
+		if (!parsed.success) return fail(400, { errors: fieldErrors(parsed.error) });
+		if (parsed.data.newEmail.toLowerCase() === u.email.toLowerCase())
+			return fail(400, { errors: { newEmail: 'err_email_same' } });
+		if (!emailEnabled) {
+			const okPw = await locals.auth.api
+				.verifyPassword({
+					body: { password: parsed.data.password ?? '' },
+					headers: request.headers
+				})
+				.then(() => true)
+				.catch(() => false);
+			if (!okPw) return fail(400, { errors: { password: 'err_password_wrong' } });
+			const r = await changeEmailNow(locals.db, u.id, parsed.data.newEmail);
+			if (r === 'same') return fail(400, { errors: { newEmail: 'err_email_same' } });
+			if (r === 'taken') return fail(400, { errors: { newEmail: 'err_email_taken' } });
+			return { emailChanged: parsed.data.newEmail };
+		}
+		try {
+			await locals.auth.api.changeEmail({
+				body: { newEmail: parsed.data.newEmail, callbackURL: '/account?changed=1' },
+				headers: request.headers
+			});
+		} catch (e) {
+			if (e instanceof APIError) return fail(400, { errors: { newEmail: 'err_email_taken' } });
+			throw e;
+		}
+		return { emailSent: parsed.data.newEmail };
 	},
 	prefs: async ({ locals, url, request }) => {
 		const u = requireUser(locals.user, url);

@@ -26,11 +26,18 @@
 			{m.account_2fa()}:
 			<strong>{data.account.twoFactorEnabled ? m.account_2fa_on() : m.account_2fa_off()}</strong>
 		</p>
-		<a class="btn btn-secondary" href="/account/password">{m.nav_password()}</a>
-		<a class="btn btn-secondary" href="/account/2fa">{m.account_2fa_manage()}</a>
+		<div class="btn-row">
+			<a class="btn btn-secondary" href="/account/password">{m.nav_password()}</a>
+			<a class="btn btn-secondary" href="/account/2fa"
+				>{data.account.twoFactorEnabled ? m.account_2fa_manage_on() : m.account_2fa_setup()}</a
+			>
+		</div>
 	</div>
 
 	{#if form && 'saved' in form}<p class="notice" role="status">{m.saved()}</p>{/if}
+	{#if data.changed}<p class="notice" role="status">
+			{m.acc_email_changed({ email: data.account.email })}
+		</p>{/if}
 	<form method="POST" action="?/details" class="card stack" novalidate>
 		<h2 class="h3">{m.acc_details()}</h2>
 		<Field name="name" label={m.set_name()} value={data.account.name} error={e.name} required />
@@ -44,9 +51,42 @@
 				error={e.phone}
 			/>
 		{/if}
-		<p class="small muted">{m.acc_email_note()}</p>
-		<button class="btn btn-secondary btn-block" type="submit">{m.save()}</button>
+		<button class="btn btn-block" type="submit">{m.save()}</button>
 	</form>
+
+	<!-- login email: every role can change it (a confirmation link goes to the new address) -->
+	{#if data.account.canChangeEmail}
+		<form method="POST" action="?/email" class="card stack" novalidate>
+			<h2 class="h3">{m.acc_email_h()}</h2>
+			<p class="small muted">{m.acc_email_now({ email: data.account.email })}</p>
+			{#if form && 'emailSent' in form}<p class="notice" role="status">
+					{m.acc_email_sent({ email: String(form.emailSent) })}
+				</p>{/if}
+			{#if form && 'emailChanged' in form}<p class="notice" role="status">
+					{m.acc_email_changed({ email: String(form.emailChanged) })}
+				</p>{/if}
+			<Field
+				name="newEmail"
+				type="email"
+				label={m.acc_email_new()}
+				error={e.newEmail}
+				required
+				autocomplete="email"
+			/>
+			{#if !data.emailOn}
+				<Field
+					name="password"
+					type="password"
+					label={m.set_current_password()}
+					hint={m.acc_email_pw_hint()}
+					error={e.password}
+					required
+					autocomplete="current-password"
+				/>
+			{/if}
+			<button class="btn btn-block" type="submit">{m.acc_email_btn()}</button>
+		</form>
+	{/if}
 
 	<form method="POST" action="?/prefs" class="card stack">
 		<h2 class="h3">{m.acc_notifications()}</h2>
@@ -63,7 +103,7 @@
 			><input type="checkbox" name="homework" defaultChecked={!data.prefs.homeworkOff} />
 			<span>{m.acc_pref_homework()}</span></label
 		>
-		<button class="btn btn-secondary btn-block" type="submit">{m.save()}</button>
+		<button class="btn btn-block" type="submit">{m.save()}</button>
 	</form>
 
 	<div class="card stack">
