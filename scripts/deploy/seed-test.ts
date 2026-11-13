@@ -2,7 +2,7 @@
 // itself cannot do it). Refuses to run unless TEST_SITE=1 is set explicitly.
 // Env: DATABASE_URL (the TEST branch), BETTER_AUTH_SECRET, TEST_PASSWORD, TEST_SITE=1, IF_EMPTY=1.
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { eq, notLike } from 'drizzle-orm';
+import { eq, notLike, sql } from 'drizzle-orm';
 import pg from 'pg';
 import * as schema from '../../src/lib/server/db/schema.ts';
 import type { DB } from '../../src/lib/server/db/types.ts';
@@ -57,7 +57,13 @@ async function main() {
 				.select({ id: schema.personalTask.id })
 				.from(schema.personalTask)
 				.limit(1);
-			if (seeded && !real && v3 && buddies && msgs && fu && ps && pt) {
+			// tutor services fake data is there too?
+			const [sv] = await db
+				.select({ id: schema.tutorProfile.tutorId })
+				.from(schema.tutorProfile)
+				.where(sql`jsonb_array_length(${schema.tutorProfile.services}) > 0`)
+				.limit(1);
+			if (seeded && !real && v3 && buddies && msgs && fu && ps && pt && sv) {
 				console.log('Test data already there: kept.');
 				return;
 			}
