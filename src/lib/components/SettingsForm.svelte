@@ -122,6 +122,13 @@
 				defaultValue={v('teachingStyle')}></textarea>
 		</div>
 		<Field
+			name="languages"
+			label={m.set_languages()}
+			hint={m.set_languages_hint()}
+			value={v('languages')}
+			error={e.languages}
+		/>
+		<Field
 			name="town"
 			label={m.set_town()}
 			hint={m.set_town_hint()}

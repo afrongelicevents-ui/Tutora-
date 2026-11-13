@@ -268,7 +268,11 @@
 				<span class="ov-l"
 					>{data.days[0] === data.today ? m.sc2_today_overview() : m.sc2_day_overview()}</span
 				>
-				<strong>{m.sc2_n_lessons({ n: dayLessons.length })}</strong>
+				<strong
+					>{dayLessons.length === 1
+						? m.sc2_one_lesson()
+						: m.sc2_n_lessons({ n: dayLessons.length })}</strong
+				>
 				<span class="ov-t"
 					><LineIcon name="clock" size={18} />
 					{m.sc2_total({

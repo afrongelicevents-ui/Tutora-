@@ -61,6 +61,7 @@ export const profileSchema = z.object({
 	qualifications: text(300),
 	yearsTeaching: optionalInt(0, 60),
 	teachingStyle: text(1000),
+	languages: text(120),
 	town: text(80)
 });
 

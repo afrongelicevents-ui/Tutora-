@@ -32,10 +32,6 @@
 	const py = (v: number) => 130 - (v / maxT) * 110;
 	const line = $derived(trend.map((x, i) => `${i ? 'L' : 'M'}${px(i)},${py(x.total)}`).join(' '));
 	const area = $derived(`${line} L${px(5)},130 L${px(0)},130 Z`);
-	const month = $derived(
-		data.months.find((x) => x.month === data.thisMonth && x.currency === data.currency)
-	);
-	const monthName = $derived(fmtMonth(fromLocal(data.thisMonth + '-15', 600)).split(' ')[0]);
 </script>
 
 <svelte:head><title>{m.v3_nav_earnings()} · Tutora</title></svelte:head>

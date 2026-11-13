@@ -117,6 +117,9 @@
 					>{s.qualifications}</strong
 				>
 			</div>{/if}
+		{#if s.languages}<div>
+				<span class="muted">{m.tp3_languages()}</span><strong class="r">{s.languages}</strong>
+			</div>{/if}
 	</div>
 	{#if s.subjects.length > 1}
 		<div class="rows">

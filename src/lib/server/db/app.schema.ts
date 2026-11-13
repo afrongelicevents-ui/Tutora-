@@ -97,6 +97,8 @@ export const tutorProfile = pgTable(
 		qualifications: text('qualifications'),
 		yearsTeaching: integer('years_teaching'),
 		teachingStyle: text('teaching_style'),
+		/** e.g. "English, Shona" */
+		languages: text('languages'),
 		town: text('town'),
 		/** where in-person lessons happen (shown only to booked students) */
 		lessonAddress: text('lesson_address'),

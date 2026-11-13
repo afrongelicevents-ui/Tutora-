@@ -67,6 +67,7 @@
 				<div>
 					<p class="hero-name">{site.name}</p>
 					{#if site.town}<p class="small muted">{site.town}</p>{/if}
+					{#if site.languages}<p class="small muted">{m.tp3_languages()}: {site.languages}</p>{/if}
 					{#if site.yearsTeaching}<span class="pill p-ok"
 							>{m.years_teaching({ n: site.yearsTeaching })}</span
 						>{/if}

@@ -250,3 +250,15 @@ An independent reviewer and an automated walkthrough (5 roles × phone and deskt
 - All six tasks passed on the test site: 225 automated tests, type check and lint clean; 18 permission checks; an automated walkthrough of 482 page views (student, under-13 student, parent with two children, tutor, owner; phone 390 px and desktop) with no real errors; an independent review whose findings are fixed (D120).
 - The automatic live step of the deploy is restored: pushes to main again go to the test site, then live.
 - Before/after screenshots: docs/screenshots/before and docs/screenshots/after (fake test data).
+
+## D122 — Teacher side redesign (2026-11-13)
+
+Following the teacher design references, without hero photos (plain headers, like the student side). All earlier tutor features kept; only reorganised.
+
+- Bottom tabs with icons: Today, Schedule, Students, Earnings, More.
+- Today: greeting by time of day, My students and Lessons this week cards, Next lesson (Join goes straight to Meet/Teams or the low-data room, from 10 minutes before), Needs your attention (booking requests, homework to check, payments to confirm), recent messages, today's schedule with attendance. Monthly earnings moved to the Earnings tab. Booking requests and payment confirmations stay on Today below.
+- Schedule: Today / This week / This month / All (last 30 days completed + next 90 days), day overview, Join and Message on lessons, upcoming schedule, and Manage your availability: Add holiday (whole days), Add time off (some hours on one day, new), Edit schedule (regular hours). Before blocking time that has booked lessons, the tutor sees those lessons and must confirm; blocking never cancels them. Blocked times were already never offered for booking.
+- Students: total, active this month, rating; search; Add student (shares the tutor's own page; students become theirs when they book: there is no way to add a student account directly); Active / Inactive / Pending (active = a lesson in the last 30 days or one booked; pending = no lessons yet or a request waiting); cards with message and open; insights from recorded marks only.
+- Earnings: this week / month / year, change vs the period before, lessons done, average per lesson, waiting to confirm, a 6-month trend, transactions, payment details. Tutora never holds money, so there is no payout date; the page says so instead of inventing one.
+- More = teaching centre: profile card (verified badge only when approved, rating from real reviews, subjects, Edit profile, Preview my page), stats, My teaching day (new /tutor/day: lessons, marking/payment reminders, the tutor's own tasks with times and weekly goals, same planner as students), Student success (students whose marks with this tutor went up, first three vs latest three results) and good reviews, My achievements (consistency, lessons milestones, regular routine, on-time marking, tasks done, reviews: each from real data, with what's still needed when not earned), teaching tools, and Account and settings as its own page.
+- New profile field: Languages you teach in, shown on the public page.

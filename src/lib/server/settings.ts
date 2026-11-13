@@ -444,6 +444,7 @@ export interface PublicSite {
 	qualifications: string | null;
 	yearsTeaching: number | null;
 	teachingStyle: string | null;
+	languages: string | null;
 	hasPhoto: boolean;
 	photoVersion: number;
 	whatsapp: string | null;
@@ -512,6 +513,7 @@ export async function publicSite(db: DB, s: SiteSettings): Promise<PublicSite> {
 		qualifications: s.qualifications,
 		yearsTeaching: s.yearsTeaching,
 		teachingStyle: s.teachingStyle,
+		languages: s.languages,
 		hasPhoto: !!s.photoKey,
 		photoVersion: s.photoVersion,
 		whatsapp: s.whatsappNumber,

@@ -7,11 +7,11 @@
 	import Face from '#lib/components/people/Face.svelte';
 	let { data } = $props();
 	const href = (status: string) => {
-		const p = new URLSearchParams();
-		if (data.q) p.set('q', data.q);
-		if (status) p.set('status', status);
-		const s = p.toString();
-		return s ? `?${s}` : '?';
+		const parts = [
+			data.q ? `q=${encodeURIComponent(data.q)}` : '',
+			status ? `status=${status}` : ''
+		].filter(Boolean);
+		return `?${parts.join('&')}`;
 	};
 	const label = (s: string) =>
 		s === 'active' ? m.st2_active() : s === 'inactive' ? m.st2_inactive() : m.st2_pending();
