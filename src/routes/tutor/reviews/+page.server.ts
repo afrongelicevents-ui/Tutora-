@@ -1,4 +1,5 @@
 import type { Actions, PageServerLoad } from './$types';
+import { reviewReplied } from '#lib/server/events.ts';
 import { allReviews, replyToReview, reportReview } from '#lib/server/people.ts';
 import { notifyOwners } from '#lib/server/notify.ts';
 import { m } from '#lib/paraglide/messages.js';
@@ -19,7 +20,9 @@ export const actions: Actions = {
 		const f = formObject(await request.formData());
 		const id = Number(f.id);
 		if (!Number.isInteger(id)) return fail(400, { error: 'err_generic' });
-		await replyToReview(locals.db, t, id, f.reply?.trim().slice(0, 600) || null);
+		const text = f.reply?.trim().slice(0, 600) || null;
+		await replyToReview(locals.db, t, id, text);
+		if (text) await reviewReplied(locals.db, id);
 		return { saved: true };
 	},
 	report: async ({ locals, url, request }) => {

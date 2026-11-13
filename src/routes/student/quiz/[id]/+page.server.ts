@@ -1,6 +1,10 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireRole } from '#lib/server/guards.ts';
+import { eq } from 'drizzle-orm';
+import { questionSet, quizAssignment } from '#lib/server/db/v3.schema.ts';
+import { notifyTutor } from '#lib/server/notify.ts';
+import { m } from '#lib/paraglide/messages.js';
 import {
 	AssessFail,
 	answersFromForm,
@@ -29,6 +33,25 @@ export const actions: Actions = {
 				id,
 				answersFromForm(await request.formData())
 			);
+			// the tutor who set it hears the result
+			const [q] = await locals.db
+				.select({ tutorId: questionSet.tutorId, title: questionSet.title })
+				.from(quizAssignment)
+				.innerJoin(questionSet, eq(questionSet.id, quizAssignment.setId))
+				.where(eq(quizAssignment.id, id));
+			if (q)
+				await notifyTutor(
+					locals.db,
+					q.tutorId,
+					m.ev_quiz_done_s({ name: locals.user!.name }),
+					m.ev_quiz_done_b({
+						name: locals.user!.name,
+						title: q.title,
+						score: r.score,
+						max: r.maxScore
+					}),
+					{ kind: 'homework', link: `/tutor/students/${me}` }
+				);
 			return { marked: r };
 		} catch (e) {
 			if (e instanceof AssessFail) return fail(400, { error: e.code });

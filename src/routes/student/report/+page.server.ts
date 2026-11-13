@@ -12,6 +12,7 @@ import {
 } from '#lib/server/planner.ts';
 import { weekPattern } from '#lib/server/checkins.ts';
 import { checkinActions, checkinView } from '#lib/server/checkin-actions.ts';
+import { reportShared } from '#lib/server/events.ts';
 import { familyOf } from '#lib/server/family.ts';
 import { shortName } from '#lib/names.ts';
 import { isIsoDate } from '#lib/tz.ts';
@@ -64,7 +65,9 @@ export const actions: Actions = {
 	shareReport: async ({ locals, url, request }) => {
 		const u = requireRole(locals.user, url, ['student']);
 		const yes = (await request.formData()).get('answer') === 'yes';
+		const before = await shareReport(locals.db, u.id);
 		await setShareReport(locals.db, u.id, yes);
+		if (yes && !before) await reportShared(locals.db, u.id);
 		return { reportShared: yes };
 	}
 };

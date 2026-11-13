@@ -18,7 +18,8 @@ import {
 } from '#lib/server/settings.ts';
 import { tutorsForUser } from '#lib/server/people.ts';
 import { hitLimit } from '#lib/server/rate-limit.ts';
-import { notifyTutor } from '#lib/server/notify.ts';
+import { notifyTutor, notifyUser } from '#lib/server/notify.ts';
+import { alsoTellFamily, parentLink } from '#lib/server/events.ts';
 import { user } from '#lib/server/db/auth.schema.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { fmtDayTime, localDate } from '#lib/tz.ts';
@@ -120,7 +121,29 @@ export const actions: Actions = {
 					name: `${kid.name} (${m.par3_booked_by({ name: u.name })})`,
 					what: v.kind === 'intro' ? m.email_what_intro() : m.email_what_lesson(),
 					when: fmtDayTime(b.startsAt)
-				})
+				}),
+				{ kind: 'booking', link: '/tutor#requests' }
+			);
+			// the child sees the request too, and any other parent who follows their lessons
+			await notifyUser(
+				locals.db,
+				kid.id,
+				m.ev_parent_booked_s(),
+				m.ev_parent_booked_b({
+					name: u.name,
+					tutor: tutor.tutorName ?? '',
+					when: fmtDayTime(b.startsAt)
+				}),
+				{ kind: 'booking', link: '/student/lessons' }
+			);
+			await alsoTellFamily(
+				locals.db,
+				kid.id,
+				'lessons',
+				m.ev_parent_booked_fam_s({ child: kid.name }),
+				m.ev_parent_booked_fam_b({ name: u.name, child: kid.name, when: fmtDayTime(b.startsAt) }),
+				{ kind: 'family_lesson', link: parentLink('/parent', kid.id) },
+				[u.id]
 			);
 		} catch (e) {
 			if (e instanceof BookingFail) return fail(400, { error: e.code });

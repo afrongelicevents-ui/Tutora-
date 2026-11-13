@@ -51,7 +51,20 @@ export const actions: Actions = {
 		const f = formObject(await request.formData());
 		const id = Number(f.id) || 0;
 		return handle(async () => {
-			const { token } = await tutorDecide(locals.db, me.id, id, f.accept === '1');
+			const { token, parentId, subject, tutor } = await tutorDecide(
+				locals.db,
+				me.id,
+				id,
+				f.accept === '1'
+			);
+			if (parentId)
+				await notifyUser(
+					locals.db,
+					parentId,
+					token ? m.ev_sp_yes_s({ tutor }) : m.ev_sp_no_s({ tutor }),
+					token ? m.ev_sp_yes_b({ tutor, subject }) : m.ev_sp_no_b({ tutor, subject }),
+					{ kind: 'family', link: `/parent/school-plus/${id}` }
+				);
 			const origin = toolsEnv(url).origin;
 			return { id, link: token ? `${origin}/school/${token}` : null, declined: !token };
 		});

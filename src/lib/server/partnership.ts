@@ -146,7 +146,7 @@ export async function tutorDecide(db: DB, tutorId: string, id: number, accept: b
 			.set({ status: 'declined', schoolTokenHash: null })
 			.where(eq(partnership.id, id));
 		await log(db, id, 'event', 'tutor', t?.name ?? '', 'The tutor declined the partnership.');
-		return { token: null };
+		return { token: null, parentId: p.parentId, subject: p.subject, tutor: t?.name ?? '' };
 	}
 	// a fresh private link each time (the old one stops working)
 	const bytes = crypto.getRandomValues(new Uint8Array(24));
@@ -156,7 +156,7 @@ export async function tutorDecide(db: DB, tutorId: string, id: number, accept: b
 		.set({ status: 'school_invited', schoolTokenHash: await sha256Hex(token) })
 		.where(eq(partnership.id, id));
 	await log(db, id, 'event', 'tutor', t?.name ?? '', 'The tutor agreed and invited the school.');
-	return { token };
+	return { token, parentId: p.parentId, subject: p.subject, tutor: t?.name ?? '' };
 }
 
 /** The partnership a school link opens (null when the link no longer works). */

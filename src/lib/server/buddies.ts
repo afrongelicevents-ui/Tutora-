@@ -73,6 +73,7 @@ export interface Notice {
 		| 'bn_new' // you have a new study buddy
 		| 'bn_waiting' // waiting for a parent to approve
 		| 'bn_approved' // a parent approved: you're now buddies
+		| 'bn_declined' // a parent said no: the link was removed
 		| 'bn_report'; // owner: a new report or item to check
 	values: Record<string, string>;
 	link: string;
@@ -148,6 +149,19 @@ async function parentsOf(db: DB, studentId: string) {
 		.from(familyLink)
 		.where(and(eq(familyLink.studentId, studentId), eq(familyLink.status, 'active')));
 	return rows.map((r) => r.parentId);
+}
+
+/**
+ * Who may approve a buddy for a child under 13: the child's guardians when there are any,
+ * otherwise any connected parent (a parent who joined with the child's own code).
+ */
+async function approversOf(db: DB, studentId: string) {
+	const rows = await db
+		.select({ parentId: familyLink.parentId, guardian: familyLink.guardian })
+		.from(familyLink)
+		.where(and(eq(familyLink.studentId, studentId), eq(familyLink.status, 'active')));
+	const g = rows.filter((r) => r.guardian);
+	return (g.length ? g : rows).map((r) => r.parentId);
 }
 
 async function isStudent(db: DB, id: string) {
@@ -478,8 +492,11 @@ export async function connectByCode(
 				});
 		}
 	};
-	tellParents(userId, mine, myParents, names.me, otherName);
-	tellParents(other, theirs, theirParents, otherName, names.me);
+	// an under-13 request goes to the people who can approve it (guardians first)
+	const who = async (id: string, band: AgeBand, all: string[]) =>
+		band === 'under13' ? approversOf(db, id) : all;
+	tellParents(userId, mine, await who(userId, mine, myParents), names.me, otherName);
+	tellParents(other, theirs, await who(other, theirs, theirParents), otherName, names.me);
 	for (const s of [userId, other])
 		notices.push({
 			userId: s,
@@ -502,15 +519,25 @@ export async function parentDecide(
 	const [l] = await db.select().from(buddyLink).where(eq(buddyLink.id, linkId));
 	if (!l || l.status !== 'pending') return { ok: false, activated: false, notices: [] };
 	const side =
-		(await parentsOf(db, l.aId)).includes(parentId) && l.needParentA && !l.approvedA
+		(await approversOf(db, l.aId)).includes(parentId) && l.needParentA && !l.approvedA
 			? 'a'
-			: (await parentsOf(db, l.bId)).includes(parentId) && l.needParentB && !l.approvedB
+			: (await approversOf(db, l.bId)).includes(parentId) && l.needParentB && !l.approvedB
 				? 'b'
 				: null;
 	if (!side) return { ok: false, activated: false, notices: [] };
 	if (!approve) {
 		await db.delete(buddyLink).where(eq(buddyLink.id, l.id));
-		return { ok: true, activated: false, notices: [] };
+		// both children learn it did not go ahead (no reason, no names of parents)
+		return {
+			ok: true,
+			activated: false,
+			notices: [l.aId, l.bId].map((s) => ({
+				userId: s,
+				key: 'bn_declined' as const,
+				values: {},
+				link: '/student/buddies'
+			}))
+		};
 	}
 	const approvedA = side === 'a' ? now : l.approvedA;
 	const approvedB = side === 'b' ? now : l.approvedB;
@@ -599,6 +626,7 @@ export async function parentBuddyList(db: DB, parentId: string, childId: string)
 		status: 'active' | 'pending';
 		needsMe: boolean;
 	}[] = [];
+	const canApprove = (await approversOf(db, childId)).includes(parentId);
 	for (const l of links) {
 		const other = l.aId === childId ? l.bId : l.aId;
 		const [u] = await db.select({ name: user.name }).from(user).where(eq(user.id, other));
@@ -614,6 +642,7 @@ export async function parentBuddyList(db: DB, parentId: string, childId: string)
 			grade: card?.grade || prof?.level || null,
 			status: l.status,
 			needsMe:
+				canApprove &&
 				l.status === 'pending' &&
 				(childSide === 'a' ? l.needParentA && !l.approvedA : l.needParentB && !l.approvedB)
 		});

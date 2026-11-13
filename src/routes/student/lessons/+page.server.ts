@@ -15,6 +15,8 @@ import { getSettings } from '#lib/server/settings.ts';
 import { myFavourites } from '#lib/server/student.ts';
 import { meetingsFor } from '#lib/server/student-home.ts';
 import { requireRole } from '#lib/server/guards.ts';
+import { afterAccept } from '#lib/server/after-accept.ts';
+import { toolsEnv } from '#lib/server/tools/env.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
 import { OPEN_BEFORE_MIN, CLOSE_AFTER_MIN } from '#lib/server/room.ts';
 import { formObject } from '#lib/validation/auth.ts';
@@ -165,15 +167,31 @@ export const actions: Actions = {
 	withdraw: async ({ locals, url, request }) => {
 		const u = requireRole(locals.user, url, ['student']);
 		const f = formObject(await request.formData());
-		return (await handle(() => withdrawRequest(locals.db, u.id, idOf(f)))) ?? { done: 'withdrawn' };
+		const tutorId = await bookingTutorId(locals.db, u.id, idOf(f));
+		const err = await handle(() => withdrawRequest(locals.db, u.id, idOf(f)));
+		if (err) return err;
+		if (tutorId)
+			await notifyTutor(
+				locals.db,
+				tutorId,
+				m.ev_withdrawn_s(),
+				m.ev_withdrawn_b({ name: u.name }),
+				{ kind: 'booking', link: '/tutor#requests' }
+			);
+		return { done: 'withdrawn' };
 	},
 	respond: async ({ locals, url, request }) => {
 		const u = requireRole(locals.user, url, ['student']);
 		const f = formObject(await request.formData());
 		const yes = f.answer === 'yes';
 		const tutorId = await bookingTutorId(locals.db, u.id, idOf(f));
-		const err = await handle(() => respondToProposal(locals.db, u.id, idOf(f), yes));
+		let accepted: Awaited<ReturnType<typeof respondToProposal>> = null;
+		const err = await handle(async () => {
+			accepted = await respondToProposal(locals.db, u.id, idOf(f), yes);
+		});
 		if (err) return err;
+		// the new time is a real lesson now: meeting link + the student and family are told
+		if (accepted) await afterAccept(locals.db, toolsEnv(url), accepted);
 		if (tutorId)
 			await notifyTutor(
 				locals.db,

@@ -18,6 +18,9 @@ import { clientIp, hitLimit } from '#lib/server/rate-limit.ts';
 import { familyLink } from '#lib/server/db/v3.schema.ts';
 import { user } from '#lib/server/db/auth.schema.ts';
 import { formObject } from '#lib/validation/auth.ts';
+import { notifyUser } from '#lib/server/notify.ts';
+import { nameOf } from '#lib/server/events.ts';
+import { m } from '#lib/paraglide/messages.js';
 import { shortName } from '#lib/names.ts';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -127,11 +130,22 @@ export const actions: Actions = {
 	decide: async ({ locals, url, request }) => {
 		const u = requireRole(locals.user, url, ['parent']);
 		const f = formObject(await request.formData());
-		return (
-			(await fam(() =>
-				decidePending(locals.db, u.id, f.child ?? '', f.parent ?? '', f.allow === '1')
-			)) ?? { decided: true }
+		const err = await fam(() =>
+			decidePending(locals.db, u.id, f.child ?? '', f.parent ?? '', f.allow === '1')
 		);
+		if (err) return err;
+		// the parent who was waiting hears the answer
+		if (f.parent) {
+			const child = await nameOf(locals.db, f.child ?? '');
+			await notifyUser(
+				locals.db,
+				f.parent,
+				f.allow === '1' ? m.ev_fam_yes_s({ child }) : m.ev_fam_no_s({ child }),
+				f.allow === '1' ? m.ev_fam_yes_b({ child }) : m.ev_fam_no_b({ child }),
+				{ kind: 'family', link: '/parent' }
+			);
+		}
+		return { decided: true };
 	},
 	perms: async ({ locals, url, request }) => {
 		const u = requireRole(locals.user, url, ['parent']);
@@ -148,10 +162,19 @@ export const actions: Actions = {
 	leave: async ({ locals, url, request }) => {
 		const u = requireRole(locals.user, url, ['parent']);
 		const f = formObject(await request.formData());
-		return (
-			(await fam(() =>
-				removeLink(locals.db, { role: 'parent', id: u.id }, f.child ?? '', u.id)
-			)) ?? { left: true }
+		const err = await fam(() =>
+			removeLink(locals.db, { role: 'parent', id: u.id }, f.child ?? '', u.id)
 		);
+		if (err) return err;
+		// the child knows who can no longer see their learning
+		if (f.child)
+			await notifyUser(
+				locals.db,
+				f.child,
+				m.ev_fam_left_s({ name: u.name }),
+				m.ev_fam_left_b({ name: u.name }),
+				{ kind: 'family', link: '/student/family' }
+			);
+		return { left: true };
 	}
 };

@@ -13,6 +13,7 @@ const TEXT: Record<Notice['key'], [(v: never) => string, (v: never) => string]> 
 	bn_new: [m.bn_new_s, m.bn_new_b],
 	bn_waiting: [m.bn_waiting_s, m.bn_waiting_b],
 	bn_approved: [m.bn_approved_s, m.bn_approved_b],
+	bn_declined: [m.bn_declined_s, m.bn_declined_b],
 	bn_report: [m.bn_report_s, m.bn_report_b]
 };
 

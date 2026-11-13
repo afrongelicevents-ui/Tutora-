@@ -84,16 +84,20 @@
 					plan: tu.plan
 				})}
 			</p>
-			<form method="POST" action="?/status">
-				<input type="hidden" name="id" value={tu.tutorId} />
-				{#if tu.status === 'active'}<input type="hidden" name="status" value="suspended" /><button
-						class="btn btn-secondary btn-sm"
-						type="submit">{m.owner_suspend()}</button
-					>{:else}<input type="hidden" name="status" value="active" /><button
-						class="btn btn-sm"
-						type="submit">{m.owner_reactivate()}</button
-					>{/if}
-			</form>
+			{#if tu.status === 'active' || tu.status === 'suspended'}
+				<form method="POST" action="?/status">
+					<input type="hidden" name="id" value={tu.tutorId} />
+					{#if tu.status === 'active'}<input type="hidden" name="status" value="suspended" /><button
+							class="btn btn-secondary btn-sm"
+							type="submit">{m.owner_suspend()}</button
+						>{:else}<input type="hidden" name="status" value="active" /><button
+							class="btn btn-sm"
+							type="submit">{m.owner_reactivate()}</button
+						>{/if}
+				</form>
+			{:else}
+				<span class="small muted">{m.ev_owner_not_submitted()}</span>
+			{/if}
 		</div>
 	{:else}
 		<p class="empty">{m.owner_no_tutors()}</p>

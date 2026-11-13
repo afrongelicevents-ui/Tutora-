@@ -5,6 +5,7 @@ import { requireRole } from '#lib/server/guards.ts';
 import {
 	blockStudent,
 	buddyView,
+	getCard,
 	isPreset,
 	messagesBetween,
 	PRESETS,
@@ -13,6 +14,8 @@ import {
 	sendPreset
 } from '#lib/server/buddies.ts';
 import { tellOwners } from '#lib/server/buddy-notify.ts';
+import { notifyUser } from '#lib/server/notify.ts';
+import { m } from '#lib/paraglide/messages.js';
 import { hitLimit } from '#lib/server/rate-limit.ts';
 import { buddyLink } from '#lib/server/db/buddies.schema.ts';
 
@@ -33,6 +36,15 @@ export const actions: Actions = {
 		if (!isPreset(preset)) return fail(400, { error: 'buddy_not_allowed' });
 		const r = await sendPreset(locals.db, u.id, params.id, preset);
 		if (!r.ok) return fail(400, { error: r.error });
+		// the buddy hears about it (sendPreset already limits how many a day)
+		const me = await getCard(locals.db, u.id);
+		await notifyUser(
+			locals.db,
+			params.id,
+			m.ev_buddy_msg_s({ name: me?.displayName ?? '' }),
+			m.ev_buddy_msg_b({ name: me?.displayName ?? '' }),
+			{ kind: 'family', link: `/student/buddies/${u.id}` }
+		);
 		return { sent: true };
 	},
 	report: async ({ locals, url, params, request }) => {

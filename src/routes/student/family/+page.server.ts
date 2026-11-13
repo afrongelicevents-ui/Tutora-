@@ -14,6 +14,8 @@ import {
 import { profile } from '#lib/server/db/app.schema.ts';
 import { hitLimit } from '#lib/server/rate-limit.ts';
 import { formObject } from '#lib/validation/auth.ts';
+import { notifyUser } from '#lib/server/notify.ts';
+import { m } from '#lib/paraglide/messages.js';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const u = requireRole(locals.user, url, ['student']);
@@ -87,6 +89,14 @@ export const actions: Actions = {
 			if (e instanceof FamilyFail) return fail(400, { error: e.code });
 			throw e;
 		}
+		if (f.parentId)
+			await notifyUser(
+				locals.db,
+				f.parentId,
+				m.ev_fam_removed_s({ child: u.name }),
+				m.ev_fam_removed_b({ child: u.name }),
+				{ kind: 'family', link: '/parent' }
+			);
 		return { removed: true };
 	}
 };

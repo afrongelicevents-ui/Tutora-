@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
+import { ORIGIN } from '$app/env/private';
 import type { Actions, PageServerLoad } from './$types';
 import { TEST_PASSWORD, TEST_SITE } from '$app/env/private';
 import { requireOwner } from '#lib/server/guards.ts';
@@ -40,6 +41,14 @@ export const actions: Actions = {
 		const p = statusForm.safeParse(formObject(await request.formData()));
 		if (!p.success) return fail(400, { error: 'err_generic' });
 		const before = await getSettings(locals.db, p.data.id).catch(() => null);
+		// a profile only goes live through review: from "waiting" or back from "suspended"
+		if (
+			p.data.status === 'active' &&
+			before &&
+			before.status !== 'pending' &&
+			before.status !== 'suspended'
+		)
+			return fail(400, { error: 'err_generic' });
 		const ok = await setTutorStatus(locals.db, p.data.id, p.data.status);
 		if (!ok) return fail(404, { error: 'err_not_found' });
 		await audit(locals.db, me.id, `tutor_${p.data.status}`, p.data.id, before?.tutorName ?? null);
@@ -48,12 +57,17 @@ export const actions: Actions = {
 				locals.db,
 				p.data.id,
 				m.tutor_approved_s(),
-				m.tutor_approved_b({ url: `/t/${before?.slug}` }),
+				m.tutor_approved_b({ url: `${ORIGIN ?? url.origin}/t/${before?.slug}` }),
 				{
 					kind: 'account',
 					link: '/tutor'
 				}
 			);
+		if (p.data.status === 'suspended' && before?.status === 'active')
+			await notifyUser(locals.db, p.data.id, m.ev_tutor_suspended_s(), m.ev_tutor_suspended_b(), {
+				kind: 'account',
+				link: '/tutor-status'
+			});
 		return { done: p.data.status === 'active' ? 'owner_done_active' : 'owner_done_suspended' };
 	},
 	reject: async ({ locals, url, request }) => {

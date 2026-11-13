@@ -41,11 +41,17 @@ async function connect(
 	guardianClaim: boolean
 ) {
 	const r = await redeemInvite(db, code, parent.id, { guardianClaim });
+	// waiting for the guardian: the child is told it is not active yet
+	const pending = r.status === 'pending_guardian';
 	await notifyUser(
 		db,
 		r.studentId,
-		m.fam_notify_joined_s({ name: parent.name }),
-		m.fam_notify_joined_b({ name: parent.name }),
+		pending
+			? m.ev_fam_pending_child_s({ name: parent.name })
+			: m.fam_notify_joined_s({ name: parent.name }),
+		pending
+			? m.ev_fam_pending_child_b({ name: parent.name })
+			: m.fam_notify_joined_b({ name: parent.name }),
 		{ kind: 'family', link: '/student/family' }
 	);
 	if (r.status === 'pending_guardian' && r.guardianId) {

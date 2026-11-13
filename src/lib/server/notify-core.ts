@@ -18,7 +18,9 @@ export type NotifyKind =
 	/** family: a child's lesson was booked, confirmed or moved */
 	| 'family_lesson'
 	/** family: connections, shared check-ins, School+ */
-	| 'family';
+	| 'family'
+	/** a message from a tutor or student */
+	| 'message';
 
 export interface NotifyOpts {
 	kind?: NotifyKind;

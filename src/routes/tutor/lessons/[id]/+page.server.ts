@@ -3,6 +3,7 @@ import type { Actions, PageServerLoad } from './$types';
 import { BookingFail, cancelLesson, lessonWithPeople } from '#lib/server/bookings.ts';
 import { setAttendance, setPrivateNote } from '#lib/server/people.ts';
 import { requireTutor } from '#lib/server/guards.ts';
+import { alsoTellFamily, materialShared, parentLink } from '#lib/server/events.ts';
 import { notifyUser } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { fileLink, getStore } from '#lib/server/storage.ts';
@@ -81,6 +82,7 @@ export const actions: Actions = {
 		const share = emails.length
 			? await shareWithAll(locals.db, env, t, file.id, emails)
 			: ('skipped' as const);
+		await materialShared(locals.db, t, id, file.name);
 		return { attached: true, share };
 	},
 	/** Upload a small file (photo or PDF, max 5 MB) to the lesson; only this lesson's students can open it. */
@@ -106,6 +108,12 @@ export const actions: Actions = {
 			return materialFail(e);
 		}
 		await getStore(platform).put(key, file.bytes, file.kind);
+		await materialShared(
+			locals.db,
+			t,
+			lessonId(params.id),
+			String(data.get('title') ?? '').trim() || m.ld3_file()
+		);
 		return { attached: true };
 	},
 	addLink: async ({ locals, url, request, params }) => {
@@ -121,6 +129,7 @@ export const actions: Actions = {
 		} catch (e) {
 			return materialFail(e);
 		}
+		await materialShared(locals.db, t, lessonId(params.id), f.title ?? '');
 		return { attached: true };
 	},
 	removeMaterial: async ({ locals, url, request, params }) => {
@@ -179,7 +188,16 @@ export const actions: Actions = {
 					locals.db,
 					uid,
 					m.email_lesson_cancel_s(),
-					m.email_lesson_cancel_b({ when: fmtDayTime(r.lesson.startsAt) })
+					m.email_lesson_cancel_b({ when: fmtDayTime(r.lesson.startsAt) }),
+					{ kind: 'booking', link: '/student/lessons' }
+				);
+				await alsoTellFamily(
+					locals.db,
+					uid,
+					'lessons',
+					m.email_lesson_cancel_s(),
+					m.email_lesson_cancel_b({ when: fmtDayTime(r.lesson.startsAt) }),
+					{ kind: 'family_lesson', link: parentLink('/parent', uid) }
 				);
 			}
 		} catch (e) {

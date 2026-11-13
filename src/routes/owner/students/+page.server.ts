@@ -1,4 +1,6 @@
 import { fail } from '@sveltejs/kit';
+import { notifyUser } from '#lib/server/notify.ts';
+import { m } from '#lib/paraglide/messages.js';
 import type { Actions, PageServerLoad } from './$types';
 import { requireOwner } from '#lib/server/guards.ts';
 import { allStudents, audit, setStudentSuspended } from '#lib/server/owner.ts';
@@ -18,6 +20,10 @@ export const actions: Actions = {
 		if (!(await setStudentSuspended(locals.db, f.id ?? '', on)))
 			return fail(404, { error: 'err_not_found' });
 		await audit(locals.db, me.id, on ? 'student_suspended' : 'student_restored', f.id ?? '');
+		if (!on)
+			await notifyUser(locals.db, f.id ?? '', m.ev_restored_s(), m.ev_restored_b(), {
+				kind: 'account'
+			});
 		return { saved: true };
 	}
 };

@@ -1,14 +1,13 @@
 import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
+import { homeworkMarked, homeworkSet } from '#lib/server/events.ts';
 import { requireTutor } from '#lib/server/guards.ts';
 import { answersToCheck, giveHomework, listStudents, markAnswer } from '#lib/server/people.ts';
 import { fileLink, getStore } from '#lib/server/storage.ts';
 import { DOC_KINDS, MB, newKey, readUpload } from '#lib/server/files.ts';
-import { notifyUser } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { isIsoDate } from '#lib/tz.ts';
-import { m } from '#lib/paraglide/messages.js';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const t = requireTutor(locals.user, url).id;
@@ -69,16 +68,7 @@ export const actions: Actions = {
 				fileKey,
 				fileName: file?.ok ? file.name : null
 			});
-			await notifyUser(
-				locals.db,
-				userId,
-				m.email_hw_new_s(),
-				m.email_hw_new_b({ title: p.data.title }),
-				{
-					kind: 'homework',
-					link: '/student/homework'
-				}
-			);
+			await homeworkSet(locals.db, userId, p.data.title);
 		}
 		return { sent: to.length };
 	},
@@ -107,6 +97,7 @@ export const actions: Actions = {
 			maxScore
 		});
 		if (!ok) return fail(404, { error: 'err_not_found' });
+		await homeworkMarked(locals.db, t, Number(f.id) || 0);
 		return { checked: true, scored: score !== null };
 	}
 };

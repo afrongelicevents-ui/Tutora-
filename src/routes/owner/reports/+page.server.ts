@@ -1,3 +1,4 @@
+import { reviewModerated, supportClosed } from '#lib/server/events.ts';
 import type { Actions, PageServerLoad } from './$types';
 import { requireOwner } from '#lib/server/guards.ts';
 import {
@@ -28,6 +29,7 @@ export const actions: Actions = {
 		await setReviewHidden(locals.db, id, hidden);
 		if (hidden) await dismissReport(locals.db, id);
 		await audit(locals.db, me.id, hidden ? 'review_hidden' : 'review_shown', String(id));
+		await reviewModerated(locals.db, id, hidden);
 		return { saved: true };
 	},
 	dismiss: async ({ locals, url, request }) => {
@@ -41,6 +43,7 @@ export const actions: Actions = {
 		const me = requireOwner(locals.user, url);
 		const id = Number(formObject(await request.formData()).id) || 0;
 		await closeSupport(locals.db, id);
+		await supportClosed(locals.db, id);
 		await audit(locals.db, me.id, 'support_done', String(id));
 		return { saved: true };
 	}

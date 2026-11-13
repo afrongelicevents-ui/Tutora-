@@ -13,6 +13,7 @@ import {
 } from '../billing.ts';
 import { notifyUser } from '../notify.ts';
 import { afterAccept } from '../after-accept.ts';
+import { alsoTellFamily, parentLink } from '../events.ts';
 import { toolsEnv } from '../tools/env.ts';
 import { formObject } from '../../validation/auth.ts';
 import { fmtDayTime, fromLocal, hhmmToMinutes, isIsoDate } from '../../tz.ts';
@@ -68,7 +69,18 @@ export const inboxActions: Actions = {
 					when: fmtDayTime(b.startsAt),
 					extra: f.message ? m.email_message_line({ text: message(f.message) ?? '' }) : ''
 				}),
-				{ kind: 'booking', link: '/student#requests' }
+				{ kind: 'booking', link: '/student/lessons' }
+			);
+			await alsoTellFamily(
+				locals.db,
+				b.userId,
+				'lessons',
+				m.email_declined_s(),
+				m.email_declined_b({
+					when: fmtDayTime(b.startsAt),
+					extra: f.message ? m.email_message_line({ text: message(f.message) ?? '' }) : ''
+				}),
+				{ kind: 'family_lesson', link: parentLink('/parent', b.userId) }
 			);
 			return { done: 'declined' };
 		} catch (e) {
@@ -94,7 +106,18 @@ export const inboxActions: Actions = {
 					when: fmtDayTime(when),
 					extra: f.message ? m.email_message_line({ text: message(f.message) ?? '' }) : ''
 				}),
-				{ kind: 'booking', link: '/student#requests' }
+				{ kind: 'booking', link: '/student/lessons' }
+			);
+			await alsoTellFamily(
+				locals.db,
+				b.userId,
+				'lessons',
+				m.email_proposed_s(),
+				m.email_proposed_b({
+					when: fmtDayTime(when),
+					extra: f.message ? m.email_message_line({ text: message(f.message) ?? '' }) : ''
+				}),
+				{ kind: 'family_lesson', link: parentLink('/parent', b.userId) }
 			);
 			return { done: 'proposed' };
 		} catch (e) {
@@ -114,6 +137,15 @@ export const inboxActions: Actions = {
 				m.email_confirmed_s({ receipt: receiptNumber(r.receiptNo) }),
 				m.email_confirmed_b({ amount: formatMoney(r.amountCents, r.currency) }),
 				{ kind: 'payment', link: '/student/payments?tab=history' }
+			);
+			// a guardian who pays for the child gets the receipt too
+			await alsoTellFamily(
+				locals.db,
+				r.userId,
+				'guardians',
+				m.email_confirmed_s({ receipt: receiptNumber(r.receiptNo) }),
+				m.email_confirmed_b({ amount: formatMoney(r.amountCents, r.currency) }),
+				{ kind: 'payment', link: parentLink('/parent/payments?tab=history', r.userId) }
 			);
 			return { done: 'confirmed', receipt: receiptNumber(r.receiptNo) };
 		} catch (e) {
@@ -164,6 +196,15 @@ export const inboxActions: Actions = {
 					link: `/student/lessons/${a.lessonId}`
 				}
 			);
+		if (v === 'absent' && a.attendance !== 'absent')
+			await alsoTellFamily(
+				locals.db,
+				a.userId,
+				'lessons',
+				m.ev_absent_fam_s(),
+				m.ev_absent_fam_b({ when: fmtDayTime(a.startsAt) }),
+				{ kind: 'family_lesson', link: parentLink('/parent', a.userId) }
+			);
 		return { done: 'attendance' };
 	},
 	rejectPayment: async ({ locals, url, request }) => {
@@ -184,6 +225,18 @@ export const inboxActions: Actions = {
 						extra: f.reason ? m.email_reason_line({ text: message(f.reason) ?? '' }) : ''
 					}),
 					{ kind: 'payment', link: '/student/payments?tab=history' }
+				);
+			if (before)
+				await alsoTellFamily(
+					locals.db,
+					before.userId,
+					'guardians',
+					m.email_rejected_s(),
+					m.email_rejected_b({
+						amount: formatMoney(before.amountCents, before.currency),
+						extra: f.reason ? m.email_reason_line({ text: message(f.reason) ?? '' }) : ''
+					}),
+					{ kind: 'payment', link: parentLink('/parent/payments?tab=history', before.userId) }
 				);
 			return { done: 'rejected' };
 		} catch (e) {

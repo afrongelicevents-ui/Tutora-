@@ -50,7 +50,7 @@ export async function sendAction(
 	const names = await namesOf(db, [me.id]);
 	const name = names[me.id] ?? '';
 	await notifyUser(db, r.toId, m.msg_new_s({ name }), m.msg_new_b({ name }), {
-		kind: 'lesson',
+		kind: 'message',
 		link: link(r.toId)
 	});
 	return { sent: true };

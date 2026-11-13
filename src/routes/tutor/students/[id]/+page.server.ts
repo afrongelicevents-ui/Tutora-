@@ -1,11 +1,12 @@
 import { together } from '#lib/server/together.ts';
+import { homeworkMarked, homeworkSet } from '#lib/server/events.ts';
 import { error, fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
 import {
 	getStudent,
-	giveFeedback,
 	giveHomework,
+	markAnswer,
 	homeworkForUser,
 	setLevel,
 	setLessonFeedback,
@@ -229,7 +230,8 @@ export const actions: Actions = {
 			locals.db,
 			s.id,
 			m.email_cash_rec_s({ receipt: receiptNumber(r.receiptNo) }),
-			m.email_cash_rec_b({ amount: formatMoney(cents, r.currency) })
+			m.email_cash_rec_b({ amount: formatMoney(cents, r.currency) }),
+			{ kind: 'payment', link: '/student/payments?tab=history' }
 		);
 		return { saved: true, receipt: receiptNumber(r.receiptNo) };
 	},
@@ -256,12 +258,7 @@ export const actions: Actions = {
 			fileKey,
 			fileName: file?.ok ? file.name : null
 		});
-		await notifyUser(
-			locals.db,
-			s.id,
-			m.email_hw_new_s(),
-			m.email_hw_new_b({ title: parsed.data.title })
-		);
+		await homeworkSet(locals.db, s.id, parsed.data.title);
 		return { saved: true };
 	},
 	feedback: async ({ locals, url, request, params }) => {
@@ -271,7 +268,13 @@ export const actions: Actions = {
 		const hw = await homeworkForUser(locals.db, s.id, t);
 		const answer = hw.flatMap((h) => h.answers).find((a) => a.id === Number(f.answerId));
 		if (!answer) return fail(404, { error: 'err_not_found' });
-		await giveFeedback(locals.db, t, answer.id, f.feedback?.trim().slice(0, 1000) || null);
+		// feedback here marks the answer as checked too (as on the Marking page) and tells them
+		await markAnswer(locals.db, t, answer.id, {
+			comment: f.feedback?.trim().slice(0, 1000) || null,
+			score: answer.score ?? null,
+			maxScore: answer.maxScore ?? null
+		});
+		await homeworkMarked(locals.db, t, answer.id);
 		return { saved: true };
 	}
 };

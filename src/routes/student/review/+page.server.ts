@@ -2,6 +2,8 @@ import { fail, redirect } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
 import { canReview, myReview, myTutor, postReview } from '#lib/server/people.ts';
+import { notifyTutor } from '#lib/server/notify.ts';
+import { m } from '#lib/paraglide/messages.js';
 import { requireRole } from '#lib/server/guards.ts';
 import { formObject } from '#lib/validation/auth.ts';
 
@@ -36,6 +38,13 @@ export const actions: Actions = {
 			});
 		const r = await postReview(locals.db, tutor.tutorId, u.id, u.name, p.data.rating, p.data.text);
 		if (!r) return fail(403, { error: 'err_review_not_allowed' });
+		await notifyTutor(
+			locals.db,
+			tutor.tutorId,
+			m.ev_review_s({ rating: p.data.rating }),
+			m.ev_review_b({ name: u.name.split(' ')[0], rating: p.data.rating }),
+			{ kind: 'review', link: '/tutor/reviews' }
+		);
 		redirect(303, `/student/review?tutor=${tutor.slug}&thanks=1`);
 	}
 };
