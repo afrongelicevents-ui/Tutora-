@@ -1,9 +1,9 @@
 /** Shared page logic for student / tutor conversation pages. */
 import { error, fail } from '@sveltejs/kit';
-import { inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { user } from './db/auth.schema.ts';
-import { tutorProfile } from './db/app.schema.ts';
+import { notification, tutorProfile } from './db/app.schema.ts';
 import { readingParents, sendMessage, thread } from './messages.ts';
 import { hitLimit } from './rate-limit.ts';
 import { notifyUser } from './notify.ts';
@@ -30,6 +30,24 @@ export async function loadThread(
 ) {
 	const messages = await thread(db, viewer, pair);
 	if (!messages) error(404, 'Not found');
+	// reading the conversation clears its "new message" notifications from the bell
+	const own =
+		viewer.id === pair.studentId
+			? `/student/messages/${pair.tutorId}`
+			: viewer.id === pair.tutorId
+				? `/tutor/messages/${pair.studentId}`
+				: null;
+	if (own)
+		await db
+			.update(notification)
+			.set({ readAt: new Date() })
+			.where(
+				and(
+					eq(notification.userId, viewer.id),
+					eq(notification.link, own),
+					isNull(notification.readAt)
+				)
+			);
 	const [names, parents] = await Promise.all([
 		namesOf(db, [pair.tutorId, pair.studentId]),
 		readingParents(db, pair.studentId)

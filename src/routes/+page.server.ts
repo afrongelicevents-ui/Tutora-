@@ -7,5 +7,10 @@ import { homeFor } from '#lib/roles.ts';
 export const load: PageServerLoad = async ({ locals }) => {
 	if (locals.user) redirect(303, homeFor(locals.user.role));
 	const content = await getContent(locals.db);
-	return { heroPhotoV: content.heroPhoto ? content.heroPhotoV : null };
+	// the owner's own homepage wording (Owner → Content); empty = the built-in text
+	return {
+		heroPhotoV: content.heroPhoto ? content.heroPhotoV : null,
+		heroTitle: content.heroTitle || null,
+		heroLead: content.heroLead || null
+	};
 };

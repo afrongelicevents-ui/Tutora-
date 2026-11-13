@@ -18,6 +18,7 @@ import { familyLink } from './db/v3.schema.ts';
 import { notifyUser, type NotifyOpts } from './notify.ts';
 import { parentsWhoSee } from './family.ts';
 import { firstName } from './study.ts';
+import { listStudents } from './people.ts';
 import { m } from '../paraglide/messages.js';
 
 type Area = 'lessons' | 'homework' | 'progress' | 'study';
@@ -210,4 +211,27 @@ export async function materialShared(db: DB, tutorId: string, lessonId: number, 
 			kind: 'lesson',
 			link: `/student/lessons/${lessonId}`
 		});
+}
+
+/** The tutor added a revision resource: the one student it is for, or all their students. */
+export async function resourceShared(
+	db: DB,
+	tutorId: string,
+	studentId: string | null,
+	subject: string,
+	title: string
+) {
+	const ids = studentId ? [studentId] : (await listStudents(db, tutorId)).map((s) => s.id);
+	const tutor = await tutorNameOf(db, tutorId);
+	for (const id of ids)
+		await notifyUser(
+			db,
+			id,
+			m.ev_resource_s({ tutor }),
+			m.ev_resource_b({ tutor, subject, title }),
+			{
+				kind: 'homework',
+				link: '/student/homework#resources'
+			}
+		);
 }

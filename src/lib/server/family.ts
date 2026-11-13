@@ -361,7 +361,11 @@ export async function setSharing(
 	}
 ) {
 	const [row] = await db
-		.select({ guardian: familyLink.guardian, isUnder18: profile.isUnder18 })
+		.select({
+			guardian: familyLink.guardian,
+			isUnder18: profile.isUnder18,
+			managed: profile.managed
+		})
 		.from(familyLink)
 		.leftJoin(profile, eq(profile.userId, familyLink.studentId))
 		.where(and(eq(familyLink.studentId, studentId), eq(familyLink.parentId, parentId)));
@@ -392,13 +396,32 @@ export async function removeLink(
 	if (by.role === 'student' && by.id !== studentId) throw new FamilyFail('err_not_found');
 	if (by.role === 'parent' && by.id !== parentId) throw new FamilyFail('err_not_found');
 	const [row] = await db
-		.select({ guardian: familyLink.guardian, isUnder18: profile.isUnder18 })
+		.select({
+			guardian: familyLink.guardian,
+			isUnder18: profile.isUnder18,
+			managed: profile.managed
+		})
 		.from(familyLink)
 		.leftJoin(profile, eq(profile.userId, familyLink.studentId))
 		.where(and(eq(familyLink.studentId, studentId), eq(familyLink.parentId, parentId)));
 	if (!row) throw new FamilyFail('err_not_found');
 	if (by.role === 'student' && row.guardian && row.isUnder18)
 		throw new FamilyFail('fam_err_guardian_stays');
+	// a child account a parent made has no login of its own: its last guardian can't leave it
+	if (by.role === 'parent' && row.guardian && row.managed) {
+		const others = await db
+			.select({ id: familyLink.parentId })
+			.from(familyLink)
+			.where(
+				and(
+					eq(familyLink.studentId, studentId),
+					eq(familyLink.guardian, true),
+					eq(familyLink.status, 'active')
+				)
+			);
+		if (others.filter((o) => o.id !== parentId).length === 0)
+			throw new FamilyFail('fam_err_last_guardian');
+	}
 	// a School+ partnership this parent started ends with the connection
 	await db
 		.update(partnership)

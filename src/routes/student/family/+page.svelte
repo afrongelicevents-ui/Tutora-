@@ -16,6 +16,13 @@
 	{#if form && 'error' in form && form.error}<p class="alert full" role="alert">
 			{t(form.error as string, { minutes: 60 })}
 		</p>{/if}
+	{#if form && 'shared' in form}<p class="notice full" role="status">{m.fc_done_shared()}</p>
+	{:else if form && 'revoked' in form}<p class="notice full" role="status">
+			{m.fc_done_revoked()}
+		</p>
+	{:else if form && 'removed' in form}<p class="notice full" role="status">
+			{m.fc_done_removed()}
+		</p>{/if}
 
 	<div class="navycard code">
 		<span class="eyebrow">{m.fc3_your_code()}</span>

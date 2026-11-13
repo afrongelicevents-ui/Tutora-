@@ -10,8 +10,7 @@
 	const e = $derived(
 		((form as { errors?: Record<string, string> } | null)?.errors ?? {}) as Record<string, string>
 	);
-	let clicked = $state(false);
-	const creating = $derived(clicked || data.create);
+	const creating = $derived(data.create);
 	const roleName = (r: string) =>
 		r === 'tutor' ? m.v3_role_tutor() : r === 'owner' ? m.v3_role_owner() : m.v3_role_student();
 </script>
@@ -33,7 +32,7 @@
 	<p class="note">{m.v3_code_what()}</p>
 	{#if (form as { error?: string } | null)?.error}<p class="alert" role="alert">
 			{t((form as { error: string }).error)}
-		</p>{/if}
+		</p>{:else if data.error}<p class="alert" role="alert">{t(data.error)}</p>{/if}
 
 	{#if data.me && data.me.role !== 'parent'}
 		<p class="alert" role="alert">{m.v3_code_not_parent({ role: roleName(data.me.role) })}</p>
@@ -126,12 +125,9 @@
 		</form>
 	{:else}
 		<div class="actions">
-			<button class="btn btn-block" type="button" onclick={() => (clicked = true)}
-				>{m.v3_code_create()}</button
-			>
+			<a class="btn btn-block" href="?create=1">{m.v3_code_create()}</a>
 			<a class="btn-link center" href="/login?next=/code/connect">{m.v3_code_have_account()}</a>
 		</div>
-		<noscript><a class="btn btn-block" href="?create=1">{m.v3_code_create()}</a></noscript>
 	{/if}
 </section>
 

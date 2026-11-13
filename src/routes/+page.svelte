@@ -17,8 +17,8 @@
 	</div>
 	<div class="brand">Tutora</div>
 	<div class="text">
-		<h1>{m.v3_tagline()}</h1>
-		<p>{m.v3_welcome_lead()}</p>
+		<h1>{data.heroTitle ?? m.v3_tagline()}</h1>
+		<p>{data.heroLead ?? m.v3_welcome_lead()}</p>
 		<a class="btn btn-block light" href="/get-started">{m.v3_get_started()}</a>
 		<a class="btn btn-block outline" href="/login">{m.v3_sign_in()}</a>
 	</div>

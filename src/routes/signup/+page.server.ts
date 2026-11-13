@@ -33,17 +33,23 @@ export const actions: Actions = {
 		}
 
 		// the public sign-up only makes students; parents join with a child's code (/code)
+		// from a tutor's page: the email link and the "check your email" page lead back to booking
+		const next = safeNext(url.searchParams.get('next'), '');
 		const result = await signUp(
 			{ auth: locals.auth, db: locals.db },
-			{ ...input, accountType: 'student' }
+			{ ...input, accountType: 'student' },
+			next || undefined
 		);
 		if (!result.ok) return fail(400, { values, errors: result.errors });
 
 		// Without an email service there is nothing to confirm: the new account is already logged in.
 		if (!emailEnabled) {
 			// straight on to booking when they came from a tutor's page
-			redirect(303, safeNext(url.searchParams.get('next'), '/student'));
+			redirect(303, next || '/student');
 		}
-		redirect(303, `/verify-email?email=${encodeURIComponent(result.email)}`);
+		redirect(
+			303,
+			`/verify-email?email=${encodeURIComponent(result.email)}${next ? `&next=${encodeURIComponent(next)}` : ''}`
+		);
 	}
 };

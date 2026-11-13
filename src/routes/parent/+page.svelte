@@ -185,9 +185,9 @@
 				<a href="/parent/buddies?child={c.studentId}"
 					><span>{m.pb_link()}</span><span class="go">›</span></a
 				>
-				<a href="/parent/messages?child={c.studentId}"
-					><span>{m.msg_parent_link()}</span><span class="go">›</span></a
-				>
+				{#if data.readsMessages}<a href="/parent/messages?child={c.studentId}"
+						><span>{m.msg_parent_link()}</span><span class="go">›</span></a
+					>{/if}
 				<a href="/parent/personal?child={c.studentId}"
 					><span>{m.pp_link()}</span><span class="go">›</span></a
 				>

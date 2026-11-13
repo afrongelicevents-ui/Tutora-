@@ -426,7 +426,13 @@ export async function personalHistory(
 			return { ...s, startMood: start, endMood: end, ticked: s.done > 0 };
 		})
 		.filter((d) => d.planned > 0 || d.startMood || d.endMood);
-	return { days, olderFrom: dates.at(-1)! };
+	// older days exist only back to the day the account was made
+	const [acct] = await db
+		.select({ createdAt: user.createdAt })
+		.from(user)
+		.where(eq(user.id, studentId));
+	const more = !!acct && localDate(acct.createdAt) < dates.at(-1)!;
+	return { days, olderFrom: dates.at(-1)!, more };
 }
 
 /** The day's short summary line (message key), from the day's own numbers and feelings. */

@@ -95,7 +95,7 @@
 					</a>
 					<span class="label">{m.me_day_planned()}</span>
 				{:else}
-					<a class="plan-btn" href="/student/planner">{m.me_plan_day()}</a>
+					<a class="plan-btn" href="/student/schedule">{m.me_plan_day()}</a>
 				{/if}
 			</div>
 			<a class="stat" href="/student/planner#tasks">
@@ -156,7 +156,7 @@
 			</div>
 		{:else}
 			<p class="muted empty">
-				{m.me_no_schedule()} <a href="/student/planner">{m.me_make_schedule()} →</a>
+				{m.me_no_schedule()} <a href="/student/schedule">{m.me_make_schedule()} →</a>
 			</p>
 		{/if}
 	</section>

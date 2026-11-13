@@ -1,7 +1,7 @@
 // Flow: student books → tutor accepts → lesson → join → mark done → student pays →
 // tutor confirms → receipt for the student. Student, tutor (and parent view) talk to each other.
 import { expect, test } from '@playwright/test';
-import { as, closeDb, press, sql } from './helpers.ts';
+import { as, closeDb, pick, press, sql } from './helpers.ts';
 
 test.afterAll(closeDb);
 
@@ -12,8 +12,8 @@ test('booking to receipt, across student and tutor', async ({ browser }) => {
 	// 1. the student books a lesson (first free time)
 	await student.goto('/student/book?tutor=chipo-moyo');
 	const subj = student.locator('input[name=subjectId][type=radio]');
-	if (await subj.count()) await subj.first().check();
-	await student.locator('input[name=slot]').first().check();
+	if (await subj.count()) await pick(student, 'input[name=subjectId][type=radio]');
+	await pick(student, 'input[name=slot]');
 	await press(student, 'form button[type=submit]');
 	await expect(student).toHaveURL(/\/student\/book\/sent/);
 

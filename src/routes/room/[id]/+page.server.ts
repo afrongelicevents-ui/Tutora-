@@ -1,7 +1,15 @@
 import { error, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireUser } from '#lib/server/guards.ts';
-import { addRoomFile, enter, isAdmitted, roomAccess } from '#lib/server/room.ts';
+import {
+	addRoomFile,
+	CLOSE_AFTER_MIN,
+	enter,
+	isAdmitted,
+	OPEN_BEFORE_MIN,
+	roomAccess
+} from '#lib/server/room.ts';
+import { m } from '#lib/paraglide/messages.js';
 import { lessonWithPeople } from '#lib/server/bookings.ts';
 import { iceServers } from '#lib/server/ice.ts';
 import { getStore } from '#lib/server/storage.ts';
@@ -12,8 +20,7 @@ export const load: PageServerLoad = async ({ locals, url, params, fetch }) => {
 	const u = requireUser(locals.user, url);
 	const id = Number(params.id) || 0;
 	const access = await roomAccess(locals.db, u, id);
-	if (!access)
-		error(404, 'This lesson room is not open. Rooms open 30 minutes before an online lesson.');
+	if (!access) error(404, m.room_not_open({ before: OPEN_BEFORE_MIN, after: CLOSE_AFTER_MIN }));
 	await enter(locals.db, access, u.id);
 	const l = await lessonWithPeople(locals.db, id);
 	return {

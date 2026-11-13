@@ -72,7 +72,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		firstName: shortName(u.name),
 		// younger children sign in with a username; that address is not a real email
 		email: u.email.endsWith('.invalid') ? null : u.email,
-		school: [school?.school, school?.year || prof?.level].filter(Boolean).join(' · '),
+		// School+ details first, then what Edit profile saved on the card, then the level
+		school: [school?.school || card?.school, school?.year || card?.grade || prof?.level]
+			.filter(Boolean)
+			.join(' · '),
 		week: { done: week.done, planned: week.planned },
 		streak: days,
 		consistency: Math.round((100 * active.size) / 14),

@@ -5,6 +5,7 @@ import { requireRole } from '#lib/server/guards.ts';
 import { childOverview } from '#lib/server/parent.ts';
 import { pickChild } from '#lib/server/parent-child.ts';
 import { shortName } from '#lib/names.ts';
+import { readingParents } from '#lib/server/messages.ts';
 
 export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 	const u = requireRole(locals.user, url, ['parent']);
@@ -16,6 +17,8 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 		kids,
 		current,
 		child: current ? await childOverview(locals.db, u.id, current) : null,
+		// the messages link only for a parent who may read them (under 18, guardian first)
+		readsMessages: current ? (await readingParents(locals.db, current)).includes(u.id) : false,
 		waitingCode: waiting ? { firstName: waiting.firstName } : null
 	};
 };

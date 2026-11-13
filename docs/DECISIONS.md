@@ -264,3 +264,16 @@ Following the teacher design references, without hero photos (plain headers, lik
 - New profile field: Languages you teach in, shown on the public page.
 
 - Payments to confirm moved from Today to the top of Earnings (Today keeps booking requests and homework only).
+
+## D123 — Backend wiring (2026-11-13)
+
+Full audit in docs/WIRING.md (86 rows, every one now fixed or decided). Choices made without asking:
+
+- **Who is told:** every event reaches the person it affects in the bell (and by email when they allow it). Family members hear only about the areas the child shares with them (lessons, homework, progress, study). Payments (receipts, rejections) go to guardians only.
+- **Guardians first:** buddy approvals for under-13s and reading a child's messages belong to the child's guardians. A parent who only joined with the child's code can do this only when the child has no guardian.
+- **Managed child accounts** (made by a parent, no email): the child can see payments (guardians get the confirm/reject alerts) but can't delete the account. Their only guardian can't "stop following" either, because the account would be left with nobody. Both see an honest message to contact Tutora from Help.
+- **Tutor accepting a request** in the past or during their own time off is refused with a clear message (suggest a new time instead).
+- **Earnings** count a lesson as taught only if at least one student came (all-absent lessons are left out).
+- **Topic scores on a student's page (T20):** the tutor sees all the student's marks for the full picture. Other tutors' written feedback stays hidden.
+- **Homework-due reminders** now run in the hourly cron.
+- **Live deploys** stay manual until the end-to-end tests and the independent walkthrough pass.

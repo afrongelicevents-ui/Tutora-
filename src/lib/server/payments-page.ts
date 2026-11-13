@@ -25,7 +25,11 @@ import { m } from '#lib/paraglide/messages.js';
 export interface Payer {
 	id: string;
 	name: string;
+	/** a parent paying for their child: the tutor sees "Child (paid by Parent)" */
+	paidBy?: string;
 }
+const payerName = (u: Payer) =>
+	u.paidBy ? m.ev_paid_by({ child: u.name, parent: u.paidBy }) : u.name;
 type Resolve = (e: RequestEvent) => Promise<Payer>;
 
 /**
@@ -115,11 +119,12 @@ export function paymentsActions(resolve: Resolve): Actions {
 				tutor.tutorId,
 				m.email_pay_new_s(),
 				m.email_pay_new_b({
-					name: u.name,
+					name: payerName(u),
 					amount: formatMoney(cents, row.currency),
 					method: p.data.method,
 					ref: p.data.reference
-				})
+				}),
+				{ kind: 'payment', link: '/tutor/payments#confirm' }
 			);
 			return { done: 'sent' };
 		},
@@ -153,7 +158,8 @@ export function paymentsActions(resolve: Resolve): Actions {
 				locals.db,
 				tutor.tutorId,
 				m.email_cash_new_s(),
-				m.email_cash_new_b({ name: u.name, amount: formatMoney(cents, row.currency), date })
+				m.email_cash_new_b({ name: payerName(u), amount: formatMoney(cents, row.currency), date }),
+				{ kind: 'payment', link: '/tutor/payments#confirm' }
 			);
 			return { done: 'cash' };
 		},
@@ -169,7 +175,8 @@ export function paymentsActions(resolve: Resolve): Actions {
 					locals.db,
 					tutor.tutorId,
 					m.email_pkg_s(),
-					m.email_pkg_b({ name: u.name, pkg: sp.name })
+					m.email_pkg_b({ name: payerName(u), pkg: sp.name }),
+					{ kind: 'payment', link: '/tutor/payments' }
 				);
 			} catch (e) {
 				if (e instanceof BillingFail) return fail(400, { error: e.code });

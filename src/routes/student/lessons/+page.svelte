@@ -85,7 +85,12 @@
 					<button class="btn-link small" type="submit">{m.withdraw_request()}</button>
 				</form>
 			{:else}
-				<a class="small" href="/student/find">{m.choose_another_time()}</a>
+				<a
+					class="small"
+					href={r.tutorSlug
+						? `/student/book?tutor=${encodeURIComponent(r.tutorSlug)}`
+						: '/student/find'}>{m.choose_another_time()}</a
+				>
 			{/if}
 		</div>
 	{/each}
@@ -234,9 +239,9 @@
 	<section aria-labelledby="lt-mat">
 		<div class="sh">
 			<h2 id="lt-mat" class="sec">{m.lt_materials()}</h2>
-			<a class="all" href="/student/homework#resources"
-				>{m.tt_view_all()} <LineIcon name="chevron" size={16} /></a
-			>
+			{#if data.moreMaterials}<a class="all" href="?materials=all#lt-mat"
+					>{m.tt_view_all()} <LineIcon name="chevron" size={16} /></a
+				>{/if}
 		</div>
 		{#if data.materials.length}
 			<ul class="box">
@@ -280,7 +285,10 @@
 		</div>
 	{/each}
 
-	<p class="note">{m.ls3_how_note()}</p>
+	<p class="note">
+		{m.ls3_how_note()}
+		{#if data.tutors.length}<a href="/student/payments">{m.v3_nav_payments()} →</a>{/if}
+	</p>
 
 	{#if data.past.length}
 		<section>

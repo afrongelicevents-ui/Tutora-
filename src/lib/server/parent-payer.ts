@@ -20,5 +20,5 @@ export async function parentPayer(
 	const a = await parentAccess(db, parent.id, childId);
 	if (!a.ok || !a.guardian) error(404, 'Not found');
 	const [c] = await db.select({ name: user.name }).from(user).where(eq(user.id, childId));
-	return { id: childId, name: c?.name ?? '' };
+	return { id: childId, name: c?.name ?? '', paidBy: parent.name };
 }

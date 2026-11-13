@@ -1,12 +1,13 @@
 <script lang="ts">
 	import SourceTag from '#lib/components/tools/SourceTag.svelte';
 	import { m, t } from '#lib/i18n.ts';
-	import { fmtDay, fmtWeekday } from '#lib/tz.ts';
+	import { fmtDay, fmtWeekday, localDate } from '#lib/tz.ts';
 	import { shrink } from '#lib/shrink.ts';
 	import DrivePickButton from '#lib/components/tools/DrivePickButton.svelte';
 	let { data, form } = $props();
 	const dueDate = (iso: string) => new Date(iso + 'T12:00:00Z');
-	const today = new Date().toISOString().slice(0, 10);
+	// Harare's date, not UTC (a due date is a Zimbabwe calendar day)
+	const today = localDate(new Date());
 	const dueLabel = (iso: string) =>
 		iso < today ? m.hw3_overdue() : m.hw3_due({ day: fmtWeekday(dueDate(iso)) });
 	const source = (k: string) =>
@@ -83,9 +84,7 @@
 							</p>{/if}
 					</div>
 				{/each}
-				<details
-					open={!sent && !!form?.error && String((form as { id?: string }).id) === String(h.id)}
-				>
+				<details open={!!form?.error && String((form as { id?: string }).id) === String(h.id)}>
 					<summary class="btn {sent ? 'btn-ghost' : ''} btn-block"
 						>{sent ? m.hand_in_again() : m.hw3_upload()}</summary
 					>

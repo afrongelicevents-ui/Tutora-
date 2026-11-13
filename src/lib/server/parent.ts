@@ -380,7 +380,8 @@ export async function weeklyReport(db: DB, parentId: string, studentId: string, 
 		access,
 		weekStart: localDate(weekStart),
 		sessionsDone: done.length,
-		sessionsPlanned: plan.length,
+		// only the plan slots that already existed by the end of that week
+		sessionsPlanned: plan.filter((p) => p.createdAt < end).length,
 		minutes,
 		topics: [...byTopic.entries()].map(([topic, v]) => ({
 			topic,
@@ -389,8 +390,8 @@ export async function weeklyReport(db: DB, parentId: string, studentId: string, 
 		checks: results.filter((r) => r.source === 'daily_check').length,
 		lessons: lessons.length,
 		homeworkSet: hw.length,
-		checkins: (await sharedCheckins(db, studentId, weekStart, 20))
-			.filter((c) => c.createdAt < end)
-			.map((c) => c.mood)
+		checkins: (await sharedCheckins(db, studentId, weekStart, 50, new Date(), end)).map(
+			(c) => c.mood
+		)
 	};
 }

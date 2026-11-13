@@ -17,7 +17,13 @@
 			empty={m.msg_none()}
 		/>
 	{:else}
-		<p class="muted">{m.msg_none()}</p>
+		<p class="muted">
+			{data.reason === 'adult'
+				? m.msg_parent_adult()
+				: data.reason === 'guardian'
+					? m.msg_parent_guardian()
+					: m.msg_none()}
+		</p>
 	{/if}
 </div>
 

@@ -6,6 +6,14 @@ export const PW = process.env.E2E_PASSWORD ?? 'Shot-pass-123';
 /** A fresh browser context logged in as this test account. */
 export async function as(browser: Browser, login: string): Promise<Page> {
 	const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+	// the "TEST SITE" bar stays visible but never sits in front of a button
+	await ctx.addInitScript(() => {
+		document.addEventListener('DOMContentLoaded', () => {
+			const s = document.createElement('style');
+			s.textContent = '.testbar{pointer-events:none}';
+			document.head.append(s);
+		});
+	});
 	const page = await ctx.newPage();
 	await page.goto('/login');
 	await page.fill('input[name=email], input[name=identifier], input[type=email]', login);
@@ -21,6 +29,11 @@ export async function as(browser: Browser, login: string): Promise<Page> {
 export async function press(page: Page, selector: string) {
 	await Promise.all([page.waitForLoadState('load'), page.locator(selector).first().click()]);
 	await page.waitForLoadState('networkidle').catch(() => {});
+}
+
+/** Tick a radio or checkbox that is styled as a chip (the input itself is hidden). */
+export async function pick(page: Page, selector: string) {
+	await page.locator(selector).first().check({ force: true });
 }
 
 let pool: pg.Pool | null = null;

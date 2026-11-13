@@ -29,7 +29,10 @@ export const load: PageServerLoad = async ({ locals, cookies, url }) => {
 	return {
 		invite: { firstName: invite.firstName, level: invite.level, isUnder18: invite.isUnder18 },
 		me: locals.user ? { role: locals.user.role, name: locals.user.name } : null,
-		create: url.searchParams.has('create')
+		create: url.searchParams.has('create'),
+		error: /^[a-z0-9_]{1,40}$/.test(url.searchParams.get('error') ?? '')
+			? url.searchParams.get('error')
+			: null
 	};
 };
 
@@ -139,7 +142,8 @@ export const actions: Actions = {
 				`/parent?${r.status === 'active' ? 'connected' : 'pending'}=${encodeURIComponent(invite.firstName)}`
 			);
 		} catch (e) {
-			if (e instanceof FamilyFail) redirect(303, '/parent');
+			// the account exists and is signed in: show why the code did not connect, here
+			if (e instanceof FamilyFail) redirect(303, `/code/connect?error=${e.code}`);
 			throw e;
 		}
 	}

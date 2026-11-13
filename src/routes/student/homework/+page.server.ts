@@ -123,14 +123,15 @@ export const actions: Actions = {
 	},
 	handIn: async ({ locals, url, request, platform }) => {
 		const u = requireRole(locals.user, url, ['student']);
+		const data = await request.formData();
+		const f = formObject(data);
 		const limit = await hitLimit(locals.db, 'upload', u.id);
 		if (!limit.ok)
 			return fail(429, {
 				error: 'err_rate_limited',
-				minutes: Math.ceil(limit.retryAfterSeconds / 60)
+				minutes: Math.ceil(limit.retryAfterSeconds / 60),
+				id: f.id
 			});
-		const data = await request.formData();
-		const f = formObject(data);
 		const file = await readUpload(data.get('file'), { maxBytes: 5 * MB, allowed: DOC_KINDS });
 		if (file && !file.ok) return fail(400, { error: file.error, id: f.id });
 		const note = f.note?.trim().slice(0, 2000) || null;

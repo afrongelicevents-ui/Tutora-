@@ -1,6 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
+import { resourceShared } from '#lib/server/events.ts';
 import { requireTutor } from '#lib/server/guards.ts';
 import { subject } from '#lib/server/db/app.schema.ts';
 import { user } from '#lib/server/db/auth.schema.ts';
@@ -80,6 +81,7 @@ export const actions: Actions = {
 		} catch (e) {
 			return failed(e);
 		}
+		await resourceShared(locals.db, t, studentId, f.subject ?? '', file.name);
 		const emails = await emailsFor(locals.db, t, studentId);
 		const share = emails.length
 			? await shareWithAll(locals.db, env, t, file.id, emails)
@@ -101,6 +103,7 @@ export const actions: Actions = {
 		} catch (e) {
 			return failed(e);
 		}
+		await resourceShared(locals.db, t, f.studentId || null, f.subject ?? '', f.title ?? '');
 		return { added: true };
 	},
 	remove: async ({ locals, url, request }) => {

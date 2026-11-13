@@ -121,7 +121,7 @@ export const actions: Actions = {
 		// only ever on the test site
 		if (TEST_SITE !== '1') return fail(404, { error: 'err_not_found' });
 		await seedTestData(locals.db, locals.auth, { testSite: true, password: TEST_PASSWORD });
-		void me;
+		await audit(locals.db, me.id, 'test_site_reset', null);
 		return { done: 'owner_done_reset' };
 	}
 };

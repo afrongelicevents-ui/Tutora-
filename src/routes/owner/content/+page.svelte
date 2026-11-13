@@ -72,6 +72,8 @@
 						>
 					</form>
 				</li>
+			{:else}
+				<li class="small muted">{m.oc_subjects_none()}</li>
 			{/each}
 		</ul>
 		<form method="POST" action="?/addSubject" class="row">

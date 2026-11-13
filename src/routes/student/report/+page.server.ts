@@ -54,6 +54,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			line: daySummaryLine(d, d.startMood, d.endMood)
 		})),
 		olderFrom: hist.olderFrom,
+		moreHistory: hist.more,
 		paged: !!before,
 		shared,
 		family: family.filter((f) => f.status === 'active').map((f) => f.label || shortName(f.name))

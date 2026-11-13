@@ -2,10 +2,12 @@
 	import { page } from '$app/state';
 	import { m } from '#lib/i18n.ts';
 	const email = $derived(page.url.searchParams.get('email'));
-	// only one place to come back to: connecting to a child with Family Connection
-	const next = $derived(
-		page.url.searchParams.get('next') === '/code/connect' ? '/code/connect' : null
-	);
+	// only two places to come back to: Family Connection, or booking the tutor they signed up from
+	const next = $derived.by(() => {
+		const n = page.url.searchParams.get('next') ?? '';
+		if (n === '/code/connect') return n;
+		return /^\/student\/book\?tutor=[a-z0-9-]{1,80}(&intro=1)?$/.test(n) ? n : null;
+	});
 </script>
 
 <svelte:head><title>{m.verify_title()} · Tutora</title></svelte:head>

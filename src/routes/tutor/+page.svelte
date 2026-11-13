@@ -246,13 +246,15 @@
 		{#each data.lessons as l (l.id)}
 			{@const ended = new Date(l.endsAt) < now}
 			{@const started = new Date(l.startsAt) <= now}
+			{@const open =
+				new Date(l.startsAt).getTime() - data.openBeforeMin * 60_000 <= new Date(now).getTime()}
 			<li class="lesson">
 				<div class="line">
 					<a class="what" href="/tutor/lessons/{l.id}"
 						>{fmtTime(l.startsAt)} · {l.people.map((p) => first(p.name)).join(', ') ||
 							m.tut3_nobody()} · {l.subjectName ?? m.intro_chat()}</a
 					>
-					{#if l.mode === 'online' && !ended}
+					{#if l.mode === 'online' && !ended && open}
 						{#if l.meeting}
 							<a class="next-t" href={l.meeting.joinUrl} target="_blank" rel="noopener noreferrer"
 								>{m.tut3_join_on({ tool: toolLabel(l.meeting.provider) })}</a
@@ -269,7 +271,7 @@
 						? m.mode_online()
 						: `${m.mode_in_person()}${l.address ? ` · ${l.address}` : ''}`}{l.people.length > 1
 						? ` · ${m.group()}`
-						: ''}{#if l.mode === 'online' && l.meeting && !ended}
+						: ''}{#if l.mode === 'online' && l.meeting && !ended && open}
 						· <a href="/room/{l.id}">{m.tut3_room_fallback()}</a>{/if}</span
 				>
 				{#if started}

@@ -26,7 +26,9 @@ export type BookingError =
 	| 'err_state'
 	| 'err_cancel_late'
 	| 'err_group_full'
-	| 'err_child';
+	| 'err_child'
+	| 'err_booking_past'
+	| 'err_slot_blocked';
 
 export class BookingFail extends Error {
 	constructor(public code: BookingError) {
@@ -293,6 +295,20 @@ export async function acceptBooking(db: DB, tutorId: string, bookingId: number, 
 					)
 				);
 			if (clash.length) throw new BookingFail('err_slot_taken');
+			// never a lesson in the past, or in time the tutor blocked off
+			if (b.startsAt <= now) throw new BookingFail('err_booking_past');
+			const off = await tx
+				.select({ id: calendarEvent.id })
+				.from(calendarEvent)
+				.where(
+					and(
+						eq(calendarEvent.tutorId, tutorId),
+						eq(calendarEvent.kind, 'blocked'),
+						lt(calendarEvent.startsAt, b.endsAt),
+						gt(calendarEvent.endsAt, b.startsAt)
+					)
+				);
+			if (off.length) throw new BookingFail('err_slot_blocked');
 			const capacity = b.kind === 'lesson' && s.groupMode !== 'one_to_one' ? s.maxGroupSize : 1;
 			const [l] = await tx
 				.insert(lesson)
@@ -565,7 +581,8 @@ export function requestsForUser(db: DB, userId: string) {
 			proposedStartsAt: booking.proposedStartsAt,
 			tutorMessage: booking.tutorMessage,
 			subjectName: subject.name,
-			tutorName: tutorProfile.tutorName
+			tutorName: tutorProfile.tutorName,
+			tutorSlug: tutorProfile.slug
 		})
 		.from(booking)
 		.leftJoin(subject, eq(subject.id, booking.subjectId))
@@ -619,7 +636,12 @@ export async function lessonsBetween(db: DB, tutorId: string, from: Date, to: Da
 		.orderBy(asc(lesson.startsAt));
 	if (!ls.length) return [];
 	const people = await db
-		.select({ lessonId: attendee.lessonId, userId: attendee.userId, name: user.name })
+		.select({
+			lessonId: attendee.lessonId,
+			userId: attendee.userId,
+			name: user.name,
+			attendance: attendee.attendance
+		})
 		.from(attendee)
 		.innerJoin(user, eq(user.id, attendee.userId))
 		.where(

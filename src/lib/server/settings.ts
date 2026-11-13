@@ -251,8 +251,10 @@ export async function listTutors(db: DB, f: TutorFilter | string = {}): Promise<
 			services: t.services ?? []
 		};
 	});
+	// a tutor with no subjects yet (e.g. just added by the owner) has nothing to book: hidden
 	cards = cards.filter(
 		(t) =>
+			t.subjects.length > 0 &&
 			(!filter.service || t.services.includes(filter.service)) &&
 			(!q.subject || t.subjects.some((n) => n.toLowerCase().includes(q.subject))) &&
 			(!q.level || t.levels.some((n) => n.toLowerCase().includes(q.level))) &&

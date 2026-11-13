@@ -99,8 +99,11 @@ export function sharedCheckins(
 	studentId: string,
 	since: Date,
 	limit = 10,
-	now = new Date()
+	now = new Date(),
+	/** an end for older weeks (the weekly report) */
+	until?: Date
 ) {
+	const cut = new Date(now.getTime() - SHARE_DELAY_MIN * 60_000);
 	return db
 		.select({
 			id: checkin.id,
@@ -115,7 +118,7 @@ export function sharedCheckins(
 				eq(checkin.sharedWithFamily, true),
 				gte(checkin.createdAt, since),
 				// the undo window: not shown to family in the first minutes
-				lt(checkin.createdAt, new Date(now.getTime() - SHARE_DELAY_MIN * 60_000))
+				lt(checkin.createdAt, until && until < cut ? until : cut)
 			)
 		)
 		.orderBy(desc(checkin.createdAt))

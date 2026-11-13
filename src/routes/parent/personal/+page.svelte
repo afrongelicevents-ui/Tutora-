@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay } from '#lib/tz.ts';
+	import ChildSwitcher from '#lib/components/parent/ChildSwitcher.svelte';
 	let { data } = $props();
 </script>
 
@@ -9,6 +10,7 @@
 <div class="screen">
 	<a class="back" href="/parent?child={data.current ?? ''}">← {m.v3_nav_home()}</a>
 	<h1>{m.pp_title()}{data.name ? ` · ${data.name}` : ''}</h1>
+	<ChildSwitcher kids={data.kids} current={data.current} base="/parent/personal" />
 	{#if !data.shared}
 		<p class="muted">{m.pp_not_shared({ name: data.name })}</p>
 	{:else}

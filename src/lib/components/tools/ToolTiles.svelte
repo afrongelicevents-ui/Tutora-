@@ -19,8 +19,9 @@
 		tools.drive
 			? { tool: 'drive', state: 'connected' }
 			: { tool: 'drive', state: 'connect', href: tools.driveConnectHref },
+		// Kahoot! has no account link: "on" only means quiz links are shown, so it is "Ready"
 		tools.kahoot
-			? { tool: 'kahoot', state: 'connected' }
+			? { tool: 'kahoot', state: 'ready' }
 			: { tool: 'kahoot', state: 'connect', href: '/student/tools#kahoot' }
 	]);
 </script>

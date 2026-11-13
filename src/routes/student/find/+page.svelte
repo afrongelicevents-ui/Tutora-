@@ -13,7 +13,8 @@
 		const u = new URL(page.url.href);
 		if (v) u.searchParams.set(k, v);
 		else u.searchParams.delete(k);
-		u.searchParams.delete('n');
+		// a new filter starts the list again; "Show more" keeps the filters and grows the list
+		if (k !== 'n') u.searchParams.delete('n');
 		return u.pathname + u.search;
 	};
 	const filtered = $derived(

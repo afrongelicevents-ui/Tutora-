@@ -82,7 +82,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const total = await sumBetween(r.from, r.to);
 	const prevTotal = await sumBetween(r.prevFrom, r.from);
 	const periodLessons = await lessonsBetween(locals.db, t, r.from, r.to);
-	const lessonsDone = periodLessons.filter((l) => l.endsAt <= now && l.people.length).length;
+	// lessons actually taught: someone came (a lesson where everyone was marked absent is left out)
+	const lessonsDone = periodLessons.filter(
+		(l) => l.endsAt <= now && l.people.some((p) => p.attendance !== 'absent')
+	).length;
 	return {
 		period,
 		summary: {

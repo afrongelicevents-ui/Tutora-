@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { freshDb, hasTestDb } from './testing/db.ts';
 import { makeUser } from './testing/fixtures.ts';
 import type { DB } from './db/types.ts';
-import { tutorProfile } from './db/app.schema.ts';
+import { subject, tutorProfile } from './db/app.schema.ts';
 import { assessmentResult } from './db/v3.schema.ts';
 import { together } from './together.ts';
 import { listTutors } from './settings.ts';
@@ -46,6 +46,8 @@ describe.skipIf(!hasTestDb)('you and your tutor; services filter (real database)
 			.update(tutorProfile)
 			.set({ services: ['homework'] })
 			.where(eq(tutorProfile.tutorId, a.id));
+		// Find only lists tutors who have something to book
+		await db.insert(subject).values({ tutorId: a.id, name: 'Maths' });
 		const names = (await listTutors(db, { service: 'homework' })).map((x) => x.name);
 		expect(names).toContain('Homework Helper');
 		expect(names).not.toContain('Mr Other');

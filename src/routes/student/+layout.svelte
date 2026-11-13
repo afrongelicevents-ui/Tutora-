@@ -1,5 +1,6 @@
 <script lang="ts">
 	import AppShell from '#lib/components/AppShell.svelte';
+	import { page } from '$app/state';
 	import { m } from '#lib/i18n.ts';
 	let { children, data } = $props();
 </script>
@@ -7,7 +8,7 @@
 <AppShell
 	tag={m.v3_tag_student()}
 	label={m.nav_dashboard()}
-	unread={data.unread}
+	unread={(page.data as { unreadNow?: number }).unreadNow ?? data.unread}
 	tabs={[
 		{ href: '/student', label: m.v3_nav_home(), icon: 'home', also: ['/student/subjects'] },
 		{

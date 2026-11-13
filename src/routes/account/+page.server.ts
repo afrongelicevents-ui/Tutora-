@@ -132,6 +132,14 @@ export const actions: Actions = {
 		if (u.role === 'owner') return fail(403, { deleteError: 'err_generic' });
 		const f = formObject(await request.formData());
 		if (f.confirm !== 'DELETE') return fail(400, { deleteError: 'err_delete_confirm' });
+		// a child account a parent made (no email of its own) is closed by the parent, not the child
+		if (u.role === 'student') {
+			const [pr] = await locals.db
+				.select({ managed: profile.managed })
+				.from(profile)
+				.where(eq(profile.userId, u.id));
+			if (pr?.managed) return fail(403, { deleteError: 'err_managed_delete' });
+		}
 		const limit = await hitLimit(locals.db, 'passwordReset', `delete:${u.id}`);
 		if (!limit.ok) return fail(429, { deleteError: 'err_rate_limited' });
 		const ok = await locals.auth.api

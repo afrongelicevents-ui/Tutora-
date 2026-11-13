@@ -83,7 +83,7 @@
 				title: `${r.student} · ${r.subjectName ?? m.intro_chat()}`,
 				sub: m.tut3_request_waiting(),
 				cls: 'pend',
-				href: '/tutor'
+				href: '/tutor#requests'
 			}));
 		return [...ls, ...es, ...rs].sort((a, b) => a.start.getTime() - b.start.getTime());
 	}

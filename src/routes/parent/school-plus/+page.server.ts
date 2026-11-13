@@ -28,6 +28,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const mine = [];
 	for (const r of all) if ((await parentAccess(locals.db, u.id, r.p.studentId)).ok) mine.push(r);
 	return {
+		// ?child=<id> picks the child (works without JavaScript too)
+		selected: kids.some((k) => k.studentId === url.searchParams.get('child'))
+			? url.searchParams.get('child')
+			: null,
 		kids: kids.map((k) => ({
 			id: k.studentId,
 			name: shortName(k.name),

@@ -44,6 +44,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		(l) => l.endsAt.getTime() + CLOSE_AFTER_MIN * 60_000 > now.getTime()
 	);
 	const nextId = upcomingLessons[0]?.id ?? null;
+	// "View all" shows every shared material in the same list
+	const allMaterials = url.searchParams.get('materials') === 'all';
 	const [todo, tools, materials, nextMeeting, handedIn] = await Promise.all([
 		todoFromTutors(locals.db, u.id, now),
 		studentToolStatus(locals.db, u.id, url),
@@ -60,7 +62,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.innerJoin(attendee, eq(attendee.lessonId, lessonMaterial.lessonId))
 			.where(and(eq(attendee.userId, u.id), eq(attendee.status, 'booked')))
 			.orderBy(desc(lessonMaterial.createdAt))
-			.limit(4),
+			.limit(allMaterials ? 200 : 5),
 		// the next lesson's Meet / Teams link (shown only on this student's own lesson)
 		nextId
 			? locals.db
@@ -125,7 +127,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		todo: todo.slice(0, 3),
 		todoTotal: todo.length,
 		tools,
-		materials,
+		materials: allMaterials ? materials : materials.slice(0, 4),
+		moreMaterials: !allMaterials && materials.length > 4,
 		nextJoin: nextMeeting[0]?.joinUrl?.startsWith('https://') ? nextMeeting[0] : null,
 		handedIn,
 		today: localDate(now),

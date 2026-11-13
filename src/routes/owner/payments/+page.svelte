@@ -2,6 +2,7 @@
 	import { m } from '#lib/i18n.ts';
 	import { fmtDay } from '#lib/tz.ts';
 	import { formatMoney } from '#lib/money.ts';
+	import { methodLabel } from '#lib/components/tutor/labels.ts';
 	let { data } = $props();
 	const label = (s: string) =>
 		({ pending: m.pay_reported(), confirmed: m.pay_paid(), rejected: m.status_rejected() })[s] ?? s;
@@ -18,7 +19,7 @@
 			<li>
 				<span
 					><b>{p.studentName}</b> → {p.tutorName}<span class="small muted block"
-						>{fmtDay(p.createdAt)} · {p.method}</span
+						>{fmtDay(p.createdAt)} · {methodLabel(p.method)}</span
 					></span
 				><b>{formatMoney(p.amountCents, p.currency)}</b>
 			</li>
@@ -38,7 +39,7 @@
 			<li>
 				<span
 					><b>{p.studentName}</b> → {p.tutorName}<span class="small muted block"
-						>{fmtDay(p.createdAt)} · {p.method} · {label(p.status)}</span
+						>{fmtDay(p.createdAt)} · {methodLabel(p.method)} · {label(p.status)}</span
 					></span
 				><b>{formatMoney(p.amountCents, p.currency)}</b>
 			</li>

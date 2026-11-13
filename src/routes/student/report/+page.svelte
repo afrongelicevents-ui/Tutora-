@@ -161,7 +161,7 @@
 		{:else}
 			<p class="muted">{m.pr_history_none()}</p>
 		{/if}
-		{#if data.history.length}<a class="btn btn-secondary" href="?before={data.olderFrom}#pr-hist"
+		{#if data.moreHistory}<a class="btn btn-secondary" href="?before={data.olderFrom}#pr-hist"
 				>{m.pr_older()}</a
 			>{/if}
 	</section>

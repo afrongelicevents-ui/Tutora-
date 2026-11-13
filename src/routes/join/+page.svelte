@@ -1,15 +1,16 @@
 <script lang="ts">
 	import { m } from '#lib/i18n.ts';
+	let { data } = $props();
 </script>
 
 <svelte:head>
 	<title>{m.join_title()} · Tutora</title>
-	<meta name="description" content={m.join_lead()} />
+	<meta name="description" content={data.joinLead ?? m.join_lead()} />
 </svelte:head>
 
 <section class="wrap narrow">
 	<h1>{m.join_title()}</h1>
-	<p class="lead">{m.join_lead()}</p>
+	<p class="lead">{data.joinLead ?? m.join_lead()}</p>
 	<h2>{m.join_get()}</h2>
 	<ul class="gets">
 		<li><b>{m.join_get1_t()}</b><span class="small muted block">{m.join_get1()}</span></li>

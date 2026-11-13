@@ -54,7 +54,7 @@
 								><span>{m.par3_pay_for({ name: k.short })}</span><span class="go">›</span></a
 							>
 						{/if}
-						{#if k.managed && k.guardian}
+						{#if k.guardian}
 							<a href="/parent/book?child={k.id}"
 								><span>{m.par3_book_for({ name: k.short })}</span><span class="go">›</span></a
 							>

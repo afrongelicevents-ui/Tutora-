@@ -7,6 +7,7 @@
 <svelte:head><title>{m.leave_review()} · Tutora</title></svelte:head>
 
 <section class="screen">
+	<a class="back" href="/student/tutors" aria-label={m.v3_back()}>←</a>
 	<h1>{m.leave_review()}</h1>
 	{#if data.tutorName}<p class="muted">{m.with_tutor({ name: data.tutorName })}</p>{/if}
 	{#if page.url.searchParams.has('thanks')}<p class="notice" role="status">

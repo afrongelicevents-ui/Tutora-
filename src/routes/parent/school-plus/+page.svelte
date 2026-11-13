@@ -6,7 +6,7 @@
 	);
 	let child = $state('');
 	$effect.pre(() => {
-		if (!child) child = v.child ?? data.kids[0]?.id ?? '';
+		if (!child) child = v.child ?? data.selected ?? data.kids[0]?.id ?? '';
 	});
 	const tutors = $derived(data.tutors.find((x) => x.childId === child)?.list ?? []);
 	const kid = $derived(data.kids.find((k) => k.id === child));

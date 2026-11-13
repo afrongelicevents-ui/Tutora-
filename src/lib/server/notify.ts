@@ -62,11 +62,21 @@ export const myNotifications = (db: DB, userId: string, limit = 50) =>
 		.orderBy(desc(notification.createdAt), desc(notification.id))
 		.limit(limit);
 
-export async function unreadCount(db: DB, userId: string) {
+/** The newest notifications the bell page shows (and marks read when opened). */
+export const BELL_PAGE = 50;
+
+/**
+ * Unread notifications. `skipNewest`: leave out the newest N, for the bell page itself,
+ * which marks exactly those read while this count is being worked out.
+ */
+export async function unreadCount(db: DB, userId: string, skipNewest = 0) {
+	const shown = skipNewest
+		? sql`and ${notification.id} not in (select id from notification where user_id = ${userId} order by created_at desc, id desc limit ${skipNewest})`
+		: sql``;
 	const [r] = await db
 		.select({ n: sql<number>`count(*)::int` })
 		.from(notification)
-		.where(and(eq(notification.userId, userId), isNull(notification.readAt)));
+		.where(and(eq(notification.userId, userId), isNull(notification.readAt), sql`true ${shown}`));
 	return r.n;
 }
 

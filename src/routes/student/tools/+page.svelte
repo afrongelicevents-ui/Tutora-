@@ -61,7 +61,7 @@
 		name="Kahoot!"
 		logo="kahoot"
 		on={data.pref.kahootOn}
-		status={data.pref.kahootOn ? m.tools6_on() : m.tools6_off()}
+		status={data.pref.kahootOn ? m.st_kahoot_on() : m.tools6_off()}
 		use={m.tools6_kahoot_use_student()}
 		access={data.pref.kahootOn ? m.tools6_kahoot_access() : undefined}
 	>

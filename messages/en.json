@@ -2691,5 +2691,20 @@
 	"bn_declined_s": "Study buddy not approved",
 	"bn_declined_b": "A parent did not approve this study buddy, so the link was removed.",
 	"ev_fam_pending_child_s": "{name} wants to follow your learning",
-	"ev_fam_pending_child_b": "{name} used your Family Connection code. Your guardian needs to approve it first; until then they can't see anything."
+	"ev_fam_pending_child_b": "{name} used your Family Connection code. Your guardian needs to approve it first; until then they can't see anything.",
+	"fam_err_last_guardian": "You are this child's only guardian and you made their account, so you can't stop following them. To close the account, contact Tutora from Help.",
+	"err_managed_delete": "Your parent made this account, so only they can close it. Ask them to contact Tutora from Help.",
+	"ev_resource_s": "{tutor} added a revision resource",
+	"ev_resource_b": "{tutor} added \"{title}\" for {subject}. Find it under Homework → Resources.",
+	"err_booking_past": "This time has already passed. Suggest a new time instead.",
+	"err_slot_blocked": "You blocked this time off in your calendar. Suggest a new time, or remove the time off first.",
+	"room_not_open": "This lesson room is not open. Rooms open {before} minutes before an online lesson and close {after} minutes after it ends.",
+	"st_kahoot_on": "On · no Kahoot! account needed",
+	"fc_done_shared": "Saved. Your family now sees only what you chose.",
+	"fc_done_revoked": "Your code was cancelled. Nobody can use it now.",
+	"fc_done_removed": "Removed. They can no longer see your learning.",
+	"ev_paid_by": "{child} (paid by {parent})",
+	"msg_parent_adult": "Messages of a child who is 18 or older stay private.",
+	"msg_parent_guardian": "Only this child's guardian can read their messages.",
+	"oc_subjects_none": "No subjects yet. Add the first one below."
 }

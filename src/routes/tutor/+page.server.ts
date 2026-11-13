@@ -108,6 +108,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			: null,
 		messages: convs.slice(0, 2),
 		unreadMessages: convs.reduce((a, c) => a + c.unread, 0),
+		openBeforeMin: OPEN_BEFORE_MIN,
 		now,
 		name: s.tutorName || locals.user!.name,
 		currency: s.currency,

@@ -1,7 +1,7 @@
 /**
  * Data for the student's home screen, all from the student's own records.
  */
-import { and, count, desc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import type { AnyColumn } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { homework, homeworkAnswer } from './db/app.schema.ts';
@@ -39,7 +39,7 @@ export async function nextLessonFor(db: DB, userId: string, now = new Date()) {
 	};
 }
 
-/** Homework not handed in yet, due within the next 7 days (or overdue). */
+/** Homework not handed in yet: due within the next 7 days (or overdue), or recent with no due date. */
 export async function homeworkDueCount(db: DB, userId: string, now = new Date()) {
 	const [r] = await db
 		.select({ n: count() })
@@ -49,8 +49,14 @@ export async function homeworkDueCount(db: DB, userId: string, now = new Date())
 			and(
 				eq(homework.userId, userId),
 				isNull(homeworkAnswer.id),
-				lte(homework.dueOn, localDate(addDays(now, 7))),
-				gte(homework.dueOn, localDate(addDays(now, -30)))
+				or(
+					and(
+						lte(homework.dueOn, localDate(addDays(now, 7))),
+						gte(homework.dueOn, localDate(addDays(now, -30)))
+					),
+					// homework with no due date counts while it is recent (set in the last 30 days)
+					and(isNull(homework.dueOn), gte(homework.createdAt, addDays(now, -30)))
+				)
 			)
 		);
 	return r?.n ?? 0;
