@@ -200,9 +200,14 @@ jobs:
   # full of fake data. Never touches the live database.
   deploy-test:
     # Runs first: the same code goes to the test site before the live site.
-    # LIVE only when started by hand (Actions → Deploy → Run workflow) while the overnight
-    # batch is checked on the test site; pushes to main still update the TEST site.
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if: >-
+      ${{
+        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+        (github.event.workflow_run.conclusion == 'success' &&
+         github.event.workflow_run.event == 'push' &&
+         github.event.workflow_run.head_branch == 'main' &&
+         github.event.workflow_run.head_repository.full_name == github.repository)
+      }}
     runs-on: ubuntu-latest
     environment: test
     steps:
