@@ -6,7 +6,28 @@
 	import { waLink } from '#lib/whatsapp.ts';
 	import BriefLine from '#lib/components/tutor/BriefLine.svelte';
 	import { methodLabel, toolLabel } from '#lib/components/tutor/labels.ts';
+	import LineIcon from '#lib/components/LineIcon.svelte';
+	import { ago } from '#lib/ago.ts';
 	let { data, form } = $props();
+	const greeting = $derived(
+		data.hour < 12 ? m.tt2_morning() : data.hour < 17 ? m.tt2_afternoon() : m.tt2_evening()
+	);
+	const initials = (n: string) =>
+		n
+			.replace(/^(Mr|Mrs|Ms|Miss|Dr)\.?\s+/i, '')
+			.split(/\s+/)
+			.filter(Boolean)
+			.slice(0, 2)
+			.map((w) => w[0]!.toUpperCase())
+			.join('');
+	function untilText(start: Date | string, end: Date | string) {
+		const ms = new Date(start).getTime() - Date.now();
+		if (ms <= 0) return new Date(end).getTime() > Date.now() ? m.tt2_now() : '';
+		const min = Math.round(ms / 60000);
+		if (min < 60) return m.tt2_in_min({ n: min });
+		if (min < 24 * 60) return m.tt2_in_hm({ h: Math.floor(min / 60), m: min % 60 });
+		return fmtDay(new Date(start));
+	}
 
 	const first = (n: string) => shortName(n) || n;
 	const accepted = $derived.by(() => {
@@ -33,17 +54,117 @@
 <svelte:head><title>{m.today_title()} · Tutora</title></svelte:head>
 
 <section class="screen">
-	<h1 class="hello">{m.tut3_welcome({ name: data.name })}</h1>
+	<header class="greet">
+		<p class="g1">{greeting},</p>
+		<h1>{first(data.name)}.</h1>
+		<p class="g2">{m.tt2_lead()}</p>
+	</header>
 
-	<div class="stat3">
-		<div><strong>{data.stats.students}</strong><span>{m.tut3_stat_students()}</span></div>
-		<div><strong>{data.stats.week}</strong><span>{m.tut3_stat_week()}</span></div>
-		<div>
-			<strong>{formatMoney(data.stats.monthCents, data.currency).replace(/\.00$/, '')}</strong><span
-				>{m.tut3_stat_month()}</span
+	<div class="stat2">
+		<a class="statcard" href="/tutor/students">
+			<LineIcon name="tutors" size={30} />
+			<strong>{data.stats.students}</strong>
+			<span>{m.tt2_my_students()} <LineIcon name="chevron" size={16} /></span>
+		</a>
+		<a class="statcard" href="/tutor/calendar?view=week">
+			<LineIcon name="calendar" size={30} />
+			<strong>{data.stats.week}</strong>
+			<span>{m.tt2_lessons_week()} <LineIcon name="chevron" size={16} /></span>
+		</a>
+	</div>
+
+	{#if data.next}
+		{@const nx = data.next}
+		<section class="nextcard" aria-labelledby="nx-h">
+			<div class="nx-top">
+				<h2 id="nx-h"><LineIcon name="calendar" size={22} /> {m.tt2_next()}</h2>
+				<span class="when">{untilText(nx.startsAt, nx.endsAt)}</span>
+			</div>
+			<div class="nx-body">
+				<span class="face" aria-hidden="true">{initials(nx.who[0] ?? '?')}</span>
+				<div class="nx-who">
+					<strong>{nx.who.length ? nx.who.map((n) => first(n)).join(', ') : m.tut3_nobody()}</strong
+					>
+					<span
+						>{nx.subjectName ?? m.intro_chat()} · {fmtDay(nx.startsAt)} {fmtTime(nx.startsAt)}</span
+					>
+					<span class="mode"
+						><LineIcon name={nx.mode === 'online' ? 'video' : 'home'} size={18} />
+						{nx.mode === 'online' ? m.mode_online() : m.mode_in_person()}</span
+					>
+				</div>
+			</div>
+			{#if nx.mode === 'online' && nx.open}
+				<a
+					class="joinbtn"
+					href={nx.joinUrl ?? `/room/${nx.id}`}
+					target={nx.joinUrl ? '_blank' : undefined}
+					rel={nx.joinUrl ? 'noopener noreferrer' : undefined}
+					><LineIcon name="video" size={20} />
+					{nx.joinUrl
+						? m.tut3_join_on({ tool: toolLabel(nx.provider ?? 'meet') })
+						: m.tt2_join()}</a
+				>
+			{:else}
+				<a class="joinbtn" href="/tutor/lessons/{nx.id}">{m.tt2_open_lesson()}</a>
+			{/if}
+		</section>
+	{/if}
+
+	<section class="tcard" aria-labelledby="att-h">
+		<div class="tc-h">
+			<h2 id="att-h"><LineIcon name="bell" size={22} /> {m.tt2_attention()}</h2>
+			<a href="/notifications">{m.tt_view_all()} <LineIcon name="chevron" size={16} /></a>
+		</div>
+		<div class="att3">
+			<a href="#requests"
+				><LineIcon name="calendar" size={26} /><strong>{data.requests.length}</strong><span
+					>{m.tt2_requests()}</span
+				></a
+			>
+			<a href="/tutor/homework"
+				><LineIcon name="clipboard" size={26} /><strong>{data.toCheck}</strong><span
+					>{m.tt2_homework()}</span
+				></a
+			>
+			<a href="#payments"
+				><LineIcon name="wallet" size={26} /><strong>{data.payments.length}</strong><span
+					>{m.tt2_payments()}</span
+				></a
 			>
 		</div>
-	</div>
+	</section>
+
+	<section class="tcard" aria-labelledby="msg-h">
+		<div class="tc-h">
+			<h2 id="msg-h"><LineIcon name="chat" size={22} /> {m.tt2_messages()}</h2>
+			<a href="/tutor/messages">{m.tt_view_all()} <LineIcon name="chevron" size={16} /></a>
+		</div>
+		{#if data.messages.length}
+			<ul class="msgs">
+				{#each data.messages as c (c.otherId)}
+					<li>
+						<a href="/tutor/messages/{c.otherId}">
+							<span class="face sm" aria-hidden="true">{initials(c.otherName)}</span>
+							<span class="mb"
+								><strong>{c.otherName}</strong><span class="snip"
+									>{c.lastFromMe ? m.tt_you({ text: c.last }) : c.last}</span
+								></span
+							>
+							<span class="ago"
+								>{ago(new Date(c.lastAt))}{#if c.unread}<span class="dot"
+										><span class="sr-only">{m.tt_unread({ n: c.unread, name: c.otherName })}</span
+										></span
+									>{/if}</span
+							>
+						</a>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<p class="note">{m.tt2_no_messages()}</p>
+		{/if}
+	</section>
 
 	{#if accepted}<p class="ok-box" role="status">{accepted}</p>{/if}
 	{#if doneText}<p class="notice" role="status">{doneText}</p>{/if}
@@ -56,6 +177,7 @@
 		</a>
 	{/if}
 
+	<div id="requests"></div>
 	{#each data.requests as r (r.id)}
 		<article class="request">
 			<span class="eyebrow">{r.kind === 'intro' ? m.tut3_new_intro() : m.tut3_new_request()}</span>
@@ -123,7 +245,7 @@
 	{/each}
 
 	<div class="section-h">
-		<h2>{m.today_word()}</h2>
+		<h2>{m.tt2_today_schedule()}</h2>
 		<a href="/tutor/calendar">{m.tut3_see_schedule()}</a>
 	</div>
 	<ul class="rows">
@@ -213,7 +335,7 @@
 	{/if}
 
 	{#if data.payments.length}
-		<div class="section-h"><h2>{m.today_payments_h()}</h2></div>
+		<div class="section-h" id="payments"><h2>{m.today_payments_h()}</h2></div>
 		<ul class="rows">
 			{#each data.payments as p (p.id)}
 				<li class="pay">
@@ -272,9 +394,239 @@
 </section>
 
 <style>
-	.hello {
+	.greet {
+		display: flex;
+		flex-direction: column;
+	}
+	.greet .g1 {
 		margin: 0;
-		font-size: 1.75rem;
+		font: 600 1.75rem var(--font-display);
+		color: var(--navy);
+	}
+	.greet h1 {
+		margin: 0;
+		font-size: 2.75rem;
+		line-height: 1.05;
+		color: var(--navy);
+	}
+	.greet .g2 {
+		margin: 6px 0 0;
+		color: var(--text);
+	}
+	.stat2 {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 12px;
+	}
+	.statcard {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2px;
+		padding: 16px 10px;
+		background: #fff;
+		border: 1px solid var(--border);
+		border-radius: 22px;
+		box-shadow: var(--shadow-soft);
+		color: var(--ocean);
+		text-decoration: none;
+		text-align: center;
+	}
+	.statcard strong {
+		font: 600 2rem var(--font-display);
+		color: var(--navy);
+	}
+	.statcard span {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		color: var(--navy);
+		font-weight: 600;
+	}
+	.nextcard {
+		background: linear-gradient(150deg, var(--navy), #163a6e);
+		color: #fff;
+		border-radius: 24px;
+		padding: 18px;
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+		box-shadow: 0 14px 30px rgb(11 37 69 / 0.25);
+	}
+	.nx-top {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 10px;
+	}
+	.nx-top h2 {
+		margin: 0;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 1.375rem;
+		color: #fff;
+	}
+	.when {
+		border: 1px solid rgb(255 255 255 / 0.35);
+		border-radius: 99px;
+		padding: 4px 12px;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		white-space: nowrap;
+	}
+	.nx-body {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+	}
+	.face {
+		width: 64px;
+		height: 64px;
+		border-radius: 50%;
+		background: #dcebfa;
+		color: var(--navy);
+		display: grid;
+		place-items: center;
+		font: 600 1.375rem var(--font-display);
+		flex: none;
+		box-shadow: 0 0 0 3px rgb(255 255 255 / 0.6);
+	}
+	.face.sm {
+		width: 46px;
+		height: 46px;
+		font-size: 1rem;
+		box-shadow: none;
+	}
+	.nx-who {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 0;
+	}
+	.nx-who strong {
+		font: 600 1.25rem var(--font-display);
+	}
+	.nx-who span {
+		color: #cfe0f5;
+		font-size: 0.875rem;
+	}
+	.nx-who .mode {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		color: #fff;
+	}
+	.joinbtn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		min-height: 52px;
+		border-radius: 99px;
+		background: #fff;
+		color: var(--navy);
+		font-weight: 700;
+		text-decoration: none;
+	}
+	.tcard {
+		background: #fff;
+		border: 1px solid var(--border);
+		border-radius: 22px;
+		padding: 16px;
+		box-shadow: var(--shadow-soft);
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+	.tc-h {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 10px;
+	}
+	.tc-h h2 {
+		margin: 0;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 1.25rem;
+		color: var(--navy);
+	}
+	.tc-h a {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		color: var(--navy);
+		font-weight: 600;
+		text-decoration: none;
+		font-size: 0.875rem;
+	}
+	.att3 {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+	.att3 a {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 2px;
+		text-align: center;
+		color: var(--ocean);
+		text-decoration: none;
+		padding: 4px;
+	}
+	.att3 a + a {
+		border-left: 1px solid var(--border);
+	}
+	.att3 strong {
+		font: 600 1.5rem var(--font-display);
+		color: var(--navy);
+	}
+	.att3 span {
+		font-size: 0.8125rem;
+		color: var(--text);
+		line-height: 1.25;
+	}
+	.msgs {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	.msgs a {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 6px 0;
+		color: var(--navy);
+		text-decoration: none;
+	}
+	.mb {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+	}
+	.snip {
+		color: var(--muted);
+		font-size: 0.875rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.ago {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		color: var(--muted);
+		font-size: 0.8125rem;
+		white-space: nowrap;
+	}
+	.dot {
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
+		background: var(--ocean);
 	}
 	.ok-box {
 		margin: 0;

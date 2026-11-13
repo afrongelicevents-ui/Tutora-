@@ -23,7 +23,7 @@ import {
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const t = requireTutor(locals.user, url).id;
 	const v = url.searchParams.get('view');
-	const view = v === 'day' || v === 'month' ? v : 'week';
+	const view = v === 'day' || v === 'month' || v === 'all' ? v : 'week';
 	const d = url.searchParams.get('date') ?? '';
 	const anchor = isIsoDate(d) ? fromLocal(d, 12 * 60) : new Date();
 	let from: Date;
@@ -37,6 +37,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		len = new Date(Date.UTC(y, mo, 0)).getUTCDate();
 		prev = fromLocal(`${new Date(Date.UTC(y, mo - 2, 1)).toISOString().slice(0, 7)}-01`, 12 * 60);
 		next = fromLocal(`${new Date(Date.UTC(y, mo, 1)).toISOString().slice(0, 7)}-01`, 12 * 60);
+	} else if (view === 'all') {
+		// everything from 30 days ago (completed) to 90 days ahead (upcoming)
+		from = startOfLocalDay(addDays(new Date(), -30));
+		len = 121;
+		prev = from;
+		next = from;
 	} else {
 		from = view === 'week' ? startOfLocalWeek(anchor) : startOfLocalDay(anchor);
 		len = view === 'week' ? 7 : 1;
@@ -44,11 +50,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		next = addDays(from, len);
 	}
 	const to = addDays(from, len);
-	const [lessons, events, requests, times] = await Promise.all([
+	const [lessons, events, requests, times, after] = await Promise.all([
 		lessonsBetween(locals.db, t, from, to),
 		eventsBetween(locals.db, t, from, to),
 		pendingRequests(locals.db, t),
-		listAvailability(locals.db, t)
+		listAvailability(locals.db, t),
+		// "Upcoming schedule" under a single day: the next lessons after it
+		view === 'day' ? lessonsBetween(locals.db, t, to, addDays(to, 21)) : Promise.resolve([])
 	]);
 	// in-person addresses and meeting links of THIS tutor's lessons in the range
 	const ids = lessons.map((l) => l.id);
@@ -89,7 +97,16 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				student: r.studentName.split(' ')[0],
 				mode: r.mode
 			})),
-		times: times.map((x) => ({ weekday: x.weekday, start: x.startMinute, end: x.endMinute }))
+		times: times.map((x) => ({ weekday: x.weekday, start: x.startMinute, end: x.endMinute })),
+		add: url.searchParams.get('add'),
+		upcoming: after.slice(0, 3).map((l) => ({
+			id: l.id,
+			startsAt: l.startsAt,
+			endsAt: l.endsAt,
+			subjectName: l.subjectName,
+			who: l.people.map((p) => p.name)
+		})),
+		now: new Date()
 	};
 };
 
@@ -106,7 +123,41 @@ const eventSchema = z.object({
 	note: z.string().trim().max(300).optional()
 });
 
+/** Booked lessons inside a time the tutor wants to block (they stay booked; we only warn). */
+async function clashes(db: App.Locals['db'], tutorId: string, startsAt: Date, endsAt: Date) {
+	const ls = await lessonsBetween(db, tutorId, addDays(startsAt, -1), endsAt);
+	return ls
+		.filter((l) => l.startsAt < endsAt && l.endsAt > startsAt && l.people.length)
+		.map((l) => ({
+			id: l.id,
+			startsAt: l.startsAt,
+			subjectName: l.subjectName,
+			who: l.people.map((p) => p.name.split(' ')[0]).join(', ')
+		}));
+}
+
 export const actions: Actions = {
+	/** Time off on one day, between two times: no bookings are offered then. */
+	addTimeOff: async ({ locals, url, request }) => {
+		const t = requireTutor(locals.user, url).id;
+		const f = formObject(await request.formData());
+		const a = hhmmToMinutes(f.start ?? '');
+		const b = hhmmToMinutes(f.end ?? '');
+		if (!isIsoDate(f.date ?? '') || a === null || b === null || b <= a)
+			return fail(400, { error: 'err_times', where: 'timeoff' });
+		const startsAt = fromLocal(f.date, a);
+		const endsAt = fromLocal(f.date, b);
+		const clash = await clashes(locals.db, t, startsAt, endsAt);
+		if (clash.length && f.confirm !== '1') return fail(409, { clash, where: 'timeoff', values: f });
+		await addEvent(locals.db, t, {
+			title: (f.title ?? '').trim().slice(0, 80) || 'Time off',
+			startsAt,
+			endsAt,
+			note: null,
+			kind: 'blocked'
+		});
+		return { added: true };
+	},
 	addEvent: async ({ locals, url, request }) => {
 		const t = requireTutor(locals.user, url).id;
 		const p = eventSchema.safeParse(formObject(await request.formData()));
@@ -129,6 +180,8 @@ export const actions: Actions = {
 		const startsAt = fromLocal(f.from, 0);
 		const endsAt = fromLocal(f.to, 24 * 60);
 		if (+endsAt - +startsAt > 366 * 86_400_000) return fail(400, { error: 'err_times' });
+		const clash = await clashes(locals.db, t, startsAt, endsAt);
+		if (clash.length && f.confirm !== '1') return fail(409, { clash, where: 'holiday', values: f });
 		await addEvent(locals.db, t, {
 			title: (f.title ?? '').trim().slice(0, 80) || 'Not available',
 			startsAt,

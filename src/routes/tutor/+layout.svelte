@@ -12,14 +12,31 @@
 	label={m.nav_tutor()}
 	unread={data.unread}
 	tabs={[
-		{ href: '/tutor', label: m.v3_nav_today() },
-		{ href: '/tutor/calendar', label: m.v3_nav_schedule() },
-		{ href: '/tutor/students', label: m.v3_nav_students() },
-		{ href: '/tutor/payments', label: m.v3_nav_earnings() },
+		{ href: '/tutor', label: m.v3_nav_today(), icon: 'home', also: ['/tutor/lessons'] },
+		{ href: '/tutor/calendar', label: m.v3_nav_schedule(), icon: 'calendar' },
+		{
+			href: '/tutor/students',
+			label: m.v3_nav_students(),
+			icon: 'tutors',
+			also: ['/tutor/messages']
+		},
+		{ href: '/tutor/payments', label: m.v3_nav_earnings(), icon: 'wallet' },
 		{
 			href: '/tutor/more',
 			label: m.v3_nav_more(),
-			also: ['/tutor/settings', '/tutor/reviews', '/tutor/photo', '/tutor/setup']
+			icon: 'more',
+			also: [
+				'/tutor/settings',
+				'/tutor/reviews',
+				'/tutor/photo',
+				'/tutor/setup',
+				'/tutor/day',
+				'/tutor/homework',
+				'/tutor/assessments',
+				'/tutor/resources',
+				'/tutor/school-plus',
+				'/tutor/tools'
+			]
 		}
 	]}
 	more={[

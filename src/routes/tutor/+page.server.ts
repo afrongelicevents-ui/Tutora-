@@ -6,14 +6,16 @@ import { requireTutor } from '#lib/server/guards.ts';
 import { SubmitFail, submitForApproval } from '#lib/server/tutor.ts';
 import type { Actions, PageServerLoad } from './$types';
 import { lessonsBetween, pendingRequests } from '#lib/server/bookings.ts';
-import { monthlyTotals, pendingPayments } from '#lib/server/billing.ts';
+import { pendingPayments } from '#lib/server/billing.ts';
+import { conversations } from '#lib/server/messages.ts';
+import { OPEN_BEFORE_MIN } from '#lib/server/room.ts';
 import { getSettings, listAvailability, listSubjects } from '#lib/server/settings.ts';
 import { fileLink } from '#lib/server/storage.ts';
 import { inboxActions } from '#lib/server/actions/tutor-inbox.ts';
 import { briefsForRequests } from '#lib/server/brief.ts';
 import { attendee, lesson, profile } from '#lib/server/db/app.schema.ts';
 import { lessonMeeting } from '#lib/server/db/v3.schema.ts';
-import { addDays, fromLocal, localDate, startOfLocalDay, startOfLocalWeek } from '#lib/tz.ts';
+import { addDays, local, startOfLocalDay, startOfLocalWeek } from '#lib/tz.ts';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const t = requireTutor(locals.user, url).id;
@@ -21,8 +23,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const now = new Date();
 	const day = startOfLocalDay(now);
 	const week = startOfLocalWeek(now);
-	const thisMonth = localDate(now).slice(0, 7);
-	const [lessons, weekLessons, requests, payments, s, subjects, times, students, months] =
+	const [lessons, weekLessons, requests, payments, s, subjects, times, students] =
 		await Promise.all([
 			lessonsBetween(db, t, day, addDays(day, 1)),
 			lessonsBetween(db, t, week, addDays(week, 7)),
@@ -31,9 +32,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			getSettings(db, t),
 			listSubjects(db, t),
 			listAvailability(db, t),
-			countStudents(db, t),
-			monthlyTotals(db, t, fromLocal(`${thisMonth}-01`, 0))
+			countStudents(db, t)
 		]);
+	// the next lesson that hasn't finished (today or in the next two weeks), and messages
+	const [soon, convs] = await Promise.all([
+		lessonsBetween(db, t, day, addDays(day, 15)),
+		conversations(db, t, 'tutor')
+	]);
+	const next = soon.find((l) => l.endsAt > now) ?? null;
+	const [nextMeeting] = next
+		? await db
+				.select({ provider: lessonMeeting.provider, joinUrl: lessonMeeting.joinUrl })
+				.from(lessonMeeting)
+				.where(eq(lessonMeeting.lessonId, next.id))
+		: [];
 	const ids = [...new Set(lessons.flatMap((l) => l.people.map((p) => p.userId)))];
 	const lessonIds = lessons.map((l) => l.id);
 	// lessons come from THIS tutor only, so these lookups stay inside their own lessons
@@ -81,15 +93,31 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		!s.whatsappNumber && !s.contactEmail && 'contact',
 		!s.bankAccountNumber && !s.ecocashNumber && !s.innbucksNumber && 'payments'
 	].filter(Boolean) as string[];
-	const month = months.find((x) => x.month === thisMonth && x.currency === s.currency);
 	return {
+		hour: local(now).minutes / 60,
+		next: next
+			? {
+					id: next.id,
+					startsAt: next.startsAt,
+					endsAt: next.endsAt,
+					mode: next.mode,
+					subjectName: next.subjectName,
+					who: next.people.map((p) => p.name),
+					joinUrl: nextMeeting?.joinUrl?.startsWith('https://') ? nextMeeting.joinUrl : null,
+					provider: nextMeeting?.provider ?? null,
+					open:
+						next.mode === 'online' &&
+						now.getTime() >= next.startsAt.getTime() - OPEN_BEFORE_MIN * 60_000
+				}
+			: null,
+		messages: convs.slice(0, 2),
+		unreadMessages: convs.reduce((a, c) => a + c.unread, 0),
 		now,
 		name: s.tutorName || locals.user!.name,
 		currency: s.currency,
 		stats: {
 			students,
-			week: weekLessons.length,
-			monthCents: month?.total ?? 0
+			week: weekLessons.length
 		},
 		lessons: lessons.map((l) => {
 			const mine = places.filter((p) => p.lessonId === l.id);
