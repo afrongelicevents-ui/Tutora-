@@ -48,8 +48,8 @@
 			<input id="q" name="q" type="search" value={data.q} placeholder={m.st2_search()} />
 			{#if data.status}<input type="hidden" name="status" value={data.status} />{/if}
 		</form>
-		<a class="btn navy add" href="/tutor/students/add"
-			><LineIcon name="plus" size={20} /> {m.st2_add()}</a
+		<a class="btn navy add" href="/tutor/students/add" aria-label={m.st2_add()}
+			><LineIcon name="plus" size={20} /> {m.st2_add_short()}</a
 		>
 	</div>
 
