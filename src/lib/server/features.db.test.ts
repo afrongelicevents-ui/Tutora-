@@ -143,12 +143,13 @@ describe.skipIf(!hasTestDb)(
 		});
 
 		describe('students list (tutor)', () => {
-			it('lists only students and parents, with search', async () => {
+			it('lists only students (never parents or tutors), with search', async () => {
 				await makeUser(db, 'student', 'Tendai Moyo');
-				await makeUser(db, 'parent', 'Mai Dube');
+				const parent = await makeUser(db, 'parent', 'Mai Dube');
 				const tutor = await makeUser(db, 'tutor', 'The Tutor');
 				const all = await listStudents(db, tid);
-				expect(all.map((s) => s.name)).toEqual(expect.arrayContaining(['Tendai Moyo', 'Mai Dube']));
+				expect(all.map((s) => s.name)).toContain('Tendai Moyo');
+				expect(all.some((s) => s.id === parent.id)).toBe(false);
 				expect(all.some((s) => s.id === tutor.id)).toBe(false);
 				expect((await listStudents(db, tid, 'tend')).map((s) => s.name)).toEqual(['Tendai Moyo']);
 				expect(await listStudents(db, tid, '%')).toEqual([]); // wildcards are treated as text

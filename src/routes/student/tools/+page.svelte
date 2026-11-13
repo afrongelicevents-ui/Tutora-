@@ -22,7 +22,7 @@
 		name="Google Meet"
 		logo="meet"
 		on={data.ready}
-		status={data.ready ? m.tools6_no_account() : m.tools6_not_ready()}
+		status={data.ready ? m.tools6_no_account() : m.tools6_unavailable()}
 		use={m.tools6_meet_use_student()}
 		access={m.tools6_links_only()}
 	/>
@@ -31,7 +31,7 @@
 		name="Microsoft Teams"
 		logo="teams"
 		on={data.teamsReady}
-		status={data.teamsReady ? m.tools6_no_account() : m.tools6_not_ready()}
+		status={data.teamsReady ? m.tools6_no_account() : m.tools6_unavailable()}
 		use={m.tools6_teams_use_student()}
 		access={m.tools6_links_only()}
 	/>

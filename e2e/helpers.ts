@@ -50,7 +50,12 @@ export async function press(page: Page, selector: string) {
 	await el.waitFor({ state: 'visible', timeout: 15_000 }).catch((e) => {
 		throw new Error(`press: "${selector}" not visible on ${page.url()}\n${String(e)}`);
 	});
-	await Promise.all([page.waitForLoadState('load'), el.click()]);
+	// wait for the form's POST to come back, then for the page it leads to
+	await Promise.all([
+		page.waitForResponse((r) => r.request().method() === 'POST', { timeout: 30_000 }),
+		el.click()
+	]);
+	await page.waitForLoadState('load');
 	await page.waitForLoadState('networkidle').catch(() => {});
 }
 

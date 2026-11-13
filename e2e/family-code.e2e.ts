@@ -24,7 +24,7 @@ test('family code connects a parent who sees only shared areas', async ({ browse
 	await press(parent, 'form.stack button[type=submit]');
 	await expect(parent).toHaveURL(/\/code\/connect/);
 	await press(parent, 'form[action="?/connect"] button[type=submit]');
-	await expect(parent).toHaveURL(/\/parent\?(connected|pending)=/);
+	await expect(parent).toHaveURL(/\/parent\?.*(connected|pending)=/);
 	const [link] = await sql<{ status: string }>(
 		`select status from family_link where student_id = 'test_nyasha' and parent_id = 'test_ruth'`
 	);

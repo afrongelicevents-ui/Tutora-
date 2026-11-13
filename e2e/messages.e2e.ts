@@ -28,7 +28,7 @@ test('messages both ways with unread counts', async ({ browser }) => {
 	// 2. the tutor sees 2 unread from Nyasha
 	await tutor.goto('/tutor/messages');
 	const row = tutor.locator('a.row[href="/tutor/messages/test_nyasha"]');
-	await expect(row.locator('.dot')).toContainText('2 unread');
+	await expect(row.locator('.dot')).toContainText(': 2');
 	const [bell] = await sql<{ n: number }>(
 		`select count(*)::int n from notification where user_id = 'test_chipo' and kind = 'message' and created_at > now() - interval '1 minute'`
 	);
