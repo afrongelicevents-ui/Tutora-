@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { withoutTitle } from '#lib/names.ts';
 	/**
 	 * A person's photo, or their initials in a coloured circle (any area). Pass only photos
 	 * the viewer may see (e.g. a student's approved profile photo).
@@ -11,8 +12,7 @@
 	}: { name: string; photo?: string | null; size?: number } = $props();
 	const COLOURS = ['#1a5fae', '#1f7a4d', '#8a5a12', '#7b3fa0', '#b4433a', '#0f766e'];
 	const initials = $derived(
-		name
-			.trim()
+		withoutTitle(name)
 			.split(/\s+/)
 			.slice(0, 2)
 			.map((w) => w[0]?.toUpperCase() ?? '')

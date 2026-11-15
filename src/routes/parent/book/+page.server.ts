@@ -42,16 +42,21 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const slug = url.searchParams.get('tutor');
 	if (!slug) {
 		const q = (url.searchParams.get('q') ?? '').trim().slice(0, 60);
+		// a search was sent (even an empty one): an empty search lists every available tutor
+		const searched = url.searchParams.has('q');
 		const [mine, found] = await Promise.all([
 			tutorsForUser(locals.db, kid.id),
-			q ? listTutors(locals.db, { q }) : Promise.resolve([])
+			searched ? listTutors(locals.db, q ? { q } : {}) : Promise.resolve([])
 		]);
 		return {
 			mode: 'pick' as const,
 			kid: { id: kid.id, name: shortName(kid.name) },
 			q,
+			searched,
 			mine: mine.filter((t) => t.status === 'active').map((t) => ({ slug: t.slug, name: t.name })),
-			found: found.slice(0, 10).map((t) => ({ slug: t.slug, name: t.name, subjects: t.subjects }))
+			found: found
+				.slice(0, q ? 10 : 30)
+				.map((t) => ({ slug: t.slug, name: t.name, subjects: t.subjects }))
 		};
 	}
 	const tutor = await activeTutorBySlug(locals.db, slug);

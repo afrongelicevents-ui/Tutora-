@@ -3,7 +3,7 @@
 	// The working part of an active School+ partnership, for the tutor and the teacher:
 	// the shared learning plan, this month's note for the parent, logged messages, and ending it.
 	import { m } from '#lib/i18n.ts';
-	import { fmtDayTime } from '#lib/tz.ts';
+	import { fmtDayTime, monthWords } from '#lib/tz.ts';
 	let {
 		id,
 		status,
@@ -73,7 +73,7 @@
 			<span class="note">{m.spw_report_note()}</span>
 		</form>
 		{#each reports as r (r.id)}
-			<p class="small"><strong>{r.month} · {r.fromName}:</strong> {r.body}</p>
+			<p class="small"><strong>{monthWords(r.month)} · {r.fromName}:</strong> {r.body}</p>
 		{/each}
 	</details>
 {/if}

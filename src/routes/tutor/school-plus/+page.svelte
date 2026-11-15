@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDate } from '#lib/tz.ts';
 	import PartnershipWork from '#lib/components/schoolplus/PartnershipWork.svelte';
@@ -15,6 +16,18 @@
 	const FINISHED = ['declined', 'withdrawn', 'ended'];
 	const open = $derived(data.items.filter((p) => !FINISHED.includes(p.status)));
 	const done = $derived(data.items.filter((p) => FINISHED.includes(p.status)));
+	let copied = $state(false);
+	// the Copy button only with JS; without it the text is selected on focus
+	let js = $state(false);
+	onMount(() => (js = true));
+	async function copy(text: string) {
+		try {
+			await navigator.clipboard.writeText(text);
+			copied = true;
+		} catch {
+			copied = false;
+		}
+	}
 </script>
 
 <svelte:head><title>{m.sp3_title()} · Tutora</title></svelte:head>
@@ -51,6 +64,12 @@
 						value={f.link}
 						onfocus={(e) => (e.currentTarget as HTMLInputElement).select()}
 					/>
+					{#if js}<button
+							type="button"
+							class="btn btn-sm"
+							data-testid="sp-copy-link"
+							onclick={() => copy(f.link ?? '')}>{copied ? m.spt_copied() : m.spt_copy()}</button
+						>{/if}
 					<span>{f.emailed ? m.spt_link_emailed() : m.spt_link_note()}</span>
 				</div>
 			{/if}
@@ -64,13 +83,20 @@
 							value="1"
 						/><button class="btn btn-sm">{m.spt_agree()}</button>
 					</form>
-					<form method="POST" action="?/decide" data-testid="sp-decline">
-						<input type="hidden" name="id" value={p.id} /><input
-							type="hidden"
-							name="accept"
-							value="0"
-						/><button class="btn btn-ghost btn-sm">{m.par_decline()}</button>
-					</form>
+					<details class="small">
+						<summary>{m.par_decline()}</summary>
+						<form method="POST" action="?/decide" data-testid="sp-decline" class="stack">
+							<input type="hidden" name="id" value={p.id} /><input
+								type="hidden"
+								name="accept"
+								value="0"
+							/>
+							<label class="check"
+								><input type="checkbox" name="sure" /> <span>{m.spt_decline_sure()}</span></label
+							>
+							<button class="btn btn-ghost btn-sm">{m.par_decline()}</button>
+						</form>
+					</details>
 				</div>
 			{:else if p.status === 'tutor_accepted' || p.status === 'teacher_invited'}
 				<form method="POST" action="?/invite" data-testid="sp-invite">

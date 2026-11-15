@@ -325,6 +325,7 @@ import {
 	sp3_err_adult,
 	sp3_err_changed,
 	sp3_err_consent,
+	sp3_err_consent_name,
 	sp3_err_guardian,
 	sp3_err_no_tutor,
 	sp3_err_open,
@@ -462,7 +463,8 @@ import {
 	v3_nav_marking,
 	v3_nav_tools,
 	waiting,
-	years_teaching
+	years_teaching,
+	you
 } from './paraglide/messages.js';
 
 export const T_MESSAGES = {
@@ -791,6 +793,7 @@ export const T_MESSAGES = {
 	sp3_err_adult,
 	sp3_err_changed,
 	sp3_err_consent,
+	sp3_err_consent_name,
 	sp3_err_guardian,
 	sp3_err_no_tutor,
 	sp3_err_open,
@@ -928,5 +931,6 @@ export const T_MESSAGES = {
 	v3_nav_marking,
 	v3_nav_tools,
 	waiting,
-	years_teaching
+	years_teaching,
+	you
 };

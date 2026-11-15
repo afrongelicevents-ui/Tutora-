@@ -14,7 +14,9 @@
 	<ChildSwitcher kids={data.kids} current={data.current} base="/parent/report" />
 	{#if r}
 		<p class="lead">
-			{m.par3_week_of({ name: r.name, date: fmtDate(fromLocal(r.weekStart, 720)) })}
+			{data.thisWeek
+				? m.par3_this_week_of({ name: r.name, date: fmtDate(fromLocal(r.weekStart, 720)) })
+				: m.par3_week_of({ name: r.name, date: fmtDate(fromLocal(r.weekStart, 720)) })}
 		</p>
 		<div class="stat3">
 			<div>

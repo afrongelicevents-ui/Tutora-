@@ -26,7 +26,7 @@ import {
 import { enrollment, profile, tutorProfile } from './db/app.schema.ts';
 import { user } from './db/auth.schema.ts';
 import { FamilyFail, parentAccess, sha256Hex } from './family.ts';
-import { localDate } from '../tz.ts';
+import { localDate, monthWords } from '../tz.ts';
 
 const teacherUser = alias(user, 'teacher_user');
 
@@ -196,6 +196,12 @@ export async function requestPartnership(
 }
 
 /** The parent's written consent, once the teacher has accepted: School+ starts. */
+const TITLES = /^(mr|mrs|ms|miss|mx|dr|prof|sir|madam)\.?\s+/;
+const plainName = (n: string) =>
+	n.toLowerCase().replace(/\s+/g, ' ').trim().replace(TITLES, '').trim();
+/** "Mrs  grace ZULU" and "Grace Zulu" are the same person's name. */
+export const sameName = (a: string, b: string) => !!plainName(b) && plainName(a) === plainName(b);
+
 export async function giveConsent(
 	db: DB,
 	parentId: string,
@@ -209,6 +215,9 @@ export async function giveConsent(
 	if (p.status !== 'teacher_accepted') throw new PartnershipFail('sp3_err_changed');
 	const consentName = clean(v.consentName, 80);
 	if (!v.consent || consentName.length < 2) throw new PartnershipFail('sp3_err_consent');
+	// the signature must be the signed-in parent's own name (titles, capitals and spaces aside)
+	if (!sameName(consentName, await nameOf(db, parentId)))
+		throw new PartnershipFail('sp3_err_consent_name');
 	const [child, tutor, teacher] = await Promise.all([
 		nameOf(db, p.studentId),
 		tutorNameOf(db, p.tutorId),
@@ -347,6 +356,19 @@ export async function byToken(db: DB, token: string) {
 	return null;
 }
 
+/**
+ * An invite link that was already answered (or the partnership moved on): its status, so the
+ * page can say so kindly instead of "not found". The link itself can no longer be used.
+ */
+export async function answeredByToken(db: DB, token: string) {
+	if (!/^[0-9a-f]{48}$/.test(token)) return null;
+	const [p] = await db
+		.select({ status: partnership.status, declinedBy: partnership.declinedBy })
+		.from(partnership)
+		.where(eq(partnership.schoolTokenHash, await sha256Hex(token)));
+	return p ?? null;
+}
+
 /** The teacher (signed in with a schoolteacher account) accepts or declines the invite. */
 export async function teacherRespond(db: DB, token: string, teacherId: string, accept: boolean) {
 	const p = await byToken(db, token);
@@ -365,15 +387,13 @@ export async function teacherRespond(db: DB, token: string, teacherId: string, a
 		row = await setStatus(db, p.id, ['teacher_invited'], {
 			status: 'teacher_accepted',
 			teacherId,
-			schoolRespondedAt: now,
-			schoolTokenHash: null
+			schoolRespondedAt: now
 		});
 	} else {
 		row = await setStatus(db, p.id, ['teacher_invited'], {
 			status: 'declined',
 			declinedBy: 'teacher',
-			schoolRespondedAt: now,
-			schoolTokenHash: null
+			schoolRespondedAt: now
 		});
 	}
 	await log(
@@ -505,7 +525,7 @@ export async function saveReport(db: DB, who: Member, id: number, body: string, 
 			],
 			set: { body: text, fromName, createdAt: new Date() }
 		});
-	await log(db, id, 'event', who.role, fromName, `Added the ${month} report note.`);
+	await log(db, id, 'event', who.role, fromName, `Added the ${monthWords(month)} note.`);
 	return p;
 }
 
@@ -603,6 +623,28 @@ export async function details(db: DB, p: Partnership) {
 		reports,
 		messages: logRows.filter((l) => l.kind === 'message').length
 	};
+}
+
+/** A child's partnership that is still going (for the parent's child page), or null. */
+export async function openPartnershipOf(db: DB, parentId: string, studentId: string) {
+	const [p] = await db
+		.select({
+			id: partnership.id,
+			status: partnership.status,
+			subject: partnership.subject,
+			school: partnership.schoolName
+		})
+		.from(partnership)
+		.where(
+			and(
+				eq(partnership.studentId, studentId),
+				eq(partnership.parentId, parentId),
+				inArray(partnership.status, OPEN)
+			)
+		)
+		.orderBy(desc(partnership.createdAt))
+		.limit(1);
+	return p ?? null;
 }
 
 /** All of a parent's partnerships (newest first), with the child's and tutor's names. */

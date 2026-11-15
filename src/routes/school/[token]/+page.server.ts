@@ -2,7 +2,12 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
-import { byToken, PartnershipFail, teacherRespond } from '#lib/server/partnership.ts';
+import {
+	answeredByToken,
+	byToken,
+	PartnershipFail,
+	teacherRespond
+} from '#lib/server/partnership.ts';
 import { tellSchoolPlus } from '#lib/server/school-plus-notify.ts';
 import { partnership } from '#lib/server/db/v3.schema.ts';
 import { profile } from '#lib/server/db/app.schema.ts';
@@ -21,9 +26,18 @@ import { APIError } from 'better-auth/api';
  * They make a small schoolteacher account (or log in), then accept or decline.
  */
 export const load: PageServerLoad = async ({ locals, params, setHeaders }) => {
-	setHeaders({ 'cache-control': 'private, no-store', 'referrer-policy': 'no-referrer' });
+	setHeaders({ 'cache-control': 'private, no-store', 'referrer-policy': 'same-origin' });
 	const p = await byToken(locals.db, params.token);
-	if (!p) error(404, 'Not found');
+	if (!p) {
+		// already answered (declined, accepted…): a kind page, not "not found"
+		const a = await answeredByToken(locals.db, params.token);
+		if (!a) error(404, 'Not found');
+		return {
+			answered: a.status === 'declined' && a.declinedBy === 'teacher' ? 'declined' : 'done',
+			invite: null,
+			me: locals.user ? { role: locals.user.role, name: locals.user.name } : null
+		};
+	}
 	const [[kid], [t]] = await Promise.all([
 		locals.db.select({ name: user.name }).from(user).where(eq(user.id, p.studentId)),
 		locals.db
@@ -32,6 +46,7 @@ export const load: PageServerLoad = async ({ locals, params, setHeaders }) => {
 			.where(eq(tutorProfile.tutorId, p.tutorId))
 	]);
 	return {
+		answered: null,
 		invite: {
 			child: shortName(kid?.name ?? ''),
 			subject: p.subject,

@@ -1,56 +1,21 @@
 <script lang="ts">
+	import { initialOf } from '#lib/names.ts';
 	import AppShell from '#lib/components/AppShell.svelte';
+	import { studentArea } from '#lib/nav.ts';
 	import { page } from '$app/state';
-	import { m } from '#lib/i18n.ts';
 	let { children, data } = $props();
 	// the round profile initial in the header, as on the family side
 	const initial = $derived(
-		((data as { user?: { name?: string } | null }).user?.name ?? '')
-			.trim()
-			.charAt(0)
-			.toUpperCase() || undefined
+		((data as { user?: { name?: string } | null }).user?.name ?? '').trim()
+			? initialOf((data as { user?: { name?: string } | null }).user?.name ?? '')
+			: undefined
 	);
 </script>
 
 <AppShell
-	tag={m.v3_tag_student()}
-	label={m.nav_dashboard()}
+	{...studentArea()}
 	unread={(page.data as { unreadNow?: number }).unreadNow ?? data.unread}
 	{initial}
-	tabs={[
-		{ href: '/student', label: m.v3_nav_home(), icon: 'home', also: ['/student/subjects'] },
-		{
-			href: '/student/tutors',
-			label: m.v3_nav_tutors(),
-			icon: 'tutors',
-			also: ['/student/find', '/student/book', '/student/tutor', '/student/messages']
-		},
-		{ href: '/student/lessons', label: m.v3_nav_lessons(), icon: 'lessons' },
-		{
-			href: '/student/progress',
-			label: m.v3_nav_progress(),
-			icon: 'progress',
-			also: ['/student/days', '/student/talk']
-		},
-		{
-			href: '/student/me',
-			label: m.v3_nav_you(),
-			icon: 'user',
-			also: [
-				'/student/family',
-				'/student/buddies',
-				'/student/schedule',
-				'/student/planner',
-				'/student/report'
-			]
-		}
-	]}
-	more={[
-		{ href: '/student/homework', label: m.v3_nav_homework() },
-		{ href: '/student/study', label: m.v3_nav_study() },
-		{ href: '/student/payments', label: m.v3_nav_payments() },
-		{ href: '/student/tools', label: m.v3_nav_tools() }
-	]}
 >
 	<!-- .st-area: the shared reference style for every student page (app.css "student area") -->
 	<div class="st-area">{@render children()}</div>

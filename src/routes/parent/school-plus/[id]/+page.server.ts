@@ -59,8 +59,11 @@ export const actions: Actions = {
 		}
 		return { consented: true };
 	},
-	stop: async ({ locals, url, params }) => {
+	stop: async ({ locals, url, params, request }) => {
 		const u = requireRole(locals.user, url, ['parent']);
+		// a two-step action: the "I'm sure" box is checked here too, so it holds without JavaScript
+		if (formObject(await request.formData()).sure !== 'on')
+			return fail(400, { error: 'err_tick_sure' });
 		try {
 			const p = await stopPartnership(locals.db, u.id, Number(params.id) || 0);
 			await tellSchoolPlus(locals.db, p, p.status === 'ended' ? 'ended' : 'withdrawn', u.id);

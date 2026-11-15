@@ -6,6 +6,8 @@
 	import { shrink } from '#lib/shrink.ts';
 	import { moodLabel } from '#lib/components/tutor/mood.ts';
 	let { data, form } = $props();
+	// the same 'still to pay' as Earnings and the family see (waiting payments shown on their own)
+	const toPay = $derived(Math.max(0, data.balance.owed - data.balance.waiting));
 	const s = $derived(data.student);
 	const money = (c: number) => formatMoney(c, data.currency);
 	const now = $derived(new Date(data.now));
@@ -288,9 +290,7 @@
 		<div><strong>{money(data.balance.paid)}</strong><span>{m.paid()}</span></div>
 		<div><strong>{money(data.balance.waiting)}</strong><span>{m.waiting()}</span></div>
 		<div>
-			<strong class:owe={data.balance.owed > 0}>{money(data.balance.owed)}</strong><span
-				>{m.owed()}</span
-			>
+			<strong class:owe={toPay > 0}>{money(toPay)}</strong><span>{m.owed()}</span>
 		</div>
 	</div>
 	{#if data.balance.credit > 0}<p class="note">

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { m, t } from '#lib/i18n.ts';
-	import { fmtDay, fmtDayTime } from '#lib/tz.ts';
+	import { fmtDay, fmtDayTime, monthWords } from '#lib/tz.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	import Hero from '#lib/components/ui/Hero.svelte';
 	import Timeline from '#lib/components/ui/Timeline.svelte';
@@ -122,7 +122,7 @@
 		<div class="link" class:on={active}>
 			<span class="ui-ico {active ? 'green' : ''}"><LineIcon name="refresh" size={22} /></span>
 			<span class="ui-pill {active ? 'ok' : ''}"
-				>{active ? m.spp_connected() : m.spp_waiting()}</span
+				>{active ? m.spp_connected() : data.stopped ? m.spp_not_connected() : m.spp_waiting()}</span
 			>
 		</div>
 		<div class="ui-card who">
@@ -199,7 +199,7 @@
 	<section class="ui-card" id="reports" aria-labelledby="rep-h">
 		<div class="ui-sec-h"><h2 id="rep-h">{m.spp_f_reports()}</h2></div>
 		{#each data.reports as r (r.id)}
-			<p><strong>{r.month} · {r.fromName}</strong><br />{r.body}</p>
+			<p><strong>{monthWords(r.month)} · {r.fromName}</strong><br />{r.body}</p>
 		{:else}
 			<p class="muted">{m.spp_reports_none()}</p>
 		{/each}
@@ -236,14 +236,10 @@
 			</details>
 		{/if}
 		{#if live}
-			<form
-				method="POST"
-				action="?/stop"
-				data-testid="sp-stop"
-				onsubmit={(e) => {
-					if (!confirm(m.sp3_stop_confirm())) e.preventDefault();
-				}}
-			>
+			<form method="POST" action="?/stop" data-testid="sp-stop" class="stack">
+				<label class="check"
+					><input type="checkbox" name="sure" /> <span>{m.spp_stop_sure()}</span></label
+				>
 				<button class="ui-btn-soft danger" type="submit">{m.sp3_stop()}</button>
 			</form>
 			<p class="note">{m.sp3_stop_note()}</p>

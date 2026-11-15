@@ -222,6 +222,12 @@ export interface Balance {
 	credit: number;
 }
 
+/**
+ * What is still to pay: owed, less payments already sent and waiting for the tutor's OK
+ * (those are shown on their own as "waiting"). The one definition used on every page.
+ */
+export const stillToPay = (b: { owed: number; waiting: number }) => Math.max(0, b.owed - b.waiting);
+
 export async function balanceFor(db: DB, tutorId: string, userId: string): Promise<Balance> {
 	const all = await balances(db, tutorId, [userId]);
 	return all.get(userId) ?? { charged: 0, paid: 0, waiting: 0, owed: 0, credit: 0 };

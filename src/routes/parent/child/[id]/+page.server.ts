@@ -9,6 +9,7 @@ import { readingParents } from '#lib/server/messages.ts';
 import { tutorsForUser } from '#lib/server/people.ts';
 import { shareReport } from '#lib/server/planner.ts';
 import { homework, homeworkAnswer } from '#lib/server/db/app.schema.ts';
+import { openPartnershipOf } from '#lib/server/partnership.ts';
 import {
 	BookingFail,
 	bookingTutorId,
@@ -28,12 +29,14 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 	const access = await parentAccess(locals.db, u.id, id);
 	if (!access.ok) error(404, 'Not found');
 	const kid = (await childrenOf(locals.db, u.id)).find((k) => k.studentId === id);
-	const [child, photos, readers, tutors, sharesReport] = await Promise.all([
+	const [child, photos, readers, tutors, sharesReport, sp] = await Promise.all([
 		childOverview(locals.db, u.id, id),
 		childPhotos(locals.db, [id]),
 		readingParents(locals.db, id),
 		tutorsForUser(locals.db, id),
-		shareReport(locals.db, id)
+		shareReport(locals.db, id),
+		// the child's School+ partnership still going, if any (same batch, one small query)
+		openPartnershipOf(locals.db, u.id, id)
 	]);
 	const requests = access.guardian ? await requestsForUser(locals.db, id) : [];
 	const hw: { id: number; title: string; dueOn: string | null; subject: string | null }[] =
@@ -62,6 +65,7 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 			.filter((t) => t.status === 'active')
 			.map((t) => ({ slug: t.slug, name: t.name })),
 		sharesReport,
+		schoolPlus: sp ?? null,
 		homework: hw,
 		booked: url.searchParams.has('booked'),
 		requests: requests.map((r) => ({

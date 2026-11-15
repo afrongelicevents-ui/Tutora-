@@ -32,8 +32,9 @@
 
 	<div class="stack-l">
 		{#each data.items as h (h.id)}
-			{@const marked = h.answers.find((a) => a.checkedAt)}
-			{@const sent = h.answers.length > 0}
+			{@const latest = h.answers.at(-1)}
+			{@const marked = !!latest?.checkedAt}
+			{@const sent = !!latest}
 			<div class="card hw">
 				<div class="top">
 					<strong>{h.title}</strong>

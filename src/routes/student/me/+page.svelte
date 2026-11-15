@@ -101,7 +101,7 @@
 			<a class="stat" href="/student/planner#tasks">
 				<span class="ic"><LineIcon name="check" /></span>
 				<strong>{data.personal.tasksDone} / {data.personal.tasksTotal}</strong>
-				<span class="label">{m.me_tasks_done()}</span>
+				<span class="label">{m.me_tasks_done_today()}</span>
 			</a>
 			<a class="stat" href="/student/planner#goals">
 				<span class="ic gold"><LineIcon name="trophy" /></span>

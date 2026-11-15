@@ -48,7 +48,8 @@
 								? '/parent'
 								: user.role === 'schoolteacher'
 									? '/teacher'
-									: '/student'}>{m.nav_dashboard()}</a
+									: '/student'}
+							>{user.role === 'schoolteacher' ? m.nav_teacher_home() : m.nav_dashboard()}</a
 						>
 					{/if}
 					<a href="/notifications">{m.notif_title()}</a>

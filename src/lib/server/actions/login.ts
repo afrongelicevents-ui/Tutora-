@@ -20,7 +20,7 @@ export async function logIn(
 				email: parsed.data.email,
 				password: parsed.data.password,
 				callbackURL: '/account',
-				// "Stay logged in on this phone" (ticked by default): 30 days; otherwise until the browser closes
+				// "Stay logged in on this device" (ticked by default): 30 days; otherwise until the browser closes
 				rememberMe: input.remember === 'on'
 			},
 			headers

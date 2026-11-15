@@ -63,8 +63,15 @@ export async function tellSchoolPlus(
 			to.push(parent, tutor);
 			if (teacher) to.push(teacher);
 	}
-	for (const r of to)
-		if (r.id !== by) await notifyUser(db, r.id, s, b, { kind: 'family', link: r.href });
+	for (const r of to) {
+		if (r.id === by) continue;
+		// the parent is addressed as "you" where the message is about their own step
+		const body =
+			event === 'teacher_accepted' && r.id === p.parentId
+				? m.spn_teacher_accepted_parent_b({ school: p.schoolName })
+				: b;
+		await notifyUser(db, r.id, s, body, { kind: 'family', link: r.href });
+	}
 }
 
 /** The invite link by email to the teacher, when the parent gave an address and email works. */

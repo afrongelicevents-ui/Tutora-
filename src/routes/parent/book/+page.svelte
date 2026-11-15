@@ -30,7 +30,8 @@
 			>
 			<button class="btn btn-ghost" type="submit">{m.find3_apply()}</button>
 		</form>
-		{#if data.q}
+		{#if data.searched}
+			{#if !data.q}<p class="small muted">{m.find3_all_tutors()}</p>{/if}
 			<div class="rows">
 				{#each data.found as tu (tu.slug)}<a href="?{kidQ}&tutor={tu.slug}"
 						><span>{tu.name} <span class="muted small">· {tu.subjects.join(', ')}</span></span><span

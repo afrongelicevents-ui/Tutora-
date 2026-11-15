@@ -65,6 +65,8 @@ export const actions: Actions = {
 		const f = formObject(await request.formData());
 		return handle(async () => {
 			const accept = f.accept === '1';
+			// declining can't be undone: the "I'm sure" box is checked here too (works without JS)
+			if (!accept && f.sure !== 'on') return fail(400, { error: 'err_tick_sure', id: idOf(f) });
 			const p = await tutorDecide(locals.db, me.id, idOf(f), accept);
 			await tellSchoolPlus(locals.db, p, accept ? 'tutor_accepted' : 'tutor_declined', me.id);
 			return { id: p.id, done: accept ? 'accepted' : 'declined' };

@@ -153,7 +153,7 @@
 				{/each}
 				{#if c.week}
 					<p class="small">
-						{m.par3_sessions()}:
+						{m.par3_sessions_week()}:
 						<strong
 							>{c.week.planned
 								? `${Math.min(c.week.done, c.week.planned)}/${c.week.planned}${c.week.done > c.week.planned ? ` +${c.week.done - c.week.planned}` : ''}`
@@ -232,6 +232,19 @@
 						><LineIcon name="chat" size={18} /> {m.msg_parent_link()}</a
 					>{/if}
 			</section>
+
+			{#if data.schoolPlus}
+				<section class="ui-card" aria-labelledby="sp-h" data-testid="child-school-plus">
+					<div class="ui-sec-h"><h2 id="sp-h">{m.sp3_title()}</h2></div>
+					<p class="small">
+						{data.schoolPlus.subject} · {data.schoolPlus.school}<br /><span class="muted"
+							>{t(`sp3_status_${data.schoolPlus.status}`)}</span
+						>
+					</p>
+					<a class="ui-btn-soft" href="/parent/school-plus/{data.schoolPlus.id}">{m.spp_open()} ›</a
+					>
+				</section>
+			{/if}
 
 			<section class="ui-card" aria-labelledby="hw-h">
 				<div class="ui-sec-h"><h2 id="hw-h">{m.pf_homework()}</h2></div>

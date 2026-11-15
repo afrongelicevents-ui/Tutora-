@@ -92,8 +92,12 @@ describe.skipIf(!hasTestDb)('School+: every status and who may see what', () => 
 		await expect(
 			giveConsent(db, parent.id, p.id, { consentName: 'G', consent: true })
 		).rejects.toThrow('sp3_err_consent');
+		// someone else's name is refused; the parent's own name (any capitals/spaces) is fine
+		await expect(
+			giveConsent(db, parent.id, p.id, { consentName: 'Somebody Else', consent: true })
+		).rejects.toThrow('sp3_err_consent_name');
 		const active = await giveConsent(db, parent.id, p.id, {
-			consentName: 'Guardian Person',
+			consentName: "  rudo's  GUARDIAN ",
 			consent: true
 		});
 		expect(active.status).toBe('active');

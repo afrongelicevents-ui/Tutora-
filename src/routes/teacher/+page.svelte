@@ -6,7 +6,7 @@
 
 <svelte:head><title>School+ · Tutora</title></svelte:head>
 
-<div class="screen tskin ui-page">
+<div class="screen tskin ui-page tpage">
 	<Hero dark title={m.spx_title()} lead={m.spx_lead()}>
 		{#snippet badge()}<span class="ui-pill gold">School+</span>{/snippet}
 	</Hero>
@@ -26,3 +26,10 @@
 		{/each}
 	</ul>
 </div>
+
+<style>
+	.tpage {
+		max-width: 760px;
+		margin-inline: auto;
+	}
+</style>

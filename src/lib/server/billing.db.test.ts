@@ -17,8 +17,10 @@ import {
 	receiptData,
 	recordCash,
 	rejectPayment,
+	stillToPay,
 	submitPayment
 } from './billing.ts';
+import { studentCards } from './tutor-students.ts';
 import { receiptPdf } from './pdf.ts';
 import { payment, studentPackage } from './db/app.schema.ts';
 
@@ -195,6 +197,23 @@ describe.skipIf(!hasTestDb)('payments, receipts and packages (real database)', (
 		const months = await monthlyTotals(db, tid, new Date('2026-01-01'));
 		expect(months[0].month).toBe('2026-11');
 		expect(months[0].total).toBeGreaterThan(0);
+	});
+
+	it('"still to pay" is the same everywhere: owed minus what is waiting, waiting on its own', async () => {
+		const u = await makeUser(db, 'student');
+		await bookLessons(u.id, [zw(10, '15:00'), zw(10, '16:00')]);
+		await submitPayment(db, tid, u.id, pay(800));
+		const own = await balanceFor(db, tid, u.id);
+		expect(own).toMatchObject({ owed: 1600, waiting: 800 });
+		expect(stillToPay(own)).toBe(800);
+		// the tutor's list and Earnings use the same figure
+		const all = await balances(db, tid);
+		expect(stillToPay(all.get(u.id)!)).toBe(800);
+		const { cards } = await studentCards(db, tid);
+		const card = cards.find((c) => c.id === u.id);
+		if (card) expect(card.owed).toBe(800);
+		// never below zero when more is waiting than owed
+		expect(stillToPay({ owed: 100, waiting: 800 })).toBe(0);
 	});
 
 	it('students only see their own payments', async () => {

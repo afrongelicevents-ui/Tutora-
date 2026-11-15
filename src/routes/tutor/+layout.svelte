@@ -1,5 +1,6 @@
 <script lang="ts">
 	import AppShell from '#lib/components/AppShell.svelte';
+	import { tutorArea } from '#lib/nav.ts';
 	import { m } from '#lib/i18n.ts';
 	import { t } from '#lib/i18n.ts';
 	import { page } from '$app/state';
@@ -7,48 +8,7 @@
 	const inWizard = $derived(page.url.pathname.startsWith('/tutor/setup'));
 </script>
 
-<AppShell
-	tag={m.v3_tag_tutor()}
-	label={m.nav_tutor()}
-	unread={data.unread}
-	tabs={[
-		{ href: '/tutor', label: m.v3_nav_today(), icon: 'home', also: ['/tutor/lessons'] },
-		{ href: '/tutor/calendar', label: m.v3_nav_schedule(), icon: 'calendar' },
-		{
-			href: '/tutor/students',
-			label: m.v3_nav_students(),
-			icon: 'tutors',
-			also: ['/tutor/messages']
-		},
-		{ href: '/tutor/payments', label: m.v3_nav_earnings(), icon: 'wallet' },
-		{
-			href: '/tutor/more',
-			label: m.v3_nav_more(),
-			icon: 'more',
-			also: [
-				'/tutor/settings',
-				'/tutor/reviews',
-				'/tutor/photo',
-				'/tutor/setup',
-				'/tutor/day',
-				'/tutor/homework',
-				'/tutor/assessments',
-				'/tutor/resources',
-				'/tutor/school-plus',
-				'/tutor/tools'
-			]
-		}
-	]}
-	more={[
-		{ href: '/tutor/messages', label: m.msg_tutor_link() },
-		{ href: '/tutor/homework', label: m.v3_nav_marking() },
-		{ href: '/tutor/assessments', label: m.v3_nav_assessments() },
-		{ href: '/tutor/resources', label: m.res3_nav() },
-		{ href: '/tutor/school-plus', label: m.sp3_title() },
-		{ href: '/tutor/tools', label: m.v3_nav_tools() },
-		{ href: '/tutor/settings', label: m.v3_nav_profile() }
-	]}
->
+<AppShell {...tutorArea()} unread={data.unread}>
 	<div class="tskin">
 		{#if data.status !== 'active' && !inWizard}
 			<div class="screen">

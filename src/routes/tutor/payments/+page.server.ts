@@ -1,5 +1,6 @@
 import { requireTutor } from '#lib/server/guards.ts';
 import type { Actions, PageServerLoad } from './$types';
+import { stillToPay } from '#lib/server/billing.ts';
 import {
 	balances,
 	monthlyTotals,
@@ -65,7 +66,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		.filter((r) => r.charged || r.paid || r.waiting)
 		// "owes" = not paid and not reported yet: the same figure the student and parent see
 		// (a payment waiting for the tutor's OK is shown on its own as "waiting")
-		.map((r) => ({ ...r, owed: Math.max(0, r.owed - r.waiting) }));
+		.map((r) => ({ ...r, owed: stillToPay(r) }));
 	// confirmed payments in this period and the one before (tutor's own currency)
 	const sumBetween = async (from: Date, to: Date) => {
 		const [x] = await locals.db

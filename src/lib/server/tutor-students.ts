@@ -10,7 +10,7 @@ import type { DB } from './db/types.ts';
 import { attendee, lesson, review, subject } from './db/app.schema.ts';
 import { assessmentResult } from './db/v3.schema.ts';
 import { listStudents } from './people.ts';
-import { balances } from './billing.ts';
+import { balances, stillToPay } from './billing.ts';
 import { addDays, localDate } from '../tz.ts';
 
 export type StudentStatus = 'active' | 'inactive' | 'pending';
@@ -77,7 +77,7 @@ export async function studentCards(db: DB, tutorId: string, q = '', now = new Da
 			status,
 			lastLesson: past[0]?.startsAt ?? null,
 			nextLesson: ahead[0]?.startsAt ?? null,
-			owed: bal.get(p.id)?.owed ?? 0,
+			owed: stillToPay(bal.get(p.id) ?? { owed: 0, waiting: 0 }),
 			// marks with this tutor: latest three, and the first three (needs 4+ results)
 			latestPct: pct(res.slice(-3)),
 			firstPct: res.length >= 4 ? pct(res.slice(0, 3)) : null,

@@ -13,7 +13,9 @@
 				? m.role_tutor()
 				: data.account.role === 'parent'
 					? m.role_parent()
-					: m.role_student()
+					: data.account.role === 'schoolteacher'
+						? m.role_schoolteacher()
+						: m.role_student()
 	);
 </script>
 
@@ -101,8 +103,8 @@
 			><input type="checkbox" name="email" defaultChecked={!data.prefs.emailOff} />
 			<span>{m.acc_pref_email()}</span></label
 		>
-		{#if data.account.role !== 'owner'}
-			<!-- lesson and homework alerts are for students, parents and tutors, not the owner -->
+		{#if data.account.role !== 'owner' && data.account.role !== 'schoolteacher'}
+			<!-- lesson and homework alerts are for students, parents and tutors (not the owner or a schoolteacher) -->
 			<label class="check"
 				><input type="checkbox" name="reminders" defaultChecked={!data.prefs.remindersOff} />
 				<span>{m.acc_pref_reminders()}</span></label

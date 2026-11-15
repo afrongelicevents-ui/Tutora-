@@ -9,7 +9,9 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const me = requireRole(locals.user, url, ['schoolteacher']);
 	const rows = await forTeacher(locals.db, me.id);
 	const open = rows.filter((r) => r.p.status === 'active' || r.p.status === 'teacher_accepted');
-	if (open.length === 1 && rows.length === 1) redirect(303, `/teacher/p/${open[0].p.id}`);
+	// one partnership: open it straight away (unless the list itself was asked for: ?all=1)
+	if (open.length === 1 && rows.length === 1 && !url.searchParams.has('all'))
+		redirect(303, `/teacher/p/${open[0].p.id}`);
 	return {
 		items: rows.map((r) => ({
 			id: r.p.id,

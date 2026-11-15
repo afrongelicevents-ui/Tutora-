@@ -9,7 +9,7 @@
 
 <svelte:head><title>School+ · Tutora</title></svelte:head>
 
-<div class="screen tskin ui-page" data-testid="teacher-partnership" data-status={data.status}>
+<div class="screen tskin ui-page tpage" data-testid="teacher-partnership" data-status={data.status}>
 	<Hero
 		dark
 		title={`${data.child} · ${data.subject}`}
@@ -18,7 +18,7 @@
 		}`}
 	>
 		{#snippet badge()}<span class="ui-pill gold">School+</span>{/snippet}
-		<a class="back-l" href="/teacher">← {m.v3_back()}</a>
+		<a class="back-l" href="/teacher?all=1">← {m.v3_back()}</a>
 	</Hero>
 	<span class="ui-pill">{t(`sp3_status_${data.status}`)}</span>
 	{#if data.welcome}<p class="notice" role="status">{m.spx_welcome()}</p>{/if}
@@ -28,7 +28,7 @@
 		<p class="softcard small">{m.spx_waiting_consent()}</p>
 	{/if}
 	{#if data.consentText}
-		<details class="small">
+		<details class="card small">
 			<summary>{m.sp3_consent_h()}</summary>
 			<p>{data.consentText}</p>
 		</details>
@@ -46,6 +46,12 @@
 </div>
 
 <style>
+	/* centred like the rest of the site (this area has no side menu) */
+	.tpage {
+		max-width: 760px;
+		margin-inline: auto;
+	}
+
 	.back-l {
 		color: #fff;
 		font-weight: 600;

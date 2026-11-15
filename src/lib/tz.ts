@@ -106,3 +106,12 @@ export function dtf(locale: string, opts: Intl.DateTimeFormatOptions): Intl.Date
 	if (!f) formatters.set(key, (f = new Intl.DateTimeFormat(locale, opts)));
 	return f;
 }
+
+/** "2026-11" → "November 2026" (a month written in words, not as a code). */
+export function monthWords(ym: string): string {
+	const m = /^(\d{4})-(\d{2})$/.exec(ym);
+	if (!m) return ym;
+	return dtf('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+		new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, 15))
+	);
+}

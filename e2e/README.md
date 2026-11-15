@@ -48,10 +48,12 @@ School+ pages must keep these `data-testid`s (or update the test):
 | same                             | "Find a tutor first" button (child has no tutor)                                 | `sp-find-tutor` |
 | `/parent/school-plus/<id>`       | page wrapper with `data-status="<status>"`                                       | `sp-parent`     |
 | same                             | consent form (`input[name=consent]` checkbox, `input[name=consentName]`, submit) | `sp-consent`    |
-| same                             | stop / withdraw form (submit; a confirm() dialog)                                | `sp-stop`       |
+| same                             | stop / withdraw form (submit; needs the `sure` tick)                             | `sp-stop`       |
 
-Tutor (`/tutor/school-plus`): `sp-item` (with `data-status`), `sp-accept`, `sp-decline`,
-`sp-invite`, `sp-invite-link`. Teacher: `spi-signup`, `spi-respond` (buttons `value=1|0`) on
+Tutor (`/tutor/school-plus`): `sp-item` (with `data-status`), `sp-accept`, `sp-decline`
+(inside a `<details>`, needs the `sure` tick), `sp-invite`, `sp-invite-link`, `sp-copy-link`.
+Answered invite link: `spi-answered` (`data-answered=done|declined`). Parent child page:
+`child-school-plus`. Teacher: `spi-signup`, `spi-respond` (buttons `value=1|0`) on
 `/school/<token>`; `teacher-partnership` (with `data-status`) on `/teacher/p/<id>`; shared:
 `sp-message`, `sp-plan`, `sp-report`, `sp-end`.
 Locally email counts as on (dev), so a new teacher confirms their email first: the test sets

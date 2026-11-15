@@ -102,7 +102,16 @@ test('every status, end to end, with a new teacher account', async ({ browser })
 	// the teacher opens the link, makes a small account and accepts
 	const teacher = await freshContext(browser);
 	await teacherSignsUp(teacher, invitePath, 'Mr T. Chiganga', `teacher-${tag}@example.com`);
-	await press(teacher, '[data-testid=spi-respond] button[value="1"]');
+	// a real form POST from the invite page, as Chromium sends it: the page's referrer policy
+	// must let the browser send the site's own Origin, or the CSRF check refuses it (403)
+	const [post] = await Promise.all([
+		teacher.waitForRequest((r) => r.method() === 'POST' && r.url().includes('/school/')),
+		teacher.locator('[data-testid=spi-respond] button[value="1"]').click()
+	]);
+	expect(await post.headerValue('origin')).toBe(new URL(teacher.url()).origin);
+	const res = await post.response();
+	expect(res?.status()).toBeLessThan(400);
+	await teacher.waitForURL(new RegExp(`/teacher/p/${id}`));
 	await expect(teacher).toHaveURL(new RegExp(`/teacher/p/${id}`));
 	await expect(teacher.locator('[data-testid=teacher-partnership]')).toHaveAttribute(
 		'data-status',
@@ -192,6 +201,13 @@ test('declines and withdrawal', async ({ browser }) => {
 	const a = uniq();
 	const id1 = await request(parent, a);
 	await tutor.goto('/tutor/school-plus');
+	// without the "I'm sure" tick nothing happens; with it the request is declined
+	await item(tutor, a).locator('details:has([data-testid=sp-decline]) summary').click();
+	await item(tutor, a).locator('[data-testid=sp-decline] button').click();
+	await tutor.waitForLoadState('load');
+	expect(await status(id1)).toBe('requested');
+	await item(tutor, a).locator('details:has([data-testid=sp-decline]) summary').click();
+	await item(tutor, a).locator('[data-testid=sp-decline] input[name=sure]').check();
 	await item(tutor, a).locator('[data-testid=sp-decline] button').click();
 	await tutor.waitForLoadState('load');
 	expect(await status(id1)).toBe('declined');
@@ -204,9 +220,19 @@ test('declines and withdrawal', async ({ browser }) => {
 	await teacherSignsUp(teacher, invitePath, 'Mrs No', `teacher-${b}@example.com`);
 	await press(teacher, '[data-testid=spi-respond] button[value="0"]');
 	expect(await status(id2)).toBe('declined');
-	// the used link no longer opens
-	const gone = await teacher.goto(invitePath);
-	expect(gone?.status()).toBe(404);
+	// a clear confirmation after declining
+	await expect(teacher.locator('[data-testid=spi-answered]')).toHaveAttribute(
+		'data-answered',
+		'declined'
+	);
+	// reopening the used link: a friendly "already answered" page, not a 404
+	const again = await teacher.goto(invitePath);
+	expect(again?.status()).toBe(200);
+	await expect(teacher.locator('[data-testid=spi-answered]')).toHaveAttribute(
+		'data-answered',
+		'declined'
+	);
+	await expect(teacher.locator('[data-testid=spi-respond]')).toHaveCount(0);
 
 	// the parent withdraws a request before it starts
 	const c = uniq();
@@ -214,7 +240,9 @@ test('declines and withdrawal', async ({ browser }) => {
 	await tutorAcceptsAndInvites(tutor, c);
 	await parent.goto(`/parent/school-plus/${id3}`);
 	await parent.waitForLoadState('networkidle');
-	parent.once('dialog', (d) => d.accept());
+	await press(parent, '[data-testid=sp-stop] button[type=submit]');
+	expect(await status(id3)).not.toBe('withdrawn'); // not without the tick
+	await parent.locator('[data-testid=sp-stop] input[name=sure]').check();
 	await press(parent, '[data-testid=sp-stop] button[type=submit]');
 	expect(await status(id3)).toBe('withdrawn');
 });

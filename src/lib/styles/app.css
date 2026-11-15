@@ -1906,3 +1906,15 @@ main:has(> .look) {
 .tskin .phero.dark .ui-pill.gold {
 	background: rgb(255 255 255 / 0.14);
 }
+
+/* Disabled buttons look disabled everywhere (any button style). */
+button:disabled,
+button[aria-disabled='true'],
+.btn[aria-disabled='true'],
+input[type='submit']:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	filter: grayscale(0.4);
+	box-shadow: none;
+	pointer-events: none;
+}

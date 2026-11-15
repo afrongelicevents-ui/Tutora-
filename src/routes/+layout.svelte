@@ -8,6 +8,9 @@
 	import type { LayoutProps } from './$types';
 
 	import { page } from '$app/state';
+	import AppShell from '#lib/components/AppShell.svelte';
+	import { areaFor } from '#lib/nav.ts';
+	import { initialOf } from '#lib/names.ts';
 
 	let { children, data }: LayoutProps = $props();
 
@@ -40,8 +43,10 @@
 	];
 	const under = (list: string[]) =>
 		list.some((p) => page.url.pathname === p || page.url.pathname.startsWith(p + '/'));
+	// the shared pages keep the signed-in person's own area shell (tabs / side navigation)
+	const area = $derived(under(['/notifications', '/account']) ? areaFor(data.user?.role) : null);
 	const chrome = $derived(
-		!(page.url.pathname === '/' && !data.user) && !under(APP) && !under(BARE)
+		!(page.url.pathname === '/' && !data.user) && !under(APP) && !under(BARE) && !area
 	);
 	// WhatsApp is the tutor's own number, only on that tutor's page (none on Tutora's pages)
 	const whatsapp = $derived((page.data.tutorWhatsapp as string | null | undefined) ?? null);
@@ -58,7 +63,21 @@
 {#if data.testSite}<div class="testbar" role="note">{m.test_site_bar()}</div>{/if}
 {#if chrome}<Header user={data.user} unread={data.unread} />{/if}
 <main id="main" class:bare={!chrome}>
-	{@render children()}
+	{#if area}
+		<AppShell
+			{...area}
+			unread={(page.data as { unreadNow?: number }).unreadNow ?? data.unread}
+			bellHref={data.user?.role === 'parent' ? '/parent/notifications' : '/notifications'}
+			accountHref={data.user?.role === 'parent' ? '/parent/settings' : '/account'}
+			initial={data.user?.role === 'tutor' ? '' : initialOf(data.user?.name ?? '')}
+		>
+			{#if data.user?.role === 'student'}<div class="st-area">{@render children()}</div>
+			{:else if data.user?.role === 'tutor'}<div class="tskin">{@render children()}</div>
+			{:else}{@render children()}{/if}
+		</AppShell>
+	{:else}
+		{@render children()}
+	{/if}
 </main>
 {#if chrome}<Footer {whatsapp} />{/if}
 {#if showWhatsApp && whatsapp}<div class="fab-space" aria-hidden="true"></div>
