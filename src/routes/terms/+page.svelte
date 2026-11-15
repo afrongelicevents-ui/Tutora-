@@ -5,7 +5,7 @@
 <svelte:head><title>{m.terms_title()} · Tutora</title></svelte:head>
 
 <!-- Legal text is kept in one language until reviewed; translations will follow. -->
-<article class="wrap narrow">
+<article class="wrap narrow look">
 	<h1>{m.terms_title()}</h1>
 	<p class="notice small">{m.draft_notice()}</p>
 	<h2>What Tutora is</h2>

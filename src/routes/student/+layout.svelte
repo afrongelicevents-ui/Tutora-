@@ -3,12 +3,20 @@
 	import { page } from '$app/state';
 	import { m } from '#lib/i18n.ts';
 	let { children, data } = $props();
+	// the round profile initial in the header, as on the family side
+	const initial = $derived(
+		((data as { user?: { name?: string } | null }).user?.name ?? '')
+			.trim()
+			.charAt(0)
+			.toUpperCase() || undefined
+	);
 </script>
 
 <AppShell
 	tag={m.v3_tag_student()}
 	label={m.nav_dashboard()}
 	unread={(page.data as { unreadNow?: number }).unreadNow ?? data.unread}
+	{initial}
 	tabs={[
 		{ href: '/student', label: m.v3_nav_home(), icon: 'home', also: ['/student/subjects'] },
 		{
@@ -44,5 +52,6 @@
 		{ href: '/student/tools', label: m.v3_nav_tools() }
 	]}
 >
-	{@render children()}
+	<!-- .st-area: the shared reference style for every student page (app.css "student area") -->
+	<div class="st-area">{@render children()}</div>
 </AppShell>

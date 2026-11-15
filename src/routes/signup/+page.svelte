@@ -10,7 +10,7 @@
 
 <svelte:head><title>{m.signup_title()} · Tutora</title></svelte:head>
 
-<section class="screen auth">
+<section class="screen auth look look-auth">
 	<a class="back" href="/get-started" aria-label={m.v3_back()}>←</a>
 	<h1>{m.signup_title()}</h1>
 	{#if data.tutorName}<p class="muted">{m.signup_with_tutor({ name: data.tutorName })}</p>{/if}

@@ -38,20 +38,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const lessons = inRange(day, addDays(day, 1));
 	const weekLessons = inRange(week, toWeek);
 	const soon = inRange(day, toSoon);
-	const convs = await conversations(db, t, 'tutor');
 	// the next lesson that hasn't finished (today or in the next two weeks)
 	const next = soon.find((l) => l.endsAt > now) ?? null;
 	const ids = [...new Set(lessons.flatMap((l) => l.people.map((p) => p.userId)))];
 	const lessonIds = lessons.map((l) => l.id);
 	// lessons come from THIS tutor only, so these lookups stay inside their own lessons
 	// (an empty list matches nothing: drizzle turns `in ()` into `false`)
-	const phones: { userId: string; phone: string | null; parentPhone: string | null }[] = await db
+	// these four lookups don't depend on each other: start them together (one database batch)
+	const phonesQ = db
 		.select({ userId: profile.userId, phone: profile.phone, parentPhone: profile.parentPhone })
 		.from(profile)
 		.where(inArray(profile.userId, ids));
 	// today's meeting links and the next lesson's, in one lookup
 	const meetIds = next && !lessonIds.includes(next.id) ? [...lessonIds, next.id] : lessonIds;
-	const allMeetings: { lessonId: number; provider: 'meet' | 'teams'; joinUrl: string }[] = await db
+	const meetingsQ = db
 		.select({
 			lessonId: lessonMeeting.lessonId,
 			provider: lessonMeeting.provider,
@@ -59,15 +59,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		})
 		.from(lessonMeeting)
 		.where(inArray(lessonMeeting.lessonId, meetIds));
-	const meetings = allMeetings.filter((x) => lessonIds.includes(x.lessonId));
-	const nextMeeting = next ? allMeetings.find((x) => x.lessonId === next.id) : undefined;
-	const places: {
-		id: number;
-		lessonId: number;
-		userId: string;
-		attendance: 'completed' | 'absent' | null;
-		address: string | null;
-	}[] = await db
+	const placesQ = db
 		.select({
 			id: attendee.id,
 			lessonId: attendee.lessonId,
@@ -84,6 +76,25 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				ne(attendee.status, 'cancelled')
 			)
 		);
+	const [convs, phones, allMeetings, places] = (await Promise.all([
+		conversations(db, t, 'tutor'),
+		phonesQ,
+		meetingsQ,
+		placesQ
+	])) as [
+		Awaited<ReturnType<typeof conversations>>,
+		{ userId: string; phone: string | null; parentPhone: string | null }[],
+		{ lessonId: number; provider: 'meet' | 'teams'; joinUrl: string }[],
+		{
+			id: number;
+			lessonId: number;
+			userId: string;
+			attendance: 'completed' | 'absent' | null;
+			address: string | null;
+		}[]
+	];
+	const meetings = allMeetings.filter((x) => lessonIds.includes(x.lessonId));
+	const nextMeeting = next ? allMeetings.find((x) => x.lessonId === next.id) : undefined;
 	// what is still missing from setup (shown as a reminder, never forced)
 	const missing = [
 		!s.tutorName && 'profile',

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Hero from '#lib/components/ui/Hero.svelte';
 	// My students: stats, search, Add student, status filter, a card per student, insights.
 	import { m } from '#lib/i18n.ts';
 	import { formatMoney } from '#lib/money.ts';
@@ -20,10 +21,7 @@
 <svelte:head><title>{m.students_title()} · Tutora</title></svelte:head>
 
 <section class="screen">
-	<header>
-		<h1>{m.st2_title()}</h1>
-		<p class="lead">{m.st2_lead()}</p>
-	</header>
+	<Hero title={m.st2_title()} lead={m.st2_lead()} />
 
 	<div class="stats3">
 		<div>
@@ -131,12 +129,6 @@
 </section>
 
 <style>
-	header h1 {
-		margin: 0;
-	}
-	header .lead {
-		margin: 4px 0 0;
-	}
 	.stats3,
 	.ins3 {
 		display: grid;

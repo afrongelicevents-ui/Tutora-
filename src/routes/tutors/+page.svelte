@@ -27,7 +27,7 @@
 	<meta name="description" content={m.home2_meta()} />
 </svelte:head>
 
-<section class="wrap narrow">
+<section class="wrap narrow look">
 	<h1>{m.find_a_tutor()}</h1>
 	<form method="GET" class="card stack filters" role="search">
 		<label

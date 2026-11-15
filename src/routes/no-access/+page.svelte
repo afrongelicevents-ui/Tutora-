@@ -14,7 +14,7 @@
 
 <svelte:head><title>{m.noaccess_title()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow stack">
+<section class="wrap narrow stack look">
 	{#if data.loggedIn}
 		<h1>{m.noaccess_title()}</h1>
 		<p>{forWho}</p>

@@ -5,7 +5,7 @@
 
 <svelte:head><title>{m.v3_code_title()} · Tutora</title></svelte:head>
 
-<section class="screen auth">
+<section class="screen auth look look-auth">
 	<a class="back" href="/get-started" aria-label={m.v3_back()}>←</a>
 	<h1>{m.v3_code_title()}</h1>
 	<p class="lead">{m.v3_code_lead()}</p>

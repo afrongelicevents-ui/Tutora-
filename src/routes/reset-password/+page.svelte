@@ -7,7 +7,7 @@
 
 <svelte:head><title>{m.reset_title()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="wrap narrow look look-auth">
 	<h1>{m.reset_title()}</h1>
 	{#if !data.token}
 		<p class="alert" role="alert">{m.reset_invalid()}</p>

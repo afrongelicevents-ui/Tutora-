@@ -4,7 +4,7 @@
 	const noAccess = $derived(page.status === 403);
 </script>
 
-<section class="wrap narrow stack">
+<section class="wrap narrow stack look">
 	{#if noAccess}
 		<h1>{m.noaccess_title()}</h1>
 		<p>{m.noaccess_lead()}</p>

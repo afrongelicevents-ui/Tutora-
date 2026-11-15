@@ -19,7 +19,7 @@
 
 <svelte:head><title>{m.account_title()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow stack">
+<section class="wrap narrow stack look">
 	<h1>{m.account_title()}</h1>
 	<div class="card">
 		<p><strong>{data.account.name}</strong><br /><span class="muted">{data.account.email}</span></p>

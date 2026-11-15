@@ -25,25 +25,47 @@
 {@render children()}
 
 <style>
+	/* one scrollable row of pills on phones, wrapping on wide screens */
 	.ownernav {
 		display: flex;
-		flex-wrap: wrap;
-		gap: 6px;
-		padding-top: 8px;
-		/* lines up with the page below it, with room before the page title */
-		margin-bottom: 12px;
+		gap: 8px;
+		padding-top: 14px;
+		padding-bottom: 6px;
+		margin-bottom: 10px;
+		overflow-x: auto;
+		scrollbar-width: none;
+		-webkit-mask-image: linear-gradient(90deg, #000 88%, transparent);
+		mask-image: linear-gradient(90deg, #000 88%, transparent);
+	}
+	.ownernav::-webkit-scrollbar {
+		display: none;
 	}
 	.ownernav a {
-		padding: 8px 12px;
+		flex-shrink: 0;
+		display: inline-flex;
+		align-items: center;
+		padding: 0 14px;
 		min-height: 40px;
 		border-radius: 999px;
-		background: var(--mint-50);
+		background: #fff;
+		border: 1px solid var(--border);
+		box-shadow: 0 1px 2px rgb(11 37 69 / 0.05);
+		color: var(--navy);
 		text-decoration: none;
 		font-weight: 600;
 		font-size: 0.9rem;
+		white-space: nowrap;
 	}
 	.ownernav a[aria-current='page'] {
-		background: var(--brand-700);
-		color: var(--paper-50);
+		background: var(--navy);
+		border-color: var(--navy);
+		color: #fff;
+	}
+	@media (min-width: 900px) {
+		.ownernav {
+			flex-wrap: wrap;
+			-webkit-mask-image: none;
+			mask-image: none;
+		}
 	}
 </style>

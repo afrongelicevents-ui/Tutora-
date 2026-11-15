@@ -6,7 +6,7 @@
 
 <svelte:head><title>{m.on_reports()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="wrap narrow look">
 	<h1>{m.on_reports()}</h1>
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
 	{#if data.done}<p class="notice" role="status">{t(data.done)}</p>{/if}

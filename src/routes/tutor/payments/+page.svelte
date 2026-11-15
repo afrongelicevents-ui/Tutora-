@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Hero from '#lib/components/ui/Hero.svelte';
 	import { m, t } from '#lib/i18n.ts';
 	import { formatMoney } from '#lib/money.ts';
 	import { fmtDay, fmtMonth, fromLocal, dtf } from '#lib/tz.ts';
@@ -37,7 +38,7 @@
 <svelte:head><title>{m.v3_nav_earnings()} · Tutora</title></svelte:head>
 
 <section class="screen">
-	<h1>{m.v3_nav_earnings()}</h1>
+	<Hero title={m.v3_nav_earnings()} lead={m.ts_earn_lead()} />
 	{#if form?.done}<p class="notice" role="status">
 			{t(`done_${form.done}`)}{'receipt' in form && form.receipt ? ` ${form.receipt}` : ''}
 		</p>{/if}

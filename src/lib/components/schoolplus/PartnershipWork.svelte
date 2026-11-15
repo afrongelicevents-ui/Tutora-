@@ -1,4 +1,5 @@
 <script lang="ts">
+	import LineIcon from '#lib/components/LineIcon.svelte';
 	// The working part of an active School+ partnership, for the tutor and the teacher:
 	// the shared learning plan, this month's note for the parent, logged messages, and ending it.
 	import { m } from '#lib/i18n.ts';
@@ -23,8 +24,12 @@
 </script>
 
 {#if active}
-	<details class="block">
-		<summary><strong>{m.spw_plan_h()}</strong></summary>
+	<details class="block pw sky">
+		<summary
+			><span class="ui-ico blue"><LineIcon name="check" size={20} /></span><strong class="ui-serif"
+				>{m.spw_plan_h()}</strong
+			></summary
+		>
 		<form method="POST" action="?/plan" class="stack" data-testid="sp-plan">
 			<input type="hidden" name="id" value={id} />
 			<label class="field"
@@ -49,8 +54,12 @@
 			<button class="btn btn-ghost btn-sm" type="submit">{m.save()}</button>
 		</form>
 	</details>
-	<details class="block">
-		<summary><strong>{m.spw_report_h()}</strong></summary>
+	<details class="block pw cream">
+		<summary
+			><span class="ui-ico amber"><LineIcon name="progress" size={20} /></span><strong
+				class="ui-serif">{m.spw_report_h()}</strong
+			></summary
+		>
 		<form method="POST" action="?/report" class="stack" data-testid="sp-report">
 			<input type="hidden" name="id" value={id} />
 			<label class="field"
@@ -70,7 +79,7 @@
 {/if}
 
 {#if log.length}
-	<div class="rows">
+	<div class="rows pwlog">
 		{#each log as l (l.id)}<div class="logrow" class:msg={l.kind === 'message'}>
 				<span class="muted tiny">{fmtDayTime(new Date(l.createdAt))} · {l.fromName}</span><span
 					class="prewrap">{l.body}</span
@@ -120,5 +129,36 @@
 	.block summary {
 		cursor: pointer;
 		padding: 6px 0;
+	}
+	.pw {
+		border-radius: 20px;
+		padding: 12px 16px;
+		margin: 4px 0;
+	}
+	.pw.sky {
+		background: var(--ice);
+		border: 1px solid #d3e3f6;
+	}
+	.pw.cream {
+		background: #fdf6e9;
+		border: 1px solid #f1e1c2;
+	}
+	.pw summary {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		list-style: none;
+		font-size: 1.0625rem;
+	}
+	.pw summary::-webkit-details-marker {
+		display: none;
+	}
+	.pw[open] summary {
+		margin-bottom: 10px;
+	}
+	.pwlog .logrow.msg .prewrap {
+		background: var(--ice);
+		border-radius: 14px 14px 14px 4px;
+		padding: 8px 12px;
 	}
 </style>

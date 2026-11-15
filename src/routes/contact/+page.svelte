@@ -13,7 +13,7 @@
 
 <svelte:head><title>{m.footer_contact()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow stack">
+<section class="wrap narrow stack look">
 	<h1>{m.contact_title()}</h1>
 	{#if form && 'sent' in form}
 		<p class="notice" role="status">{m.contact_sent()}</p>

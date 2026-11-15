@@ -3044,5 +3044,22 @@
 	"spp_plan_none": "The tutor and teacher haven't written a plan yet.",
 	"spp_reports_none": "No monthly notes yet. The tutor and teacher each add one a month.",
 	"spp_log_note": "Every message between the tutor and teacher is kept here for you to read ({n} so far).",
-	"spp_finished": "This partnership has finished. You can ask for a new one from School+."
+	"spp_finished": "This partnership has finished. You can ask for a new one from School+.",
+	"ts_earn_lead": "What your students paid, what is waiting for you to confirm, and how this month compares.",
+	"st_photo_alt": "Two students working through their notes together",
+	"home_pill": "Tutors, families and schools together",
+	"home_offer_h": "What Tutora offers",
+	"home_o1_t": "Find a good tutor",
+	"home_o1_b": "Browse approved tutors, read real reviews and book a lesson.",
+	"home_o2_t": "Lessons and a study plan",
+	"home_o2_b": "Lessons, homework and a weekly plan in one simple app.",
+	"home_o3_t": "Family Connection",
+	"home_o3_b": "Parents see what their child chooses to share, nothing more.",
+	"home_o4_t": "School+",
+	"home_o4_b": "Your child's tutor and schoolteacher working together.",
+	"home_how_h": "How it works",
+	"home_how_b": "Create an account, find a tutor and book your first lesson. Everything else lives in one place.",
+	"home_browse": "Browse tutors",
+	"spt_earlier": "Earlier partnerships ({n})",
+	"join_photo_alt": "A tutor helping a boy with his schoolwork"
 }

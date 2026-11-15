@@ -5,7 +5,7 @@
 </script>
 
 <svelte:head><title>{m.subjects_h()} · Tutora</title></svelte:head>
-<section class="wrap narrow">
+<section class="wrap narrow look">
 	<h1>{m.subjects_h()}</h1>
 	<SubjectList site={data.site} />
 	<p class="small muted">{data.site.showPrices ? m.prices_note() : m.ask_price_note()}</p>

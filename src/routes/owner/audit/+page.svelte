@@ -11,7 +11,7 @@
 
 <svelte:head><title>{m.on_audit()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="wrap narrow look">
 	<h1>{m.on_audit()}</h1>
 	<p class="small muted">{m.oa_lead()}</p>
 	<ul class="list card">

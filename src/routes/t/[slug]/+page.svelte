@@ -34,7 +34,7 @@
 	<meta name="description" content={site.headline ?? m.home_meta()} />
 </svelte:head>
 
-<section class="wrap narrow">
+<section class="wrap narrow look">
 	{#if data.preview}<p class="notice">{m.owner_preview_note()}</p>{/if}
 	{#if !site.has.anything}
 		<div class="card stack">

@@ -5,7 +5,7 @@
 
 <svelte:head><title>{m.tstatus_title()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow stack">
+<section class="wrap narrow stack look">
 	{#if data.status === 'suspended'}
 		<h1>{m.tstatus_suspended_title()}</h1>
 		<p>{m.tstatus_suspended()}</p>

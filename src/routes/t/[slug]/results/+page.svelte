@@ -5,7 +5,7 @@
 </script>
 
 <svelte:head><title>{m.results_h()} · Tutora</title></svelte:head>
-<section class="wrap narrow">
+<section class="wrap narrow look">
 	<h1>{m.results_h()}</h1>
 	<Results results={data.site.results} />
 	<p class="small muted">{m.results_privacy()}</p>

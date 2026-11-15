@@ -9,7 +9,7 @@
 
 <svelte:head><title>{m.set_change_password()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow stack">
+<section class="wrap narrow stack look">
 	<h1>{m.set_change_password()}</h1>
 	<p class="muted">{m.pw_lead()}</p>
 	<form method="POST" class="stack" novalidate>

@@ -14,7 +14,7 @@
 
 <svelte:head><title>{m.om_title()} · Tutora</title></svelte:head>
 
-<section class="wrap stack">
+<section class="wrap stack look">
 	<h1>{m.om_title()}</h1>
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
 	{#if form?.done}<p class="notice" role="status">{m.om_done()}</p>{/if}

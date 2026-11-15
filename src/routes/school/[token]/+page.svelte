@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Hero from '#lib/components/ui/Hero.svelte';
 	import { m, t } from '#lib/i18n.ts';
 	import Field from '#lib/components/Field.svelte';
 	import BotTrap from '#lib/components/BotTrap.svelte';
@@ -21,12 +22,14 @@
 	><title>{m.sp3_title()} · Tutora</title><meta name="robots" content="noindex" /></svelte:head
 >
 
-<section class="screen auth">
-	<span class="eyebrow">School+</span>
-	<h1>{m.spi_h({ tutor: inv.tutor })}</h1>
-	<p class="lead">
-		{m.spi_lead({ child: inv.child, subject: inv.subject, school: inv.school })}
-	</p>
+<section class="screen auth tskin">
+	<Hero
+		dark
+		title={m.spi_h({ tutor: inv.tutor })}
+		lead={m.spi_lead({ child: inv.child, subject: inv.subject, school: inv.school })}
+	>
+		{#snippet badge()}<span class="ui-pill gold">School+</span>{/snippet}
+	</Hero>
 	<ul class="small plain">
 		<li>{m.spi_what_messages()}</li>
 		<li>{m.spi_what_plan()}</li>
@@ -101,10 +104,6 @@
 </section>
 
 <style>
-	h1 {
-		margin: 0;
-		font-size: 1.75rem;
-	}
 	.plain {
 		padding-left: 18px;
 	}

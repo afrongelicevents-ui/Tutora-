@@ -7,7 +7,7 @@
 
 <svelte:head><title>{m.about_h()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="wrap narrow look">
 	<h1>{site.name ? m.about_name({ name: site.name }) : m.about_h()}</h1>
 	{#if site.bio}<div class="card"><p class="prewrap">{site.bio}</p></div>{/if}
 	<dl class="kv card">

@@ -6,7 +6,7 @@
 
 <svelte:head><title>{m.on_content()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="wrap narrow look">
 	<h1>{m.on_content()}</h1>
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
 	{#if data.done}<p class="notice" role="status">{t(data.done)}</p>{/if}
@@ -16,7 +16,7 @@
 		<p class="small muted">{m.oc_photo_lead()}</p>
 		<!-- the photo the homepage shows now (the standard one until one is uploaded) -->
 		<img
-			src={data.c.heroPhoto ? `/hero-photo?v=${data.c.heroPhotoV}` : '/hero.webp'}
+			src={data.c.heroPhoto ? `/hero-photo?v=${data.c.heroPhotoV}` : '/photos/family-study.webp'}
 			alt={m.oc_photo_now()}
 			width="240"
 			height="300"

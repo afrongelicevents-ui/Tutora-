@@ -1,4 +1,5 @@
 <script lang="ts">
+	import StatTile from '#lib/components/ui/StatTile.svelte';
 	import Field from '#lib/components/Field.svelte';
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay } from '#lib/tz.ts';
@@ -23,15 +24,30 @@
 
 <svelte:head><title>{m.nav_owner()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="wrap narrow look">
 	<h1>{m.nav_owner()}</h1>
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
 	{#if data.done}<p class="notice" role="status">{t(data.done)}</p>{/if}
 
-	<div class="money3">
-		<div><b>{data.counts.tutors}</b><span>{m.owner_tutors()}</span></div>
-		<div><b>{data.counts.pending}</b><span>{m.owner_waiting()}</span></div>
-		<div><b>{data.counts.students}</b><span>{m.owner_students()}</span></div>
+	<div class="ui-card cream ostats">
+		<StatTile
+			icon="tutors"
+			tone="blue"
+			value={String(data.counts.tutors)}
+			caption={m.owner_tutors()}
+		/>
+		<StatTile
+			icon="clock"
+			tone="amber"
+			value={String(data.counts.pending)}
+			caption={m.owner_waiting()}
+		/>
+		<StatTile
+			icon="family"
+			tone="green"
+			value={String(data.counts.students)}
+			caption={m.owner_students()}
+		/>
 	</div>
 
 	<h2>{m.owner_to_approve()}</h2>
@@ -201,3 +217,11 @@
 
 	<p style="margin-top:16px"><a href="/owner/account">{m.owner_my_account()}</a></p>
 </section>
+
+<style>
+	.ostats {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 10px;
+	}
+</style>

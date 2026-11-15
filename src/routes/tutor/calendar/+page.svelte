@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Hero from '#lib/components/ui/Hero.svelte';
 	import { shortName } from '#lib/names.ts';
 	import { m, t } from '#lib/i18n.ts';
 	import {
@@ -178,10 +179,7 @@
 {/snippet}
 
 <section class="screen">
-	<header class="sh-head">
-		<h1>{m.sc2_title()}</h1>
-		<p class="lead">{m.sc2_lead()}</p>
-	</header>
+	<Hero title={m.sc2_title()} lead={m.sc2_lead()} />
 
 	<nav class="views" aria-label={m.v3_nav_schedule()}>
 		<a
@@ -497,12 +495,6 @@
 </section>
 
 <style>
-	.sh-head h1 {
-		margin: 0;
-	}
-	.sh-head .lead {
-		margin: 4px 0 0;
-	}
 	.views {
 		display: grid;
 		grid-template-columns: repeat(4, minmax(0, 1fr));

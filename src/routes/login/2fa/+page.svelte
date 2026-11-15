@@ -10,7 +10,7 @@
 
 <svelte:head><title>{m.twofa_login_title()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="wrap narrow look look-auth">
 	{#if e.form}<p class="alert" role="alert">
 			{t(e.form, { minutes: form?.retryMinutes ?? 1 })}
 		</p>{/if}

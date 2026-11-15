@@ -4,6 +4,9 @@
 	import { fmtDay, fmtTime, localDate } from '#lib/tz.ts';
 	import { formatMoney } from '#lib/money.ts';
 	import LineIcon, { subjectIcon } from '#lib/components/LineIcon.svelte';
+	import Hero from '#lib/components/ui/Hero.svelte';
+	// coloured icon tiles, in turn (as in the reference design)
+	const TONES = ['blue', 'green', 'amber', 'gold'] as const;
 	let { data } = $props();
 
 	const greet = $derived(
@@ -50,10 +53,14 @@
 <svelte:head><title>{m.v3_nav_home()} · Tutora</title></svelte:head>
 
 <div class="home">
-	<header class="welcome">
-		<h1>{greet}</h1>
-		<p>{isNew ? m.sh2_welcome() : m.sh2_keep_going()}</p>
-	</header>
+	<Hero
+		title={greet}
+		lead={isNew ? m.sh2_welcome() : m.sh2_keep_going()}
+		photo="/photos/students-together.webp"
+		photoAlt={m.st_photo_alt()}
+		photoWidth={640}
+		photoHeight={640}
+	/>
 
 	<!-- A. the one feature card: what to continue (real activity only) -->
 	<a class="navycard journey" href={resumeHref}>
@@ -84,16 +91,19 @@
 			<a href="/student/subjects">{m.sh2_view_all()} <span aria-hidden="true">→</span></a>
 		</div>
 		<ul class="tiles">
-			{#each data.tiles as s (s.name)}
+			{#each data.tiles as s, i (s.name)}
 				<li>
 					<a class="tile" href={subjectHref(s.name)}
-						><LineIcon name={subjectIcon(s.name)} size={26} /><span>{s.name}</span></a
+						><span class="st-ico {TONES[i % TONES.length]}"
+							><LineIcon name={subjectIcon(s.name)} size={22} /></span
+						><span>{s.name}</span></a
 					>
 				</li>
 			{/each}
 			<li>
 				<a class="tile" href="/student/subjects"
-					><LineIcon name="more" size={26} /><span>{m.sh2_more()}</span></a
+					><span class="st-ico"><LineIcon name="more" size={22} /></span><span>{m.sh2_more()}</span
+					></a
 				>
 			</li>
 		</ul>
@@ -101,7 +111,8 @@
 
 	<!-- C. one next step: something that needs you, else the next lesson, else book one -->
 	{#if data.urgent}
-		<a class="step glass" href={data.urgent.link}>
+		<a class="step st-cream" href={data.urgent.link}>
+			<span class="st-ico gold" aria-hidden="true"><LineIcon name="star" size={22} /></span>
 			<span class="step-text">
 				<span class="eyebrow">{m.sh2_next_step()}</span>
 				<strong
@@ -119,7 +130,8 @@
 			<span class="go" aria-hidden="true">→</span>
 		</a>
 	{:else if data.next}
-		<a class="step glass" href="/student/lessons/{data.next.id}">
+		<a class="step st-cream" href="/student/lessons/{data.next.id}">
+			<span class="st-ico gold" aria-hidden="true"><LineIcon name="calendar" size={22} /></span>
 			<span class="step-text">
 				<span class="eyebrow">{m.sh_next_lesson()}</span>
 				<strong
@@ -135,7 +147,8 @@
 			<span class="go" aria-hidden="true">→</span>
 		</a>
 	{:else}
-		<a class="step glass" href="/student/find">
+		<a class="step st-cream" href="/student/find">
+			<span class="st-ico gold" aria-hidden="true"><LineIcon name="search" size={22} /></span>
 			<span class="step-text">
 				<span class="eyebrow">{m.sh2_next_step()}</span>
 				<strong>{m.sh2_book_title()}</strong>
@@ -148,6 +161,7 @@
 	<!-- D/E. homework, then study progress -->
 	<div class="pair">
 		<a class="mini" href="/student/homework">
+			<span class="st-ico blue" aria-hidden="true"><LineIcon name="clipboard" size={22} /></span>
 			<span class="eyebrow">{m.sh2_homework()}</span>
 			<strong
 				>{data.due === 0
@@ -162,6 +176,7 @@
 			class="mini"
 			href={data.week.planned || data.week.done ? '/student/progress' : '/student/study'}
 		>
+			<span class="st-ico green" aria-hidden="true"><LineIcon name="progress" size={22} /></span>
 			<span class="eyebrow">{m.sh2_progress()}</span>
 			{#if data.week.planned}
 				<strong>{m.sh2_week({ done: data.week.done, planned: data.week.planned })}</strong>
@@ -195,28 +210,18 @@
 	.home {
 		max-width: 720px;
 		margin: 0 auto;
-		padding: 10px 20px 32px;
+		/* the same padding as .screen, so the header can reach the screen edges */
+		padding: 18px 22px 32px;
 		display: flex;
 		flex-direction: column;
 		gap: 22px;
-	}
-	.welcome h1 {
-		margin: 0;
-		font-size: 1.75rem;
-		line-height: 1.15;
-		color: var(--navy);
-		letter-spacing: -0.01em;
-	}
-	.welcome p {
-		margin: 6px 0 0;
-		color: var(--muted);
 	}
 	.eyebrow {
 		font-size: 0.75rem;
 		font-weight: 700;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: var(--muted);
+		color: var(--st-gold-text, var(--muted));
 	}
 
 	/* A. learning journey */
@@ -260,7 +265,9 @@
 	}
 	.section-h h2 {
 		margin: 0;
-		font-size: 1.25rem;
+		font-family: var(--font-display);
+		font-weight: 600;
+		font-size: 1.5rem;
 		color: var(--navy);
 	}
 	.section-h a {
@@ -286,12 +293,10 @@
 		gap: 8px;
 		min-height: 92px;
 		padding: 12px 3px;
-		border-radius: 16px;
-		background: linear-gradient(180deg, rgb(255 255 255 / 0.82), rgb(231 240 250 / 0.7));
-		border: 1px solid var(--glass-border);
+		border-radius: 18px;
+		background: #fff;
+		border: 1px solid var(--border);
 		box-shadow: var(--shadow-soft);
-		-webkit-backdrop-filter: blur(8px);
-		backdrop-filter: blur(8px);
 		color: var(--ocean);
 		text-decoration: none;
 	}
@@ -311,19 +316,12 @@
 	}
 
 	/* C. next step */
-	.glass {
-		background: var(--glass);
-		border: 1px solid var(--glass-border);
-		box-shadow: var(--shadow-soft);
-		-webkit-backdrop-filter: blur(8px);
-		backdrop-filter: blur(8px);
-	}
 	.step {
 		display: flex;
 		align-items: center;
 		gap: 14px;
-		padding: 16px 16px 16px 18px;
-		border-radius: 18px;
+		padding: 16px 16px 16px 16px;
+		border-radius: 20px;
 		color: var(--text);
 		text-decoration: none;
 	}
@@ -364,9 +362,10 @@
 		flex-direction: column;
 		gap: 6px;
 		padding: 16px;
-		border-radius: 18px;
+		border-radius: 20px;
 		background: #fff;
 		border: 1px solid var(--border);
+		box-shadow: var(--shadow-soft);
 		color: var(--text);
 		text-decoration: none;
 	}
@@ -413,22 +412,11 @@
 			padding-top: 40px;
 			gap: 28px;
 		}
-		.welcome h1 {
-			font-size: 2.125rem;
-		}
 		.journey {
 			padding: 28px 28px 26px;
 		}
 		.j-title {
 			font-size: 2.125rem;
-		}
-	}
-	@media (prefers-reduced-transparency: reduce) {
-		.tile,
-		.glass {
-			-webkit-backdrop-filter: none;
-			backdrop-filter: none;
-			background: #fff;
 		}
 	}
 </style>

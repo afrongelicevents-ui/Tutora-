@@ -2,6 +2,7 @@
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDate } from '#lib/tz.ts';
 	import PartnershipWork from '#lib/components/schoolplus/PartnershipWork.svelte';
+	import Hero from '#lib/components/ui/Hero.svelte';
 	let { data, form } = $props();
 	type F = {
 		error?: string;
@@ -11,16 +12,25 @@
 		done?: string;
 	} | null;
 	const f = $derived(form as F);
+	const FINISHED = ['declined', 'withdrawn', 'ended'];
+	const open = $derived(data.items.filter((p) => !FINISHED.includes(p.status)));
+	const done = $derived(data.items.filter((p) => FINISHED.includes(p.status)));
 </script>
 
 <svelte:head><title>{m.sp3_title()} · Tutora</title></svelte:head>
 
-<div class="screen">
-	<h1>{m.sp3_title()}</h1>
-	<p class="lead">{m.spt_lead()}</p>
+<div class="screen ui-page">
+	<Hero
+		dark
+		title={m.sp3_title()}
+		lead={m.spt_lead()}
+		photo="/photos/parent-computer.webp"
+		photoWidth={640}
+		photoHeight={640}
+	/>
 	{#if f?.error}<p class="alert" role="alert">{t(f.error)}</p>{/if}
 	{#if f?.done}<p class="notice" role="status">{t(`spt_done_${f.done}`)}</p>{/if}
-	{#each data.items as p (p.id)}
+	{#snippet item(p: (typeof data.items)[number])}
 		<section class="card stack" data-testid="sp-item" data-status={p.status}>
 			<div class="row">
 				<strong class="grow">{p.child} · {p.subject}</strong><span class="pill p-info"
@@ -85,15 +95,29 @@
 				/>
 			{/if}
 		</section>
+	{/snippet}
+	{#each open as p (p.id)}
+		{@render item(p)}
 	{:else}
-		<p class="note">{m.sp3_tutor_none()}</p>
+		<p class="softcard">{m.sp3_tutor_none()}</p>
 	{/each}
+	{#if done.length}
+		<details class="fold">
+			<summary class="ui-serif">{m.spt_earlier({ n: done.length })}</summary>
+			<div class="stack">
+				{#each done as p (p.id)}{@render item(p)}{/each}
+			</div>
+		</details>
+	{/if}
 </div>
 
 <style>
-	h1 {
-		margin: 0;
-		font-size: 1.875rem;
+	summary {
+		cursor: pointer;
+		font-size: 1.125rem;
+	}
+	details[open] summary {
+		margin-bottom: 12px;
 	}
 	input[readonly] {
 		width: 100%;

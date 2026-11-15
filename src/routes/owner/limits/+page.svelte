@@ -13,7 +13,7 @@
 
 <svelte:head><title>{m.fl_title()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="wrap narrow look">
 	<h1>{m.fl_title()}</h1>
 	<p class="small muted">{m.fl_lead()}</p>
 

@@ -1,7 +1,17 @@
 <script lang="ts">
 	import { m } from '#lib/i18n.ts';
+	import LineIcon from '#lib/components/LineIcon.svelte';
 	let { data } = $props();
-	const photo = $derived(data.heroPhotoV ? `/hero-photo?v=${data.heroPhotoV}` : '/hero.webp');
+	// the owner's own homepage photo (Owner → Homepage), else the family photo
+	const photo = $derived(
+		data.heroPhotoV ? `/hero-photo?v=${data.heroPhotoV}` : '/photos/family-study.webp'
+	);
+	const offers = [
+		{ icon: 'search', tone: 'navy', t: m.home_o1_t(), b: m.home_o1_b(), href: '/tutors' },
+		{ icon: 'calendar', tone: 'blue', t: m.home_o2_t(), b: m.home_o2_b(), href: null },
+		{ icon: 'family', tone: 'green', t: m.home_o3_t(), b: m.home_o3_b(), href: null },
+		{ icon: 'school', tone: 'amber', t: m.home_o4_t(), b: m.home_o4_b(), href: null }
+	] as const;
 </script>
 
 <svelte:head>
@@ -10,125 +20,233 @@
 	<link rel="preload" as="image" href={photo} fetchpriority="high" />
 </svelte:head>
 
-<div class="welcome">
-	<div class="photo">
-		<img src={photo} alt={m.v3_welcome_photo_alt()} width="900" height="571" fetchpriority="high" />
-		<div class="fade" aria-hidden="true"></div>
-	</div>
-	<div class="brand">Tutora</div>
-	<div class="text">
-		<h1>{data.heroTitle ?? m.v3_tagline()}</h1>
-		<p>{data.heroLead ?? m.v3_welcome_lead()}</p>
-		<a class="btn btn-block light" href="/get-started">{m.v3_get_started()}</a>
-		<a class="btn btn-block outline" href="/login">{m.v3_sign_in()}</a>
+<div class="home">
+	<header class="top">
+		<span class="brand">Tutora</span>
+		<a class="signin" href="/login">{m.v3_sign_in()}</a>
+	</header>
+
+	<section class="hero">
+		<img
+			class="photo"
+			src={photo}
+			alt={m.v3_welcome_photo_alt()}
+			width="612"
+			height="408"
+			fetchpriority="high"
+		/>
+		<div class="text">
+			<h1>{data.heroTitle ?? m.v3_tagline()}</h1>
+			<span class="underline" aria-hidden="true"></span>
+			<p>{data.heroLead ?? m.v3_welcome_lead()}</p>
+			<span class="pill"><LineIcon name="star" size={16} /> {m.home_pill()}</span>
+		</div>
+		<svg class="wave" viewBox="0 0 400 40" preserveAspectRatio="none" aria-hidden="true"
+			><path d="M0 22 C 110 44, 260 0, 400 18 L400 40 L0 40 Z" /></svg
+		>
+	</section>
+
+	<div class="body">
+		<div class="ctas">
+			<a class="ui-btn big" href="/get-started">{m.v3_get_started()} →</a>
+			<a class="ui-btn-soft big" href="/login">{m.v3_sign_in()}</a>
+		</div>
+
+		<h2 class="ui-serif">{m.home_offer_h()}</h2>
+		<div class="offers">
+			{#each offers as o (o.t)}
+				<svelte:element this={o.href ? 'a' : 'div'} class="ui-card offer" href={o.href}>
+					<span class="ui-ico {o.tone}"><LineIcon name={o.icon} size={22} /></span>
+					<span><strong>{o.t}</strong><span class="small muted block">{o.b}</span></span>
+				</svelte:element>
+			{/each}
+		</div>
+
+		<div class="ui-card sky how">
+			<span class="ui-ico blue"><LineIcon name="sun" size={22} /></span>
+			<span
+				><strong class="ui-serif">{m.home_how_h()}</strong><span class="small block"
+					>{m.home_how_b()}</span
+				></span
+			>
+			<a class="ui-btn-soft" href="/tutors">{m.home_browse()} →</a>
+		</div>
 	</div>
 </div>
 
 <style>
-	.welcome {
-		position: relative;
+	.home {
 		min-height: 100dvh;
+		background: var(--snow);
+		color: var(--navy);
+	}
+	.top {
+		position: relative;
+		z-index: 2;
 		display: flex;
-		flex-direction: column;
-		background: var(--navy);
-		color: var(--snow);
+		align-items: center;
+		justify-content: space-between;
+		padding: 18px 22px 0;
+		max-width: 1100px;
+		margin: 0 auto;
+	}
+	.brand {
+		font-family: var(--font-display);
+		font-weight: 600;
+		font-size: 1.9rem;
+	}
+	.signin {
+		font-weight: 600;
+		color: var(--navy);
+		text-decoration: none;
+		padding: 8px 14px;
+		border-radius: 999px;
+		background: #fff;
+		border: 1px solid var(--border);
+	}
+	.hero {
+		position: relative;
 		overflow: hidden;
+		margin-top: -60px;
+		padding: 84px 22px 54px;
+		background:
+			radial-gradient(120% 90% at 100% 0%, #fdf3e2 0%, transparent 55%),
+			linear-gradient(180deg, var(--ice) 0%, #f3f7fc 100%);
 	}
 	.photo {
 		position: absolute;
-		inset: 0 0 auto 0;
-		height: 62dvh;
-		min-height: 400px;
-	}
-	.photo img {
-		width: 100%;
+		inset: 0 0 0 auto;
+		width: 50%;
 		height: 100%;
 		object-fit: cover;
-		object-position: 30% center;
-	}
-	/* the only gradient in Tutora: the welcome photo fading into navy */
-	.fade {
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(
-			180deg,
-			rgba(11, 37, 69, 0.12) 0%,
-			rgba(11, 37, 69, 0.55) 55%,
-			#0b2545 100%
-		);
-	}
-	.brand {
-		position: relative;
-		padding: 22px 24px 0;
-		font-family: var(--font-display);
-		font-weight: 600;
-		font-size: 2.125rem;
+		object-position: 60% center;
+		-webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 38%);
+		mask-image: linear-gradient(90deg, transparent 0%, #000 38%);
 	}
 	.text {
 		position: relative;
-		margin-top: auto;
-		padding: 0 24px 30px;
+		max-width: 60%;
 		display: flex;
 		flex-direction: column;
-		gap: 14px;
-		max-width: 520px;
+		gap: 10px;
 	}
 	h1 {
 		margin: 0;
-		font-size: 2.5rem;
+		font-family: var(--font-display);
+		font-size: clamp(2rem, 8vw, 3.4rem);
 		line-height: 1.05;
-		color: var(--snow);
+		letter-spacing: -0.01em;
 	}
-	p {
+	.underline {
+		width: 120px;
+		height: 3px;
+		border-radius: 3px;
+		background: #d9a441;
+	}
+	.hero p {
 		margin: 0;
 		font-size: 1rem;
-		line-height: 1.5;
-		color: #c9dbef;
+		line-height: 1.45;
+		opacity: 0.85;
 	}
-	.light {
-		margin-top: 8px;
-		background: var(--snow);
-		border-color: var(--snow);
-		color: var(--navy);
+	.pill {
+		align-self: flex-start;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 8px 14px;
+		border-radius: 999px;
+		background: var(--navy);
+		color: #fff;
+		font-size: 0.875rem;
+		font-weight: 600;
+	}
+	.wave {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: -1px;
+		width: 100%;
+		height: 34px;
+	}
+	.wave path {
+		fill: var(--snow);
+	}
+	.body {
+		max-width: 1100px;
+		margin: 0 auto;
+		padding: 8px 22px 40px;
+		display: flex;
+		flex-direction: column;
+		gap: 18px;
+	}
+	.ctas {
+		display: grid;
+		gap: 10px;
+	}
+	.big {
 		min-height: 54px;
+		justify-content: center;
+		font-size: 1.05rem;
 	}
-	.light:hover {
-		background: #fff;
+	h2 {
+		margin: 6px 0 0;
+		font-size: 1.6rem;
+	}
+	.offers {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 12px;
+	}
+	.offer {
+		display: flex;
+		gap: 14px;
+		align-items: flex-start;
+		text-decoration: none;
 		color: var(--navy);
 	}
-	.outline {
-		background: transparent;
-		color: var(--snow);
-		border: 1.5px solid rgba(255, 255, 255, 0.5);
+	.offer strong {
+		font-size: 1.05rem;
 	}
-	.outline:hover {
-		background: rgba(255, 255, 255, 0.08);
-		color: var(--snow);
+	.how {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		gap: 12px 14px;
+		align-items: center;
+	}
+	.how .ui-btn-soft {
+		grid-column: 1 / -1;
+		justify-self: start;
+	}
+	@media (min-width: 600px) {
+		.offers {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.ctas {
+			grid-template-columns: repeat(2, minmax(0, 260px));
+		}
 	}
 	@media (min-width: 900px) {
-		.welcome {
-			display: grid;
-			grid-template-columns: 1.1fr 1fr;
+		.hero {
+			padding: 120px max(22px, calc((100% - 1100px) / 2 + 22px)) 80px;
 		}
 		.photo {
-			position: relative;
-			height: 100dvh;
-			grid-row: 1 / span 2;
-		}
-		.fade {
-			background: linear-gradient(90deg, rgba(11, 37, 69, 0) 60%, #0b2545 100%);
-		}
-		.brand {
-			grid-column: 2;
-			padding: 40px 56px 0;
+			width: 48%;
 		}
 		.text {
-			grid-column: 2;
-			padding: 0 56px 64px;
-			align-self: end;
+			max-width: 48%;
 		}
-		h1 {
-			font-size: 3.25rem;
+		.offers {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+		.offer {
+			flex-direction: column;
+		}
+		.how {
+			grid-template-columns: auto 1fr auto;
+		}
+		.how .ui-btn-soft {
+			grid-column: auto;
 		}
 	}
 </style>

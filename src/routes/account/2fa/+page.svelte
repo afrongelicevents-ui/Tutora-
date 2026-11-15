@@ -9,7 +9,7 @@
 
 <svelte:head><title>{m.twofa_setup_title()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow stack">
+<section class="wrap narrow stack look">
 	<h1>{m.twofa_setup_title()}</h1>
 	{#if data.required && !data.enabled}<p class="notice">{m.twofa_required()}</p>{/if}
 	{#if e.form}<p class="alert" role="alert">{t(e.form, { minutes: 1 })}</p>{/if}

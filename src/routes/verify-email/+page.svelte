@@ -15,7 +15,7 @@
 
 <svelte:head><title>{m.verify_title()} · Tutora</title></svelte:head>
 
-<section class="screen auth">
+<section class="screen auth look look-auth">
 	<h1>{m.verify_title()}</h1>
 	<p>{email ? m.verify_lead({ email }) : m.verify_lead_generic()}</p>
 	<p class="muted small">{m.verify_spam()}</p>

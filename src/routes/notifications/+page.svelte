@@ -1,4 +1,5 @@
 <script lang="ts">
+	import LineIcon from '#lib/components/LineIcon.svelte';
 	import { m } from '#lib/i18n.ts';
 	import { fmtDayTime } from '#lib/tz.ts';
 	let { data } = $props();
@@ -6,7 +7,7 @@
 
 <svelte:head><title>{m.notif_title()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="wrap narrow look">
 	<h1>{m.notif_title()}</h1>
 	{#each data.list as n (n.id)}
 		<div class="card" class:unread={n.unread}>
@@ -18,7 +19,10 @@
 			</p>
 		</div>
 	{:else}
-		<p class="empty">{m.notif_none()}</p>
+		<div class="ui-card sky look-empty">
+			<span class="ui-ico blue"><LineIcon name="bell" size={22} /></span>
+			<p class="empty">{m.notif_none()}</p>
+		</div>
 	{/each}
 	<p><a href="/account">{m.notif_settings()}</a></p>
 </section>

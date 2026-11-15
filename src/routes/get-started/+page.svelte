@@ -1,18 +1,21 @@
 <script lang="ts">
 	import { m } from '#lib/i18n.ts';
+	import LineIcon from '#lib/components/LineIcon.svelte';
 </script>
 
 <svelte:head><title>{m.v3_who_title()} · Tutora</title></svelte:head>
 
-<div class="screen narrowish">
+<div class="screen narrowish look">
 	<a class="back" href="/" aria-label={m.v3_back()}>←</a>
 	<h1>{m.v3_who_title()}</h1>
 	<p class="lead">{m.v3_who_lead()}</p>
 	<a class="who" href="/signup">
+		<span class="ui-ico blue"><LineIcon name="book" size={24} /></span>
 		<span><strong>{m.v3_im_student()}</strong><span>{m.v3_im_student_sub()}</span></span>
 		<span aria-hidden="true">›</span>
 	</a>
 	<a class="who" href="/join">
+		<span class="ui-ico amber"><LineIcon name="school" size={24} /></span>
 		<span><strong>{m.v3_im_tutor()}</strong><span>{m.v3_im_tutor_sub()}</span></span>
 		<span aria-hidden="true">›</span>
 	</a>
@@ -45,7 +48,16 @@
 		border-color: var(--navy);
 		color: var(--navy);
 	}
-	.who > span:first-child {
+	.who {
+		box-shadow: var(--shadow-soft);
+	}
+	.who > .ui-ico {
+		width: 52px;
+		height: 52px;
+		border-radius: 16px;
+	}
+	.who > span:nth-child(2) {
+		flex: 1;
 		display: flex;
 		flex-direction: column;
 		gap: 4px;

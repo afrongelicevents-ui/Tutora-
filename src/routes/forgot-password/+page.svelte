@@ -8,7 +8,7 @@
 
 <svelte:head><title>{m.forgot_title()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="wrap narrow look look-auth">
 	<h1>{m.forgot_title()}</h1>
 	{#if !data.emailOn}
 		<p class="notice" role="status">{m.forgot_ask_tutor()}</p>

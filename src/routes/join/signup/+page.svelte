@@ -9,7 +9,7 @@
 
 <svelte:head><title>{m.join_create()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow stack">
+<section class="wrap narrow stack look look-auth">
 	<h1>{m.join_create()}</h1>
 	<p class="muted">{m.join_form_lead()}</p>
 	{#if e.form}<p class="alert" role="alert">

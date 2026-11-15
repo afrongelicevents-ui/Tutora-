@@ -10,7 +10,7 @@
 
 <svelte:head><title>{m.on_payments()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="wrap narrow look">
 	<h1>{m.on_payments()}</h1>
 	<p class="small muted">{m.owner_pay_lead()}</p>
 	<h2 class="h3">{m.owner_stale({ n: data.stale.length })}</h2>

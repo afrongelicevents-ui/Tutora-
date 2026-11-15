@@ -1503,3 +1503,406 @@ a.rows-link:hover,
 	background: var(--warn-bg);
 	color: var(--warn);
 }
+
+/* ---------- tutor + schoolteacher skin (the shared ui-* look for every tutor/teacher page) ----------
+   Put `tskin` on a wrapper (the tutor layout does it for every /tutor page; the teacher pages
+   put it on their .screen). Gives existing page markup the family-area look: serif headings
+   with the gold underline, rounded soft cards, pill buttons, icon-coloured stat tiles. */
+.tskin .screen > h1,
+.tskin .screen > header > h1,
+.tskin .screen > .head > h1,
+.screen.tskin > h1,
+.tskin h1.tsk-h {
+	font-family: var(--font-display);
+	color: var(--navy);
+	font-size: clamp(1.75rem, 6vw, 2.25rem);
+	line-height: 1.12;
+	letter-spacing: -0.01em;
+	margin: 4px 0 0;
+}
+.tskin .screen > h1::after,
+.tskin .screen > header > h1::after,
+.tskin .screen > .head > h1::after,
+.screen.tskin > h1::after,
+.tskin h1.tsk-h::after {
+	content: '';
+	display: block;
+	width: 96px;
+	height: 3px;
+	margin-top: 10px;
+	border-radius: 3px;
+	background: #d9a441;
+}
+.tskin .screen h2,
+.screen.tskin h2,
+.tskin .section-h h2 {
+	font-family: var(--font-display);
+	color: var(--navy);
+	letter-spacing: -0.005em;
+}
+.tskin .card,
+.tskin .softcard,
+.tskin .rows,
+.tskin .box,
+.tskin section.block,
+.tskin details.fold {
+	background: #fff;
+	border: 1px solid var(--border);
+	border-radius: 20px;
+	box-shadow: var(--shadow-soft);
+}
+.tskin .softcard {
+	background: var(--ice);
+	border-color: #d3e3f6;
+	box-shadow: none;
+}
+.tskin .notice {
+	border-radius: 16px;
+}
+.tskin .btn {
+	border-radius: 999px;
+}
+.tskin .btn-secondary,
+.tskin .btn-ghost {
+	border-radius: 999px;
+	background: #fff;
+	border: 1px solid var(--border-strong);
+	color: var(--navy);
+}
+.tskin .chip {
+	border-radius: 999px;
+}
+.tskin .eyebrow {
+	color: #b5832a;
+	letter-spacing: 0.06em;
+}
+.tskin .field input,
+.tskin .field select,
+.tskin .field textarea {
+	border-radius: 14px;
+}
+/* a row of figures (Today, Students, Earnings): white tiles with a coloured round icon */
+.tskin .tsk-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: 12px;
+}
+.tskin .tsk-stats > * {
+	background: #fff;
+	border: 1px solid var(--border);
+	border-radius: 20px;
+	box-shadow: var(--shadow-soft);
+	padding: 14px 16px;
+	text-decoration: none;
+	color: var(--navy);
+}
+/* the cream accent panel (reminders, "next steps") */
+.tskin .tsk-cream {
+	background: #fdf6e9;
+	border: 1px solid #f1e1c2;
+	border-radius: 20px;
+	padding: 16px;
+}
+
+/* ================= student area: the shared reference style (navy / light blue / cream) =================
+   Every /student page sits inside .st-area (src/routes/student/+layout.svelte). These rules give
+   the existing student markup the same look as the family pages without changing any layout:
+   serif headings with a gold underline, rounded cards with soft shadows, cream and light-blue
+   accent panels, coloured icon tiles, gold eyebrows. Page-specific touches live in each page. */
+.st-area {
+	--st-gold: #d9a441;
+	--st-gold-text: #8a5f12;
+	--st-cream: #fdf6e9;
+	--st-cream-line: #f1e1c2;
+}
+.st-area h1:not(.sr-only) {
+	font-family: var(--font-display);
+	font-weight: 600;
+	letter-spacing: -0.01em;
+	line-height: 1.12;
+}
+.st-area h1:not(.sr-only):not(.phero h1):not(.no-underline)::after {
+	content: '';
+	display: block;
+	width: 96px;
+	height: 3px;
+	margin-top: 10px;
+	border-radius: 3px;
+	background: var(--st-gold);
+}
+.st-area .section-h h2,
+.st-area h2.st-h {
+	font-family: var(--font-display);
+	font-size: 1.375rem;
+	font-weight: 600;
+	color: var(--navy);
+}
+.st-area .eyebrow {
+	color: var(--st-gold-text);
+}
+.st-area .navycard .eyebrow {
+	color: #f3c969;
+}
+.st-area .card {
+	border-radius: 20px;
+	border-color: var(--border);
+	box-shadow: var(--shadow-soft);
+}
+.st-area .softcard {
+	border-radius: 20px;
+	border: 1px solid #d3e3f6;
+}
+.st-area .panel {
+	border-radius: 20px;
+}
+.st-area .navycard {
+	border-radius: 22px;
+}
+.st-area .lead {
+	font-size: 1rem;
+}
+/* a cream accent panel and a coloured icon tile, for pages that want them */
+.st-area .st-cream {
+	background: var(--st-cream);
+	border: 1px solid var(--st-cream-line);
+	border-radius: 20px;
+}
+.st-area .st-ico {
+	width: 40px;
+	height: 40px;
+	border-radius: 13px;
+	display: inline-grid;
+	place-items: center;
+	flex-shrink: 0;
+	background: var(--ice);
+	color: var(--navy);
+}
+.st-area .st-ico.green {
+	background: var(--ok-bg);
+	color: var(--ok);
+}
+.st-area .st-ico.amber {
+	background: var(--warn-bg);
+	color: var(--warn);
+}
+.st-area .st-ico.blue {
+	background: #e3eefb;
+	color: var(--ocean);
+}
+.st-area .st-ico.gold {
+	background: var(--st-cream);
+	color: var(--st-gold-text);
+}
+
+/* ---------- area look: public pages, sign-in, owner admin, account ----------
+   Same family as the ui-* block (navy / light blue / cream, serif headings with a gold
+   underline, rounded soft cards, navy pill buttons). Put `look` on a page's root element.
+   `look-auth` adds the sign-in card; the page background gets a soft light-blue/cream top. */
+body:has(main > .look) {
+	background: var(--snow);
+}
+.look-empty {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+.look-empty p {
+	margin: 0;
+	text-align: left;
+}
+main.bare:has(> .look) {
+	min-height: 100dvh;
+}
+main:has(> .look) {
+	background:
+		radial-gradient(90% 60% at 100% 0%, #fdf3e2 0%, transparent 45%),
+		linear-gradient(180deg, var(--ice) 0, var(--snow) 340px);
+}
+.look > h1,
+.look .look-title {
+	margin: 0;
+	font-family: var(--font-display);
+	font-size: clamp(1.75rem, 6vw, 2.3rem);
+	line-height: 1.1;
+	letter-spacing: -0.01em;
+	color: var(--navy);
+}
+.look > h1::after,
+.look .look-title::after {
+	content: '';
+	display: block;
+	width: 96px;
+	height: 3px;
+	margin-top: 10px;
+	border-radius: 3px;
+	background: #d9a441;
+}
+.look h2,
+.look .h3 {
+	font-family: var(--font-display);
+	color: var(--navy);
+}
+.look .card,
+.look .list.card {
+	border-radius: 20px;
+	border: 1px solid var(--border);
+	box-shadow: var(--shadow-soft);
+	background: #fff;
+}
+.look .list.card {
+	padding: 2px 16px;
+}
+.look .softcard {
+	border-radius: 20px;
+	background: var(--ice);
+	border: 1px solid #d3e3f6;
+}
+.look .btn:not(.btn-ghost):not(.btn-secondary):not(.btn-warn):not(.light):not(.outline) {
+	background: var(--navy);
+	border-color: var(--navy);
+	color: #fff;
+}
+.look .btn:not(.btn-ghost):not(.btn-secondary):not(.btn-warn):not(.light):not(.outline):hover {
+	background: #12365f;
+	border-color: #12365f;
+}
+.look .btn-secondary,
+.look .btn-ghost {
+	background: #fff;
+	border-color: var(--border-strong);
+	color: var(--navy);
+}
+.look input:not([type='checkbox']):not([type='radio']):not([type='file']),
+.look select,
+.look textarea {
+	border-radius: 14px;
+}
+.look-auth > form,
+.look-auth > .look-card {
+	background: #fff;
+	border: 1px solid var(--border);
+	border-radius: 22px;
+	box-shadow: var(--shadow-soft);
+	padding: 20px 18px;
+}
+.look-lead {
+	margin: 0;
+	color: var(--muted);
+	font-size: 1rem;
+	line-height: 1.45;
+}
+.look-ico {
+	width: 44px;
+	height: 44px;
+	border-radius: 14px;
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	background: #e3eefb;
+	color: var(--ocean);
+}
+.st-area .st-cream .st-ico.gold {
+	background: #fff;
+}
+.tskin .rows {
+	padding: 2px 16px;
+}
+.tskin .rows.top {
+	border-top: 1px solid var(--border);
+}
+.tskin .section-h a,
+.tskin a.all,
+.tskin .sh a {
+	white-space: nowrap;
+}
+.tskin .tc-h a {
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+.tskin section.block,
+.tskin .box,
+.tskin details.fold {
+	padding: 16px;
+}
+/* card headers ("Your daily schedule", "Subject progress"…): serif title, icon in a tile */
+.st-area .panel .panel-h h2 {
+	font-family: var(--font-display);
+	font-size: 1.1875rem;
+	font-weight: 600;
+	color: var(--navy);
+}
+.st-area .panel .panel-h h2 > svg {
+	box-sizing: content-box;
+	width: 20px;
+	height: 20px;
+	padding: 9px;
+	border-radius: 13px;
+	background: #e3eefb;
+	color: var(--ocean);
+	flex-shrink: 0;
+}
+.st-area .panel {
+	box-shadow: var(--shadow-soft);
+}
+/* shortcut grids (Progress): each icon in a coloured tile, in turn */
+.st-area .shortcuts > a > svg {
+	box-sizing: content-box;
+	width: 22px;
+	height: 22px;
+	padding: 10px;
+	border-radius: 14px;
+	background: #e3eefb;
+	color: var(--ocean);
+}
+.st-area .shortcuts > a:nth-child(4n + 2) > svg {
+	background: var(--ok-bg);
+	color: var(--ok);
+}
+.st-area .shortcuts > a:nth-child(4n + 3) > svg {
+	background: var(--warn-bg);
+	color: var(--warn);
+}
+.st-area .shortcuts > a:nth-child(4n) > svg {
+	background: var(--st-cream);
+	color: var(--st-gold-text);
+}
+/* "What tutors can help with" (Tutors tab): coloured icon tiles, in turn */
+.st-area ul.help > li > a > svg {
+	box-sizing: content-box;
+	width: 24px;
+	height: 24px;
+	padding: 9px;
+	border-radius: 14px;
+	background: #e3eefb;
+	color: var(--ocean);
+}
+.st-area ul.help > li:nth-child(4n + 2) > a > svg {
+	background: var(--ok-bg);
+	color: var(--ok);
+}
+.st-area ul.help > li:nth-child(4n + 3) > a > svg {
+	background: var(--warn-bg);
+	color: var(--warn);
+}
+.st-area ul.help > li:nth-child(4n) > a > svg {
+	background: var(--st-cream);
+	color: var(--st-gold-text);
+}
+/* owner admin: a wider column on big screens (lists of tutors, bookings, payments) */
+.wrap.narrow.ownernav,
+.ownernav ~ .look.narrow {
+	max-width: 760px;
+}
+/* a list inside a card is not a second card */
+.tskin .card .rows,
+.tskin .softcard .rows,
+.tskin section.block .rows {
+	border: none;
+	box-shadow: none;
+	background: transparent;
+	padding: 0;
+}
+/* the gold badge on a navy header */
+.tskin .phero.dark .ui-pill.gold {
+	background: rgb(255 255 255 / 0.14);
+}

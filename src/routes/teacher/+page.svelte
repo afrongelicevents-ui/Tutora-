@@ -1,14 +1,15 @@
 <script lang="ts">
+	import Hero from '#lib/components/ui/Hero.svelte';
 	import { m, t } from '#lib/i18n.ts';
 	let { data } = $props();
 </script>
 
 <svelte:head><title>School+ · Tutora</title></svelte:head>
 
-<div class="screen">
-	<span class="eyebrow">School+</span>
-	<h1>{m.spx_title()}</h1>
-	<p class="lead">{m.spx_lead()}</p>
+<div class="screen tskin ui-page">
+	<Hero dark title={m.spx_title()} lead={m.spx_lead()}>
+		{#snippet badge()}<span class="ui-pill gold">School+</span>{/snippet}
+	</Hero>
 	<ul class="rows card">
 		{#each data.items as p (p.id)}
 			<li>
@@ -25,10 +26,3 @@
 		{/each}
 	</ul>
 </div>
-
-<style>
-	h1 {
-		margin: 0;
-		font-size: 1.75rem;
-	}
-</style>

@@ -17,7 +17,7 @@
 
 <svelte:head><title>{m.v3_code_title()} · Tutora</title></svelte:head>
 
-<section class="screen auth">
+<section class="screen auth look look-auth">
 	<a class="back" href="/code" aria-label={m.v3_back()}>←</a>
 	<h1>
 		{data.me?.role === 'parent'

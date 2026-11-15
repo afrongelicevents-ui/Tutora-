@@ -324,6 +324,7 @@
 		border-radius: 20px;
 		background: #fff;
 		border: 1px solid var(--border);
+		box-shadow: var(--shadow-soft);
 	}
 	.panel-h {
 		display: flex;
@@ -338,10 +339,38 @@
 		align-items: center;
 		gap: 10px;
 		margin: 0;
-		font-family: var(--font);
-		font-size: 1rem;
-		font-weight: 700;
+		font-family: var(--font-display);
+		font-size: 1.1875rem;
+		font-weight: 600;
 		color: var(--navy);
+	}
+	/* the heading icon in a coloured tile (reference style); one colour per card, in order */
+	.panel-h h2 :global(svg),
+	.fam-main h2 :global(svg) {
+		box-sizing: content-box;
+		width: 20px;
+		height: 20px;
+		padding: 9px;
+		border-radius: 13px;
+		background: var(--ice);
+		color: var(--navy);
+		flex-shrink: 0;
+	}
+	section:nth-of-type(2) .panel-h h2 :global(svg) {
+		background: #fdf6e9;
+		color: #8a5f12;
+	}
+	section:nth-of-type(3) .panel-h h2 :global(svg) {
+		background: #e3eefb;
+		color: var(--ocean);
+	}
+	.family .fam-main h2 :global(svg) {
+		background: var(--ok-bg);
+		color: var(--ok);
+	}
+	section:nth-of-type(5) .panel-h h2 :global(svg) {
+		background: var(--warn-bg);
+		color: var(--warn);
 	}
 	.panel-h a {
 		font-size: 0.8125rem;

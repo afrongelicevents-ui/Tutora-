@@ -9,7 +9,7 @@
 
 <svelte:head><title>{m.login_title()} · Tutora</title></svelte:head>
 
-<section class="screen auth">
+<section class="screen auth look look-auth">
 	<a class="back" href="/" aria-label={m.v3_back()}>←</a>
 	<h1>{m.v3_welcome_back()}</h1>
 	{#if page.url.searchParams.has('reset')}<p class="notice" role="status">{m.reset_done()}</p>{/if}

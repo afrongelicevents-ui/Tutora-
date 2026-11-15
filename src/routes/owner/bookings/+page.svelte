@@ -16,7 +16,7 @@
 
 <svelte:head><title>{m.on_bookings()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow">
+<section class="wrap narrow look">
 	<h1>{m.on_bookings()}</h1>
 	<nav class="tabs">
 		{#each tabs as s (s)}<a href="?status={s}" aria-current={data.status === s ? 'true' : undefined}

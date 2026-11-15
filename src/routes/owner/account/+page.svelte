@@ -9,7 +9,7 @@
 
 <svelte:head><title>{m.owner_my_account()} · Tutora</title></svelte:head>
 
-<section class="wrap narrow stack">
+<section class="wrap narrow stack look">
 	<h1>{m.owner_my_account()}</h1>
 	<div class="card stack">
 		<p class="small">{m.set_login_email()}: <b>{data.email}</b></p>

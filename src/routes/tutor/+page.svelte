@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Hero from '#lib/components/ui/Hero.svelte';
 	import { shortName } from '#lib/names.ts';
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay, fmtDayTime, fmtTime, localDate, minutesToHHMM, local } from '#lib/tz.ts';
@@ -53,11 +54,13 @@
 <svelte:head><title>{m.today_title()} · Tutora</title></svelte:head>
 
 <section class="screen">
-	<header class="greet">
-		<p class="g1">{greeting},</p>
-		<h1>{first(data.name)}.</h1>
-		<p class="g2">{m.tt2_lead()}</p>
-	</header>
+	<Hero
+		title={`${greeting}, ${first(data.name)}`}
+		lead={m.tt2_lead()}
+		photo="/photos/parent-helping.webp"
+		photoWidth={625}
+		photoHeight={640}
+	/>
 
 	<div class="stat2">
 		<a class="statcard" href="/tutor/students">
@@ -344,25 +347,6 @@
 </section>
 
 <style>
-	.greet {
-		display: flex;
-		flex-direction: column;
-	}
-	.greet .g1 {
-		margin: 0;
-		font: 600 1.75rem var(--font-display);
-		color: var(--navy);
-	}
-	.greet h1 {
-		margin: 0;
-		font-size: 2.75rem;
-		line-height: 1.05;
-		color: var(--navy);
-	}
-	.greet .g2 {
-		margin: 6px 0 0;
-		color: var(--text);
-	}
 	.stat2 {
 		display: grid;
 		grid-template-columns: 1fr 1fr;

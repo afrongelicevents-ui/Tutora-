@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Hero from '#lib/components/ui/Hero.svelte';
 	// More: the tutor's teaching centre. Profile, my teaching day, student success, my own
 	// achievements, teaching tools, and one way into account & settings.
 	import { m, t } from '#lib/i18n.ts';
@@ -33,10 +34,7 @@
 <svelte:head><title>{m.v3_nav_more()} · Tutora</title></svelte:head>
 
 <section class="screen">
-	<header>
-		<h1>{m.v3_nav_more()}</h1>
-		<p class="lead">{m.mo_lead()}</p>
-	</header>
+	<Hero title={m.v3_nav_more()} lead={m.mo_lead()} />
 
 	<!-- A. my teacher profile -->
 	<section class="prof">
@@ -208,12 +206,6 @@
 </section>
 
 <style>
-	header h1 {
-		margin: 0;
-	}
-	header .lead {
-		margin: 4px 0 0;
-	}
 	.prof {
 		display: grid;
 		grid-template-columns: auto minmax(0, 1fr);
