@@ -277,3 +277,15 @@ Full audit in docs/WIRING.md (86 rows, every one now fixed or decided). Choices 
 - **Topic scores on a student's page (T20):** the tutor sees all the student's marks for the full picture. Other tutors' written feedback stays hidden.
 - **Homework-due reminders** now run in the hourly cron.
 - **Live deploys** stay manual until the end-to-end tests and the independent walkthrough pass.
+
+## D124 — Free plan, parent redesign, School+ teachers, one style everywhere (2026-11-15)
+
+- **Free plan only.** CPU is measured on Cloudflare itself (Actions → Measure CPU (test site)); numbers and limits in docs/FREE-LIMITS.md. Owner → Free limits shows usage hourly and alerts at 70%.
+- **Login password hashing: PBKDF2-SHA256 at 30,000 rounds** (was scrypt, then 100,000 rounds). Chosen to fit the 10 ms CPU budget. Passwords must be 10+ characters and logins are rate-limited per account and address. Older hashes still work and are upgraded at sign-in.
+- **Reading pages use Neon's HTTP driver with automatic batching**; form posts use the WebSocket driver (transactions). Measured on Cloudflare: 12 queries cost 12 ms (WebSocket), 9 ms (HTTP), 4 ms (batch).
+- **Public pages are kept in the worker's memory for 60 s** for logged-out visitors (the edge cache doesn't work on workers.dev). The security policy uses hashes so cached pages stay safe.
+- **All timed jobs run from GitHub Actions against the database**, never on the website; the test site's jobs every 6 hours (it shares the live site's Neon compute hours).
+- **Schoolteachers** get a minimal account through the tutor's invite link and can see only partnerships they accepted. Consent is given after the teacher accepts, so it names the real teacher.
+- **"Online/Available" is never shown**: the app doesn't know it.
+- **Photos:** only the owner-supplied photos in static/photos (licence of the stock-preview one to confirm; three look AI-generated, used because the owner chose them). The earlier static/hero.webp is not used. The first owner photo was left out because of a visible stock-site watermark.
+- **Unsplash could not be reached** (network rule; the owner can't approve changes from a phone), so no stock photos were downloaded.

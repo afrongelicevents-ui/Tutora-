@@ -96,9 +96,39 @@ failing. Heaviest pages (median CPU):
   The test site's jobs run every 6 hours to save the shared Neon compute hours.
 - **Usage is read hourly the same way** (`scripts/deploy/usage.ts`) for Owner → Free limits.
 
-## After
+## After (test site, 15 Nov 2026)
 
-(filled in from the next Cloudflare measurement)
+Cloudflare's own figures, same method (each page warmed once, then 4 visits measured):
+
+|                                           | Before           | After                                         |
+| ----------------------------------------- | ---------------- | --------------------------------------------- |
+| Median CPU per request                    | 18 ms            | **11 ms**                                     |
+| p90                                       | 32 ms            | **19 ms**                                     |
+| Requests refused for going over the limit | 15 of 231 (6.5%) | **0 of 248** (and 0 of 156 in the latest run) |
+| Test logins that failed                   | 1                | **0**                                         |
+
+| Page                     | Before      | After                                                              |
+| ------------------------ | ----------- | ------------------------------------------------------------------ |
+| Homepage `/`             | 40          | **0–1** (served from memory)                                       |
+| Tutors list, tutor page  | 18–25       | **0–1** (served from memory)                                       |
+| Student home             | 37          | **15**                                                             |
+| Parent home (new design) | 30          | **15**                                                             |
+| Tutor Today              | 29          | **22** (follow-up lookups now batched; re-measure)                 |
+| Student progress         | 32          | **13**                                                             |
+| Student You page         | 31          | **15**                                                             |
+| Tutor More               | 36          | **13**                                                             |
+| Owner pages              | —           | **5–9**                                                            |
+| Booking page             | 27          | **11**                                                             |
+| Login (`POST /login`)    | 10 (p90 42) | 23 (p90 39) — includes the one-time upgrade of old password hashes |
+
+About half of all pages are now at 10 ms or less; the busiest dashboards (tutor Today,
+parent booking, tutor calendar "all", the tutor's student page, Earnings) are 18–22 ms.
+Cloudflare refused none of them in these runs, but they are above the 10 ms target, so they
+stay on the list: next steps are fewer sequential lookups on those five pages (so the
+database batch covers more of each page) and paging long lists.
+
+Database driver, same 12 queries on Cloudflare: WebSocket 12 ms, HTTP 9 ms, HTTP batch 4 ms.
+Reading pages now use HTTP with automatic batching; form posts keep the WebSocket.
 
 ## If a limit gets close: what helps first
 
