@@ -11,11 +11,12 @@
 		['/owner/reports', m.on_reports()],
 		['/owner/moderation', m.om_link()],
 		['/owner/audit', m.on_audit()],
+		['/owner/limits', m.on_limits()],
 		['/owner/account', m.on_account()]
 	];
 </script>
 
-<nav class="wrap ownernav" aria-label={m.nav_owner()}>
+<nav class="wrap narrow ownernav" aria-label={m.nav_owner()}>
 	{#each links as [href, label] (href)}<a
 			{href}
 			aria-current={page.url.pathname === href ? 'page' : undefined}>{label}</a
@@ -29,6 +30,8 @@
 		flex-wrap: wrap;
 		gap: 6px;
 		padding-top: 8px;
+		/* lines up with the page below it, with room before the page title */
+		margin-bottom: 12px;
 	}
 	.ownernav a {
 		padding: 8px 12px;

@@ -4,11 +4,11 @@ import {
 	auditLog,
 	booking,
 	enrollment,
-	lesson,
 	payment,
 	platformSubject,
 	profile,
 	review,
+	subject,
 	supportRequest,
 	tutorProfile
 } from './db/app.schema.ts';
@@ -26,6 +26,7 @@ export async function allTutors(db: DB) {
 			slug: tutorProfile.slug,
 			name: tutorProfile.tutorName,
 			status: tutorProfile.status,
+			accountName: user.name,
 			plan: tutorProfile.plan,
 			setupDone: sql<boolean>`${tutorProfile.setupDoneAt} is not null`,
 			createdAt: tutorProfile.createdAt,
@@ -41,30 +42,49 @@ export async function allTutors(db: DB) {
 		);
 	if (!rows.length) return [];
 	const ids = rows.map((r) => r.tutorId);
-	const [students, lessons, payments] = await Promise.all([
+	// the same definitions as the Bookings and Payments pages: every booking request and
+	// every payment, with how many were accepted / confirmed
+	const [students, bookings, payments, subjects] = await Promise.all([
 		db
 			.select({ t: enrollment.tutorId, n: sql<number>`count(*)::int` })
 			.from(enrollment)
 			.where(inArray(enrollment.tutorId, ids))
 			.groupBy(enrollment.tutorId),
 		db
-			.select({ t: lesson.tutorId, n: sql<number>`count(*)::int` })
-			.from(lesson)
-			.where(and(inArray(lesson.tutorId, ids), eq(lesson.status, 'scheduled')))
-			.groupBy(lesson.tutorId),
+			.select({
+				t: booking.tutorId,
+				n: sql<number>`count(*)::int`,
+				ok: sql<number>`count(*) filter (where ${booking.status} = 'accepted')::int`
+			})
+			.from(booking)
+			.where(inArray(booking.tutorId, ids))
+			.groupBy(booking.tutorId),
 		db
-			.select({ t: payment.tutorId, n: sql<number>`count(*)::int` })
+			.select({
+				t: payment.tutorId,
+				n: sql<number>`count(*)::int`,
+				ok: sql<number>`count(*) filter (where ${payment.status} = 'confirmed')::int`
+			})
 			.from(payment)
-			.where(and(inArray(payment.tutorId, ids), eq(payment.status, 'confirmed')))
-			.groupBy(payment.tutorId)
+			.where(inArray(payment.tutorId, ids))
+			.groupBy(payment.tutorId),
+		db
+			.select({ t: subject.tutorId, n: sql<number>`count(*)::int` })
+			.from(subject)
+			.where(and(inArray(subject.tutorId, ids), eq(subject.active, true)))
+			.groupBy(subject.tutorId)
 	]);
-	const count = (list: { t: string; n: number }[], id: string) =>
-		list.find((x) => x.t === id)?.n ?? 0;
+	const row = <T extends { t: string }>(list: T[], id: string) => list.find((x) => x.t === id);
 	return rows.map((r) => ({
 		...r,
-		students: count(students, r.tutorId),
-		lessons: count(lessons, r.tutorId),
-		payments: count(payments, r.tutorId)
+		students: row(students, r.tutorId)?.n ?? 0,
+		bookings: row(bookings, r.tutorId)?.n ?? 0,
+		bookingsAccepted: row(bookings, r.tutorId)?.ok ?? 0,
+		payments: row(payments, r.tutorId)?.n ?? 0,
+		paymentsConfirmed: row(payments, r.tutorId)?.ok ?? 0,
+		activeSubjects: row(subjects, r.tutorId)?.n ?? 0,
+		// the same rule "Find a tutor" uses: a name and at least one subject to book
+		findable: !!r.name?.trim() && (row(subjects, r.tutorId)?.n ?? 0) > 0
 	}));
 }
 
@@ -89,6 +109,25 @@ export async function setTutorStatus(db: DB, tutorId: string, status: TutorStatu
 	if (done.length && status === 'suspended')
 		await db.delete(session).where(eq(session.userId, tutorId));
 	return done.length > 0;
+}
+
+/**
+ * Can students find and book this tutor once active? The same rule as "Find a tutor": a
+ * public name and at least one active subject. What is missing, for the owner's message.
+ */
+export async function tutorReadiness(db: DB, tutorId: string) {
+	const [p] = await db
+		.select({ name: tutorProfile.tutorName })
+		.from(tutorProfile)
+		.where(eq(tutorProfile.tutorId, tutorId));
+	const [s] = await db
+		.select({ n: sql<number>`count(*)::int` })
+		.from(subject)
+		.where(and(eq(subject.tutorId, tutorId), eq(subject.active, true)));
+	const missing: ('name' | 'subjects')[] = [];
+	if (!p?.name?.trim()) missing.push('name');
+	if (!s?.n) missing.push('subjects');
+	return { ready: missing.length === 0, missing };
 }
 
 export async function platformCounts(db: DB) {
@@ -186,22 +225,25 @@ export function allBookings(db: DB, status?: string) {
 	const st = ['requested', 'accepted', 'declined', 'proposed', 'cancelled'].includes(status ?? '')
 		? (status as 'requested')
 		: undefined;
-	return db
-		.select({
-			id: booking.id,
-			status: booking.status,
-			kind: booking.kind,
-			startsAt: booking.startsAt,
-			createdAt: booking.createdAt,
-			studentName: user.name,
-			tutorName: tutorProfile.tutorName
-		})
-		.from(booking)
-		.innerJoin(user, eq(user.id, booking.userId))
-		.innerJoin(tutorProfile, eq(tutorProfile.tutorId, booking.tutorId))
-		.where(st ? eq(booking.status, st) : undefined)
-		.orderBy(desc(booking.createdAt))
-		.limit(100);
+	return (
+		db
+			.select({
+				id: booking.id,
+				status: booking.status,
+				kind: booking.kind,
+				startsAt: booking.startsAt,
+				createdAt: booking.createdAt,
+				studentName: user.name,
+				tutorName: tutorProfile.tutorName
+			})
+			.from(booking)
+			.innerJoin(user, eq(user.id, booking.userId))
+			.innerJoin(tutorProfile, eq(tutorProfile.tutorId, booking.tutorId))
+			.where(st ? eq(booking.status, st) : undefined)
+			// by the lesson's date, newest first (the date shown on each row)
+			.orderBy(desc(booking.startsAt), desc(booking.id))
+			.limit(100)
+	);
 }
 
 export function allPayments(db: DB, status?: string, staleOnly = false) {
@@ -238,6 +280,7 @@ export function allPayments(db: DB, status?: string, staleOnly = false) {
 export const reportedReviews = (db: DB) =>
 	db
 		.select({
+			handled: sql<boolean>`exists (select 1 from ${auditLog} where ${auditLog.target} = ${review.id}::text and ${auditLog.action} in ('review_hidden','review_shown','report_dismissed') and ${auditLog.createdAt} > now() - interval '30 days')`,
 			id: review.id,
 			rating: review.rating,
 			text: review.text,
@@ -249,8 +292,26 @@ export const reportedReviews = (db: DB) =>
 		})
 		.from(review)
 		.innerJoin(tutorProfile, eq(tutorProfile.tutorId, review.tutorId))
-		.where(or(isNotNull(review.reportedAt), eq(review.hidden, true)))
-		.orderBy(desc(review.reportedAt));
+		// reported, hidden, or handled by the owner in the last 30 days (so a mis-press can be undone)
+		.where(
+			or(
+				isNotNull(review.reportedAt),
+				eq(review.hidden, true),
+				sql`exists (select 1 from ${auditLog} where ${auditLog.target} = ${review.id}::text and ${auditLog.action} in ('review_hidden','review_shown','report_dismissed') and ${auditLog.createdAt} > now() - interval '30 days')`
+			)
+		)
+		.orderBy(sql`${review.reportedAt} desc nulls last`, desc(review.id))
+		.limit(100);
+
+/** One review with its tutor, for the audit log line. */
+export async function reviewLabel(db: DB, id: number) {
+	const [r] = await db
+		.select({ tutor: tutorProfile.tutorName, by: review.displayName, text: review.text })
+		.from(review)
+		.innerJoin(tutorProfile, eq(tutorProfile.tutorId, review.tutorId))
+		.where(eq(review.id, id));
+	return r ? `${r.tutor ?? '—'} · ${r.by ?? '—'}: “${(r.text ?? '').slice(0, 60)}”` : null;
+}
 
 export async function dismissReport(db: DB, id: number) {
 	await db.update(review).set({ reportedAt: null, reportReason: null }).where(eq(review.id, id));
@@ -267,7 +328,22 @@ export const openSupport = (db: DB) =>
 		.limit(100);
 
 export async function closeSupport(db: DB, id: number) {
-	await db.update(supportRequest).set({ status: 'done' }).where(eq(supportRequest.id, id));
+	const r = await db
+		.update(supportRequest)
+		.set({ status: 'done' })
+		.where(eq(supportRequest.id, id))
+		.returning({ name: supportRequest.name, topic: supportRequest.topic });
+	return r[0] ?? null;
+}
+
+/** Marked done by mistake: open again. */
+export async function reopenSupport(db: DB, id: number) {
+	const r = await db
+		.update(supportRequest)
+		.set({ status: 'open' })
+		.where(eq(supportRequest.id, id))
+		.returning({ name: supportRequest.name, topic: supportRequest.topic });
+	return r[0] ?? null;
 }
 
 /* ---------- the standard subjects list ---------- */
@@ -275,12 +351,29 @@ export async function closeSupport(db: DB, id: number) {
 export const listPlatformSubjects = (db: DB) =>
 	db.select().from(platformSubject).orderBy(platformSubject.sortOrder, platformSubject.name);
 
-export async function addPlatformSubject(db: DB, name: string) {
-	await db.insert(platformSubject).values({ name, sortOrder: 100 }).onConflictDoNothing();
+/** Adds a subject unless one with the same name (any capitals, extra spaces) is there. */
+export async function addPlatformSubject(db: DB, raw: string): Promise<'added' | 'exists'> {
+	const name = raw.replace(/\s+/g, ' ').trim();
+	const [dup] = await db
+		.select({ id: platformSubject.id })
+		.from(platformSubject)
+		.where(sql`lower(trim(${platformSubject.name})) = ${name.toLowerCase()}`);
+	if (dup) return 'exists';
+	const r = await db
+		.insert(platformSubject)
+		.values({ name, sortOrder: 100 })
+		.onConflictDoNothing()
+		.returning({ id: platformSubject.id });
 	forgetShared('subjects:');
+	return r.length ? 'added' : 'exists';
 }
 
+/** Removes a subject; its name (for the log), or null when there was none. */
 export async function removePlatformSubject(db: DB, id: number) {
-	await db.delete(platformSubject).where(eq(platformSubject.id, id));
+	const r = await db
+		.delete(platformSubject)
+		.where(eq(platformSubject.id, id))
+		.returning({ name: platformSubject.name });
 	forgetShared('subjects:');
+	return r[0]?.name ?? null;
 }

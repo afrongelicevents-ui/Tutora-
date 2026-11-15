@@ -7,11 +7,13 @@
 		((form && 'errors' in form ? form.errors : {}) ?? {}) as Record<string, string>
 	);
 	const roleLabel = $derived(
-		data.account.role === 'tutor'
-			? m.role_tutor()
-			: data.account.role === 'parent'
-				? m.role_parent()
-				: m.role_student()
+		data.account.role === 'owner'
+			? m.role_owner()
+			: data.account.role === 'tutor'
+				? m.role_tutor()
+				: data.account.role === 'parent'
+					? m.role_parent()
+					: m.role_student()
 	);
 </script>
 
@@ -99,14 +101,20 @@
 			><input type="checkbox" name="email" defaultChecked={!data.prefs.emailOff} />
 			<span>{m.acc_pref_email()}</span></label
 		>
-		<label class="check"
-			><input type="checkbox" name="reminders" defaultChecked={!data.prefs.remindersOff} />
-			<span>{m.acc_pref_reminders()}</span></label
-		>
-		<label class="check"
-			><input type="checkbox" name="homework" defaultChecked={!data.prefs.homeworkOff} />
-			<span>{m.acc_pref_homework()}</span></label
-		>
+		{#if data.account.role !== 'owner'}
+			<!-- lesson and homework alerts are for students, parents and tutors, not the owner -->
+			<label class="check"
+				><input type="checkbox" name="reminders" defaultChecked={!data.prefs.remindersOff} />
+				<span>{m.acc_pref_reminders()}</span></label
+			>
+			<label class="check"
+				><input type="checkbox" name="homework" defaultChecked={!data.prefs.homeworkOff} />
+				<span>{m.acc_pref_homework()}</span></label
+			>
+		{:else}
+			<input type="hidden" name="reminders" value={data.prefs.remindersOff ? '' : 'on'} />
+			<input type="hidden" name="homework" value={data.prefs.homeworkOff ? '' : 'on'} />
+		{/if}
 		<button class="btn btn-block" type="submit">{m.save()}</button>
 	</form>
 

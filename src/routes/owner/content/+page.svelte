@@ -9,18 +9,20 @@
 <section class="wrap narrow">
 	<h1>{m.on_content()}</h1>
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
-	{#if form?.saved}<p class="notice" role="status">{m.saved()}</p>{/if}
+	{#if data.done}<p class="notice" role="status">{t(data.done)}</p>{/if}
 
 	<form method="POST" action="?/photo" enctype="multipart/form-data" class="card stack">
 		<h2 class="h3">{m.oc_photo()}</h2>
 		<p class="small muted">{m.oc_photo_lead()}</p>
-		{#if data.c.heroPhoto}<img
-				src="/hero-photo?v={data.c.heroPhotoV}"
-				alt=""
-				width="240"
-				height="300"
-				style="width:160px;height:auto;border-radius:12px"
-			/>{/if}
+		<!-- the photo the homepage shows now (the standard one until one is uploaded) -->
+		<img
+			src={data.c.heroPhoto ? `/hero-photo?v=${data.c.heroPhotoV}` : '/hero.webp'}
+			alt={m.oc_photo_now()}
+			width="240"
+			height="300"
+			style="width:160px;height:auto;border-radius:12px"
+		/>
+		{#if !data.c.heroPhoto}<p class="small muted">{m.oc_photo_standard()}</p>{/if}
 		<input
 			name="photo"
 			type="file"
@@ -42,7 +44,7 @@
 			name="heroTitle"
 			maxlength="80"
 			value={data.c.heroTitle}
-			placeholder={m.home2_title()}
+			placeholder={m.v3_tagline()}
 		/>
 		<label for="h2">{m.oc_lead()}</label>
 		<input
@@ -50,10 +52,10 @@
 			name="heroLead"
 			maxlength="200"
 			value={data.c.heroLead}
-			placeholder={m.home3_lead()}
+			placeholder={m.v3_welcome_lead()}
 		/>
 		<label for="h3">{m.oc_join()}</label>
-		<textarea id="h3" name="joinLead" maxlength="200" rows="2" placeholder={m.home3_join_lead()}
+		<textarea id="h3" name="joinLead" maxlength="200" rows="2" placeholder={m.join_lead()}
 			>{data.c.joinLead}</textarea
 		>
 		<button class="btn btn-block" type="submit">{m.save()}</button>
@@ -66,11 +68,18 @@
 			{#each data.subjects as s (s.id)}
 				<li>
 					<span>{s.name}</span>
-					<form method="POST" action="?/removeSubject">
-						<input type="hidden" name="id" value={s.id} /><button class="btn-link" type="submit"
-							>{m.remove()}</button
-						>
-					</form>
+					<!-- two steps, so a mis-tap never removes a subject -->
+					<details class="small">
+						<summary>{m.remove()}</summary>
+						<form method="POST" action="?/removeSubject" class="stack">
+							<input type="hidden" name="id" value={s.id} />
+							<label class="check"
+								><input type="checkbox" name="sure" />
+								<span>{m.oc_subject_remove_sure({ name: s.name })}</span></label
+							>
+							<button class="btn btn-warn btn-sm" type="submit">{m.remove()}</button>
+						</form>
+					</details>
 				</li>
 			{:else}
 				<li class="small muted">{m.oc_subjects_none()}</li>

@@ -1,7 +1,12 @@
 <script lang="ts">
-	import { m } from '#lib/i18n.ts';
+	import { m, t } from '#lib/i18n.ts';
 	import { fmtDayTime } from '#lib/tz.ts';
+	import { T_MESSAGES } from '#lib/t-keys.gen.ts';
 	let { data } = $props();
+	const known = new Set<string>(Object.keys(T_MESSAGES));
+	/** In plain words ("Tutor approved"); an older or unknown entry falls back to its code. */
+	const what = (action: string) =>
+		known.has(`audit_${action}`) ? t(`audit_${action}`) : action.replace(/_/g, ' ');
 </script>
 
 <svelte:head><title>{m.on_audit()} · Tutora</title></svelte:head>
@@ -13,8 +18,7 @@
 		{#each data.log as a (a.id)}
 			<li>
 				<span
-					><b>{a.action.replace(/_/g, ' ')}</b>{#if a.detail}<span class="small block"
-							>{a.detail}</span
+					><b>{what(a.action)}</b>{#if a.detail}<span class="small block">{a.detail}</span
 						>{/if}<span class="small muted block">{a.actor ?? '—'} · {fmtDayTime(a.createdAt)}</span
 					></span
 				>

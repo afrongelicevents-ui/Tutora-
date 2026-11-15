@@ -6,6 +6,8 @@ import { m } from '#lib/paraglide/messages.js';
 import { moderate, moderationQueue, resolveReport } from '#lib/server/buddies.ts';
 import { getStore } from '#lib/server/storage.ts';
 import { audit } from '#lib/server/owner.ts';
+import { eq } from 'drizzle-orm';
+import { user } from '#lib/server/db/auth.schema.ts';
 
 /** The owner checks student photos and bios before buddies see them, and handles reports. */
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -26,7 +28,14 @@ export const actions: Actions = {
 			await getStore(platform)
 				.delete(removedKey)
 				.catch(() => {});
-		await audit(locals.db, u.id, `profile_${what}_${approve ? 'approved' : 'rejected'}`, id);
+		const [who] = await locals.db.select({ name: user.name }).from(user).where(eq(user.id, id));
+		await audit(
+			locals.db,
+			u.id,
+			`profile_${what}_${approve ? 'approved' : 'rejected'}`,
+			id,
+			who?.name ?? null
+		);
 		// the student hears the result of the check
 		const thing = what === 'photo' ? m.ev_thing_photo() : m.ev_thing_bio();
 		await notifyUser(

@@ -26,7 +26,7 @@
 <section class="wrap narrow">
 	<h1>{m.nav_owner()}</h1>
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
-	{#if form?.done}<p class="notice" role="status">{t(form.done)}</p>{/if}
+	{#if data.done}<p class="notice" role="status">{t(data.done)}</p>{/if}
 
 	<div class="money3">
 		<div><b>{data.counts.tutors}</b><span>{m.owner_tutors()}</span></div>
@@ -40,13 +40,21 @@
 			<b>{tu.name ?? '—'}</b>
 			<p class="small muted">{tu.email} · {m.owner_joined({ date: fmtDay(tu.createdAt) })}</p>
 			{#if !tu.emailConfirmed}<p class="small">{m.owner_check_email()}</p>{/if}
+			{#if !tu.findable}
+				<!-- warned before approving: students could not find this page yet -->
+				<p class="small warn-t" role="note">
+					{tu.activeSubjects ? m.owner_not_ready_name() : m.owner_not_ready_subjects()}
+				</p>
+			{/if}
 			<div class="row">
 				<form method="POST" action="?/status">
 					<input type="hidden" name="id" value={tu.tutorId} /><input
 						type="hidden"
 						name="status"
 						value="active"
-					/><button class="btn btn-sm" type="submit">{m.owner_approve()}</button>
+					/><button class="btn btn-sm" type="submit" disabled={!tu.findable}
+						>{m.owner_approve()}</button
+					>
 				</form>
 				<a class="btn btn-secondary btn-sm" href="/t/{tu.slug}?preview=1"
 					>{m.owner_view_profile()}</a
@@ -79,21 +87,44 @@
 					· <a href="/t/{tu.slug}">/t/{tu.slug}</a>{/if}
 			</p>
 			<p class="small">
-				{m.owner_counts({ students: tu.students, lessons: tu.lessons, payments: tu.payments })}
+				{m.owner_counts2({
+					students: tu.students,
+					bookings: tu.bookings,
+					accepted: tu.bookingsAccepted,
+					payments: tu.payments,
+					confirmed: tu.paymentsConfirmed
+				})}
 				· {tu.setupDone ? m.owner_setup_done() : m.owner_setup_not_done()} · {m.owner_plan({
 					plan: tu.plan
 				})}
 			</p>
-			{#if tu.status === 'active' || tu.status === 'suspended'}
+			{#if tu.status === 'active' && !tu.findable}
+				<p class="small warn-t">{m.owner_not_findable()}</p>
+			{/if}
+			{#if tu.status === 'active'}
+				<!-- two steps: suspending logs the tutor out at once -->
+				<details
+					class="small"
+					open={!!(form && 'suspendFor' in form && form.suspendFor === tu.tutorId)}
+				>
+					<summary>{m.owner_suspend()}</summary>
+					<form method="POST" action="?/status" class="stack">
+						<input type="hidden" name="id" value={tu.tutorId} />
+						<input type="hidden" name="status" value="suspended" />
+						<p class="small">{m.owner_suspend_lead()}</p>
+						<label class="check"
+							><input type="checkbox" name="sure" /> <span>{m.owner_suspend_sure()}</span></label
+						>
+						<button class="btn btn-warn btn-sm" type="submit">{m.owner_suspend()}</button>
+					</form>
+				</details>
+			{:else if tu.status === 'suspended'}
 				<form method="POST" action="?/status">
 					<input type="hidden" name="id" value={tu.tutorId} />
-					{#if tu.status === 'active'}<input type="hidden" name="status" value="suspended" /><button
-							class="btn btn-secondary btn-sm"
-							type="submit">{m.owner_suspend()}</button
-						>{:else}<input type="hidden" name="status" value="active" /><button
-							class="btn btn-sm"
-							type="submit">{m.owner_reactivate()}</button
-						>{/if}
+					<input type="hidden" name="status" value="active" /><button
+						class="btn btn-sm"
+						type="submit">{m.owner_reactivate()}</button
+					>
 				</form>
 			{:else}
 				<span class="small muted">{m.ev_owner_not_submitted()}</span>
@@ -115,11 +146,19 @@
 	{/if}
 	<form method="POST" action="?/addTutor" class="card stack" novalidate>
 		<p class="small muted">{m.owner_add_lead()}</p>
-		<Field name="name" label={m.set_name()} value={av.name ?? ''} error={ae.name} required />
 		<Field
+			id="add-name"
+			name="name"
+			label={m.owner_tutor_name()}
+			value={av.name ?? ''}
+			error={ae.name ? (ae.name === 'err_name' ? 'owner_err_tutor_name' : ae.name) : undefined}
+			required
+		/>
+		<Field
+			id="add-email"
 			name="email"
 			type="email"
-			label={m.field_email()}
+			label={m.owner_tutor_email()}
 			value={av.email ?? ''}
 			error={ae.email}
 			required
@@ -135,16 +174,29 @@
 	{/if}
 	<form method="POST" action="?/resetStudent" class="card stack" novalidate>
 		<p class="small muted">{m.owner_reset_lead()}</p>
-		<Field name="email" type="email" label={m.field_email()} required />
+		<Field
+			id="reset-email"
+			name="email"
+			type="email"
+			label={m.owner_reset_email()}
+			error={form && 'resetError' in form ? (form.resetError as string) : undefined}
+			required
+		/>
 		<button class="btn btn-secondary btn-block" type="submit">{m.owner_reset_btn()}</button>
 	</form>
 
 	{#if data.testSite}
 		<h2>{m.owner_test_h()}</h2>
-		<form method="POST" action="?/resetTest" class="card stack">
-			<p class="small">{m.owner_test_lead()}</p>
-			<button class="btn btn-warn btn-block" type="submit">{m.owner_test_reset()}</button>
-		</form>
+		<details class="card">
+			<summary>{m.owner_test_reset()}</summary>
+			<form method="POST" action="?/resetTest" class="stack">
+				<p class="small">{m.owner_test_lead()}</p>
+				<label class="check"
+					><input type="checkbox" name="sure" /> <span>{m.owner_test_sure()}</span></label
+				>
+				<button class="btn btn-warn btn-block" type="submit">{m.owner_test_reset()}</button>
+			</form>
+		</details>
 	{/if}
 
 	<p style="margin-top:16px"><a href="/owner/account">{m.owner_my_account()}</a></p>

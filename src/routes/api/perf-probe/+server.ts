@@ -29,7 +29,7 @@ const QUERIES = [
 export const GET: RequestHandler = async ({ url, locals }) => {
 	if (TEST_SITE !== '1') error(404, 'Not found');
 	const mode = url.searchParams.get('driver') ?? 'ws';
-	let rows = 0;
+	let rows: number;
 	if (mode === 'ws') {
 		const r = await Promise.all(QUERIES.map((q) => locals.db.execute(q)));
 		rows = (r as unknown as { rows?: unknown[] }[]).reduce(

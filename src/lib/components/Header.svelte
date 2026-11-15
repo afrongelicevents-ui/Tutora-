@@ -46,7 +46,8 @@
 						<a href={user.role === 'parent' ? '/parent' : '/student'}>{m.nav_dashboard()}</a>
 					{/if}
 					<a href="/notifications">{m.notif_title()}</a>
-					<a href="/account">{m.nav_account()}</a>
+					<!-- the owner's account page has the owner's own settings -->
+					<a href={user.role === 'owner' ? '/owner/account' : '/account'}>{m.nav_account()}</a>
 					<form method="POST" action="/logout">
 						<button class="btn-link" type="submit">{m.nav_logout()}</button>
 					</form>

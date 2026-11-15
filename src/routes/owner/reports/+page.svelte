@@ -1,19 +1,33 @@
 <script lang="ts">
-	import { m } from '#lib/i18n.ts';
+	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay } from '#lib/tz.ts';
-	let { data } = $props();
+	let { data, form } = $props();
 </script>
 
 <svelte:head><title>{m.on_reports()} · Tutora</title></svelte:head>
 
 <section class="wrap narrow">
 	<h1>{m.on_reports()}</h1>
+	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
+	{#if data.done}<p class="notice" role="status">{t(data.done)}</p>{/if}
 	<h2>{m.or_reviews()}</h2>
+	<p class="small muted">{m.or_reviews_lead()}</p>
 	{#each data.reviews as r (r.id)}
 		<div class="card stack">
-			<p class="small muted">{r.tutorName} · {'★'.repeat(r.rating)} · {r.displayName}</p>
+			<div class="row">
+				<p class="small muted grow">
+					{r.tutorName} · {'★'.repeat(r.rating)} · {r.displayName}
+				</p>
+				<span class="pill {r.hidden ? 'p-no' : 'p-ok'}"
+					>{r.hidden ? m.or_hidden() : m.or_visible()}</span
+				>
+			</div>
 			<p>“{r.text}”</p>
-			{#if r.reportReason}<p class="small"><b>{m.or_reason()}:</b> {r.reportReason}</p>{/if}
+			{#if r.reportReason}<p class="small">
+					<b>{m.or_reason()}:</b>
+					{r.reportReason}{#if r.reportedAt}
+						· {fmtDay(r.reportedAt)}{/if}
+				</p>{/if}
 			<div class="row">
 				<form method="POST" action="?/hide">
 					<input type="hidden" name="id" value={r.id} /><input
@@ -24,7 +38,7 @@
 						>{r.hidden ? m.show() : m.hide()}</button
 					>
 				</form>
-				{#if r.reportReason}<form method="POST" action="?/dismiss">
+				{#if r.reportReason && !r.hidden}<form method="POST" action="?/dismiss">
 						<input type="hidden" name="id" value={r.id} /><button
 							class="btn btn-secondary btn-sm"
 							type="submit">{m.or_keep()}</button
@@ -33,7 +47,7 @@
 			</div>
 		</div>
 	{:else}
-		<p class="empty">{m.none_yet()}</p>
+		<p class="empty">{m.or_reviews_none()}</p>
 	{/each}
 
 	<h2>{m.or_support()}</h2>
@@ -53,9 +67,13 @@
 						class="btn btn-secondary btn-sm"
 						type="submit">{m.or_mark_done()}</button
 					>
+				</form>{:else}<form method="POST" action="?/reopen">
+					<input type="hidden" name="id" value={s.id} /><button class="btn-link small" type="submit"
+						>{m.or_reopen()}</button
+					>
 				</form>{/if}
 		</div>
 	{:else}
-		<p class="empty">{m.none_yet()}</p>
+		<p class="empty">{m.or_support_none()}</p>
 	{/each}
 </section>
