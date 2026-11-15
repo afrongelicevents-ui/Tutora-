@@ -65,7 +65,7 @@ async function connect(
 			r.guardianId,
 			m.fam_notify_pending_s({ name: parent.name, child }),
 			m.fam_notify_pending_b({ child }),
-			{ kind: 'family', link: '/parent/children' }
+			{ kind: 'family', link: '/parent/settings' }
 		);
 	}
 	return r;

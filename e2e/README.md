@@ -35,3 +35,24 @@ E2E_DB=postgres://…/tutora_e2e E2E_PASSWORD=Shot-pass-123 CRON_SECRET=<same> p
   time it names (or, on a local database only, empty the `action_limit` table).
 - Without `CRON_SECRET` the check-in flow still runs, but skips the hourly-job step (it says so in
   the test's notes). The 8 PM day summary isn't tested end to end: it needs the real clock.
+
+## School+ (e2e/school-plus.e2e.ts): selectors the parent pages must keep
+
+The School+ flow walks every status with Mrs Sibanda (parent), Tatenda (child), Chipo (tutor)
+and a new schoolteacher who signs up through the invite link. A redesign of the parent
+School+ pages must keep these `data-testid`s (or update the test):
+
+| page                             | element                                                                          | data-testid     |
+| -------------------------------- | -------------------------------------------------------------------------------- | --------------- |
+| `/parent/school-plus?child=<id>` | request form (`select[name=tutor]`, `input[name=subject                          | school          | teacher]`, submit) | `sp-request` |
+| same                             | "Find a tutor first" button (child has no tutor)                                 | `sp-find-tutor` |
+| `/parent/school-plus/<id>`       | page wrapper with `data-status="<status>"`                                       | `sp-parent`     |
+| same                             | consent form (`input[name=consent]` checkbox, `input[name=consentName]`, submit) | `sp-consent`    |
+| same                             | stop / withdraw form (submit; a confirm() dialog)                                | `sp-stop`       |
+
+Tutor (`/tutor/school-plus`): `sp-item` (with `data-status`), `sp-accept`, `sp-decline`,
+`sp-invite`, `sp-invite-link`. Teacher: `spi-signup`, `spi-respond` (buttons `value=1|0`) on
+`/school/<token>`; `teacher-partnership` (with `data-status`) on `/teacher/p/<id>`; shared:
+`sp-message`, `sp-plan`, `sp-report`, `sp-end`.
+Locally email counts as on (dev), so a new teacher confirms their email first: the test sets
+`email_verified` and logs in from the invite link. On the test site the teacher is signed in at once.

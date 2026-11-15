@@ -1,70 +1,114 @@
 <script lang="ts">
 	import { m, t } from '#lib/i18n.ts';
-	import { fmtDayTime } from '#lib/tz.ts';
+	import Field from '#lib/components/Field.svelte';
+	import BotTrap from '#lib/components/BotTrap.svelte';
+	import { page } from '$app/state';
 	let { data, form } = $props();
-	const p = $derived(data.p);
+	const inv = $derived(data.invite);
+	type F = {
+		error?: string;
+		declined?: boolean;
+		values?: Record<string, string>;
+		errors?: Record<string, string>;
+	} | null;
+	const f = $derived(form as F);
+	const v = $derived(f?.values ?? {});
+	const e = $derived(f?.errors ?? {});
+	const here = $derived(page.url.pathname);
 </script>
 
 <svelte:head
 	><title>{m.sp3_title()} · Tutora</title><meta name="robots" content="noindex" /></svelte:head
 >
 
-<div class="screen">
-	<span class="eyebrow">{m.sp3_title()}</span>
-	<h1>{m.sp3_school_h({ child: p.child, subject: p.subject })}</h1>
-	{#if (form as { error?: string } | null)?.error}<p class="alert" role="alert">
-			{t((form as { error: string }).error)}
-		</p>{/if}
-	{#if p.status === 'school_invited'}
-		<p class="lead">{m.sp3_school_lead({ school: p.school, child: p.child })}</p>
-		<div class="softcard small">
-			<strong>{m.sp3_consent_h()}</strong><span>{p.consentText}</span>
-		</div>
-		<form method="POST" action="?/respond" class="stack">
-			<label class="field"
-				><span class="label">{m.sp3_your_name()}</span><input
-					name="teacher"
-					value={p.teacher}
-					maxlength="80"
-				/></label
+<section class="screen auth">
+	<span class="eyebrow">School+</span>
+	<h1>{m.spi_h({ tutor: inv.tutor })}</h1>
+	<p class="lead">
+		{m.spi_lead({ child: inv.child, subject: inv.subject, school: inv.school })}
+	</p>
+	<ul class="small plain">
+		<li>{m.spi_what_messages()}</li>
+		<li>{m.spi_what_plan()}</li>
+		<li>{m.spi_what_report()}</li>
+		<li>{m.spi_what_consent()}</li>
+	</ul>
+	{#if f?.error}<p class="alert" role="alert">{t(f.error)}</p>{/if}
+
+	{#if f?.declined}
+		<p class="notice" role="status">{m.spi_declined_done()}</p>
+	{:else if data.me?.role === 'schoolteacher'}
+		<p class="softcard small">{m.spi_signed_in({ name: data.me.name })}</p>
+		<form method="POST" action="?/respond" class="stack" data-testid="spi-respond">
+			<button class="btn btn-block" name="accept" value="1"
+				>{inv.legacy ? m.spi_take_over() : m.spi_accept()}</button
 			>
-			<button class="btn btn-block" name="accept" value="1">{m.sp3_school_yes()}</button>
-			<button class="btn btn-ghost btn-block" name="accept" value="0">{m.sp3_school_no()}</button>
+			{#if !inv.legacy}<button class="btn btn-ghost btn-block" name="accept" value="0"
+					>{m.spi_decline()}</button
+				>{/if}
 		</form>
-		<p class="note">{m.sp3_school_note()}</p>
+	{:else if data.me}
+		<p class="alert" role="alert">{m.spi_wrong_account()}</p>
+		<form method="POST" action="/logout">
+			<button class="btn btn-ghost btn-block">{m.nav_logout()}</button>
+		</form>
 	{:else}
-		<div class="rows">
-			{#each data.log as l (l.id)}<div class="logrow">
-					<span class="muted tiny">{fmtDayTime(l.createdAt)} · {l.fromName}</span><span
-						class="prewrap">{l.body}</span
-					>
-				</div>{/each}
-		</div>
-		<form method="POST" action="?/message" class="stack">
-			<label class="field"
-				><span class="label">{m.sp3_message_tutor()}</span><textarea
-					name="body"
-					rows="4"
-					maxlength="2000"
-					required></textarea></label
-			>
-			<button class="btn" type="submit">{m.sp3_send()}</button>
+		<h2 class="h3">{m.spi_create_h()}</h2>
+		{#if e.form}<p class="alert" role="alert">{t(e.form)}</p>{/if}
+		<form method="POST" action="?/signup" class="stack" novalidate data-testid="spi-signup">
+			<BotTrap />
+			<Field
+				name="name"
+				label={m.field_name()}
+				autocomplete="name"
+				required
+				value={v.name ?? inv.teacher}
+				error={e.name}
+			/>
+			<Field
+				name="email"
+				type="email"
+				label={m.field_email()}
+				autocomplete="email"
+				required
+				value={v.email ?? ''}
+				error={e.email}
+			/>
+			<Field
+				name="password"
+				type="password"
+				label={m.field_password()}
+				hint={m.field_password_hint()}
+				autocomplete="new-password"
+				minlength={10}
+				required
+				error={e.password}
+			/>
+			<Field
+				name="school"
+				label={m.spi_school()}
+				required
+				value={v.school ?? inv.school}
+				error={e.school}
+			/>
+			<button class="btn btn-block" type="submit">{m.spi_create()}</button>
 		</form>
-		<p class="note">{m.sp3_logged_note()}</p>
+		<a class="btn-link center" href={`/login?next=${encodeURIComponent(here)}`}
+			>{m.spi_have_account()}</a
+		>
+		<p class="note">{m.spi_only_this()}</p>
 	{/if}
-</div>
+</section>
 
 <style>
 	h1 {
 		margin: 0;
 		font-size: 1.75rem;
 	}
-	.logrow {
-		flex-direction: column;
-		align-items: flex-start !important;
-		gap: 2px !important;
+	.plain {
+		padding-left: 18px;
 	}
-	.tiny {
-		font-size: 0.75rem;
+	.center {
+		text-align: center;
 	}
 </style>

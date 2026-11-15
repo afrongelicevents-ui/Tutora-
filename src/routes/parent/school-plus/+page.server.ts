@@ -1,53 +1,37 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { and, eq } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 import { requireRole } from '#lib/server/guards.ts';
-import { childrenOf, FamilyFail, parentAccess } from '#lib/server/family.ts';
-import { forParent, PartnershipFail, requestPartnership } from '#lib/server/partnership.ts';
-import { enrollment, tutorProfile } from '#lib/server/db/app.schema.ts';
-import { notifyTutor } from '#lib/server/notify.ts';
+import { FamilyFail, parentAccess } from '#lib/server/family.ts';
+import { pickChild } from '#lib/server/parent-child.ts';
+import { childPhotos } from '#lib/server/parent-home.ts';
+import {
+	PartnershipFail,
+	requestPartnership,
+	schoolPlusForChild
+} from '#lib/server/partnership.ts';
+import { tellSchoolPlus } from '#lib/server/school-plus-notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
-import { shortName } from '#lib/names.ts';
-import { m } from '#lib/paraglide/messages.js';
 
-export const load: PageServerLoad = async ({ locals, url }) => {
+/** School+ for one child at a time (?child=): offer and request, the steps, or the active team. */
+export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 	const u = requireRole(locals.user, url, ['parent']);
-	const kids = (await childrenOf(locals.db, u.id)).filter((k) => k.status === 'active');
-	const tutors = await Promise.all(
-		kids.map(async (k) => ({
-			childId: k.studentId,
-			list: await locals.db
-				.select({ id: tutorProfile.tutorId, name: tutorProfile.tutorName })
-				.from(enrollment)
-				.innerJoin(tutorProfile, eq(tutorProfile.tutorId, enrollment.tutorId))
-				.where(and(eq(enrollment.userId, k.studentId), eq(tutorProfile.status, 'active')))
-		}))
-	);
-	// only partnerships for children this parent is still connected to
-	const all = await forParent(locals.db, u.id);
-	const mine = [];
-	for (const r of all) if ((await parentAccess(locals.db, u.id, r.p.studentId)).ok) mine.push(r);
+	const { kids, current } = await pickChild(locals.db, u.id, url, cookies);
+	if (!current) return { kids, current: null, sp: null, child: null };
+	const [sp, photos] = await Promise.all([
+		schoolPlusForChild(locals.db, u.id, current),
+		childPhotos(locals.db, [current])
+	]);
+	const kid = kids.find((k) => k.id === current);
 	return {
-		// ?child=<id> picks the child (works without JavaScript too)
-		selected: kids.some((k) => k.studentId === url.searchParams.get('child'))
-			? url.searchParams.get('child')
-			: null,
-		kids: kids.map((k) => ({
-			id: k.studentId,
-			name: shortName(k.name),
-			canConsent: !!k.isUnder18 && k.guardian,
-			adult: !k.isUnder18
-		})),
-		tutors,
-		partnerships: mine.map((r) => ({
-			id: r.p.id,
-			child: shortName(r.child),
-			tutor: r.tutor,
-			subject: r.p.subject,
-			school: r.p.schoolName,
-			teacher: r.p.teacherName,
-			status: r.p.status
-		}))
+		kids,
+		current,
+		sp,
+		child: {
+			id: current,
+			name: kid?.name ?? '',
+			level: kid?.level ?? null,
+			photo: photos.get(current) ?? null
+		}
 	};
 };
 
@@ -64,17 +48,9 @@ export const actions: Actions = {
 				subject: f.subject ?? '',
 				schoolName: f.school ?? '',
 				teacherName: f.teacher ?? '',
-				teacherEmail: f.teacherEmail,
-				consentName: f.consentName ?? '',
-				consent: f.consent === 'on'
+				teacherEmail: f.teacherEmail
 			});
-			await notifyTutor(
-				locals.db,
-				row.tutorId,
-				m.sp3_n_request_s(),
-				m.sp3_n_request_b({ subject: row.subject, school: row.schoolName }),
-				{ kind: 'family', link: '/tutor/school-plus' }
-			);
+			await tellSchoolPlus(locals.db, row, 'requested', u.id);
 			redirect(303, `/parent/school-plus/${row.id}`);
 		} catch (e) {
 			if (e instanceof PartnershipFail || e instanceof FamilyFail)

@@ -478,13 +478,22 @@ export const lessonMeeting = pgTable('lesson_meeting', {
 
 /* ------------------------------------------------------------------ School+ */
 
+/**
+ * requested → tutor_accepted → teacher_invited → teacher_accepted → (parent consents) active;
+ * declined (by the tutor or the teacher), withdrawn (by the parent before it was active),
+ * ended (by anyone once active).
+ */
 export const PARTNERSHIP_STATUS = [
 	'requested',
-	'school_invited',
+	'tutor_accepted',
+	'teacher_invited',
+	'teacher_accepted',
 	'active',
 	'declined',
-	'stopped'
+	'withdrawn',
+	'ended'
 ] as const;
+export type PartnershipStatus = (typeof PARTNERSHIP_STATUS)[number];
 
 /**
  * Premium Academic Partnership: with the parent's written consent, the tutor and the
@@ -503,13 +512,21 @@ export const partnership = pgTable(
 		teacherName: text('teacher_name').notNull(),
 		teacherEmail: text('teacher_email'),
 		status: text('status', { enum: PARTNERSHIP_STATUS }).notNull().default('requested'),
-		/** the written consent, as the parent signed it */
-		consentText: text('consent_text').notNull(),
-		consentName: text('consent_name').notNull(),
-		consentAt: ts('consent_at').notNull(),
-		/** fingerprint of the private link the school uses to answer and to message */
+		/** the written consent, as the parent signed it (given once the teacher has accepted) */
+		consentText: text('consent_text'),
+		consentName: text('consent_name'),
+		consentAt: ts('consent_at'),
+		/** fingerprint of the teacher's invite link (cleared once used or withdrawn) */
 		schoolTokenHash: text('school_token_hash'),
+		/** the schoolteacher's own account, once they accept */
+		teacherId: text('teacher_id').references(() => user.id, { onDelete: 'set null' }),
+		tutorAcceptedAt: ts('tutor_accepted_at'),
+		teacherInvitedAt: ts('teacher_invited_at'),
+		/** when the teacher accepted (or declined) */
 		schoolRespondedAt: ts('school_responded_at'),
+		activeAt: ts('active_at'),
+		declinedBy: text('declined_by', { enum: ['tutor', 'teacher'] }),
+		/** when it was withdrawn or ended, and by whom */
 		stoppedAt: ts('stopped_at'),
 		stoppedBy: text('stopped_by').references(() => user.id, { onDelete: 'set null' }),
 		createdAt: created()
@@ -517,8 +534,39 @@ export const partnership = pgTable(
 	(t) => [
 		index('partnership_parent').on(t.parentId),
 		index('partnership_tutor').on(t.tutorId),
-		uniqueIndex('partnership_token').on(t.schoolTokenHash)
+		uniqueIndex('partnership_token').on(t.schoolTokenHash),
+		index('partnership_teacher').on(t.teacherId)
 	]
+);
+
+/** The shared learning plan: what tutor and teacher agree to work on (one per partnership). */
+export const partnershipPlan = pgTable('partnership_plan', {
+	partnershipId: integer('partnership_id')
+		.primaryKey()
+		.references(() => partnership.id, { onDelete: 'cascade' }),
+	goals: text('goals'),
+	topics: text('topics'),
+	examFocus: text('exam_focus'),
+	updatedByName: text('updated_by_name'),
+	updatedAt: ts('updated_at').notNull().defaultNow()
+});
+
+/** Monthly report input: a short note from the teacher (or the tutor) for the parent. */
+export const partnershipReport = pgTable(
+	'partnership_report',
+	{
+		id: serial('id').primaryKey(),
+		partnershipId: integer('partnership_id')
+			.notNull()
+			.references(() => partnership.id, { onDelete: 'cascade' }),
+		/** YYYY-MM */
+		month: text('month').notNull(),
+		fromRole: text('from_role', { enum: ['tutor', 'teacher'] }).notNull(),
+		fromName: text('from_name').notNull(),
+		body: text('body').notNull(),
+		createdAt: created()
+	},
+	(t) => [uniqueIndex('partnership_report_one').on(t.partnershipId, t.month, t.fromRole)]
 );
 
 /** Every message and every step in a partnership (the log the parent can read). */

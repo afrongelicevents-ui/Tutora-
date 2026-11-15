@@ -103,6 +103,15 @@ describe('central lock for private areas (also page-data requests)', () => {
 	const tutorNo2fa = { id: 't', role: 'tutor', emailVerified: true, twoFactorEnabled: false };
 	const tutor = { ...tutorNo2fa, twoFactorEnabled: true, tutorStatus: 'active' as const };
 	const owner = { id: 'o', role: 'owner', emailVerified: true, twoFactorEnabled: true };
+	it('schoolteachers see only their own area; nobody else gets into it', async () => {
+		const { areaAccess } = await import('./guards.ts');
+		const teacher = { id: 'st', role: 'schoolteacher', emailVerified: true };
+		expect(areaAccess('/teacher/p/1', '', teacher)).toEqual({ ok: true });
+		for (const p of ['/student', '/parent', '/tutor', '/owner', '/student/lessons/__data.json'])
+			expect(areaAccess(p, '', teacher).ok).toBe(false);
+		for (const who of [student, tutor, owner, { id: 'p', role: 'parent', emailVerified: true }])
+			expect(areaAccess('/teacher', '', who)).toEqual({ ok: false, status: 403, area: 'teacher' });
+	});
 	it('blocks visitors and students from tutor data, including __data.json', async () => {
 		const { areaAccess } = await import('./guards.ts');
 		expect(

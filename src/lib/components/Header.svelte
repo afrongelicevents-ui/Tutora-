@@ -43,7 +43,13 @@
 						<a href="/tutor/calendar">{m.tnav_calendar()}</a>
 						<a href="/tutor/settings">{m.settings_title()}</a>
 					{:else}
-						<a href={user.role === 'parent' ? '/parent' : '/student'}>{m.nav_dashboard()}</a>
+						<a
+							href={user.role === 'parent'
+								? '/parent'
+								: user.role === 'schoolteacher'
+									? '/teacher'
+									: '/student'}>{m.nav_dashboard()}</a
+						>
 					{/if}
 					<a href="/notifications">{m.notif_title()}</a>
 					<!-- the owner's account page has the owner's own settings -->

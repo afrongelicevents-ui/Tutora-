@@ -9,7 +9,7 @@
 
 <div class="screen">
 	{#if data.mode === 'pick'}
-		<a class="back" href="/parent/children" aria-label={m.v3_back()}>←</a>
+		<a class="back" href="/parent/tutors" aria-label={m.v3_back()}>←</a>
 		<h1>{m.par3_book_for({ name: data.kid.name })}</h1>
 		{#if data.mine.length}
 			<div class="rows top">

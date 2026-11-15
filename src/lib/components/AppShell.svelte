@@ -19,6 +19,9 @@
 		tag,
 		label,
 		unread = 0,
+		bellHref = '/notifications',
+		accountHref = '/account',
+		initial = '',
 		children
 	}: {
 		/** the bottom tab bar on phones (and the first part of the side navigation) */
@@ -29,6 +32,12 @@
 		tag: string;
 		label: string;
 		unread?: number;
+		/** where the bell goes (the family area keeps its own tabs on its bell page) */
+		bellHref?: string;
+		/** where the account link goes */
+		accountHref?: string;
+		/** when given, the account link is a round profile initial (family area) */
+		initial?: string;
 		children: Snippet;
 	} = $props();
 
@@ -55,13 +64,14 @@
 			{/each}
 		</nav>
 		<div class="side-foot">
-			<a href="/notifications" aria-current={path === '/notifications' ? 'page' : undefined}
+			<a href={bellHref} aria-current={path === bellHref ? 'page' : undefined}
 				>{m.notif_title()}{#if unread}<span class="count">{unread > 9 ? '9+' : unread}</span
 					>{/if}</a
 			>
-			<a href="/account" aria-current={path.startsWith('/account') ? 'page' : undefined}
-				>{m.nav_settings()}</a
-			>
+			{#if !all.some((x) => x.href === accountHref)}
+				<a href={accountHref} aria-current={path.startsWith(accountHref) ? 'page' : undefined}
+					>{m.nav_settings()}</a
+				>{/if}
 			<form method="POST" action="/logout">
 				<button type="submit">{m.nav_logout()}</button>
 			</form>
@@ -74,7 +84,7 @@
 			<div class="top-right">
 				<a
 					class="bell"
-					href="/notifications"
+					href={bellHref}
 					aria-label={unread ? m.notif_unread({ n: unread }) : m.notif_title()}
 					><svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"
 						><path
@@ -85,7 +95,9 @@
 						/></svg
 					>{#if unread}<span class="count">{unread > 9 ? '9+' : unread}</span>{/if}</a
 				>
-				<a class="acct" href="/account">{m.nav_settings()}</a>
+				{#if initial}<a class="acct initial" href={accountHref} aria-label={m.nav_settings()}
+						>{initial}</a
+					>{:else}<a class="acct" href={accountHref}>{m.nav_settings()}</a>{/if}
 			</div>
 		</div>
 		{@render children()}
@@ -108,6 +120,18 @@
 </div>
 
 <style>
+	.acct.initial {
+		width: 38px;
+		height: 38px;
+		border-radius: 50%;
+		background: var(--navy);
+		color: #fff;
+		display: grid;
+		place-items: center;
+		font-weight: 700;
+		text-decoration: none;
+		font-family: var(--font-display);
+	}
 	.shell {
 		min-height: 100dvh;
 		padding-bottom: calc(60px + env(safe-area-inset-bottom));

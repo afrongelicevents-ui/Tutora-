@@ -5,6 +5,9 @@ import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const PREFIXES = [
+	'spp_offer_',
+	'spt_done_',
+	'sp3_step_',
 	'fl_name_',
 	'fl_hint_',
 	'fl_why_',

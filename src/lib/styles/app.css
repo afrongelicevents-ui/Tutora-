@@ -1342,3 +1342,164 @@ a.rows-link:hover,
 		grid-auto-flow: row;
 	}
 }
+
+/* ---------- shared UI style (navy, light blue, cream; serif headings; rounded soft cards) ----------
+   Used first by the family area; meant for every page. Pieces:
+   .ui-page        page column with even spacing (put on the .screen element)
+   .ui-card        white rounded card with a soft shadow; .cream / .sky accent panels
+   .ui-sec-h       section heading row: serif h2 + a "View all" link on the right
+   .ui-ico         coloured round-cornered icon tile; .green .amber .blue .navy
+   .ui-btn         primary navy pill button; .ui-btn-soft white outline pill
+   .ui-serif       serif heading text in navy
+   .ui-pill        small rounded badge; .ui-grid2 / .ui-grid4 / .ui-cols layouts
+   Components: src/lib/components/ui/ (Hero, ProgressRing, Avatar, IconTile, StatTile, PersonCard) */
+.ui-page {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	padding-bottom: 24px;
+}
+.ui-card {
+	background: #fff;
+	border: 1px solid var(--border);
+	border-radius: 20px;
+	box-shadow: var(--shadow-soft);
+	padding: 16px;
+}
+.ui-card.cream {
+	background: #fdf6e9;
+	border-color: #f1e1c2;
+}
+.ui-card.sky {
+	background: var(--ice);
+	border-color: #d3e3f6;
+}
+.ui-sec-h {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 12px;
+}
+.ui-sec-h h2 {
+	margin: 0;
+	font-family: var(--font-display);
+	font-size: 1.5rem;
+	color: var(--navy);
+}
+.ui-sec-h a {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	white-space: nowrap;
+	font-weight: 600;
+	text-decoration: none;
+	color: var(--ocean);
+}
+.ui-ico {
+	width: 44px;
+	height: 44px;
+	border-radius: 14px;
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	background: var(--ice);
+	color: var(--navy);
+}
+.ui-ico.green {
+	background: var(--ok-bg);
+	color: var(--ok);
+}
+.ui-ico.amber {
+	background: var(--warn-bg);
+	color: var(--warn);
+}
+.ui-ico.blue {
+	background: #e3eefb;
+	color: var(--ocean);
+}
+.ui-ico.navy {
+	background: var(--navy);
+	color: #fff;
+}
+.ui-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 48px;
+	padding: 0 20px;
+	border-radius: 999px;
+	background: var(--navy);
+	color: #fff;
+	font-weight: 600;
+	text-decoration: none;
+	border: none;
+	cursor: pointer;
+}
+.ui-btn-soft {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 40px;
+	padding: 0 16px;
+	border-radius: 999px;
+	background: #fff;
+	border: 1px solid var(--border-strong);
+	color: var(--navy);
+	font-weight: 600;
+	text-decoration: none;
+	cursor: pointer;
+}
+.ui-serif {
+	font-family: var(--font-display);
+	color: var(--navy);
+}
+.ui-page .muted {
+	color: var(--muted);
+}
+.ui-grid2 {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+}
+.ui-grid4 {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 10px;
+}
+@media (min-width: 900px) {
+	.ui-cols {
+		display: grid;
+		grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+		gap: 18px;
+		align-items: start;
+	}
+	.ui-cols > div {
+		display: flex;
+		flex-direction: column;
+		gap: 18px;
+	}
+}
+.ui-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 12px;
+	border-radius: 999px;
+	background: var(--ice);
+	color: var(--navy);
+	font-size: 0.875rem;
+	font-weight: 600;
+}
+.ui-pill.gold {
+	background: var(--navy);
+	color: #f3c969;
+}
+.ui-pill.ok {
+	background: var(--ok-bg);
+	color: var(--ok);
+}
+.ui-pill.warn {
+	background: var(--warn-bg);
+	color: var(--warn);
+}

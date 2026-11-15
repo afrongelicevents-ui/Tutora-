@@ -17,7 +17,9 @@ export const user = pgTable('user', {
 	mustChangePassword: boolean('must_change_password').default(false).notNull(),
 	/** set by the platform owner: the account cannot log in or be used */
 	suspendedAt: timestamp('suspended_at'),
-	role: text('role', { enum: ['owner', 'tutor', 'student', 'parent'] }).default('student')
+	role: text('role', { enum: ['owner', 'tutor', 'student', 'parent', 'schoolteacher'] }).default(
+		'student'
+	)
 });
 
 export const session = pgTable(

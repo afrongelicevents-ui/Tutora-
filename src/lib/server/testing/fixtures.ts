@@ -14,7 +14,7 @@ let lastTutor: string | null = null;
  */
 export async function makeUser(
 	db: DB,
-	role: 'tutor' | 'student' | 'parent' | 'owner',
+	role: 'tutor' | 'student' | 'parent' | 'owner' | 'schoolteacher',
 	name = `Person ${++n}`,
 	tutorId: string | null | undefined = undefined
 ) {

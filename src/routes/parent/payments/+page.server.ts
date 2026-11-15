@@ -25,7 +25,7 @@ export const load: PageServerLoad = async (e) => {
 	const child = e.url.searchParams.get('child');
 	return {
 		// no tutor yet for this child: say so on the children page instead of a silent bounce
-		...(await paymentsLoad(e, payer, '/parent/children?nopay=1')),
+		...(await paymentsLoad(e, payer, '/parent/settings?nopay=1')),
 		child,
 		payerName: child ? payer.name : null
 	};

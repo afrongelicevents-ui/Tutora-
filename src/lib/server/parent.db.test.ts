@@ -5,21 +5,12 @@ import { makeUser, MONDAY_8AM } from './testing/fixtures.ts';
 import type { DB } from './db/types.ts';
 import { notification, profile } from './db/app.schema.ts';
 import { user } from './db/auth.schema.ts';
-import { createInvite, redeemInvite, removeLink, setSharing } from './family.ts';
+import { createInvite, redeemInvite, setSharing } from './family.ts';
 import { createChildAccount, setChildLogin } from './family-accounts.ts';
 import { addCheckin } from './checkins.ts';
 import { recordResult } from './progress.ts';
 import { addPlanItem, endSession, startSession } from './study.ts';
 import { chooseTip, childOverview, childUpdates, weeklyReport } from './parent.ts';
-import {
-	byToken,
-	logOf,
-	postMessage,
-	requestPartnership,
-	schoolRespond,
-	stopPartnership,
-	tutorDecide
-} from './partnership.ts';
 import { sendWeeklyReports } from './weekly.ts';
 import { addDays, fromLocal, startOfLocalWeek } from '../tz.ts';
 
@@ -61,12 +52,12 @@ describe('how you can help (no database)', () => {
 describe.skipIf(!hasTestDb)('parent area: visibility, younger children, School+', () => {
 	let db: DB;
 	let close: () => Promise<void>;
-	let T: string;
+	let _T: string;
 	const now = MONDAY_8AM;
 
 	beforeAll(async () => {
 		({ db, close } = await freshDb());
-		T = (await makeUser(db, 'tutor', 'Miss Doreen')).id;
+		_T = (await makeUser(db, 'tutor', 'Miss Doreen')).id;
 	});
 	afterAll(async () => close?.());
 
@@ -194,90 +185,7 @@ describe.skipIf(!hasTestDb)('parent area: visibility, younger children, School+'
 		).rejects.toThrow();
 	});
 
-	it('School+: consent, tutor, school opt-in, logged messages, parent stops it', async () => {
-		const kid = await makeUser(db, 'student', 'Rudo');
-		await db
-			.update(profile)
-			.set({ isUnder18: true, parentName: 'P', parentPhone: '+263770000000' })
-			.where(eq(profile.userId, kid.id));
-		const guardian = await makeUser(db, 'parent', 'Guardian', null);
-		const aunt = await makeUser(db, 'parent', 'Aunt', null);
-		await link(kid.id, guardian.id, true);
-		const base = {
-			studentId: kid.id,
-			tutorId: T,
-			subject: 'Maths',
-			schoolName: 'Test High',
-			teacherName: 'Mr Teacher',
-			consentName: 'Guardian Person',
-			consent: true
-		};
-		// only the guardian can consent for a child under 18; consent must be given
-		await link(kid.id, aunt.id); // pending approval: no access at all
-		await expect(requestPartnership(db, aunt.id, base)).rejects.toThrow();
-		await expect(requestPartnership(db, guardian.id, { ...base, consent: false })).rejects.toThrow(
-			'sp3_err_consent'
-		);
-		const other = await makeUser(db, 'tutor', 'Not their tutor', null);
-		await expect(
-			requestPartnership(db, guardian.id, { ...base, tutorId: other.id })
-		).rejects.toThrow('sp3_err_tutor');
-		const p = await requestPartnership(db, guardian.id, base);
-		expect(p.consentText).toContain('Test High');
-		// another tutor can't act on it
-		await expect(tutorDecide(db, other.id, p.id, true)).rejects.toThrow();
-		const { token } = await tutorDecide(db, T, p.id, true);
-		expect(token).toMatch(/^[0-9a-f]{48}$/);
-		// no messages before the school agrees
-		await expect(postMessage(db, { role: 'teacher', token: token! }, 'hello')).rejects.toThrow();
-		await schoolRespond(db, token!, true, 'Mr Teacher');
-		await postMessage(db, { role: 'teacher', token: token! }, 'We start fractions next week.');
-		await postMessage(db, { role: 'tutor', tutorId: T, id: p.id }, 'Thanks, I will match it.');
-		const log = await logOf(db, p.id);
-		expect(log.filter((l) => l.kind === 'message').map((l) => l.fromRole)).toEqual([
-			'teacher',
-			'tutor'
-		]);
-		// the parent stops it: the school's link stops working at once
-		await expect(stopPartnership(db, aunt.id, p.id)).rejects.toThrow();
-		await stopPartnership(db, guardian.id, p.id);
-		expect(await byToken(db, token!)).toBeNull();
-		await expect(
-			postMessage(db, { role: 'tutor', tutorId: T, id: p.id }, 'more')
-		).rejects.toThrow();
-		expect((await logOf(db, p.id)).at(-1)?.body).toContain('stopped');
-	});
-
-	it('School+: not for adult students; ends when the parent is no longer connected', async () => {
-		const adult = await makeUser(db, 'student', 'Grown Up', T);
-		const dad = await makeUser(db, 'parent', 'Dad', null);
-		await link(adult.id, dad.id);
-		const v = {
-			studentId: adult.id,
-			tutorId: T,
-			subject: 'Maths',
-			schoolName: 'S',
-			teacherName: 'T',
-			consentName: 'Dad Person',
-			consent: true
-		};
-		await expect(requestPartnership(db, dad.id, v)).rejects.toThrow('sp3_err_adult');
-		const kid = await makeUser(db, 'student', 'Young One', T);
-		await db
-			.update(profile)
-			.set({ isUnder18: true, parentName: 'P', parentPhone: '+263770000000' })
-			.where(eq(profile.userId, kid.id));
-		const mum = await makeUser(db, 'parent', 'Mum Three', null);
-		await link(kid.id, mum.id, true);
-		const p = await requestPartnership(db, mum.id, {
-			...v,
-			studentId: kid.id,
-			consentName: 'Mum Three'
-		});
-		const { token } = await tutorDecide(db, T, p.id, true);
-		await removeLink(db, { role: 'parent', id: mum.id }, kid.id, mum.id);
-		expect(await byToken(db, token!)).toBeNull();
-	});
+	// School+ has its own tests: school-plus.db.test.ts
 
 	it('reserved addresses cannot be used to sign up', async () => {
 		const { signupSchema } = await import('../validation/auth.ts');

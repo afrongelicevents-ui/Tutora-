@@ -8,6 +8,7 @@ import type { DB } from './db/types.ts';
 import { familyInvite, familyLink, guardianPermission, partnership } from './db/v3.schema.ts';
 import { profile } from './db/app.schema.ts';
 import { user } from './db/auth.schema.ts';
+import { perRequest } from './cache.ts';
 
 export const INVITE_HOURS = 48;
 /** No 0/O, 1/I/L: easy to read out over the phone. */
@@ -297,7 +298,13 @@ const NO_ACCESS: Access = {
  * lessons, homework, study and progress (they manage the child's permissions).
  * Check-ins are separate: only the ones the child chose to share, never their notes.
  */
-export async function parentAccess(db: DB, parentId: string, studentId: string): Promise<Access> {
+/** What this parent may see of this child (asked once per page, however many cards ask). */
+export const parentAccess = (db: DB, parentId: string, studentId: string): Promise<Access> =>
+	perRequest(db, `access:${parentId}:${studentId}`, () =>
+		parentAccessFresh(db, parentId, studentId)
+	);
+
+async function parentAccessFresh(db: DB, parentId: string, studentId: string): Promise<Access> {
 	const [row] = await db
 		.select({ link: familyLink, isUnder18: profile.isUnder18, suspended: user.suspendedAt })
 		.from(familyLink)
@@ -425,12 +432,18 @@ export async function removeLink(
 	// a School+ partnership this parent started ends with the connection
 	await db
 		.update(partnership)
-		.set({ status: 'stopped', stoppedAt: new Date(), schoolTokenHash: null })
+		.set({ status: 'ended', stoppedAt: new Date(), schoolTokenHash: null })
 		.where(
 			and(
 				eq(partnership.parentId, parentId),
 				eq(partnership.studentId, studentId),
-				inArray(partnership.status, ['requested', 'school_invited', 'active'])
+				inArray(partnership.status, [
+					'requested',
+					'tutor_accepted',
+					'teacher_invited',
+					'teacher_accepted',
+					'active'
+				])
 			)
 		);
 	await db

@@ -49,6 +49,16 @@ import {
 	startOfLocalWeek
 } from '../tz.ts';
 import type { TestLogin } from './seed.ts';
+import {
+	giveConsent,
+	inviteTeacher,
+	postMessage,
+	requestPartnership,
+	savePlan,
+	saveReport,
+	teacherRespond,
+	tutorDecide
+} from './partnership.ts';
 
 /** A code anyone can use on the test site to try "Join with code" (Kuda's invite). */
 export const TEST_INVITE_CODE = 'KUD-TEST42';
@@ -716,5 +726,57 @@ export async function seedV3(db: DB, hash: string, logins: TestLogin[], now = ne
 		.update(tutorProfile)
 		.set({ services: ['skills', 'group', 'exams'] })
 		.where(eq(tutorProfile.tutorId, tendai));
+
+	// School+: Mr Chiganga (schoolteacher, teacher@example.com) and Chipo work together on
+	// Tatenda's Maths, with Mrs Sibanda's consent: every real step, so the log is believable.
+	const teacher = 'test_teacher';
+	await db.insert(user).values({
+		id: teacher,
+		name: 'Mr T. Chiganga',
+		email: 'teacher@example.com',
+		emailVerified: true,
+		role: 'schoolteacher'
+	});
+	await db.insert(profile).values({ userId: teacher, consentAt: now });
+	await db.insert(account).values({
+		id: `acc_${teacher}`,
+		userId: teacher,
+		accountId: teacher,
+		providerId: 'credential',
+		password: hash
+	});
+	logins.push({ role: 'schoolteacher', name: 'Mr T. Chiganga', email: 'teacher@example.com' });
+	await db.insert(enrollment).values({ tutorId: chipo, userId: tatenda }).onConflictDoNothing();
+	const sp = await requestPartnership(db, sibanda, {
+		studentId: tatenda,
+		tutorId: chipo,
+		subject: 'Mathematics',
+		schoolName: 'Avondale High School',
+		teacherName: 'Mr T. Chiganga'
+	});
+	await tutorDecide(db, chipo, sp.id, true);
+	const { token } = await inviteTeacher(db, chipo, sp.id);
+	await teacherRespond(db, token, teacher, true);
+	await giveConsent(db, sibanda, sp.id, { consentName: 'Memory Sibanda', consent: true });
+	const asTeacher = { role: 'teacher' as const, userId: teacher };
+	await savePlan(db, asTeacher, sp.id, {
+		goals: 'Feel confident with algebra before the end-of-term test.',
+		topics: 'Linear equations, simplifying expressions, word problems',
+		examFocus: 'End-of-term test (Paper 1)'
+	});
+	await postMessage(db, asTeacher, sp.id, 'We start simultaneous equations in class next week.');
+	await postMessage(
+		db,
+		{ role: 'tutor', userId: chipo },
+		sp.id,
+		'Thank you. I will practise substitution with Tatenda on Saturday.'
+	);
+	await saveReport(
+		db,
+		asTeacher,
+		sp.id,
+		'Tatenda answers more questions in class and her homework is neater.',
+		now
+	);
 	return { invite: TEST_INVITE_CODE };
 }

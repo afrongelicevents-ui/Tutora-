@@ -2,36 +2,49 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireTutor } from '#lib/server/guards.ts';
 import {
+	details,
+	endPartnership,
 	forTutor,
-	logOf,
+	inviteTeacher,
 	PartnershipFail,
 	postMessage,
-	tutorDecide
+	savePlan,
+	saveReport,
+	tutorDecide,
+	type Partnership
 } from '#lib/server/partnership.ts';
-import { notifyUser } from '#lib/server/notify.ts';
+import { emailInvite, tellSchoolPlus } from '#lib/server/school-plus-notify.ts';
+import { getSettings } from '#lib/server/settings.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { toolsEnv } from '#lib/server/tools/env.ts';
 import { shortName } from '#lib/names.ts';
-import { m } from '#lib/paraglide/messages.js';
 
+/** The tutor's School+ partnerships: agree, invite the teacher, then work together. */
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const me = requireTutor(locals.user, url);
 	const rows = await forTutor(locals.db, me.id);
+	// full details only for the ones still going (the others show their status)
+	const open = new Set(['tutor_accepted', 'teacher_invited', 'teacher_accepted', 'active']);
 	return {
 		items: await Promise.all(
-			rows.map(async (r) => ({
-				id: r.p.id,
-				child: shortName(r.child),
-				subject: r.p.subject,
-				school: r.p.schoolName,
-				teacher: r.p.teacherName,
-				teacherEmail: r.p.teacherEmail,
-				status: r.p.status,
-				log:
-					r.p.status === 'active' || r.p.status === 'school_invited'
-						? await logOf(locals.db, r.p.id)
-						: []
-			}))
+			rows.map(async (r) => {
+				const d = open.has(r.p.status) ? await details(locals.db, r.p) : null;
+				return {
+					id: r.p.id,
+					child: shortName(r.child),
+					subject: r.p.subject,
+					school: r.p.schoolName,
+					teacher: r.teacher ?? r.p.teacherName,
+					teacherHasAccount: !!r.p.teacherId,
+					teacherEmail: r.p.teacherEmail,
+					status: r.p.status,
+					since: r.p.activeAt,
+					steps: d?.steps ?? null,
+					log: d?.log ?? [],
+					plan: d?.plan ?? null,
+					reports: d?.reports ?? []
+				};
+			})
 		)
 	};
 };
@@ -44,29 +57,30 @@ const handle = async <T>(fn: () => Promise<T>) => {
 		throw e;
 	}
 };
+const idOf = (f: Record<string, string>) => Number(f.id) || 0;
 
 export const actions: Actions = {
 	decide: async ({ locals, url, request }) => {
 		const me = requireTutor(locals.user, url);
 		const f = formObject(await request.formData());
-		const id = Number(f.id) || 0;
 		return handle(async () => {
-			const { token, parentId, subject, tutor } = await tutorDecide(
-				locals.db,
-				me.id,
-				id,
-				f.accept === '1'
-			);
-			if (parentId)
-				await notifyUser(
-					locals.db,
-					parentId,
-					token ? m.ev_sp_yes_s({ tutor }) : m.ev_sp_no_s({ tutor }),
-					token ? m.ev_sp_yes_b({ tutor, subject }) : m.ev_sp_no_b({ tutor, subject }),
-					{ kind: 'family', link: `/parent/school-plus/${id}` }
-				);
-			const origin = toolsEnv(url).origin;
-			return { id, link: token ? `${origin}/school/${token}` : null, declined: !token };
+			const accept = f.accept === '1';
+			const p = await tutorDecide(locals.db, me.id, idOf(f), accept);
+			await tellSchoolPlus(locals.db, p, accept ? 'tutor_accepted' : 'tutor_declined', me.id);
+			return { id: p.id, done: accept ? 'accepted' : 'declined' };
+		});
+	},
+	/** A fresh private invite link for the teacher (also emailed when possible). */
+	invite: async ({ locals, url, request }) => {
+		const me = requireTutor(locals.user, url);
+		const f = formObject(await request.formData());
+		return handle(async () => {
+			const { token, p } = await inviteTeacher(locals.db, me.id, idOf(f));
+			const link = `${toolsEnv(url).origin}/school/${token}`;
+			const s = await getSettings(locals.db, me.id);
+			const emailed = await emailInvite(p, link, s.tutorName ?? '');
+			await tellSchoolPlus(locals.db, p, 'teacher_invited', me.id);
+			return { id: p.id, link, emailed };
 		});
 	},
 	message: async ({ locals, url, request }) => {
@@ -75,20 +89,49 @@ export const actions: Actions = {
 		return handle(async () => {
 			const p = await postMessage(
 				locals.db,
-				{ role: 'tutor', tutorId: me.id, id: Number(f.id) || 0 },
+				{ role: 'tutor', userId: me.id },
+				idOf(f),
 				f.body ?? ''
 			);
-			await notifyUser(
+			await tellSchoolPlus(locals.db, p, 'message', me.id);
+			return { id: p.id, done: 'sent' };
+		});
+	},
+	plan: async ({ locals, url, request }) => {
+		const me = requireTutor(locals.user, url);
+		const f = formObject(await request.formData());
+		return handle(async () => {
+			const p = await savePlan(locals.db, { role: 'tutor', userId: me.id }, idOf(f), f);
+			await tellSchoolPlus(locals.db, p, 'plan', me.id);
+			return { id: p.id, done: 'plan' };
+		});
+	},
+	report: async ({ locals, url, request }) => {
+		const me = requireTutor(locals.user, url);
+		const f = formObject(await request.formData());
+		return handle(async () => {
+			const p = await saveReport(
 				locals.db,
-				p.parentId,
-				m.sp3_n_message_s(),
-				m.sp3_n_message_b({ subject: p.subject }),
-				{
-					kind: 'family',
-					link: `/parent/school-plus/${p.id}`
-				}
+				{ role: 'tutor', userId: me.id },
+				idOf(f),
+				f.body ?? ''
 			);
-			return { sent: true };
+			await tellSchoolPlus(locals.db, p, 'report', me.id);
+			return { id: p.id, done: 'report' };
+		});
+	},
+	end: async ({ locals, url, request }) => {
+		const me = requireTutor(locals.user, url);
+		const f = formObject(await request.formData());
+		if (f.sure !== 'on') return fail(400, { error: 'err_tick_sure', id: idOf(f) });
+		return handle(async () => {
+			const p: Partnership = await endPartnership(
+				locals.db,
+				{ role: 'tutor', userId: me.id },
+				idOf(f)
+			);
+			await tellSchoolPlus(locals.db, p, 'ended', me.id);
+			return { id: p.id, done: 'ended' };
 		});
 	}
 };

@@ -10,7 +10,9 @@ export const load: LayoutServerLoad = async ({ locals, url }) => {
 			? await unreadCount(
 					locals.db,
 					locals.user.id,
-					url.pathname === '/notifications' ? BELL_PAGE : 0
+					url.pathname === '/notifications' || url.pathname === '/parent/notifications'
+						? BELL_PAGE
+						: 0
 				)
 			: 0,
 		/** the test site shows a "TEST SITE — fake data" bar on every page */

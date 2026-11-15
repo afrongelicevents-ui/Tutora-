@@ -74,7 +74,7 @@ export async function homeworkMarked(db: DB, tutorId: string, answerId: number) 
 		{
 			subject: m.ev_hw_marked_fam_s({ name: child }),
 			body: m.ev_hw_marked_fam_b({ name: child, title: h.title }),
-			opts: { kind: 'homework', link: `/parent/updates?child=${encodeURIComponent(h.userId)}` }
+			opts: { kind: 'homework', link: `/parent/child/${encodeURIComponent(h.userId)}` }
 		}
 	);
 }
@@ -94,7 +94,7 @@ export async function homeworkSet(db: DB, studentId: string, title: string) {
 		{
 			subject: m.ev_hw_new_fam_s({ name: child }),
 			body: m.ev_hw_new_fam_b({ name: child, title }),
-			opts: { kind: 'homework', link: `/parent/updates?child=${encodeURIComponent(studentId)}` }
+			opts: { kind: 'homework', link: `/parent/child/${encodeURIComponent(studentId)}` }
 		}
 	);
 }

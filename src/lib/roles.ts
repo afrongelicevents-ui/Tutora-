@@ -1,4 +1,5 @@
-export const ROLES = ['owner', 'tutor', 'student', 'parent'] as const;
+/** `schoolteacher`: made only through a School+ invite link; sees only its partnerships. */
+export const ROLES = ['owner', 'tutor', 'student', 'parent', 'schoolteacher'] as const;
 export type Role = (typeof ROLES)[number];
 
 /**
@@ -14,8 +15,9 @@ export function isRole(value: unknown): value is Role {
 }
 
 /** Where each role lands after logging in. */
-export function homeFor(role: Role): '/owner' | '/tutor' | '/student' | '/parent' {
+export function homeFor(role: Role): '/owner' | '/tutor' | '/student' | '/parent' | '/teacher' {
 	if (role === 'owner') return '/owner';
+	if (role === 'schoolteacher') return '/teacher';
 	if (role === 'parent') return '/parent';
 	return role === 'tutor' ? '/tutor' : '/student';
 }

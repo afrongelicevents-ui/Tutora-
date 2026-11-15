@@ -162,6 +162,13 @@
       "when": 1794746260331,
       "tag": "0022_usage_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794747580062,
+      "tag": "0023_school_plus_teacher",
+      "breakpoints": true
     }
   ]
 }

@@ -1,8 +1,15 @@
 <script lang="ts">
 	import { m, t } from '#lib/i18n.ts';
-	import { fmtDayTime } from '#lib/tz.ts';
+	import { fmtDate } from '#lib/tz.ts';
+	import PartnershipWork from '#lib/components/schoolplus/PartnershipWork.svelte';
 	let { data, form } = $props();
-	type F = { error?: string; id?: number; link?: string | null; sent?: boolean } | null;
+	type F = {
+		error?: string;
+		id?: number;
+		link?: string | null;
+		emailed?: boolean;
+		done?: string;
+	} | null;
 	const f = $derived(form as F);
 </script>
 
@@ -10,41 +17,44 @@
 
 <div class="screen">
 	<h1>{m.sp3_title()}</h1>
-	<p class="lead">{m.sp3_tutor_lead()}</p>
+	<p class="lead">{m.spt_lead()}</p>
 	{#if f?.error}<p class="alert" role="alert">{t(f.error)}</p>{/if}
+	{#if f?.done}<p class="notice" role="status">{t(`spt_done_${f.done}`)}</p>{/if}
 	{#each data.items as p (p.id)}
-		<section class="card stack">
+		<section class="card stack" data-testid="sp-item" data-status={p.status}>
 			<div class="row">
 				<strong class="grow">{p.child} · {p.subject}</strong><span class="pill p-info"
 					>{t(`sp3_status_${p.status}`)}</span
 				>
 			</div>
 			<span class="small muted"
-				>{p.school} · {p.teacher}{p.teacherEmail ? ` · ${p.teacherEmail}` : ''}</span
+				>{p.school} · {p.teacher}{p.teacherEmail && !p.teacherHasAccount
+					? ` · ${p.teacherEmail}`
+					: ''}{p.since ? ` · ${m.spt_since({ date: fmtDate(new Date(p.since)) })}` : ''}</span
 			>
+
 			{#if f?.link && f.id === p.id}
-				<div class="softcard small">
-					<strong>{m.sp3_link_h()}</strong>
+				<div class="softcard small" data-testid="sp-invite-link">
+					<strong>{m.spt_link_h()}</strong>
 					<input
 						readonly
 						value={f.link}
 						onfocus={(e) => (e.currentTarget as HTMLInputElement).select()}
 					/>
-					<span>{m.sp3_link_note()}</span>
+					<span>{f.emailed ? m.spt_link_emailed() : m.spt_link_note()}</span>
 				</div>
 			{/if}
-			{#if p.status === 'requested' || p.status === 'school_invited'}
+
+			{#if p.status === 'requested'}
 				<div class="row">
-					<form method="POST" action="?/decide">
+					<form method="POST" action="?/decide" data-testid="sp-accept">
 						<input type="hidden" name="id" value={p.id} /><input
 							type="hidden"
 							name="accept"
 							value="1"
-						/><button class="btn btn-sm"
-							>{p.status === 'requested' ? m.sp3_agree() : m.sp3_new_link()}</button
-						>
+						/><button class="btn btn-sm">{m.spt_agree()}</button>
 					</form>
-					<form method="POST" action="?/decide">
+					<form method="POST" action="?/decide" data-testid="sp-decline">
 						<input type="hidden" name="id" value={p.id} /><input
 							type="hidden"
 							name="accept"
@@ -52,29 +62,27 @@
 						/><button class="btn btn-ghost btn-sm">{m.par_decline()}</button>
 					</form>
 				</div>
-			{/if}
-			{#if p.log.length}
-				<div class="rows">
-					{#each p.log as l (l.id)}<div class="logrow">
-							<span class="muted tiny">{fmtDayTime(l.createdAt)} · {l.fromName}</span><span
-								class="prewrap">{l.body}</span
-							>
-						</div>{/each}
-				</div>
-			{/if}
-			{#if p.status === 'active'}
-				<form method="POST" action="?/message" class="stack">
+			{:else if p.status === 'tutor_accepted' || p.status === 'teacher_invited'}
+				<form method="POST" action="?/invite" data-testid="sp-invite">
 					<input type="hidden" name="id" value={p.id} />
-					<label class="field"
-						><span class="label">{m.sp3_message_teacher()}</span><textarea
-							name="body"
-							rows="3"
-							maxlength="2000"
-							required></textarea></label
+					<button class="btn btn-sm"
+						>{p.status === 'tutor_accepted' ? m.spt_invite() : m.spt_new_link()}</button
 					>
-					<button class="btn btn-ghost btn-sm" type="submit">{m.sp3_send()}</button>
-					<span class="note">{m.sp3_logged_note()}</span>
 				</form>
+				{#if p.status === 'teacher_invited'}<p class="note">{m.spt_waiting_teacher()}</p>{/if}
+			{:else if p.status === 'teacher_accepted'}
+				<p class="note">{m.spt_waiting_consent()}</p>
+			{/if}
+
+			{#if p.steps}
+				<PartnershipWork
+					id={p.id}
+					status={p.status}
+					log={p.log}
+					plan={p.plan}
+					reports={p.reports}
+					who="tutor"
+				/>
 			{/if}
 		</section>
 	{:else}
@@ -86,14 +94,6 @@
 	h1 {
 		margin: 0;
 		font-size: 1.875rem;
-	}
-	.logrow {
-		flex-direction: column;
-		align-items: flex-start !important;
-		gap: 2px !important;
-	}
-	.tiny {
-		font-size: 0.75rem;
 	}
 	input[readonly] {
 		width: 100%;

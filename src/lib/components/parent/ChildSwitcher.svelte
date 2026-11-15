@@ -24,6 +24,6 @@
 		{#each kids.filter((k) => k.status !== 'active') as k (k.id)}
 			<span class="chip add" title={m.par_pending_short()}>{k.name} · {m.par3_waiting()}</span>
 		{/each}
-		<a class="chip add" href="/parent/children#add">{m.par_add_code()}</a>
+		<a class="chip add" href="/parent/settings#add">{m.par_add_code()}</a>
 	</nav>
 {/if}

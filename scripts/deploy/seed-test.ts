@@ -63,7 +63,12 @@ async function main() {
 				.from(schema.tutorProfile)
 				.where(sql`jsonb_array_length(${schema.tutorProfile.services}) > 0`)
 				.limit(1);
-			if (seeded && !real && v3 && buddies && msgs && fu && ps && pt && sv) {
+			// School+ schoolteacher account (teacher@example.com) is there too?
+			const [teacher] = await db
+				.select({ id: schema.user.id })
+				.from(schema.user)
+				.where(eq(schema.user.id, 'test_teacher'));
+			if (seeded && !real && v3 && buddies && msgs && fu && ps && pt && sv && teacher) {
 				console.log('Test data already there: kept.');
 				return;
 			}

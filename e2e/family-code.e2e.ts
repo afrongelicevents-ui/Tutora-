@@ -37,10 +37,12 @@ test('family code connects a parent who sees only shared areas', async ({ browse
 	);
 	expect(n.n).toBeGreaterThan(0);
 
-	// 3. everything shared: the parent sees the lessons number
+	// 3. everything shared: the parent sees the lessons on the child's page
 	await parent.goto('/parent?child=test_nyasha');
-	const lessons = parent.locator('.stat3 > div').nth(2);
-	await expect(lessons).toContainText('lessons booked');
+	await expect(parent).toHaveURL(/\/parent\/child\/test_nyasha/);
+	const lessons = parent.locator('section#lessons');
+	await expect(lessons).toBeVisible();
+	await expect(lessons).not.toContainText("doesn't share");
 
 	// 4. the student switches lessons off for Ruth
 	await student.goto('/student/family');
@@ -56,7 +58,6 @@ test('family code connects a parent who sees only shared areas', async ({ browse
 	expect(l2.lessons).toBe(false);
 
 	// 5. the parent no longer sees lessons
-	await parent.goto('/parent?child=test_nyasha');
-	await expect(parent.locator('.stat3 > div').nth(2)).toContainText('not shared');
-	await expect(parent.locator('.stat3 > div').nth(2)).not.toContainText('lessons booked');
+	await parent.goto('/parent/child/test_nyasha');
+	await expect(parent.locator('section#lessons')).toContainText("doesn't share");
 });

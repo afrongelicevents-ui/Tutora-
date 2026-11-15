@@ -2,10 +2,13 @@
 	import { page } from '$app/state';
 	import { m } from '#lib/i18n.ts';
 	const email = $derived(page.url.searchParams.get('email'));
-	// only two places to come back to: Family Connection, or booking the tutor they signed up from
+	// only a few places to come back to: Family Connection, a School+ invite, or booking the
+	// tutor they signed up from
 	const next = $derived.by(() => {
 		const n = page.url.searchParams.get('next') ?? '';
 		if (n === '/code/connect') return n;
+		// a schoolteacher's School+ invite
+		if (/^\/school\/[0-9a-f]{48}$/.test(n)) return n;
 		return /^\/student\/book\?tutor=[a-z0-9-]{1,80}(&intro=1)?$/.test(n) ? n : null;
 	});
 </script>
