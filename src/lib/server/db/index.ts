@@ -98,7 +98,11 @@ export function batching(sql: Neon) {
 		try {
 			const results = await sql.transaction(q.map((w) => sql.query(w.query, w.params, w.opts)));
 			results.forEach((r, i) => q[i].resolve(r));
-		} catch {
+		} catch (e) {
+			// visible in the worker's log (Measure CPU counts these): a batch should not fail
+			console.warn(
+				`db batch fell back (${q.length}): ${String((e as Error)?.message).slice(0, 80)}`
+			);
 			for (const w of q) void one(w);
 		}
 	};

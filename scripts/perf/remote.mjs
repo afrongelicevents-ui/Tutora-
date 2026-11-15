@@ -108,6 +108,12 @@ const ROLES = {
 		'/account'
 	],
 	'sibanda@example.com': [
+		'/parent/child/test_tatenda',
+		'/parent/tutors',
+		'/parent/progress',
+		'/parent/settings',
+		'/parent/notifications',
+		'/parent/school-plus',
 		'/parent',
 		'/parent?child=test_tatenda',
 		'/parent/children',
@@ -164,6 +170,12 @@ for (const [who, paths] of Object.entries(ROLES)) {
 	const cookie = await login(who);
 	if (!cookie) continue;
 	const list = [...paths];
+	if (who.startsWith('sibanda')) {
+		// the newest School+ partnership page, found on the School+ page
+		const { text } = await req('/parent/school-plus', { cookie });
+		const id = /\/parent\/school-plus\/(\d+)/.exec(text)?.[1];
+		if (id) list.push(`/parent/school-plus/${id}`);
+	}
 	if (who.startsWith('chipo')) {
 		// a real lesson page, found on the calendar
 		const { text } = await req('/tutor/calendar?view=all', { cookie });
@@ -212,11 +224,16 @@ const norm = (u) => {
 };
 const by = new Map();
 const outcomes = {};
+const warnings = {};
 let withCpu = 0;
 for (const e of events) {
 	const r = e.event?.request;
 	if (!r?.url || r.url.includes('__warm=1')) continue;
 	outcomes[e.outcome] = (outcomes[e.outcome] ?? 0) + 1;
+	for (const l of e.logs ?? []) {
+		const msg = String(l.message?.[0] ?? '').slice(0, 60);
+		if (l.level === 'warn' || l.level === 'error') warnings[msg] = (warnings[msg] ?? 0) + 1;
+	}
 	const cpu = e.cpuTime ?? e.cpu_time ?? null;
 	if (cpu == null) continue;
 	withCpu++;
@@ -247,6 +264,7 @@ console.log(
 	`requests ${visited.length}, log events ${events.length}, with CPU ${withCpu}, 5xx seen ${summary.errorsSeenByVisitor}`
 );
 console.log('outcomes', JSON.stringify(outcomes));
+console.log('warnings in the worker log', JSON.stringify(warnings));
 if (summary.overall)
 	console.log(
 		`all requests: p50 ${summary.overall.p50} ms, p90 ${summary.overall.p90} ms, max ${summary.overall.max} ms`
