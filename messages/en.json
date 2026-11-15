@@ -3079,5 +3079,8 @@
 	"spp_not_connected": "Not connected (partnership finished)",
 	"role_schoolteacher": "Schoolteacher",
 	"nav_teacher_home": "My School+",
-	"find3_all_tutors": "All available tutors (type a name or subject to narrow the list)."
+	"find3_all_tutors": "All available tutors (type a name or subject to narrow the list).",
+	"err_locked": "Too many wrong passwords for this account. To keep it safe, it is locked for {minutes} minutes. You can reset your password now.",
+	"login_locked_s": "Someone tried to sign in to your Tutora account",
+	"login_locked_b": "Your password was entered wrongly 10 times, so your account is locked for 30 minutes. If this wasn't you, reset your password from the sign-in page."
 }

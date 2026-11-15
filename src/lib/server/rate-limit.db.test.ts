@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { freshDb, hasTestDb } from './testing/db.ts';
-import { clientIp, hitLimit } from './rate-limit.ts';
+import { clearLimit, clientIp, hitLimit, peekLimit } from './rate-limit.ts';
 import type { DB } from './db/types.ts';
 
 describe.skipIf(!hasTestDb)('rate limits (real database)', () => {
@@ -20,6 +20,21 @@ describe.skipIf(!hasTestDb)('rate limits (real database)', () => {
 		expect((await hitLimit(db, 'login', 'ip-2', t0, rule)).ok).toBe(true);
 		// after the window it starts again
 		expect((await hitLimit(db, 'login', 'ip-1', t0 + 61_000, rule)).ok).toBe(true);
+	});
+
+	it('locks an account after too many wrong passwords, and a right one clears it', async () => {
+		const t0 = 2_000_000;
+		const rule = { max: 3, windowSeconds: 1800 };
+		expect((await peekLimit(db, 'loginFail', 'a@b.c', t0, rule)).ok).toBe(true);
+		for (let i = 0; i < 3; i++) await hitLimit(db, 'loginFail', 'a@b.c', t0 + i, rule);
+		const locked = await peekLimit(db, 'loginFail', 'a@b.c', t0 + 10, rule);
+		expect(locked.ok).toBe(false);
+		expect(locked.retryAfterSeconds).toBeGreaterThan(0);
+		// another account is not affected; the lock ends with the window
+		expect((await peekLimit(db, 'loginFail', 'x@y.z', t0, rule)).ok).toBe(true);
+		expect((await peekLimit(db, 'loginFail', 'a@b.c', t0 + 1_801_000, rule)).ok).toBe(true);
+		await clearLimit(db, 'loginFail', 'a@b.c');
+		expect((await peekLimit(db, 'loginFail', 'a@b.c', t0 + 10, rule)).ok).toBe(true);
 	});
 
 	it('counts parallel requests correctly', async () => {

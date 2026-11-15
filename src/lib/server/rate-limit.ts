@@ -11,7 +11,9 @@ export interface LimitRule {
 export const LIMITS = {
 	login: { max: 5, windowSeconds: 60 },
 	/** per account, from any IP: stops slow password guessing spread over many addresses */
-	loginAccount: { max: 20, windowSeconds: 60 * 60 },
+	loginAccount: { max: 40, windowSeconds: 60 * 60 },
+	/** WRONG passwords for one account: 10 in 30 minutes locks it for the rest of the window */
+	loginFail: { max: 10, windowSeconds: 30 * 60 },
 	tutorSetup: { max: 5, windowSeconds: 60 * 60 },
 	signup: { max: 5, windowSeconds: 60 * 60 },
 	passwordReset: { max: 3, windowSeconds: 60 * 60 },
@@ -82,6 +84,33 @@ export async function hitLimit(
 		remaining: Math.max(0, rule.max - row.count),
 		retryAfterSeconds: Math.max(0, Math.ceil((Number(row.resetAt) - now) / 1000))
 	};
+}
+
+/** Looks at a limit without counting a try (for a lockout check before the password). */
+export async function peekLimit(
+	db: DB,
+	name: LimitName,
+	identity: string,
+	now = Date.now(),
+	rule: LimitRule = LIMITS[name]
+): Promise<LimitResult> {
+	const rows = await db
+		.select({ count: actionLimit.count, resetAt: actionLimit.resetAt })
+		.from(actionLimit)
+		.where(sql`${actionLimit.key} = ${`${name}:${identity}`}`);
+	const row = rows[0];
+	if (!row || Number(row.resetAt) <= now)
+		return { ok: true, remaining: rule.max, retryAfterSeconds: 0 };
+	return {
+		ok: row.count < rule.max,
+		remaining: Math.max(0, rule.max - row.count),
+		retryAfterSeconds: Math.max(0, Math.ceil((Number(row.resetAt) - now) / 1000))
+	};
+}
+
+/** Forgets a limit (a right password ends a run of wrong ones). */
+export async function clearLimit(db: DB, name: LimitName, identity: string) {
+	await db.delete(actionLimit).where(sql`${actionLimit.key} = ${`${name}:${identity}`}`);
 }
 
 /** Best-effort client identity: Cloudflare sets cf-connecting-ip. */
