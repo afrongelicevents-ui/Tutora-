@@ -35,7 +35,8 @@ let shared: ReturnType<typeof createAuth> | null = null;
 export function makeAuth(_db: DB) {
 	shared ??= createAuth({
 		db: requestDb,
-		baseURL: ORIGIN,
+		// the site's own address: from ORIGIN, else from the request that builds it (the same site)
+		baseURL: ORIGIN || getRequestEvent().url.origin,
 		secret: BETTER_AUTH_SECRET,
 		sendEmail,
 		emailEnabled,
