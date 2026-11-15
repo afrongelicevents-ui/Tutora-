@@ -14,6 +14,7 @@ const RUNS = Number(process.env.RUNS ?? 4);
 if (!SITE || !PW) throw new Error('SITE and TEST_PASSWORD are needed');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const statuses = [];
 
 // 1. start listening
 const tail = spawn('npx', ['wrangler', 'tail', WORKER, '--format', 'json'], {
@@ -38,14 +39,20 @@ async function req(path, { cookie = '', method = 'GET', body, headers = {} } = {
 }
 
 async function login(email) {
-	const { res } = await req('/login', {
-		method: 'POST',
-		body: new URLSearchParams({ email, password: PW, remember: 'on' }).toString(),
-		headers: { 'content-type': 'application/x-www-form-urlencoded' }
-	});
-	const cookies = res.headers.getSetCookie().map((c) => c.split(';')[0]);
-	if (!cookies.length) throw new Error(`login failed for one test account (${res.status})`);
-	return cookies.join('; ');
+	// Cloudflare may refuse with 503 when a request goes over the CPU limit: try again
+	for (let i = 0; i < 5; i++) {
+		const { res } = await req('/login', {
+			method: 'POST',
+			body: new URLSearchParams({ email, password: PW, remember: 'on' }).toString(),
+			headers: { 'content-type': 'application/x-www-form-urlencoded' }
+		});
+		statuses.push(res.status);
+		const cookies = res.headers.getSetCookie().map((c) => c.split(';')[0]);
+		if (cookies.length) return cookies.join('; ');
+		await sleep(3_000);
+	}
+	console.log('A test login kept failing; skipping that account.');
+	return null;
 }
 
 const PUBLIC = [
@@ -139,6 +146,7 @@ const visited = [];
 for (const p of PUBLIC) for (let i = 0; i < RUNS; i++) visited.push((await req(p)).res.status);
 for (const [who, paths] of Object.entries(ROLES)) {
 	const cookie = await login(who);
+	if (!cookie) continue;
 	const list = [...paths];
 	if (who.startsWith('chipo')) {
 		// a real lesson page, found on the calendar
@@ -200,6 +208,7 @@ const rows = [...by.entries()]
 const all = rows.flatMap((r) => by.get(r.route)).sort((x, y) => x - y);
 const summary = {
 	requestsSent: visited.length,
+	errorsSeenByVisitor: [...visited, ...statuses].filter((x) => x >= 500).length,
 	eventsSeen: events.length,
 	eventsWithCpu: withCpu,
 	outcomes,
@@ -208,7 +217,9 @@ const summary = {
 	routes: rows
 };
 fs.writeFileSync('perf-remote.json', JSON.stringify(summary, null, 1));
-console.log(`requests ${visited.length}, log events ${events.length}, with CPU ${withCpu}`);
+console.log(
+	`requests ${visited.length}, log events ${events.length}, with CPU ${withCpu}, 5xx seen ${summary.errorsSeenByVisitor}`
+);
 console.log('outcomes', JSON.stringify(outcomes));
 if (summary.overall)
 	console.log(
