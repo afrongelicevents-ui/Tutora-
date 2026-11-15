@@ -1,12 +1,12 @@
 import { building, dev } from '$app/env';
 import { DATABASE_URL, TEST_SITE } from '$app/env/private';
-import { eq } from 'drizzle-orm';
-import { tutorProfile } from '#lib/server/db/app.schema.ts';
-import { user } from '#lib/server/db/auth.schema.ts';
+import { getSettings } from '#lib/server/settings.ts';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { type Handle, sequence } from '@sveltejs/kit/hooks';
 import { makeAuth } from '#lib/server/auth.ts';
 import { openDb } from '#lib/server/db/index.ts';
+import { rememberForThisRequest } from '#lib/server/cache.ts';
+import { cacheKey, cachedPage, forgetPages, keepPage } from '#lib/server/public-cache.ts';
 import { getTextDirection } from '#lib/paraglide/runtime.js';
 import { paraglideMiddleware } from '#lib/paraglide/server.js';
 import { isAllowedAuthPath, securityHeaders } from '#lib/server/security.ts';
@@ -31,6 +31,8 @@ const handleDb: Handle = async ({ event, resolve }) => {
 	if (building) return resolve(event);
 	const { db, close } = await openDb(DATABASE_URL);
 	event.locals.db = db;
+	// reading pages: the same lookup twice in one page runs once (never for form posts)
+	if (event.request.method === 'GET') rememberForThisRequest(db);
 	event.locals.auth = makeAuth(db);
 	try {
 		return await resolve(event);
@@ -64,17 +66,14 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 			tutorStatus: null
 		};
 		if (role === 'tutor') {
-			const [p] = await event.locals.db
-				.select({ status: tutorProfile.status })
-				.from(tutorProfile)
-				.where(eq(tutorProfile.tutorId, data.user.id));
+			// the tutor's settings row (the layout and page need it too: read once per page)
+			const p = await getSettings(event.locals.db, data.user.id).catch(() => null);
 			event.locals.user.tutorStatus = p?.status ?? null;
 		}
 		{
-			const [p] = await event.locals.db
-				.select({ must: user.mustChangePassword, suspendedAt: user.suspendedAt })
-				.from(user)
-				.where(eq(user.id, data.user.id));
+			// read with the session already (Better Auth additional fields): no extra query
+			const p = data.user as { mustChangePassword?: boolean | null; suspendedAt?: Date | null };
+			const must = !!p.mustChangePassword;
 			// an account suspended by the owner is treated as logged out
 			if (p?.suspendedAt) {
 				event.locals.user = undefined;
@@ -82,7 +81,7 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 			} else {
 				// after a temporary password made by someone else: choose your own before anything else
 				const path = event.url.pathname;
-				if (p?.must && path !== '/account/password' && path !== '/logout') {
+				if (must && path !== '/account/password' && path !== '/logout') {
 					if (event.isDataRequest) return new Response('Forbidden', { status: 403 });
 					return new Response(null, { status: 303, headers: { location: '/account/password' } });
 				}
@@ -117,4 +116,24 @@ const handleHeaders: Handle = async ({ event, resolve }) => {
 	return response;
 };
 
-export const handle: Handle = sequence(handleHeaders, handleDb, handleParaglide, handleAuth);
+/**
+ * Public pages for logged-out visitors are served from memory for a minute (no rendering, no
+ * database). Any form post clears them in this worker. See public-cache.ts.
+ */
+const handlePublicCache: Handle = async ({ event, resolve }) => {
+	if (building) return resolve(event);
+	if (event.request.method !== 'GET' && event.request.method !== 'HEAD') forgetPages();
+	const key = cacheKey(event.request, event.url);
+	if (!key) return resolve(event);
+	const hit = cachedPage(key);
+	if (hit) return hit;
+	return keepPage(key, await resolve(event));
+};
+
+export const handle: Handle = sequence(
+	handlePublicCache,
+	handleHeaders,
+	handleDb,
+	handleParaglide,
+	handleAuth
+);

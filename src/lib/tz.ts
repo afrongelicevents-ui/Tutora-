@@ -94,3 +94,15 @@ export function fmtMinutes(min: number): string {
 	const mm = String(min % 60).padStart(2, '0');
 	return `${h % 12 === 0 ? 12 : h % 12}:${mm} ${h < 12 ? 'AM' : 'PM'}`;
 }
+
+const formatters = new Map<string, Intl.DateTimeFormat>();
+/**
+ * A date formatter made once and reused. Making an Intl.DateTimeFormat is slow (it loads
+ * locale data); pages that format many dates were making one per date.
+ */
+export function dtf(locale: string, opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+	const key = locale + JSON.stringify(opts);
+	let f = formatters.get(key);
+	if (!f) formatters.set(key, (f = new Intl.DateTimeFormat(locale, opts)));
+	return f;
+}

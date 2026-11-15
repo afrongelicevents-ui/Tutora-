@@ -9,7 +9,6 @@ import {
 	addCheckin,
 	answerShare,
 	isMood,
-	MOOD_KEY,
 	needsTalkSuggestion,
 	setCheckinNote,
 	setCheckinShared,
@@ -18,15 +17,11 @@ import {
 	todayState,
 	type CheckinMood
 } from './checkins.ts';
-import { activeParents } from './family.ts';
 import { notifyUser } from './notify.ts';
+import { tellFamilyAbout } from './scheduled.ts';
 import { checkin as checkinTable } from './db/v3.schema.ts';
-import { user } from './db/auth.schema.ts';
 import type { DB } from './db/types.ts';
 import { formObject } from '../validation/auth.ts';
-import { shortName } from '../names.ts';
-import { t } from '../i18n.ts';
-import { m } from '../paraglide/messages.js';
 
 /** Data for the check-in card. */
 export async function checkinView(db: DB, studentId: string, now = new Date()) {
@@ -120,14 +115,5 @@ export const checkinActions = {
 
 /** Tell the student's active family about a check-in the student chose to share. */
 export async function tellFamily(db: DB, studentId: string, mood: CheckinMood) {
-	const [me] = await db.select({ name: user.name }).from(user).where(eq(user.id, studentId));
-	const first = shortName(me?.name ?? '');
-	for (const parentId of await activeParents(db, studentId))
-		await notifyUser(
-			db,
-			parentId,
-			m.ci_notify_s({ name: first }),
-			m.ci_notify_b({ mood: t(MOOD_KEY[mood]) }),
-			{ kind: 'family', link: `/parent?child=${encodeURIComponent(studentId)}` }
-		);
+	await tellFamilyAbout(db, (u, s, b, o) => notifyUser(db, u, s, b, o), studentId, mood);
 }

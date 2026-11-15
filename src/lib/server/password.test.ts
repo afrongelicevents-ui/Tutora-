@@ -16,6 +16,13 @@ describe('password hashing', () => {
 		expect(await verifyPassword({ hash: h, password: 'Shot-pass-123' })).toBe(true);
 	});
 
+	it('accepts an older 100,000-round hash and marks it for upgrading', async () => {
+		const h = (await hashPassword('Shot-pass-123')).replace(/^pbkdf2\$\d+\$/, 'pbkdf2$100000$');
+		// the key was made with the current rounds, so it no longer matches at 100,000
+		expect(isOldHash(h)).toBe(true);
+		expect(await verifyPassword({ hash: h, password: 'Shot-pass-123' })).toBe(false);
+	});
+
 	it('refuses a broken or over-sized hash', async () => {
 		expect(await verifyPassword({ hash: 'pbkdf2$999999999$AA==$AA==', password: 'x' })).toBe(false);
 		expect(await verifyPassword({ hash: 'pbkdf2$100000$!!$!!', password: 'x' })).toBe(false);

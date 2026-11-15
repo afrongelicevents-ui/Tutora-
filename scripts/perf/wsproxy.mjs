@@ -22,11 +22,60 @@ try {
 }
 
 const PG = { host: '127.0.0.1', port: 5432 };
+const pg = require('pg');
+const pools = new Map();
+const poolFor = (cs) => {
+	const u = new URL(cs);
+	u.hostname = '127.0.0.1';
+	u.searchParams.delete('sslmode');
+	const key = u.toString();
+	if (!pools.has(key)) pools.set(key, new pg.Pool({ connectionString: key, max: 4 }));
+	return pools.get(key);
+};
+const raw = { getTypeParser: () => (v) => v };
+/** Neon's HTTP SQL endpoint (POST /sql), as the serverless driver's `neon()` calls it. */
+async function httpSql(req, res) {
+	let body = '';
+	for await (const c of req) body += c;
+	const input = JSON.parse(body);
+	const pool = poolFor(req.headers['neon-connection-string']);
+	const run = async (client, q) => {
+		queries++;
+		log.push(q.query.slice(0, 400));
+		const r = await client.query({ text: q.query, values: q.params, rowMode: 'array', types: raw });
+		return {
+			command: r.command,
+			rowCount: r.rowCount,
+			fields: r.fields.map((f) => ({ name: f.name, dataTypeID: f.dataTypeID })),
+			rows: r.rows
+		};
+	};
+	const client = await pool.connect();
+	try {
+		let out;
+		if (input.queries) {
+			await client.query('begin');
+			out = { results: [] };
+			for (const q of input.queries) out.results.push(await run(client, q));
+			await client.query('commit');
+		} else out = await run(client, input);
+		res.setHeader('content-type', 'application/json');
+		res.end(JSON.stringify(out));
+	} catch (e) {
+		if (input.queries) await client.query('rollback').catch(() => {});
+		res.writeHead(400, { 'content-type': 'application/json' });
+		res.end(JSON.stringify({ message: e.message, code: e.code }));
+	} finally {
+		client.release();
+	}
+}
 let queries = 0;
 let log = [];
 
 const server = http.createServer((req, res) => {
-	if (req.url === '/log') {
+	if (req.url === '/sql' && req.method === 'POST') {
+		httpSql(req, res);
+	} else if (req.url === '/log') {
 		res.setHeader('content-type', 'application/json');
 		res.end(JSON.stringify(log));
 		log = [];

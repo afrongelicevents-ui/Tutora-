@@ -15,7 +15,8 @@ export default defineConfig({
 			adapter: adapter(),
 			// Content-Security-Policy. SvelteKit adds hashes/nonces for its own inline scripts.
 			csp: {
-				mode: 'auto',
+				// hashes, not per-response nonces: public pages can be kept in memory and served again
+				mode: 'hash',
 				// one source of truth, with tests: src/lib/server/security.ts
 				directives: cspDirectives()
 			}

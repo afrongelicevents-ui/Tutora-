@@ -6,7 +6,7 @@
 import { and, asc, eq, gte, inArray, isNull, lte, or } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { user } from './db/auth.schema.ts';
-import { checkin, studyPlanItem, studySession } from './db/v3.schema.ts';
+import { checkin, studySession } from './db/v3.schema.ts';
 import { personalActivity, type ActivityKind } from './db/schedule.schema.ts';
 import {
 	dayTick,
@@ -20,6 +20,8 @@ import type { Notify } from './notify-core.ts';
 import { addDays, fromLocal, local, localDate, startOfLocalWeek } from '../tz.ts';
 import { MOOD_LEVEL, type Mood } from '../checkin-copy.ts';
 import { m } from '../paraglide/messages.js';
+import { perRequest } from './cache.ts';
+import { planFor } from './study.ts';
 
 export const TASK_MAX = 40;
 export const GOAL_MAX = 10;
@@ -57,9 +59,23 @@ export async function itemsFor(db: DB, studentId: string, dates: string[]) {
 	const out = new Map<string, PlanItem[]>();
 	if (!dates.length) return out;
 	const sorted = [...dates].sort();
-	const first = sorted[0];
-	const last = sorted.at(-1)!;
-	const [acts, slots, tasks, ticks, sessions] = await Promise.all([
+	// Today, this week and the last two weeks are asked for by the same page: fetch one
+	// window that covers them all, once per page (see cache.ts), instead of three times.
+	const wFirst = localDate(addDays(new Date(), -28));
+	const wLast = localDate(addDays(new Date(), 7));
+	const inWindow = sorted[0] >= wFirst && sorted.at(-1)! <= wLast;
+	const first = inWindow ? wFirst : sorted[0];
+	const last = inWindow ? wLast : sorted.at(-1)!;
+	const [acts, slots, tasks, ticks, sessions] = await perRequest(
+		db,
+		`planner:${studentId}:${first}:${last}`,
+		() => planRows(db, studentId, first, last)
+	);
+	return buildItems(out, dates, acts, slots, tasks, ticks, sessions);
+}
+
+async function planRows(db: DB, studentId: string, first: string, last: string) {
+	return Promise.all([
 		db
 			.select()
 			.from(personalActivity)
@@ -69,10 +85,8 @@ export async function itemsFor(db: DB, studentId: string, dates: string[]) {
 					or(eq(personalActivity.active, true), gte(personalActivity.removedAt, fromLocal(first)))
 				)
 			),
-		db
-			.select()
-			.from(studyPlanItem)
-			.where(and(eq(studyPlanItem.studentId, studentId), eq(studyPlanItem.active, true))),
+		// the weekly study plan, shared with the other cards on the page
+		planFor(db, studentId),
 		db
 			.select()
 			.from(personalTask)
@@ -104,6 +118,19 @@ export async function itemsFor(db: DB, studentId: string, dates: string[]) {
 				)
 			)
 	]);
+}
+
+type Rows = Awaited<ReturnType<typeof planRows>>;
+
+function buildItems(
+	out: Map<string, PlanItem[]>,
+	dates: string[],
+	acts: Rows[0],
+	slots: Rows[1],
+	tasks: Rows[2],
+	ticks: Rows[3],
+	sessions: Rows[4]
+) {
 	for (const date of dates) {
 		const wd = weekdayOf(date);
 		const end = endOf(date);

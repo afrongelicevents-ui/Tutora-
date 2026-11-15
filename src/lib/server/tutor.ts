@@ -1,7 +1,7 @@
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
-import { availability, subject, tutorProfile } from './db/app.schema.ts';
-import { getSettings, type SiteSettings } from './settings.ts';
+import { tutorProfile } from './db/app.schema.ts';
+import { getSettings, listAvailability, listSubjects, type SiteSettings } from './settings.ts';
 import { notifyOwners } from './notify.ts';
 import { m } from '../paraglide/messages.js';
 
@@ -16,16 +16,13 @@ export interface ProfileItem {
 
 /** What a tutor's profile has, and what is still missing (for the completeness bar). */
 export async function completeness(db: DB, s: SiteSettings) {
-	const [subs, times] = await Promise.all([
-		db
-			.select({ n: sql<number>`count(*)::int` })
-			.from(subject)
-			.where(and(eq(subject.tutorId, s.tutorId), eq(subject.active, true))),
-		db
-			.select({ n: sql<number>`count(*)::int` })
-			.from(availability)
-			.where(eq(availability.tutorId, s.tutorId))
+	// the same lists the page shows (asked once per page), not two extra counting queries
+	const [subjectRows, timeRows] = await Promise.all([
+		listSubjects(db, s.tutorId),
+		listAvailability(db, s.tutorId)
 	]);
+	const subs = [{ n: subjectRows.length }];
+	const times = [{ n: timeRows.length }];
 	const items: ProfileItem[] = [
 		{ key: 'cp_photo', done: !!s.photoKey, required: false, section: 'profile' },
 		{ key: 'cp_intro', done: !!(s.bio && s.headline), required: true, section: 'profile' },

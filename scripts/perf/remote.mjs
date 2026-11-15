@@ -157,6 +157,10 @@ for (const [who, paths] of Object.entries(ROLES)) {
 	for (const p of list)
 		for (let i = 0; i < RUNS; i++) visited.push((await req(p, { cookie })).res.status);
 }
+// database driver comparison (test site only): the same queries three ways
+for (const d of ['ws', 'http', 'batch'])
+	for (let i = 0; i < RUNS * 2; i++)
+		visited.push((await req(`/api/perf-probe?driver=${d}`)).res.status);
 // the hourly job, when its secret is known
 if (process.env.CRON_SECRET)
 	await req('/api/cron/reminders', {
@@ -181,7 +185,11 @@ const norm = (u) => {
 	const x = new URL(u);
 	return (
 		x.pathname.replace(/\/\d+(?=\/|$)/g, '/[id]') +
-		(x.search ? x.search.replace(/=[^&]*/g, '=…') : '')
+		(x.search
+			? x.pathname.startsWith('/api/perf-probe')
+				? x.search
+				: x.search.replace(/=[^&]*/g, '=…')
+			: '')
 	).replace(/\/__data\.json$/, ' (data)');
 };
 const by = new Map();

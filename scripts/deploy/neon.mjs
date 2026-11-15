@@ -175,6 +175,8 @@ async function main() {
 	mask(u.toString());
 	if (process.env.GITHUB_ENV) {
 		appendFileSync(process.env.GITHUB_ENV, `DATABASE_URL=${u}\n`);
+		// for the usage check (owner → Free limits)
+		appendFileSync(process.env.GITHUB_ENV, `NEON_PROJECT_ID=${project.id}\n`);
 		if (fresh) appendFileSync(process.env.GITHUB_ENV, 'TEST_BRANCH_NEW=true\n');
 	} else console.log('(not in GitHub Actions: address not written anywhere)');
 	console.log('Database address ready (hidden).');

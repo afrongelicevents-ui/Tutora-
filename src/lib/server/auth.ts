@@ -15,10 +15,26 @@ export const sendEmail: typeof send = async (msg) => {
 	if (emailEnabled) await send(msg);
 };
 
-/** Better Auth bound to this request's database connection. */
-export function makeAuth(db: DB) {
-	return createAuth({
-		db,
+/**
+ * The request's own database, looked up when Better Auth uses it. Better Auth is then built
+ * once per worker instead of once per request (building it costs several milliseconds of
+ * CPU: schema checks, option parsing), while every query still runs on the current
+ * request's connection.
+ */
+const requestDb = new Proxy({} as DB, {
+	get(_t, key) {
+		const db = getRequestEvent().locals.db as unknown as Record<PropertyKey, unknown>;
+		const v = db[key];
+		return typeof v === 'function' ? (v as (...a: unknown[]) => unknown).bind(db) : v;
+	}
+});
+
+let shared: ReturnType<typeof createAuth> | null = null;
+
+/** Better Auth for this request (same instance for the worker; see `requestDb`). */
+export function makeAuth(_db: DB) {
+	shared ??= createAuth({
+		db: requestDb,
 		baseURL: ORIGIN,
 		secret: BETTER_AUTH_SECRET,
 		sendEmail,
@@ -27,4 +43,5 @@ export function makeAuth(db: DB) {
 		production: !dev,
 		plugins: [sveltekitCookies(getRequestEvent)] // must stay last
 	});
+	return shared;
 }

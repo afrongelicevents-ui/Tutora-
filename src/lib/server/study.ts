@@ -11,6 +11,7 @@ import { user } from './db/auth.schema.ts';
 import { parentsWhoSee } from './family.ts';
 import type { Notify } from './notify-core.ts';
 import { m } from '../paraglide/messages.js';
+import { perRequest } from './cache.ts';
 
 export type SlotState = 'done' | 'now' | 'next' | 'later' | 'missed';
 
@@ -24,7 +25,7 @@ export interface TodaySlot {
 	sessionId: number | null;
 }
 
-export const planFor = (db: DB, studentId: string) =>
+const planForFresh = (db: DB, studentId: string) =>
 	db
 		.select()
 		.from(studyPlanItem)
@@ -320,3 +321,7 @@ export async function tellFamilyStudy(
 	for (const p of parents) await notify(p, title, body, { kind: 'study', link }).catch(() => {});
 	return parents.length;
 }
+
+/** A student's weekly study plan (asked once per page). */
+export const planFor = (db: DB, studentId: string) =>
+	perRequest(db, `plan:${studentId}`, () => planForFresh(db, studentId));

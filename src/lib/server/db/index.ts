@@ -41,8 +41,10 @@ export async function openDb(rawUrl: string): Promise<RequestDb> {
 	const url = cleanUrl(rawUrl);
 	if (dev && isLocal(url)) {
 		localPool ??= localDb(url);
-		return { db: await localPool, close: async () => {} };
+		// a fresh object per request on top of the shared pool, so per-request caches stay per request
+		return { db: Object.create(await localPool) as DB, close: async () => {} };
 	}
 	const pool = new NeonPool({ connectionString: url, max: 2 });
-	return { db: drizzleNeon(pool, { schema }) as unknown as DB, close: () => pool.end() };
+	// no relational schema: the app never uses db.query.*, and building it costs CPU per request
+	return { db: drizzleNeon(pool) as unknown as DB, close: () => pool.end() };
 }

@@ -5,3 +5,4 @@ export * from './buddies.schema';
 export * from './messages.schema';
 export * from './schedule.schema';
 export * from './personal.schema';
+export * from './usage.schema';

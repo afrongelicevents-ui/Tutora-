@@ -21,27 +21,26 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const now = new Date();
 	const day = startOfLocalDay(now);
 	const week = startOfLocalWeek(now);
-	const [lessons, weekLessons, requests, s, subjects, times, students] = await Promise.all([
-		lessonsBetween(db, t, day, addDays(day, 1)),
-		lessonsBetween(db, t, week, addDays(week, 7)),
+	// one range covering this week and the next 15 days (was three separate lookups)
+	const from = week < day ? week : day;
+	const toWeek = addDays(week, 7);
+	const toSoon = addDays(day, 15);
+	const [all, requests, s, subjects, times, students] = await Promise.all([
+		lessonsBetween(db, t, from, toWeek > toSoon ? toWeek : toSoon),
 		pendingRequests(db, t),
 		getSettings(db, t),
 		listSubjects(db, t),
 		listAvailability(db, t),
 		countStudents(db, t)
 	]);
-	// the next lesson that hasn't finished (today or in the next two weeks), and messages
-	const [soon, convs] = await Promise.all([
-		lessonsBetween(db, t, day, addDays(day, 15)),
-		conversations(db, t, 'tutor')
-	]);
+	// the same rule as lessonsBetween: lessons starting in [a, b)
+	const inRange = (a: Date, b: Date) => all.filter((l) => l.startsAt >= a && l.startsAt < b);
+	const lessons = inRange(day, addDays(day, 1));
+	const weekLessons = inRange(week, toWeek);
+	const soon = inRange(day, toSoon);
+	const convs = await conversations(db, t, 'tutor');
+	// the next lesson that hasn't finished (today or in the next two weeks)
 	const next = soon.find((l) => l.endsAt > now) ?? null;
-	const [nextMeeting] = next
-		? await db
-				.select({ provider: lessonMeeting.provider, joinUrl: lessonMeeting.joinUrl })
-				.from(lessonMeeting)
-				.where(eq(lessonMeeting.lessonId, next.id))
-		: [];
 	const ids = [...new Set(lessons.flatMap((l) => l.people.map((p) => p.userId)))];
 	const lessonIds = lessons.map((l) => l.id);
 	// lessons come from THIS tutor only, so these lookups stay inside their own lessons
@@ -50,14 +49,18 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		.select({ userId: profile.userId, phone: profile.phone, parentPhone: profile.parentPhone })
 		.from(profile)
 		.where(inArray(profile.userId, ids));
-	const meetings: { lessonId: number; provider: 'meet' | 'teams'; joinUrl: string }[] = await db
+	// today's meeting links and the next lesson's, in one lookup
+	const meetIds = next && !lessonIds.includes(next.id) ? [...lessonIds, next.id] : lessonIds;
+	const allMeetings: { lessonId: number; provider: 'meet' | 'teams'; joinUrl: string }[] = await db
 		.select({
 			lessonId: lessonMeeting.lessonId,
 			provider: lessonMeeting.provider,
 			joinUrl: lessonMeeting.joinUrl
 		})
 		.from(lessonMeeting)
-		.where(inArray(lessonMeeting.lessonId, lessonIds));
+		.where(inArray(lessonMeeting.lessonId, meetIds));
+	const meetings = allMeetings.filter((x) => lessonIds.includes(x.lessonId));
+	const nextMeeting = next ? allMeetings.find((x) => x.lessonId === next.id) : undefined;
 	const places: {
 		id: number;
 		lessonId: number;

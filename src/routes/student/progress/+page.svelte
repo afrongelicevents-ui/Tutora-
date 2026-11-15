@@ -5,7 +5,7 @@
 	import CheckinCard from '#lib/components/progress/CheckinCard.svelte';
 	import WeekFeelings from '#lib/components/progress/WeekFeelings.svelte';
 	import LineIcon, { subjectIcon } from '#lib/components/LineIcon.svelte';
-	import { fmtMinutes, fmtTime } from '#lib/tz.ts';
+	import { fmtMinutes, fmtTime, dtf } from '#lib/tz.ts';
 	let { data, form } = $props();
 	const greet = $derived(
 		data.partOfDay === 'morning'
@@ -23,12 +23,11 @@
 			: m.pg4_minutes({ m: data.week.minutes })
 	);
 	const subjHref = (n: string) => `/student/subjects/${encodeURIComponent(n)}`;
-	const dayNum = (d: Date) =>
-		new Intl.DateTimeFormat('en-GB', { day: 'numeric', timeZone: 'Africa/Harare' }).format(d);
+	const dayNum = (d: Date) => dtf('en-GB', { day: 'numeric', timeZone: 'Africa/Harare' }).format(d);
 	const dayName = (d: Date) =>
-		new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'Africa/Harare' }).format(d);
+		dtf('en-GB', { weekday: 'short', timeZone: 'Africa/Harare' }).format(d);
 	const monName = (d: Date) =>
-		new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'Africa/Harare' }).format(d);
+		dtf('en-GB', { month: 'short', timeZone: 'Africa/Harare' }).format(d);
 	const tone = (p: number) => (p >= READY_PCT_CLIENT ? '' : p >= 50 ? 'mid' : 'low');
 	const change = $derived(
 		data.overall.current && data.overall.previous

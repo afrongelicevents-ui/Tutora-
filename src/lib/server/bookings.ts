@@ -16,6 +16,7 @@ import { getSettings, lessonPrice, listAvailability, type SiteSettings } from '.
 import { enroll } from './people.ts';
 import { freeSlots, INTRO_MINUTES, type Busy } from './slots.ts';
 import { addMinutes, fmtDayTime } from '../tz.ts';
+import { perRequest } from './cache.ts';
 
 export type BookingError =
 	| 'err_slot_taken'
@@ -547,7 +548,7 @@ const lessonFields = {
 };
 
 /** A student's own lessons only. */
-export function lessonsForUser(db: DB, userId: string) {
+export function lessonsForUserFresh(db: DB, userId: string) {
 	return db
 		.select({
 			...lessonFields,
@@ -620,7 +621,7 @@ export function pendingRequests(db: DB, tutorId: string) {
 }
 
 /** Lessons in a time range with who is booked (for the tutor's calendar and Today screen). */
-export async function lessonsBetween(db: DB, tutorId: string, from: Date, to: Date) {
+export async function lessonsBetweenFresh(db: DB, tutorId: string, from: Date, to: Date) {
 	const ls = await db
 		.select(lessonFields)
 		.from(lesson)
@@ -710,3 +711,13 @@ export async function bookingTutorId(db: DB, userId: string, bookingId: number) 
 		.where(and(eq(booking.id, bookingId), eq(booking.userId, userId)));
 	return b?.t ?? null;
 }
+
+/** A student's own lessons (asked once per page, however many cards use them). */
+export const lessonsForUser = (db: DB, userId: string) =>
+	perRequest(db, `lessonsForUser:${userId}`, () => lessonsForUserFresh(db, userId));
+
+/** Lessons in a time range with who is booked (asked once per page for the same range). */
+export const lessonsBetween = (db: DB, tutorId: string, from: Date, to: Date) =>
+	perRequest(db, `lessonsBetween:${tutorId}:${from.getTime()}:${to.getTime()}`, () =>
+		lessonsBetweenFresh(db, tutorId, from, to)
+	);

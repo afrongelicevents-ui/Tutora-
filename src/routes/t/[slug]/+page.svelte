@@ -4,11 +4,9 @@
 	import SubjectList from '#lib/components/SubjectList.svelte';
 	import ReviewList from '#lib/components/ReviewList.svelte';
 	import Results from '#lib/components/Results.svelte';
-	import { fmtMinutes } from '#lib/tz.ts';
+	import { fmtMinutes, dtf } from '#lib/tz.ts';
 	const weekdayName = (d: number) =>
-		new Intl.DateTimeFormat('en-GB', { weekday: 'long', timeZone: 'UTC' }).format(
-			new Date(Date.UTC(2026, 10, 15 + d))
-		);
+		dtf('en-GB', { weekday: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2026, 10, 15 + d)));
 	let { data } = $props();
 	const site = $derived(data.site);
 	const initials = (n: string) =>

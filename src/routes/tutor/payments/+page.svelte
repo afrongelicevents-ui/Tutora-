@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { m, t } from '#lib/i18n.ts';
 	import { formatMoney } from '#lib/money.ts';
-	import { fmtDay, fmtMonth, fromLocal } from '#lib/tz.ts';
+	import { fmtDay, fmtMonth, fromLocal, dtf } from '#lib/tz.ts';
 	import { methodLabel } from '#lib/components/tutor/labels.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	let { data, form } = $props();
@@ -23,7 +23,7 @@
 			return {
 				key,
 				total: row?.total ?? 0,
-				label: new Intl.DateTimeFormat('en-GB', { month: 'short', timeZone: 'UTC' }).format(d)
+				label: dtf('en-GB', { month: 'short', timeZone: 'UTC' }).format(d)
 			};
 		});
 	});

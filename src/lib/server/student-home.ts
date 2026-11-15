@@ -9,7 +9,6 @@ import {
 	assessmentResult,
 	connectedAccount,
 	lessonMeeting,
-	studyPlanItem,
 	studySession,
 	toolPref
 } from './db/v3.schema.ts';
@@ -136,32 +135,21 @@ export async function learningJourney(
  * homework), most recently active first. Names are merged without regard to case.
  */
 export async function mySubjects(db: DB, userId: string): Promise<string[]> {
-	const [plan, sessions, results, hw, lessons] = await Promise.all([
-		db
-			.select({ s: studyPlanItem.subject, at: sql<string>`max(${studyPlanItem.createdAt})::text` })
-			.from(studyPlanItem)
-			.where(eq(studyPlanItem.studentId, userId))
-			.groupBy(studyPlanItem.subject),
-		db
-			.select({ s: studySession.subject, at: sql<string>`max(${studySession.startedAt})::text` })
-			.from(studySession)
-			.where(eq(studySession.studentId, userId))
-			.groupBy(studySession.subject),
-		db
-			.select({
-				s: assessmentResult.subject,
-				at: sql<string>`max(${assessmentResult.takenOn})::text`
-			})
-			.from(assessmentResult)
-			.where(eq(assessmentResult.studentId, userId))
-			.groupBy(assessmentResult.subject),
-		db
-			.select({ s: homework.subject, at: sql<string>`max(${homework.createdAt})::text` })
-			.from(homework)
-			.where(eq(homework.userId, userId))
-			.groupBy(homework.subject),
+	// one query for the four kinds of work (was four), plus the lessons the page already has
+	const [rows, lessons] = await Promise.all([
+		db.execute(sql`
+			select subject as s, max(created_at)::text as at from study_plan_item where student_id = ${userId} group by subject
+			union all
+			select subject, max(started_at)::text from study_session where student_id = ${userId} group by subject
+			union all
+			select subject, max(taken_on)::text from assessment_result where student_id = ${userId} group by subject
+			union all
+			select subject, max(created_at)::text from homework where user_id = ${userId} group by subject`),
 		lessonsForUser(db, userId)
 	]);
+	type Row = { s: string | null; at: string | null };
+	const recent = ((rows as unknown as { rows?: Row[] }).rows ??
+		(rows as unknown as Row[])) as Row[];
 	const seen = new Map<string, { name: string; at: number }>();
 	const add = (name: string | null, at: string | Date | null) => {
 		const n = name?.trim();
@@ -171,7 +159,7 @@ export async function mySubjects(db: DB, userId: string): Promise<string[]> {
 		const cur = seen.get(k);
 		if (!cur || t > cur.at) seen.set(k, { name: cur?.name ?? n, at: t });
 	};
-	for (const r of [...sessions, ...plan, ...results, ...hw]) add(r.s, r.at);
+	for (const r of recent) add(r.s, r.at);
 	for (const l of lessons) add(l.subjectName, l.startsAt);
 	return [...seen.values()].sort((a, b) => b.at - a.at).map((x) => x.name);
 }

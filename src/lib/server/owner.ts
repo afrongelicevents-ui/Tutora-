@@ -14,6 +14,7 @@ import {
 } from './db/app.schema.ts';
 import { session, user } from './db/auth.schema.ts';
 import type { SiteSettings } from './settings.ts';
+import { forgetShared } from './cache.ts';
 
 export type TutorStatus = SiteSettings['status'];
 
@@ -276,8 +277,10 @@ export const listPlatformSubjects = (db: DB) =>
 
 export async function addPlatformSubject(db: DB, name: string) {
 	await db.insert(platformSubject).values({ name, sortOrder: 100 }).onConflictDoNothing();
+	forgetShared('subjects:');
 }
 
 export async function removePlatformSubject(db: DB, id: number) {
 	await db.delete(platformSubject).where(eq(platformSubject.id, id));
+	forgetShared('subjects:');
 }

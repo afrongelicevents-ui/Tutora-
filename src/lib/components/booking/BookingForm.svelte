@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { m, t } from '#lib/i18n.ts';
 	import { formatMoney } from '#lib/money.ts';
-	import { fmtDate, fmtDayTime, fmtTime, fromLocal } from '#lib/tz.ts';
+	import { fmtDate, fmtDayTime, fmtTime, fromLocal, dtf } from '#lib/tz.ts';
 
 	interface Site {
 		name: string | null;
@@ -59,7 +59,7 @@
 	const minutes = $derived(intro ? 15 : site.lessonMinutes);
 	const dayLabel = (iso: string) => {
 		const d = fromLocal(iso, 720);
-		return new Intl.DateTimeFormat('en-GB', {
+		return dtf('en-GB', {
 			timeZone: 'Africa/Harare',
 			weekday: 'short',
 			day: 'numeric'

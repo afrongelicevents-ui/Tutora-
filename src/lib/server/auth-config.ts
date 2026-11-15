@@ -4,6 +4,7 @@
  * Do not import `$app/*` modules here.
  */
 import { betterAuth, type BetterAuthPlugin } from 'better-auth';
+import * as authSchema from './db/auth.schema.ts';
 import { and, eq } from 'drizzle-orm';
 import { account as accountTable, user as userTable } from './db/auth.schema.ts';
 import { createAuthMiddleware } from 'better-auth/api';
@@ -43,6 +44,8 @@ export function createAuth(deps: AuthDeps) {
 		secret: deps.secret,
 		database: drizzleAdapter(deps.db, {
 			provider: 'pg',
+			// given here, so the per-request database needs no relational schema (cheaper to make)
+			schema: authSchema,
 			transaction: deps.transactions ?? false
 		}),
 		emailAndPassword: {
@@ -103,7 +106,10 @@ export function createAuth(deps: AuthDeps) {
 					defaultValue: 'student',
 					// never accepted from the client; set by the server only
 					input: false
-				}
+				},
+				// read with the session (one query instead of two on every request)
+				mustChangePassword: { type: 'boolean', required: false, defaultValue: false, input: false },
+				suspendedAt: { type: 'date', required: false, input: false }
 			}
 		},
 		session: {

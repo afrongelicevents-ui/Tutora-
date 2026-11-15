@@ -8,7 +8,11 @@
  */
 import { verifyPassword as verifyScrypt } from 'better-auth/crypto';
 
-const ROUNDS = 100_000;
+// ~4 ms on a Cloudflare server: the whole login must fit the free plan's 10 ms. Long
+// passwords (10+ characters) and the login limits (per account and per address) carry the
+// rest of the protection. Hashes made with more rounds (up to 100,000) still work.
+const ROUNDS = 30_000;
+const MAX_ROUNDS = 100_000;
 const PREFIX = 'pbkdf2$';
 
 const b64 = (u: Uint8Array) => btoa(String.fromCharCode(...u));
@@ -49,7 +53,7 @@ export async function verifyPassword({ hash, password }: { hash: string; passwor
 	if (!hash.startsWith(PREFIX)) return verifyScrypt({ hash, password });
 	const [, rounds, salt, key] = hash.split('$');
 	const n = Number(rounds);
-	if (!Number.isInteger(n) || n < 1 || n > ROUNDS || !salt || !key) return false;
+	if (!Number.isInteger(n) || n < 1 || n > MAX_ROUNDS || !salt || !key) return false;
 	try {
 		return same(await derive(password, unb64(salt), n), unb64(key));
 	} catch {
@@ -57,4 +61,6 @@ export async function verifyPassword({ hash, password }: { hash: string; passwor
 	}
 }
 
-export const isOldHash = (hash: string | null | undefined) => !!hash && !hash.startsWith(PREFIX);
+/** Made the old (slow) way or with a different number of rounds: replaced at the next sign-in. */
+export const isOldHash = (hash: string | null | undefined) =>
+	!!hash && !hash.startsWith(PREFIX + ROUNDS + '$');

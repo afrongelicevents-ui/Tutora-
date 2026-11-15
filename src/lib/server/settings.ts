@@ -10,6 +10,7 @@ import {
 	platformSubject
 } from './db/app.schema.ts';
 import type { AvailabilityRow } from '../validation/settings.ts';
+import { perRequest, sharedFor } from './cache.ts';
 
 /** One tutor's settings (their public page, lessons, prices, contact and payment details). */
 export type SiteSettings = typeof tutorProfile.$inferSelect;
@@ -23,7 +24,7 @@ export type SettingsPatch = Partial<
 export class NoTutorProfile extends Error {}
 
 /** A tutor's settings. Every tutor gets a profile row when their account is made. */
-export async function getSettings(db: DB, tutorId: string): Promise<SiteSettings> {
+export async function getSettingsFresh(db: DB, tutorId: string): Promise<SiteSettings> {
 	const [row] = await db.select().from(tutorProfile).where(eq(tutorProfile.tutorId, tutorId));
 	if (!row) throw new NoTutorProfile(tutorId);
 	return row;
@@ -289,7 +290,11 @@ export async function popularTutors(db: DB, n = 3) {
 }
 
 /** The standard subjects list (owner admin) plus any subject an approved tutor teaches. */
-export async function subjectOptions(db: DB): Promise<string[]> {
+export const subjectOptions = (db: DB): Promise<string[]> =>
+	// the same for everyone and rarely changed: kept for 5 minutes in this worker
+	sharedFor('subjects:options', 5 * 60_000, () => subjectOptionsFresh(db));
+
+async function subjectOptionsFresh(db: DB): Promise<string[]> {
 	const [std, taught] = await Promise.all([
 		db
 			.select({ name: platformSubject.name })
@@ -307,7 +312,10 @@ export async function subjectOptions(db: DB): Promise<string[]> {
 }
 
 /** Distinct subject names taught by approved tutors (for the "Find a tutor" filter). */
-export async function allSubjectNames(db: DB): Promise<string[]> {
+export const allSubjectNames = (db: DB): Promise<string[]> =>
+	sharedFor('subjects:taught', 5 * 60_000, () => allSubjectNamesFresh(db));
+
+async function allSubjectNamesFresh(db: DB): Promise<string[]> {
 	const rows = await db
 		.selectDistinct({ name: subject.name })
 		.from(subject)
@@ -328,6 +336,11 @@ export async function allSubjectNames(db: DB): Promise<string[]> {
 /* ---------- subjects ---------- */
 
 export const listSubjects = (db: DB, tutorId: string, activeOnly = true) =>
+	perRequest(db, `subjects:${tutorId}:${activeOnly}`, () =>
+		listSubjectsFresh(db, tutorId, activeOnly)
+	);
+
+const listSubjectsFresh = (db: DB, tutorId: string, activeOnly: boolean) =>
 	db
 		.select()
 		.from(subject)
@@ -401,7 +414,7 @@ export async function removePackage(db: DB, tutorId: string, id: number) {
 
 /* ---------- weekly free times ---------- */
 
-export const listAvailability = (db: DB, tutorId: string) =>
+const listAvailabilityFresh = (db: DB, tutorId: string) =>
 	db
 		.select()
 		.from(availability)
@@ -581,3 +594,10 @@ export function lessonPrice(
 	if (kind === 'intro') return 0;
 	return subj?.priceCents ?? s.defaultPriceCents ?? 0;
 }
+
+/** A tutor's settings (asked once per page: the layout and the page both need them). */
+export const getSettings = (db: DB, tutorId: string): Promise<SiteSettings> =>
+	perRequest(db, `settings:${tutorId}`, () => getSettingsFresh(db, tutorId));
+
+export const listAvailability = (db: DB, tutorId: string) =>
+	perRequest(db, `availability:${tutorId}`, () => listAvailabilityFresh(db, tutorId));

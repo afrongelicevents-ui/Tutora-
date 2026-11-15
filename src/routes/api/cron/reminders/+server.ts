@@ -1,20 +1,8 @@
 import { error, json } from '@sveltejs/kit';
 import { CRON_SECRET, ORIGIN } from '$app/env/private';
 import type { RequestHandler } from './$types';
-import {
-	sendDueReminders,
-	sendHomeworkReminders,
-	sendStudyReminders
-} from '#lib/server/reminders.ts';
-import { sendWeeklyReports } from '#lib/server/weekly.ts';
 import { notifyUser, type NotifyOpts } from '#lib/server/notify.ts';
-import {
-	sendCheckinFollowups,
-	sendDaySummaries,
-	sendSharedCheckinNotes
-} from '#lib/server/checkins.ts';
-import { tellFamily } from '#lib/server/checkin-actions.ts';
-import { sendPlannerMornings } from '#lib/server/planner.ts';
+import { runScheduled } from '#lib/server/scheduled.ts';
 
 /** Constant-time comparison. */
 function sameText(a: string, b: string) {
@@ -24,49 +12,16 @@ function sameText(a: string, b: string) {
 	return r === 0;
 }
 
-/** Called every hour by .github/workflows/reminders.yml with the CRON_SECRET. */
+/**
+ * The hourly work, by hand (local development and the end-to-end tests). On the real
+ * sites it runs from GitHub Actions straight against the database (scripts/deploy/
+ * reminders.ts), so it never uses the Workers free CPU time.
+ */
 export const POST: RequestHandler = async ({ locals, request, url }) => {
 	const given = request.headers.get('authorization') ?? '';
 	if (!CRON_SECRET || CRON_SECRET.length < 24 || !sameText(given, `Bearer ${CRON_SECRET}`))
 		error(404, 'Not found');
 	const notify = (userId: string, subject: string, body: string, opts?: NotifyOpts) =>
 		notifyUser(locals.db, userId, subject, body, opts);
-	const sent = await sendDueReminders(locals.db, notify, ORIGIN ?? url.origin);
-	// "Study time at 4:00 PM" for parents; a failure here never stops the lesson reminders
-	const study = await sendStudyReminders(locals.db, notify).catch((e) => {
-		console.error('study reminders failed', e);
-		return 0;
-	});
-	// "homework due tomorrow" (once per homework, only while it has no answer)
-	const homework = await sendHomeworkReminders(locals.db, notify).catch((e) => {
-		console.error('homework reminders failed', e);
-		return 0;
-	});
-	// the weekly family report, Sunday from 5 PM (once per parent, child and week)
-	const weekly = await sendWeeklyReports(locals.db, notify).catch((e) => {
-		console.error('weekly reports failed', e);
-		return 0;
-	});
-	// learning check-ins: "How did it go?" and the end-of-day summary
-	const followups = await sendCheckinFollowups(locals.db, notify).catch((e) => {
-		console.error('check-in follow-ups failed', e);
-		return 0;
-	});
-	const days = await sendDaySummaries(locals.db, notify).catch((e) => {
-		console.error('day summaries failed', e);
-		return 0;
-	});
-	// personal planner: "plan your day" in the morning
-	const mornings = await sendPlannerMornings(locals.db, notify).catch((e) => {
-		console.error('planner mornings failed', e);
-		return 0;
-	});
-	// check-ins a child shared, after the undo window
-	const shared = await sendSharedCheckinNotes(locals.db, (sid, mood) =>
-		tellFamily(locals.db, sid, mood)
-	).catch((e) => {
-		console.error('shared check-in notes failed', e);
-		return 0;
-	});
-	return json({ sent, homework, study, weekly, followups, days, mornings, shared });
+	return json(await runScheduled(locals.db, notify, ORIGIN ?? url.origin));
 };

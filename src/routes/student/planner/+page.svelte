@@ -2,13 +2,13 @@
 	// My day planner: today's plan (timetable + study + personal tasks) with ticks, adding
 	// tasks, and weekly personal goals.
 	import { m, t } from '#lib/i18n.ts';
-	import { fmtMinutes } from '#lib/tz.ts';
+	import { fmtMinutes, dtf } from '#lib/tz.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	import { KIND_ICON } from '#lib/components/schedule/kinds.ts';
 	let { data, form } = $props();
 	const ORDER = [1, 2, 3, 4, 5, 6, 0];
 	const dayName = (d: number) =>
-		new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: 'UTC' }).format(
+		dtf('en-GB', { weekday: 'short', timeZone: 'UTC' }).format(
 			new Date(Date.UTC(2026, 10, 15 + d))
 		);
 	const name = (i: { kind: string; title: string | null; subject: string | null }) =>
