@@ -6,5 +6,6 @@ Use a real, free-to-use photo (Unsplash or Pexels licence, commercial use allowe
 | Where         | Photo               | Photographer | Licence | Link |
 | ------------- | ------------------- | ------------ | ------- | ---- |
 | Homepage hero | (add when uploaded) |              |         |      |
+| Parent pages header (`static/photos/family-study*.webp`) | Parent helping a boy with schoolwork | Supplied by the owner (15 Nov 2026) | **To confirm**: looks like a stock-site preview (612×408); buy/confirm the licence or replace | — |
 
 Tutor photos are uploaded by each tutor and belong to them.
