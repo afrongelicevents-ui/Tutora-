@@ -1,5 +1,6 @@
 import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
-import { Pool as NeonPool } from '@neondatabase/serverless';
+import { drizzle as drizzleHttp } from 'drizzle-orm/neon-http';
+import { neon, Pool as NeonPool } from '@neondatabase/serverless';
 import { dev } from '$app/env';
 import * as schema from './schema';
 import type { DB } from './types';
@@ -37,14 +38,33 @@ async function localDb(url: string): Promise<DB> {
  * shared between requests, so each request opens a small Neon pool (over WebSocket,
  * which supports transactions) and closes it when the response is done.
  */
-export async function openDb(rawUrl: string): Promise<RequestDb> {
+export async function openDb(rawUrl: string, opts: { http?: boolean } = {}): Promise<RequestDb> {
 	const url = cleanUrl(rawUrl);
 	if (dev && isLocal(url)) {
 		localPool ??= localDb(url);
 		// a fresh object per request on top of the shared pool, so per-request caches stay per request
 		return { db: Object.create(await localPool) as DB, close: async () => {} };
 	}
+	if (opts.http) return httpDb(url);
 	const pool = new NeonPool({ connectionString: url, max: 2 });
 	// no relational schema: the app never uses db.query.*, and building it costs CPU per request
 	return { db: drizzleNeon(pool) as unknown as DB, close: () => pool.end() };
+}
+
+/**
+ * Reading pages over Neon's HTTP endpoint: each query is one small HTTPS request whose JSON
+ * answer the Cloudflare runtime parses natively, instead of decoding the database protocol
+ * in JavaScript over a WebSocket. A transaction (rare on a reading page) opens the WebSocket
+ * connection only then.
+ */
+function httpDb(url: string): RequestDb {
+	const db = drizzleHttp(neon(url)) as unknown as DB & { transaction: DB['transaction'] };
+	let pool: NeonPool | null = null;
+	let ws: DB | null = null;
+	db.transaction = ((fn: never, config?: never) => {
+		pool ??= new NeonPool({ connectionString: url, max: 1 });
+		ws ??= drizzleNeon(pool) as unknown as DB;
+		return ws.transaction(fn, config);
+	}) as DB['transaction'];
+	return { db, close: async () => void (await pool?.end()) };
 }
