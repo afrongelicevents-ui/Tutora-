@@ -1,0 +1,76 @@
+name: Measure CPU (test site)
+
+# Visits every page of the TEST site as the fake test accounts while listening to the
+# worker's live log, which reports Cloudflare's own CPU time for each request. Prints a
+# table (route → CPU p50/p90/max) and keeps it as a download. Started by hand only.
+# Logs here are public: only route names and timings are printed, never secrets.
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: 'Visits per page'
+        default: '4'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf
+  cancel-in-progress: false
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    environment: test
+    timeout-minutes: 30
+    steps:
+      - name: Check secrets are set
+        id: check
+        env:
+          CF: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          NEON: ${{ secrets.NEON_API_KEY }}
+        run: |
+          if [ -z "$CF" ] || [ -z "$NEON" ]; then
+            echo "::error::Needs NEON_API_KEY and CLOUDFLARE_API_TOKEN."
+            exit 1
+          fi
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Find the test database branch
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          BRANCH: test
+        run: node scripts/deploy/neon.mjs
+      - name: Find the test site
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WORKER_NAME: tutora-test
+        run: node scripts/deploy/cloudflare.mjs
+      - name: Test logins (fake accounts)
+        run: |
+          CRON=$(printf 'tutora-test-cron:%s' "$DATABASE_URL" | sha256sum | cut -d' ' -f1)
+          TPW="Test-$(printf 'tutora-test-pw:%s' "$DATABASE_URL" | sha256sum | cut -c1-10)"
+          echo "::add-mask::$CRON"
+          echo "::add-mask::$TPW"
+          { echo "CRON_SECRET=$CRON"; echo "TEST_PASSWORD=$TPW"; } >> "$GITHUB_ENV"
+      - name: Visit every page and read the CPU time
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          WORKER: tutora-test
+          RUNS: ${{ inputs.runs }}
+        run: SITE="$SITE_URL" node scripts/perf/remote.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: perf-remote
+          path: perf-remote.json
+          if-no-files-found: ignore
