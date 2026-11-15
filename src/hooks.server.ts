@@ -29,7 +29,9 @@ const handleParaglide: Handle = ({ event, resolve }) =>
 /** Opens this request's database connection and closes it when the response is ready. */
 const handleDb: Handle = async ({ event, resolve }) => {
 	if (building) return resolve(event);
-	const { db, close } = await openDb(DATABASE_URL);
+	// reading pages use Neon's HTTP endpoint (cheaper CPU per query on Cloudflare, measured
+	// with /api/perf-probe on the test site); form posts keep the WebSocket connection
+	const { db, close } = await openDb(DATABASE_URL, { http: event.request.method === 'GET' });
 	event.locals.db = db;
 	// reading pages: the same lookup twice in one page runs once (never for form posts)
 	if (event.request.method === 'GET') rememberForThisRequest(db);

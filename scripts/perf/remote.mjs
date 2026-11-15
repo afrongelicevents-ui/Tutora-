@@ -153,7 +153,13 @@ const ROLES = {
 };
 
 const visited = [];
-for (const p of PUBLIC) for (let i = 0; i < RUNS; i++) visited.push((await req(p)).res.status);
+// the first visit of each page in a fresh worker pays one-time start-up work: one marked
+// warm-up visit per page first, left out of the numbers
+const warm = (p) => p + (p.includes('?') ? '&' : '?') + '__warm=1';
+for (const p of PUBLIC) {
+	await req(warm(p));
+	for (let i = 0; i < RUNS; i++) visited.push((await req(p)).res.status);
+}
 for (const [who, paths] of Object.entries(ROLES)) {
 	const cookie = await login(who);
 	if (!cookie) continue;
@@ -164,8 +170,10 @@ for (const [who, paths] of Object.entries(ROLES)) {
 		const id = /\/tutor\/lessons\/(\d+)/.exec(text)?.[1];
 		if (id) list.push(`/tutor/lessons/${id}`);
 	}
-	for (const p of list)
+	for (const p of list) {
+		await req(warm(p), { cookie });
 		for (let i = 0; i < RUNS; i++) visited.push((await req(p, { cookie })).res.status);
+	}
 }
 // database driver comparison (test site only): the same queries three ways
 for (const d of ['ws', 'http', 'batch'])
@@ -207,7 +215,7 @@ const outcomes = {};
 let withCpu = 0;
 for (const e of events) {
 	const r = e.event?.request;
-	if (!r?.url) continue;
+	if (!r?.url || r.url.includes('__warm=1')) continue;
 	outcomes[e.outcome] = (outcomes[e.outcome] ?? 0) + 1;
 	const cpu = e.cpuTime ?? e.cpu_time ?? null;
 	if (cpu == null) continue;

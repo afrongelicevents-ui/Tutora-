@@ -18,6 +18,7 @@ const ORIGIN = 'http://localhost:5173';
 
 // the driver talks WebSocket to our local proxy instead of Neon's
 neonConfig.wsProxy = () => '127.0.0.1:8099/v1';
+neonConfig.fetchEndpoint = () => 'http://127.0.0.1:8099/sql';
 neonConfig.useSecureWebSocket = false;
 neonConfig.pipelineTLS = false;
 neonConfig.pipelineConnect = 'password';
