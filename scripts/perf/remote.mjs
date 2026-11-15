@@ -27,14 +27,16 @@ tail.stderr.on('data', () => {});
 await sleep(12_000);
 
 // 2. visit the pages
-async function req(path, { cookie = '', method = 'GET', body, headers = {} } = {}) {
+async function reqRaw(path, { cookie = '', method = 'GET', body, headers = {} } = {}) {
 	const res = await fetch(SITE + path, {
 		method,
 		body,
 		redirect: 'manual',
+		// a hanging request must never stop the whole measurement
+		signal: AbortSignal.timeout(20_000),
 		headers: { cookie, 'user-agent': 'tutora-perf', origin: SITE, ...headers }
 	});
-	const text = await res.text();
+	const text = await res.text().catch(() => '');
 	return { res, text };
 }
 
@@ -53,6 +55,14 @@ async function login(email) {
 	}
 	console.log('A test login kept failing; skipping that account.');
 	return null;
+}
+
+async function req(path, opts) {
+	try {
+		return await reqRaw(path, opts);
+	} catch {
+		return { res: new Response(null, { status: 599 }), text: '' };
+	}
 }
 
 const PUBLIC = [
