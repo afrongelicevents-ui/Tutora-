@@ -10,9 +10,9 @@ import { assessmentResult, studySession } from './db/v3.schema.ts';
 import { user } from './db/auth.schema.ts';
 import { parentAccess, type Access } from './family.ts';
 import { sharedCheckins } from './checkins.ts';
-import { examReadiness, overallProgress, weakTopics } from './progress.ts';
+import { examReadiness, overallProgress, recentAverage, weakTopics } from './progress.ts';
 import { planFor, streak, todaysPlan, weekSummary } from './study.ts';
-import { lessonsForUser } from './bookings.ts';
+import { lessonsForUser, nextLessonsForUser } from './bookings.ts';
 import { CLOSE_AFTER_MIN } from './room.ts';
 import { addDays, fromLocal, local, localDate, startOfLocalDay } from '../tz.ts';
 import { shortName } from '../names.ts';
@@ -69,7 +69,9 @@ export async function todaysAlert(
 	db: DB,
 	studentId: string,
 	access: Access,
-	now = new Date()
+	now = new Date(),
+	/** the child's next lessons when the page already has them (saves a query) */
+	soon?: { startsAt: Date; endsAt: Date; subjectName: string | null; mode: string }[]
 ): Promise<Alert | null> {
 	if (access.study) {
 		const plan = await todaysPlan(db, studentId, now);
@@ -114,7 +116,7 @@ export async function todaysAlert(
 	}
 	if (access.lessons) {
 		const today = localDate(now);
-		const l = (await lessonsForUser(db, studentId)).find(
+		const l = (soon ?? (await lessonsForUser(db, studentId))).find(
 			(x) => localDate(x.startsAt) === today && x.endsAt.getTime() > now.getTime()
 		);
 		if (l) return { kind: 'lesson_today', subject: l.subjectName, at: l.startsAt, mode: l.mode };
@@ -194,6 +196,61 @@ export async function childOverview(db: DB, parentId: string, studentId: string,
 			streak: days,
 			homeworkDue: due,
 			exam: exams[0] ? { title: exams[0].title, daysLeft: exams[0].daysLeft } : null
+		})
+	};
+}
+
+/**
+ * The light version for the parent's child page: only what the page shows at a glance
+ * (today, the last check-in, this week's study, the 30-day average, the next 5 lessons).
+ * Per-topic scores, exams and the full lists are on their own pages ("See all").
+ */
+export async function childPageSummary(
+	db: DB,
+	studentId: string,
+	name: string,
+	access: Access,
+	homeworkDueSoon: { title: string; dueOn: string } | null,
+	now = new Date()
+) {
+	const soon = access.lessons
+		? await nextLessonsForUser(db, studentId, new Date(now.getTime() - CLOSE_AFTER_MIN * 60_000), 6)
+		: [];
+	const [alert, checkins, week, overall] = await Promise.all([
+		todaysAlert(db, studentId, access, now, soon),
+		sharedCheckins(db, studentId, addDays(now, -3), 1),
+		access.study ? weekSummary(db, studentId, now) : null,
+		access.progress ? recentAverage(db, studentId, now) : null
+	]);
+	const checkin = checkins[0] ? { mood: checkins[0].mood, at: checkins[0].createdAt } : null;
+	return {
+		studentId,
+		name,
+		firstName: shortName(name),
+		access,
+		alert,
+		checkin,
+		week,
+		overall: overall?.pct ?? null,
+		upcoming: soon.slice(0, 5).map((l) => ({
+			id: l.id,
+			subjectName: l.subjectName,
+			tutorName: l.tutorName,
+			tutorSlug: l.tutorSlug,
+			startsAt: l.startsAt,
+			mode: l.mode,
+			address: l.address
+		})),
+		moreUpcoming: soon.length > 5,
+		tip: chooseTip({
+			access,
+			weak: null,
+			weakPlanned: false,
+			checkin,
+			week,
+			streak: 0,
+			homeworkDue: homeworkDueSoon,
+			exam: null
 		})
 	};
 }

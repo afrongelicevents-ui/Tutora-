@@ -39,17 +39,20 @@ export async function enrolled(db: DB, tutorId: string, studentId: string) {
 
 /** Parents who may read an under-18 student's conversations (guardians first). */
 export async function readingParents(db: DB, studentId: string) {
-	const [p] = await db
-		.select({ u18: profile.isUnder18 })
-		.from(profile)
-		.where(eq(profile.userId, studentId));
-	if (!p?.u18) return [];
-	// the guardians read; a parent who only joined with the child's code reads when there is
-	// no guardian on the account (the same rule as approving study buddies)
+	// one query: the child's active parents, only when the child is under 18
 	const rows = await db
 		.select({ id: familyLink.parentId, guardian: familyLink.guardian })
 		.from(familyLink)
-		.where(and(eq(familyLink.studentId, studentId), eq(familyLink.status, 'active')));
+		.innerJoin(profile, eq(profile.userId, familyLink.studentId))
+		.where(
+			and(
+				eq(familyLink.studentId, studentId),
+				eq(familyLink.status, 'active'),
+				eq(profile.isUnder18, true)
+			)
+		);
+	// the guardians read; a parent who only joined with the child's code reads when there is
+	// no guardian on the account (the same rule as approving study buddies)
 	const g = rows.filter((r) => r.guardian);
 	return (g.length ? g : rows).map((r) => r.id);
 }

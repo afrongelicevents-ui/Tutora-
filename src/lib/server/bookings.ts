@@ -712,6 +712,30 @@ export async function bookingTutorId(db: DB, userId: string, bookingId: number) 
 	return b?.t ?? null;
 }
 
+/** A student's next lessons (still running or later), soonest first, at most `limit`. */
+export function nextLessonsForUser(db: DB, userId: string, after: Date, limit: number) {
+	return db
+		.select({
+			...lessonFields,
+			tutorName: tutorProfile.tutorName,
+			tutorSlug: tutorProfile.slug
+		})
+		.from(attendee)
+		.innerJoin(lesson, eq(lesson.id, attendee.lessonId))
+		.leftJoin(subject, eq(subject.id, lesson.subjectId))
+		.leftJoin(tutorProfile, eq(tutorProfile.tutorId, lesson.tutorId))
+		.where(
+			and(
+				eq(attendee.userId, userId),
+				eq(attendee.status, 'booked'),
+				eq(lesson.status, 'scheduled'),
+				gt(lesson.endsAt, after)
+			)
+		)
+		.orderBy(asc(lesson.startsAt))
+		.limit(limit);
+}
+
 /** A student's own lessons (asked once per page, however many cards use them). */
 export const lessonsForUser = (db: DB, userId: string) =>
 	perRequest(db, `lessonsForUser:${userId}`, () => lessonsForUserFresh(db, userId));

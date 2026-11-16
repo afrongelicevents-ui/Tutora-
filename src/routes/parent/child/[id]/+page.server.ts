@@ -3,7 +3,7 @@ import { and, desc, eq, lt, sql } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 import { parentAccess, childrenOf } from '#lib/server/family.ts';
 import { requireRole } from '#lib/server/guards.ts';
-import { childOverview } from '#lib/server/parent.ts';
+import { childPageSummary } from '#lib/server/parent.ts';
 import { childPhotos } from '#lib/server/parent-home.ts';
 import { readingParents } from '#lib/server/messages.ts';
 import { tutorsForUser } from '#lib/server/people.ts';
@@ -18,6 +18,7 @@ import {
 	respondToProposal
 } from '#lib/server/bookings.ts';
 import { handedInLate } from '#lib/server/homework-status.ts';
+import { addDays, localDate } from '#lib/tz.ts';
 import { sentReportsFor, tutorNames } from '#lib/server/reports.ts';
 import { afterAccept } from '#lib/server/after-accept.ts';
 import { childCovered } from '#lib/server/family-billing.ts';
@@ -26,6 +27,10 @@ import { notifyTutor } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { m } from '#lib/paraglide/messages.js';
 
+/** How many lessons and homework the page shows; "See all" opens the full lists. */
+const SHOWN = 5;
+const PAST_SHOWN = 3;
+
 /** One child, as their parent may see them (only what the child shares). */
 export const load: PageServerLoad = async ({ locals, url, params }) => {
 	const u = requireRole(locals.user, url, ['parent']);
@@ -33,13 +38,16 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 	const access = await parentAccess(locals.db, u.id, id);
 	if (!access.ok) error(404, 'Not found');
 	const kid = (await childrenOf(locals.db, u.id)).find((k) => k.studentId === id);
-	const [child, photos, readers, tutors, sharesReport, sp, past] = await Promise.all([
-		childOverview(locals.db, u.id, id),
+	if (!kid) error(404, 'Not found');
+	const now = new Date();
+	// one batch: the short lists (latest 5 homework, last 3 lessons that happened) and the cards;
+	// the full lists are on their own pages ("See all")
+	const [photos, readers, tutors, sharesReport, sp, past, hwRows, requests] = await Promise.all([
 		childPhotos(locals.db, [id]),
 		readingParents(locals.db, id),
 		tutorsForUser(locals.db, id),
 		shareReport(locals.db, id),
-		// the child's School+ partnership still going, if any (same batch, one small query)
+		// the child's School+ partnership still going, if any
 		openPartnershipOf(locals.db, u.id, id),
 		// the last lessons and whether they happened (the tutor marks attendance), only when the
 		// child shares their lessons
@@ -62,11 +70,11 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 							eq(attendee.userId, id),
 							eq(attendee.status, 'booked'),
 							eq(lesson.status, 'scheduled'),
-							lt(lesson.endsAt, new Date())
+							lt(lesson.endsAt, now)
 						)
 					)
 					.orderBy(desc(lesson.startsAt))
-					.limit(4)
+					.limit(PAST_SHOWN)
 			: Promise.resolve([])) as Promise<
 			{
 				id: number;
@@ -76,36 +84,38 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 				tutorSlug: string | null;
 				attendance: 'completed' | 'absent' | null;
 			}[]
-		>
+		>,
+		// the newest homework with where it stands: waiting, handed in (on time / late), or the
+		// tutor's mark (done / late / missing). Hand-ins and marks show here at once.
+		(access.homework
+			? locals.db
+					.select({
+						id: homework.id,
+						title: homework.title,
+						dueOn: homework.dueOn,
+						dueTime: homework.dueTime,
+						subject: homework.subject,
+						mark: homework.mark,
+						handedInAt: sql<Date | null>`(select min(a.created_at) from homework_answer a where a.homework_id = ${homework.id})`
+					})
+					.from(homework)
+					.where(eq(homework.userId, id))
+					.orderBy(desc(homework.createdAt))
+					.limit(SHOWN + 1)
+			: Promise.resolve([])) as Promise<
+			{
+				id: number;
+				title: string;
+				dueOn: string | null;
+				dueTime: string | null;
+				subject: string | null;
+				mark: 'done' | 'late' | 'missing' | null;
+				handedInAt: Date | null;
+			}[]
+		>,
+		access.guardian ? requestsForUser(locals.db, id) : Promise.resolve([])
 	]);
-	const requests = access.guardian ? await requestsForUser(locals.db, id) : [];
-	// the newest homework with where it stands: waiting, handed in (on time / late), or the
-	// tutor's mark (done / late / missing). Hand-ins and marks show here at once.
-	const hwRows: {
-		id: number;
-		title: string;
-		dueOn: string | null;
-		dueTime: string | null;
-		subject: string | null;
-		mark: 'done' | 'late' | 'missing' | null;
-		handedInAt: Date | null;
-	}[] = access.homework
-		? await locals.db
-				.select({
-					id: homework.id,
-					title: homework.title,
-					dueOn: homework.dueOn,
-					dueTime: homework.dueTime,
-					subject: homework.subject,
-					mark: homework.mark,
-					handedInAt: sql<Date | null>`(select min(a.created_at) from homework_answer a where a.homework_id = ${homework.id})`
-				})
-				.from(homework)
-				.where(eq(homework.userId, id))
-				.orderBy(desc(homework.createdAt))
-				.limit(8)
-		: [];
-	const hw = hwRows.map((h) => {
+	const hw = hwRows.slice(0, SHOWN).map((h) => {
 		const inAt = h.handedInAt ? new Date(h.handedInAt) : null;
 		const late = !!inAt && handedInLate(inAt, h.dueOn, h.dueTime);
 		return {
@@ -118,7 +128,25 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 				'done' | 'late' | 'missing' | 'in' | 'in_late' | 'waiting'
 		};
 	});
-	if (!child) error(404, 'Not found');
+	// the "How you can help" tip: homework due in the next 4 days that isn't handed in
+	const today = localDate(now);
+	const soonest = hw
+		.filter(
+			(h) =>
+				h.status === 'waiting' &&
+				h.dueOn &&
+				h.dueOn >= today &&
+				h.dueOn <= localDate(addDays(now, 4))
+		)
+		.sort((a, b) => (a.dueOn ?? '').localeCompare(b.dueOn ?? ''))[0];
+	const child = await childPageSummary(
+		locals.db,
+		id,
+		kid.name ?? '',
+		access,
+		soonest?.dueOn ? { title: soonest.title, dueOn: soonest.dueOn } : null,
+		now
+	);
 	// reports the child's tutors sent (stored in Tutora), when the child shares progress
 	// Tutora Family covers this child? (the page itself is free; reports are a Family feature)
 	const familyCovered = await childCovered(locals.db, u.id, id);
@@ -159,6 +187,7 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 		sharesReport,
 		schoolPlus: sp ?? null,
 		homework: hw,
+		moreHomework: hwRows.length > SHOWN,
 		past,
 		booked: url.searchParams.has('booked'),
 		requests: requests.map((r) => ({

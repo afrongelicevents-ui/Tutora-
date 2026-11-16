@@ -3981,5 +3981,11 @@
 	"audit_recommend_pinned": "Tutor recommended first",
 	"audit_recommend_hidden": "Tutor hidden from recommendations",
 	"audit_recommend_normal": "Tutor recommended normally",
-	"rp_student_note": "A note from your tutor"
+	"rp_student_note": "A note from your tutor",
+	"pf_see_all": "See all",
+	"pfl_title": "{name}'s lessons",
+	"pfl_upcoming": "Coming up",
+	"pfl_past": "Past lessons",
+	"pfl_none": "No lessons yet.",
+	"pfh_title": "{name}'s homework"
 }

@@ -151,6 +151,11 @@ async function averageBetween(db: DB, studentId: string, from: string, to: strin
  * Overall score: all results in the last 30 days, compared with the 30 days before.
  * `current` is null when there are no results in the last 30 days.
  */
+/** Average of all results in the last 30 days (one query; null with no results). */
+export function recentAverage(db: DB, studentId: string, now = new Date()) {
+	return averageBetween(db, studentId, localDate(addDays(now, -29)), localDate(addDays(now, 1)));
+}
+
 export async function overallProgress(db: DB, studentId: string, now = new Date()) {
 	const today = localDate(addDays(now, 1));
 	const d30 = localDate(addDays(now, -29));
