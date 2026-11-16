@@ -16,13 +16,14 @@ import {
 	type AiBinding
 } from '#lib/server/ai-tests.ts';
 import { aiFromForm } from '#lib/server/tests-form.ts';
+import { cfBinding } from '#lib/server/cf-env.ts';
 
 const testSite = TEST_SITE === '1';
 /** Workers AI only on the real sites (local dev has no free binding) */
-const binding = (env: App.Platform['env']) => (dev ? null : ((env?.AI as AiBinding) ?? null));
+const binding = () => (dev ? null : cfBinding<AiBinding>('AI'));
 
 /** The AI test maker (Tutora Pro): free Workers AI only, with our own daily counter. */
-export const load: PageServerLoad = async ({ locals, url, platform }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const t = requireTutor(locals.user, url).id;
 	const [pro, today, tags, drafts] = await Promise.all([
 		proAccess(locals.db, t),
@@ -33,7 +34,7 @@ export const load: PageServerLoad = async ({ locals, url, platform }) => {
 	const stop = aiStopLine(testSite);
 	return {
 		pro: pro.active,
-		available: !!binding(platform?.env),
+		available: !!binding(),
 		resting: today.neurons >= stop - 60,
 		tutorFull: today.mine >= AI_TUTOR_CAP - 60,
 		usedPct: Math.min(100, Math.round((100 * today.neurons) / AI_FREE_PER_DAY)),
@@ -46,14 +47,14 @@ export const load: PageServerLoad = async ({ locals, url, platform }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ locals, url, request, platform }) => {
+	default: async ({ locals, url, request }) => {
 		const t = requireTutor(locals.user, url).id;
 		if (!(await proAccess(locals.db, t)).active)
 			return fail(403, { error: 'ai_err_pro', input: null });
 		const input = aiFromForm(await request.formData());
 		let r: Awaited<ReturnType<typeof makeDrafts>>;
 		try {
-			r = await makeDrafts(locals.db, binding(platform?.env), t, input, { testSite });
+			r = await makeDrafts(locals.db, binding(), t, input, { testSite });
 		} catch (e) {
 			if (e instanceof TestFail) return fail(400, { error: e.code, input });
 			throw e;

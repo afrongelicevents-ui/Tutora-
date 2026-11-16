@@ -2,13 +2,14 @@ import { BETTER_AUTH_SECRET } from '$app/env/private';
 import { getRequestEvent } from '$app/server';
 import { R2Store, signedUrl, type FileStore } from './files.ts';
 import { DbStore } from './db-store.ts';
+import { cfBinding } from './cf-env.ts';
 
 /**
  * Where uploaded files live: a Cloudflare R2 bucket if one is connected (binding `FILES`),
  * otherwise the database itself, so the site works with no extra account.
  */
-export function getStore(platform: App.Platform | undefined): FileStore {
-	const bucket = platform?.env?.FILES;
+export function getStore(platform?: App.Platform): FileStore {
+	const bucket = platform?.env?.FILES ?? cfBinding<R2Bucket>('FILES');
 	if (bucket) return new R2Store(bucket);
 	return new DbStore(getRequestEvent().locals.db);
 }

@@ -232,7 +232,7 @@ test('Tutora Family: figures on Overview, invoices in Money, payment details in 
 }) => {
 	const owner = await as(browser, 'owner@example.com');
 	await owner.goto('/owner');
-	await expect(owner.locator('#family-stats h2')).toHaveText('Tutora Family');
+	await expect(owner.locator('#family-stats h2')).toHaveText('Tutora Family and Pro');
 	await owner.locator('#family-stats a', { hasText: 'Tutora Family invoices' }).click();
 	await expect(owner).toHaveURL(/\/owner\/payments\?view=family/);
 	await expect(owner.locator('#ofi-h')).toHaveText('Tutora Family invoices');
