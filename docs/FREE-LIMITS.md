@@ -157,6 +157,25 @@ pins is kept in the worker's memory for 5 minutes, so it is not rebuilt on every
 Ranking is a few dozen comparisons in memory. Not measured on Cloudflare yet: re-check
 with _Measure CPU (test site)_ after deploying.
 
+## Recommended tutors (16 Nov 2026, afternoon)
+
+The two parent pages that show "Tutora recommends" were measured three times on Cloudflare
+(test site). Each child's needs are now read in one query instead of five, and the parent
+child page no longer runs the topic-scores query twice.
+
+| Run (afternoon, same day)        | `/parent/tutors` | `/parent/child/[id]` | Refused for CPU |
+| -------------------------------- | ---------------- | -------------------- | --------------- |
+| With recommendations, before fix | 17 ms            | 28 ms                | 7 of 309        |
+| After "one query" fix            | 16 ms            | 31 ms                | 0 of 353        |
+| After "topic scores once" fix    | 26 ms            | 63 ms                | 1 of 283        |
+
+Daytime runs vary a lot: in the last run pages that were not changed at all (the student's
+Family page, sign-in, owner Overview) were about twice as slow as 30 minutes earlier, so the
+last row is mostly Cloudflare noise. Query counts are the steadier measure: the child page
+now runs 34 queries (was 39) and the Tutors page 15 (was 19). The tutor list used for
+recommendations is kept in memory for 5 minutes. Next step if needed: page the child page's
+lesson and homework lists.
+
 ## AI test maker (Workers AI)
 
 - **Free allowance only:** 10,000 neurons a day for the whole Cloudflare account. Model
