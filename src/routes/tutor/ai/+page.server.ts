@@ -62,7 +62,9 @@ export const actions: Actions = {
 		if (r.ok) redirect(303, `/tutor/bank?status=draft&made=${r.drafts}`);
 		return fail(r.reason === 'resting' || r.reason === 'tutor_cap' ? 429 : 400, {
 			error: `ai_err_${r.reason}`,
-			input
+			input,
+			// test site only: what the model wrote, to see why nothing could be used
+			raw: testSite ? (r.raw ?? null) : null
 		});
 	}
 };

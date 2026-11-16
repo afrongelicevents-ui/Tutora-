@@ -272,7 +272,12 @@ export function cleanAiInput(v: AiInput): AiInput {
 
 export type AiResult =
 	| { ok: true; drafts: number }
-	| { ok: false; reason: 'resting' | 'tutor_cap' | 'unavailable' | 'failed' | 'nothing' };
+	| {
+			ok: false;
+			reason: 'resting' | 'tutor_cap' | 'unavailable' | 'failed' | 'nothing';
+			/** the start of what the model wrote (shown on the test site only) */
+			raw?: string;
+	  };
 
 /**
  * Asks the model and saves what it wrote as drafts. The counter is checked (and added to)
@@ -296,8 +301,8 @@ export async function makeDrafts(
 	let res: unknown;
 	try {
 		res = await ai.run(AI_MODEL, { messages, max_tokens: MAX_OUT_TOKENS, temperature: 0.4 });
-	} catch {
-		return { ok: false, reason: 'failed' };
+	} catch (e) {
+		return { ok: false, reason: 'failed', raw: String(e).slice(0, 300) };
 	}
 	const r = (res ?? {}) as {
 		response?: unknown;
@@ -316,7 +321,7 @@ export async function makeDrafts(
 	// some models hand back the JSON already parsed
 	const text = typeof r.response === 'string' ? r.response : JSON.stringify(r.response ?? '');
 	const drafts = parseDrafts(text, v.count);
-	if (!drafts.length) return { ok: false, reason: 'nothing' };
+	if (!drafts.length) return { ok: false, reason: 'nothing', raw: text.slice(0, 600) };
 	for (const d of drafts) {
 		const q: BankInput = {
 			type: d.type,

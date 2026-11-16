@@ -32,6 +32,7 @@
 		</div>
 	{:else}
 		{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
+		{#if form && 'raw' in form && form.raw}<pre class="small" data-raw>{form.raw}</pre>{/if}
 		{#if data.tutorFull}<p class="alert" role="alert">{m.ai_err_tutor_cap()}</p>{/if}
 		{#if data.drafts}
 			<a class="ui-card sky drafts" href="/tutor/bank?status=draft"
