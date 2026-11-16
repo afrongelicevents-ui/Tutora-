@@ -41,6 +41,9 @@ describe('Tutora Family features', () => {
 		expect(familyFeatureFor('/student/plannerx')).toBeNull();
 		expect(familyFeatureFor('/parent/progress')).toBe('progress');
 		expect(familyFeatureFor('/parent/payments')).toBeNull();
+		expect(familyFeatureFor('/parent/child/test_tatenda/reports/3/pdf')).toBe('report');
+		expect(familyFeatureFor('/parent/child/test_tatenda')).toBeNull();
+		expect(familyFeatureFor('/student/quiz/5')).toBe('tests');
 		expect(lockedLocation('/parent/report', 'report')).toBe('/parent/plans?locked=report');
 		expect(lockedLocation('/student/check', 'check')).toBe('/student/upgrade?locked=check');
 	});

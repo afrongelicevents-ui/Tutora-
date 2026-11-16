@@ -12,20 +12,16 @@ import { DOC_KINDS, MB, newKey, readUpload } from '#lib/server/files.ts';
 import { hitLimit } from '#lib/server/rate-limit.ts';
 import { fmtDayTime } from '#lib/tz.ts';
 import { m } from '#lib/paraglide/messages.js';
-import { toolsEnv } from '#lib/server/tools/env.ts';
-import { connections } from '#lib/server/tools/oauth.ts';
-import { cancelMeetingForLesson, getToolPref } from '#lib/server/tools/meetings.ts';
+import { getToolPref } from '#lib/server/tools/meetings.ts';
 import {
 	joinLinks,
 	lessonLink,
 	removeLessonLink,
 	saveLessonLink
 } from '#lib/server/meeting-links.ts';
-import { pickerConfig, shareWithAll, verifyPickedFile } from '#lib/server/tools/drive.ts';
 import {
 	addLessonMaterial,
 	lessonMaterialsForTutor,
-	lessonStudentEmails,
 	MaterialFail,
 	removeLessonMaterial
 } from '#lib/server/materials.ts';
@@ -41,14 +37,13 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	const l = await lessonWithPeople(locals.db, lessonId(params.id), t);
 	if (!l) error(404, 'Not found');
 	const group = l.capacity > 1;
-	const [materials, joins, classLink, conn, pref] = await Promise.all([
+	const [materials, joins, classLink, pref] = await Promise.all([
 		lessonMaterialsForTutor(locals.db, t, l.id),
 		// the lesson's own meeting, else the class link, else the student's own link
 		joinLinks(locals.db, [
 			{ lessonId: l.id, tutorId: t, studentIds: l.people.map((p) => p.userId), group }
 		]),
 		group ? lessonLink(locals.db, l.id) : null,
-		connections(locals.db, t),
 		getToolPref(locals.db, t)
 	]);
 	return {
@@ -58,7 +53,8 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 		roomOpen:
 			Date.now() >= l.startsAt.getTime() - OPEN_BEFORE_MIN * 60_000 &&
 			Date.now() <= l.endsAt.getTime() + CLOSE_AFTER_MIN * 60_000,
-		roomClosed: url.searchParams.has('room'),
+		roomClosed: url.searchParams.get('room') === 'closed',
+		roomOff: url.searchParams.get('room') === 'off',
 		materials: await Promise.all(
 			materials.map(async (x) => ({
 				...x,
@@ -68,8 +64,7 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 		meeting: joins.get(l.id) ?? null,
 		group,
 		classLink,
-		kahootOn: pref.kahootOn,
-		picker: pickerConfig(toolsEnv(url), conn.drive)
+		kahootOn: pref.kahootOn
 	};
 };
 
@@ -91,31 +86,6 @@ export const actions: Actions = {
 		const r = await saveLessonLink(locals.db, t, id, f.url ?? '');
 		if (!r.ok) return fail(400, { error: r.error, classUrl: (f.url ?? '').slice(0, 500) });
 		return { classDone: 'saved' };
-	},
-	/** a file picked with the Google Picker: checked with the tutor's Drive, then shared */
-	attachDrive: async ({ locals, url, request, params }) => {
-		const t = requireTutor(locals.user, url).id;
-		const id = lessonId(params.id);
-		const f = formObject(await request.formData());
-		const env = toolsEnv(url);
-		const file = await verifyPickedFile(locals.db, env, t, f.fileId ?? '');
-		if (!file) return fail(400, { error: 'tools6_err_drive_file' });
-		try {
-			await addLessonMaterial(locals.db, t, id, {
-				kind: 'drive',
-				title: file.name,
-				url: file.url,
-				driveFileId: file.id
-			});
-		} catch (e) {
-			return materialFail(e);
-		}
-		const emails = await lessonStudentEmails(locals.db, t, id);
-		const share = emails.length
-			? await shareWithAll(locals.db, env, t, file.id, emails)
-			: ('skipped' as const);
-		await materialShared(locals.db, t, id, file.name);
-		return { attached: true, share };
 	},
 	/** Upload a small file (photo or PDF, max 5 MB) to the lesson; only this lesson's students can open it. */
 	addFile: async ({ locals, url, request, params, platform }) => {
@@ -213,8 +183,6 @@ export const actions: Actions = {
 		if (f.sure !== 'on') return fail(400, { error: 'err_tick_sure' });
 		try {
 			const r = await cancelLesson(locals.db, t, lessonId(params.id));
-			// remove the Meet event / Teams meeting too (best effort, never blocks)
-			await cancelMeetingForLesson(locals.db, toolsEnv(url), r.lesson.id);
 			for (const uid of r.userIds) {
 				await notifyUser(
 					locals.db,

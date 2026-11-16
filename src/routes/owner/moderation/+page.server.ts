@@ -6,13 +6,18 @@ import { m } from '#lib/paraglide/messages.js';
 import { moderate, moderationQueue, resolveReport } from '#lib/server/buddies.ts';
 import { getStore } from '#lib/server/storage.ts';
 import { audit } from '#lib/server/owner.ts';
+import { ownerHideShared, ownerSharedQuestions } from '#lib/server/tests.ts';
 import { eq } from 'drizzle-orm';
 import { user } from '#lib/server/db/auth.schema.ts';
 
 /** The owner checks student photos and bios before buddies see them, and handles reports. */
 export const load: PageServerLoad = async ({ locals, url }) => {
 	requireOwner(locals.user, url);
-	return moderationQueue(locals.db);
+	const [queue, shared] = await Promise.all([
+		moderationQueue(locals.db),
+		ownerSharedQuestions(locals.db, 30)
+	]);
+	return { ...queue, shared };
 };
 
 export const actions: Actions = {
@@ -47,6 +52,16 @@ export const actions: Actions = {
 			approve ? m.ev_checked_ok_b({ thing }) : m.ev_checked_no_b({ thing }),
 			{ kind: 'family', link: '/student/me/edit' }
 		);
+		return { done: true };
+	},
+	/** A question shared with the Tutora bank: hide it from other tutors (or show it again). */
+	question: async ({ locals, url, request }) => {
+		const u = requireOwner(locals.user, url);
+		const f = await request.formData();
+		const id = Number(f.get('id')) || 0;
+		const hide = f.get('hide') === '1';
+		await ownerHideShared(locals.db, id, hide);
+		await audit(locals.db, u.id, hide ? 'question_hidden' : 'question_shown', String(id));
 		return { done: true };
 	},
 	resolve: async ({ locals, url, request }) => {

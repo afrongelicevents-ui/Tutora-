@@ -21,6 +21,8 @@ import {
 import { sql } from 'drizzle-orm';
 import { user } from './auth.schema';
 import { attendee, homework, homeworkAnswer, lesson } from './app.schema';
+import type { QuestionTemplate } from '../../math-template';
+export type { QuestionTemplate };
 
 const ts = (name: string) => timestamp(name, { withTimezone: true });
 const created = () => ts('created_at').notNull().defaultNow();
@@ -290,25 +292,73 @@ export const questionSet = pgTable(
 		level: text('level'),
 		/** questions may be used in students' short daily knowledge checks */
 		dailyChecks: boolean('daily_checks').notNull().default(true),
+		/**
+		 * A test built from the question bank: the picked question ids (each student gets them
+		 * in their own order). Null for a hand-made quiz whose questions belong to the set.
+		 */
+		questionIds: jsonb('question_ids').$type<number[]>(),
+		/** chapters the test covers (built tests); `topic` holds them joined, for lists */
+		chapters: jsonb('chapters').$type<string[]>().notNull().default([]),
+		term: text('term'),
+		/** optional time limit, checked on the server */
+		timerMinutes: integer('timer_minutes'),
 		createdAt: created()
 	},
 	(t) => [index('question_set_tutor').on(t.tutorId)]
 );
 
+export const QUESTION_TYPES = ['mcq', 'short', 'written'] as const;
+export type QuestionType = (typeof QUESTION_TYPES)[number];
+export const DIFFICULTIES = ['easy', 'medium', 'hard'] as const;
+export type Difficulty = (typeof DIFFICULTIES)[number];
+/** a draft (from the AI test maker) can't be used until the tutor has checked it */
+export const QUESTION_STATUS = ['ready', 'draft'] as const;
+export const QUESTION_ORIGINS = ['own', 'ai', 'copied'] as const;
+
+/**
+ * One question. Questions in a hand-made quiz belong to its set (`setId`); questions in the
+ * tutor's question bank have no set and are tagged (subject, form, chapter, term, difficulty).
+ * Both are the tutor's (`tutorId`). Private unless `shared` (the Tutora bank); the owner can
+ * hide a shared question.
+ */
 export const question = pgTable(
 	'question',
 	{
 		id: serial('id').primaryKey(),
-		setId: integer('set_id')
-			.notNull()
-			.references(() => questionSet.id, { onDelete: 'cascade' }),
+		setId: integer('set_id').references(() => questionSet.id, { onDelete: 'cascade' }),
+		tutorId: text('tutor_id').references(() => user.id, { onDelete: 'cascade' }),
+		type: text('type', { enum: QUESTION_TYPES }).notNull().default('mcq'),
 		prompt: text('prompt').notNull(),
 		choices: jsonb('choices').$type<string[]>().notNull(),
 		answer: integer('answer').notNull(),
+		/** short answer: accepted answers (any of these is right) */
+		accepted: jsonb('accepted').$type<string[]>().notNull().default([]),
+		template: jsonb('template').$type<QuestionTemplate>(),
+		marks: integer('marks').notNull().default(1),
 		explanation: text('explanation'),
-		sortOrder: integer('sort_order').notNull().default(0)
+		sortOrder: integer('sort_order').notNull().default(0),
+		subject: text('subject'),
+		form: text('form'),
+		chapter: text('chapter'),
+		term: text('term'),
+		difficulty: text('difficulty', { enum: DIFFICULTIES }),
+		status: text('status', { enum: QUESTION_STATUS }).notNull().default('ready'),
+		origin: text('origin', { enum: QUESTION_ORIGINS }).notNull().default('own'),
+		shared: boolean('shared').notNull().default(false),
+		/** hidden from the Tutora bank by the owner */
+		hiddenAt: ts('hidden_at'),
+		copiedFrom: integer('copied_from'),
+		createdAt: created()
 	},
-	(t) => [index('question_set_idx').on(t.setId), check('question_answer', sql`${t.answer} >= 0`)]
+	(t) => [
+		index('question_set_idx').on(t.setId),
+		index('question_tutor_idx').on(t.tutorId, t.subject),
+		index('question_shared_idx')
+			.on(t.subject, t.form)
+			.where(sql`${t.shared} and ${t.hiddenAt} is null`),
+		check('question_answer', sql`${t.answer} >= 0`),
+		check('question_marks', sql`${t.marks} between 1 and 20`)
+	]
 );
 
 /** A quiz or test a tutor set for one student. */
@@ -327,7 +377,14 @@ export const quizAssignment = pgTable(
 	(t) => [uniqueIndex('quiz_assignment_once').on(t.setId, t.studentId)]
 );
 
-export const RESULT_SOURCES = ['test', 'quiz', 'kahoot', 'daily_check', 'homework'] as const;
+export const RESULT_SOURCES = [
+	'test',
+	'quiz',
+	'kahoot',
+	'google_forms',
+	'daily_check',
+	'homework'
+] as const;
 
 /**
  * One scored piece of work on one topic: a marked test, a quiz, a Kahoot! score, a daily
@@ -352,6 +409,10 @@ export const assessmentResult = pgTable(
 		homeworkAnswerId: integer('homework_answer_id').references(() => homeworkAnswer.id, {
 			onDelete: 'set null'
 		}),
+		/** school term ("Term 1"…), when known; otherwise worked out from the date */
+		term: text('term'),
+		/** the taken test this score came from (tests built from the bank) */
+		attemptId: integer('attempt_id'),
 		createdBy: text('created_by').references(() => user.id, { onDelete: 'set null' }),
 		createdAt: created()
 	},

@@ -290,6 +290,12 @@
 		<button class="btn btn-ghost btn-sm" type="submit">{m.save()}</button>
 	</form>
 
+	<a
+		class="btn btn-ghost btn-sm report-link"
+		href="/tutor/reports?student={encodeURIComponent(s.id)}"
+		>{m.rp_make_for({ name: s.childName ?? s.name })}</a
+	>
+
 	<!-- the tutor's own recurring meeting link (no API keys): one per student -->
 	<div class="section-h"><h2>{m.ml_h()}</h2></div>
 	<div class="softcard ml" id="lesson-link">
@@ -571,6 +577,9 @@
 </section>
 
 <style>
+	.report-link {
+		align-self: flex-start;
+	}
 	.ml {
 		display: flex;
 		flex-direction: column;

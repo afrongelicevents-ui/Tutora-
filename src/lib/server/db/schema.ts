@@ -8,3 +8,6 @@ export * from './personal.schema';
 export * from './usage.schema';
 export * from './meeting.schema';
 export * from './family.schema';
+export * from './pro.schema';
+export * from './tests.schema';
+export * from './report.schema';

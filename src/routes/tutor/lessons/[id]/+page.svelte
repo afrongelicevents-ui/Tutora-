@@ -4,10 +4,8 @@
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDayTime, fmtTime } from '#lib/tz.ts';
 	import MaterialList from '#lib/components/tools/MaterialList.svelte';
-	import DrivePickButton from '#lib/components/tools/DrivePickButton.svelte';
 	let { data, form } = $props();
 	const l = $derived(data.lesson);
-	const share = $derived(form && 'share' in form ? (form.share as string) : null);
 	let linkKind = $state<'kahoot' | 'link'>('link');
 </script>
 
@@ -25,14 +23,10 @@
 			{t(form.error as string)}
 		</p>{/if}
 	{#if form && 'saved' in form}<p class="notice" role="status">{m.saved()}</p>{/if}
-	{#if data.roomClosed && !data.roomOpen}<p class="alert" role="alert">
+	{#if data.roomOff}<p class="notice" role="status">{m.room_off()}</p>{/if}
+	{#if data.roomClosed && !data.roomOpen && !data.roomOff}<p class="alert" role="alert">
 			{m.room_not_open({ before: 10, after: 120 })}
 		</p>{/if}
-	{#if share === 'shared'}<p class="notice" role="status">{m.tools6_drive_shared()}</p>{/if}
-	{#if share === 'skipped'}<p class="notice" role="status">
-			{m.tools6_drive_share_yourself()}
-		</p>{/if}
-	{#if share === 'failed'}<p class="alert" role="alert">{m.tools6_drive_share_failed()}</p>{/if}
 
 	{#if l.status === 'scheduled'}
 		<div class="navycard">
@@ -51,9 +45,11 @@
 							target="_blank"
 							rel="noopener noreferrer">{joinLabel(data.meeting.provider)}</a
 						>
-						<a class="btn btn-ghost btn-block" href="/room/{l.id}">{m.ml_room_alt()}</a>
+						{#if data.videoRoom}<a class="btn btn-ghost btn-block" href="/room/{l.id}"
+								>{m.ml_room_alt()}</a
+							>{/if}
 					{:else}<span class="small">{m.ml_opens()}</span>{/if}
-				{:else}
+				{:else if data.videoRoom}
 					<strong>{m.tools6_room()}</strong>
 					{#if data.roomOpen}<a class="btn btn-block" href="/room/{l.id}">{m.room_start()}</a
 						>{:else}<span class="small">{m.room_opens_10()}</span>{/if}
@@ -61,12 +57,27 @@
 							class="small"
 							href="/tutor/students/{l.people[0].userId}#lesson-link">{m.ml_h()} ›</a
 						>{/if}
+				{:else}
+					<strong>{m.sl_tutor_no_link()}</strong>
+					<span class="small">{m.sl_tutor_no_link_lead()}</span>
+					{#if data.group}<a class="btn btn-block" href="#class-link">{m.sl_add_link()}</a>
+					{:else if l.people.length === 1}<a
+							class="btn btn-block"
+							href="/tutor/students/{l.people[0].userId}#lesson-link">{m.sl_add_link()}</a
+						>{/if}
 				{/if}
 			{:else}
 				<strong>{m.mode_in_person()}</strong>
 			{/if}
 			<a class="btn btn-ghost btn-block" href="/lessons/{l.id}/ics">{m.add_to_calendar()}</a>
 		</div>
+	{/if}
+
+	{#if data.group}
+		<!-- Tutora Pro: tools for the whole class (message, homework, attendance) -->
+		<p>
+			<a class="btn btn-secondary btn-block" href="/tutor/class/{l.id}">{m.pro_class_open()}</a>
+		</p>
 	{/if}
 
 	{#if data.group && l.mode === 'online' && l.status === 'scheduled'}
@@ -109,8 +120,7 @@
 			empty={m.tools6_materials_none()}
 			removeAction="?/removeMaterial"
 		/>
-		<DrivePickButton config={data.picker} action="?/attachDrive" />
-		{#if !data.picker}<p class="note">{m.tools6_drive_connect_hint()}</p>{/if}
+		<p class="note">{m.tl_drive_paste_hint()}</p>
 		<details class="add">
 			<summary>{m.ld3_add_file()}</summary>
 			<form method="POST" action="?/addFile" enctype="multipart/form-data" class="stack">

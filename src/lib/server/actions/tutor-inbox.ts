@@ -14,7 +14,6 @@ import {
 import { notifyUser } from '../notify.ts';
 import { afterAccept } from '../after-accept.ts';
 import { alsoTellFamily, parentLink } from '../events.ts';
-import { toolsEnv } from '../tools/env.ts';
 import { formObject } from '../../validation/auth.ts';
 import { fmtDayTime, fromLocal, hhmmToMinutes, isIsoDate } from '../../tz.ts';
 import { formatMoney } from '../../money.ts';
@@ -36,7 +35,7 @@ export const inboxActions: Actions = {
 		if (!p.success) return fail(400, { error: 'err_generic' });
 		try {
 			const r = await acceptBooking(locals.db, me.id, p.data.id);
-			const { meeting } = await afterAccept(locals.db, toolsEnv(url), r);
+			await afterAccept(locals.db, r);
 			// for the confirmation line: who was told (the student and the family who see lessons)
 			const [s] = await locals.db
 				.select({ name: user.name })
@@ -45,7 +44,6 @@ export const inboxActions: Actions = {
 			const family = await parentsWhoSee(locals.db, r.userId, 'lessons');
 			return {
 				done: 'accepted',
-				meeting: meeting?.provider ?? null,
 				student: shortName(s?.name ?? ''),
 				family: family.length
 			};

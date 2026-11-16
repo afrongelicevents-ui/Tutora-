@@ -2,12 +2,15 @@ import { TEST_SITE } from '$app/env/private';
 import type { LayoutServerLoad } from './$types';
 import { BELL_PAGE, unreadCount } from '#lib/server/notify.ts';
 import { photoVersions } from '#lib/server/photos.ts';
+import { videoRoomOn } from '#lib/server/flags.ts';
 
 export const load: LayoutServerLoad = async ({ locals, url }) => {
 	return {
 		/** Owner → Photos: which places show the owner's own photo (kept in memory, see photos.ts) */
 		photos: await photoVersions(locals.db).catch(() => ({})),
 		user: locals.user ? { name: locals.user.name, role: locals.user.role } : null,
+		/** Owner → Settings: Tutora's own (old) video room; off = lessons only on Teams/Meet/Zoom */
+		videoRoom: locals.user ? await videoRoomOn(locals.db).catch(() => false) : false,
 		// on the bell page the newest ones are being marked read: the count is already without them
 		unread: locals.user
 			? await unreadCount(

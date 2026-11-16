@@ -38,6 +38,8 @@ import { confirmPayment, recordCash, rejectPayment } from './billing.ts';
 import { addDays, fromLocal, localDate } from '../tz.ts';
 import { seedV3 } from './seed-v3.ts';
 import { seedFamilyBilling } from './seed-family.ts';
+import { seedProPlans } from './seed-pro.ts';
+import { seedQuestionBank } from './seed-tests.ts';
 
 export interface TestLogin {
 	role: string;
@@ -711,6 +713,10 @@ export async function seedTestData(
 	await seedV3(db, hash, logins);
 	// Tutora Family: fake payment details, families with 1, 3 and 4 children, invoices
 	await seedFamilyBilling(db, hash, logins);
+	// Tutora Pro: chipo Pro (paid), tendai and farai Free (farai's proof waits for the owner)
+	await seedProPlans(db, logins);
+	// question bank: original questions only, one shared, a built timed test
+	await seedQuestionBank(db, logins);
 
 	return logins;
 }

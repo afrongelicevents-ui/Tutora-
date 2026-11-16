@@ -5,6 +5,8 @@
 	import { fmtDay, fmtMonth, fromLocal, dtf } from '#lib/tz.ts';
 	import { methodLabel } from '#lib/components/tutor/labels.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
+	import ProLocked from '#lib/components/pro/ProLocked.svelte';
+	import ProPill from '#lib/components/pro/ProPill.svelte';
 	let { data, form } = $props();
 	const money = (c: number) => formatMoney(c, data.currency);
 	const prevLabel = $derived(
@@ -39,10 +41,13 @@
 
 <section class="screen">
 	<Hero title={m.v3_nav_earnings()} lead={m.ts_earn_lead()} />
-	{#if form?.done}<p class="notice" role="status">
+	{#if form && 'done' in form && form.done}<p class="notice" role="status">
 			{t(`done_${form.done}`)}{'receipt' in form && form.receipt ? ` ${form.receipt}` : ''}
 		</p>{/if}
 	{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
+	{#if form && 'invoiceSent' in form && form.invoiceSent}<p class="notice" role="status">
+			{m.pro_invoice_sent({ n: Number(form.invoiceSent) })}
+		</p>{/if}
 
 	{#if data.pending.length}
 		<section class="confirm-box" id="confirm" aria-labelledby="cf-h">
@@ -137,7 +142,7 @@
 	<section class="trend" aria-labelledby="tr-h">
 		<div class="tr-head">
 			<h2 id="tr-h"><LineIcon name="progress" size={22} /> {m.er_trend()}</h2>
-			<a href="/tutor/payments/export" download>{m.download_csv()}</a>
+			{#if data.pro}<a href="/tutor/payments/export" download>{m.download_csv()}</a>{/if}
 		</div>
 		{#if trend.some((x) => x.total > 0)}
 			<svg
@@ -160,6 +165,36 @@
 			</svg>
 		{:else}
 			<p class="note">{m.er_trend_none()}</p>
+		{/if}
+	</section>
+
+	<section class="pro-rep" id="earnings-report" aria-labelledby="rep-h">
+		<div class="tr-head">
+			<h2 id="rep-h"><ProPill /> {m.pro_f_earnings()}</h2>
+		</div>
+		{#if data.pro}
+			<p class="note">{m.pro_rep_lead()}</p>
+			<ul class="rows">
+				{#each data.perStudent as x (x.id)}
+					<li>
+						<a class="who" href="/tutor/students/{x.id}"
+							>{x.name}<span class="note block">{m.payments_count({ n: x.count })}</span></a
+						>
+						<strong>{money(x.total)}</strong>
+					</li>
+				{:else}
+					<li class="note">{m.none_yet()}</li>
+				{/each}
+			</ul>
+			<div class="links">
+				<a class="btn btn-secondary btn-sm" href="/tutor/payments/report" download
+					>{m.pro_download_pdf()}</a
+				>
+				<a class="btn btn-ghost btn-sm" href="/tutor/payments/export" download>{m.download_csv()}</a
+				>
+			</div>
+		{:else}
+			<ProLocked feature="earnings" />
 		{/if}
 	</section>
 
@@ -190,7 +225,13 @@
 	</ul>
 
 	<div class="links">
-		<a class="btn btn-ghost btn-sm" href="/tutor/payments/export" download>{m.download_csv()}</a>
+		{#if data.pro}
+			<a class="btn btn-ghost btn-sm" href="/tutor/payments/export" download>{m.download_csv()}</a>
+		{:else}
+			<a class="btn btn-ghost btn-sm" href="/tutor/pro?locked=export"
+				><ProPill /> {m.download_csv()}</a
+			>
+		{/if}
 		<a class="btn btn-ghost btn-sm" href="/tutor/settings/prices">{m.tut3_packages_link()}</a>
 	</div>
 	<p class="note">{m.record_cash_where()}</p>
@@ -216,44 +257,75 @@
 						{money(r.paid)}{r.waiting ? ` · ${m.waiting()} ${money(r.waiting)}` : ''}</span
 					></a
 				>
-				{#if r.owed > 0}<span class="warn-t small">{m.owes({ amount: money(r.owed) })}</span
-					>{:else}<span class="ok-t small">{m.paid_up()}</span>{/if}
+				<span class="owe">
+					{#if r.owed > 0}<span class="warn-t small">{m.owes({ amount: money(r.owed) })}</span
+						>{:else}<span class="ok-t small">{m.paid_up()}</span>{/if}
+					{#if r.owed > 0 && data.pro}
+						<span class="inv">
+							<form method="POST" action="?/sendInvoice">
+								<input type="hidden" name="student" value={r.id} />
+								<button class="btn btn-ghost btn-sm" type="submit">{m.pro_send_invoice()}</button>
+							</form>
+							<a class="small" href="/tutor/students/{r.id}/invoice" download
+								>{m.pro_invoice_pdf()}</a
+							>
+						</span>
+					{/if}
+				</span>
 			</li>
 		{:else}
 			<li class="note">{m.none_yet()}</li>
 		{/each}
 	</ul>
 
-	<div class="section-h"><h2>{m.by_month()}</h2></div>
-	<ul class="rows">
-		{#each data.months as mo (mo.month + mo.currency)}
-			<li>
-				<span>{fmtMonth(fromLocal(mo.month + '-15', 600))}</span><span
-					><strong>{formatMoney(mo.total, mo.currency)}</strong>
-					<span class="note">({m.payments_count({ n: mo.count })})</span></span
-				>
-			</li>
-		{:else}
-			<li class="note">{m.none_yet()}</li>
-		{/each}
-	</ul>
+	{#if data.pro}
+		<div class="section-h"><h2>{m.by_month()}</h2></div>
+		<ul class="rows">
+			{#each data.months as mo (mo.month + mo.currency)}
+				<li>
+					<span>{fmtMonth(fromLocal(mo.month + '-15', 600))}</span><span
+						><strong>{formatMoney(mo.total, mo.currency)}</strong>
+						<span class="note">({m.payments_count({ n: mo.count })})</span></span
+					>
+				</li>
+			{:else}
+				<li class="note">{m.none_yet()}</li>
+			{/each}
+		</ul>
 
-	<div class="section-h"><h2>{m.by_year()}</h2></div>
-	<ul class="rows">
-		{#each data.years as y (y.year + y.currency)}
-			<li>
-				<span>{y.year}</span><span
-					><strong>{formatMoney(y.total, y.currency)}</strong>
-					<span class="note">({m.payments_count({ n: y.count })})</span></span
-				>
-			</li>
-		{:else}
-			<li class="note">{m.none_yet()}</li>
-		{/each}
-	</ul>
+		<div class="section-h"><h2>{m.by_year()}</h2></div>
+		<ul class="rows">
+			{#each data.years as y (y.year + y.currency)}
+				<li>
+					<span>{y.year}</span><span
+						><strong>{formatMoney(y.total, y.currency)}</strong>
+						<span class="note">({m.payments_count({ n: y.count })})</span></span
+					>
+				</li>
+			{:else}
+				<li class="note">{m.none_yet()}</li>
+			{/each}
+		</ul>
+	{/if}
 </section>
 
 <style>
+	.pro-rep {
+		margin-top: 1.25rem;
+	}
+	.owe {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.25rem;
+	}
+	.inv {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+	}
 	.confirm-box {
 		background: #fff;
 		border: 1.5px solid var(--navy);

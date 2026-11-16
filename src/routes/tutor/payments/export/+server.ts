@@ -2,10 +2,13 @@ import type { RequestHandler } from './$types';
 import { paymentsBetween, receiptNumber, toCsv } from '#lib/server/billing.ts';
 import { requireTutor } from '#lib/server/guards.ts';
 import { localDate } from '#lib/tz.ts';
+import { proAccess } from '#lib/server/pro.ts';
+import { redirect } from '@sveltejs/kit';
 
-/** All payments of the last 2 years as a spreadsheet file (amounts in normal units, not cents). */
+/** Pro: all payments of the last 2 years as a spreadsheet file (amounts in normal units, not cents). */
 export const GET: RequestHandler = async ({ locals, url }) => {
 	const t = requireTutor(locals.user, url).id;
+	if (!(await proAccess(locals.db, t)).active) redirect(303, '/tutor/pro?locked=export');
 	const now = new Date();
 	const rows = await paymentsBetween(locals.db, t, new Date(now.getTime() - 730 * 86_400_000), now);
 	const csv = toCsv([

@@ -28,6 +28,10 @@ export interface NewResult {
 	takenOn?: string;
 	setId?: number | null;
 	homeworkAnswerId?: number | null;
+	/** "Term 1"…, when known */
+	term?: string | null;
+	/** the taken test this came from (tests built from the question bank) */
+	attemptId?: number | null;
 	createdBy?: string | null;
 }
 
@@ -49,6 +53,8 @@ export async function recordResult(db: DB, r: NewResult) {
 			takenOn: r.takenOn ?? localDate(new Date()),
 			setId: r.setId ?? null,
 			homeworkAnswerId: r.homeworkAnswerId ?? null,
+			term: r.term ?? null,
+			attemptId: r.attemptId ?? null,
 			createdBy: r.createdBy ?? null
 		})
 		.returning();

@@ -13,6 +13,7 @@ import { user } from './db/auth.schema.ts';
 import type { Notify } from './notify-core.ts';
 import { sendDueReminders, sendHomeworkReminders, sendStudyReminders } from './reminders.ts';
 import { sendWeeklyReports } from './weekly.ts';
+import { markMissingHomework } from './homework-status.ts';
 import {
 	MOOD_KEY,
 	sendCheckinFollowups,
@@ -23,6 +24,7 @@ import {
 import { sendPlannerMornings } from './planner.ts';
 import { activeParents } from './family.ts';
 import { runFamilyBilling } from './family-billing.ts';
+import { runProBilling, runTutorPayReminders } from './pro.ts';
 import { shortName } from '../names.ts';
 import { t } from '../i18n.ts';
 import { m } from '../paraglide/messages.js';
@@ -57,6 +59,8 @@ export async function runScheduled(db: DB, notify: Notify, origin: string, now =
 	};
 	await run('lessons', () => sendDueReminders(db, notify, origin, now));
 	await run('homework', () => sendHomeworkReminders(db, notify, now));
+	// nothing handed in a day after the due time: marked missing, the family is told
+	await run('homeworkMissing', () => markMissingHomework(db, notify, now));
 	await run('study', () => sendStudyReminders(db, notify, now));
 	await run('weekly', () => sendWeeklyReports(db, notify, now));
 	await run('followups', () => sendCheckinFollowups(db, notify, now));
@@ -64,6 +68,9 @@ export async function runScheduled(db: DB, notify: Notify, origin: string, now =
 	await run('mornings', () => sendPlannerMornings(db, notify, now));
 	// Tutora Family: next invoices, payment reminders, free level after 7 days unpaid
 	await run('family', () => runFamilyBilling(db, notify, now));
+	// Tutora Pro: the same for tutors, and Pro tutors' automatic payment reminders
+	await run('pro', () => runProBilling(db, notify, now));
+	await run('payReminders', () => runTutorPayReminders(db, notify, now));
 	await run('shared', () =>
 		sendSharedCheckinNotes(db, (sid, mood) => tellFamilyAbout(db, notify, sid, mood), now)
 	);

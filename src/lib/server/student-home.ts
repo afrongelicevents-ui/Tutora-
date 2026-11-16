@@ -15,6 +15,7 @@ import {
 import { lessonsForUser } from './bookings.ts';
 import { CLOSE_AFTER_MIN, OPEN_BEFORE_MIN } from './room.ts';
 import { joinLinks } from './meeting-links.ts';
+import { videoRoomOn } from './flags.ts';
 import { addDays, localDate } from '../tz.ts';
 
 export async function nextLessonFor(db: DB, userId: string, now = new Date()) {
@@ -30,6 +31,7 @@ export async function nextLessonFor(db: DB, userId: string, now = new Date()) {
 			{ lessonId: next.id, tutorId: next.tutorId, studentIds: [userId], group: next.capacity > 1 }
 		])
 	).get(next.id);
+	const room = await videoRoomOn(db);
 	const open =
 		next.mode === 'online' &&
 		next.status === 'scheduled' &&
@@ -42,8 +44,11 @@ export async function nextLessonFor(db: DB, userId: string, now = new Date()) {
 		mode: next.mode,
 		startsAt: next.startsAt,
 		meeting: meeting?.provider ?? null,
-		/** "Join lesson" from 10 minutes before: the meeting link, else the lesson room */
-		joinHref: open ? (meeting?.url ?? `/room/${next.id}`) : null
+		/** "Join lesson" from 10 minutes before: the tutor's meeting link (the old Tutora room
+		 *  only when the owner switched it back on) */
+		joinHref: open ? (meeting?.url ?? (room ? `/room/${next.id}` : null)) : null,
+		/** online, open, and the tutor has not added a link yet */
+		noLink: open && !meeting && !room
 	};
 }
 

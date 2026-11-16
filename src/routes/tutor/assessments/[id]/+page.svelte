@@ -3,6 +3,7 @@
 	import { fmtDate, fromLocal } from '#lib/tz.ts';
 	import SetFields from '../SetFields.svelte';
 	import QuestionFields from './QuestionFields.svelte';
+	import QuestionTags from '#lib/components/tests/QuestionTags.svelte';
 	let { data, form } = $props();
 	const errFor = (name: string) => (form?.error && form?.form === name ? t(form.error) : '');
 	const s = $derived(data.set);
@@ -28,53 +29,75 @@
 	</p>
 	{#if form?.done}<p class="notice" role="status">{t(`st5_done_${form.done}`)}</p>{/if}
 
-	<section class="part">
-		<div class="section-h"><h2>{m.st5_questions()}</h2></div>
-		{#if data.questions.length}
+	{#if s.questionIds}
+		<p class="ui-card sky small">
+			{m.qb_built_note()}{s.timerMinutes ? ` · ${m.qb_timer_n({ n: s.timerMinutes })}` : ''}{s.term
+				? ` · ${s.term}`
+				: ''}
+		</p>
+		<section class="part">
+			<div class="section-h"><h2>{m.st5_questions()}</h2></div>
 			<ol class="rows qlist">
 				{#each data.questions as q, i (q.id)}
 					<li>
 						<div class="grow">
 							<p class="prompt"><span class="n">{i + 1}.</span> {q.prompt}</p>
-							<ul class="small plain">
-								{#each q.choices as c, j (j)}
-									<li class:ok-t={j === q.answer}>
-										{c}{j === q.answer ? ` · ${m.st5_right_answer()}` : ''}
-									</li>
-								{/each}
-							</ul>
-							{#if q.explanation}<p class="small muted">{q.explanation}</p>{/if}
-							<details open={form?.form === `q${q.id}`}>
-								<summary class="small">{m.st5_edit()}</summary>
-								<form method="POST" action="?/editQuestion" class="stack">
-									{#if errFor(`q${q.id}`)}<p class="error" role="alert">
-											{errFor(`q${q.id}`)}
-										</p>{/if}
-									<input type="hidden" name="id" value={q.id} />
-									<QuestionFields {q} key="q{q.id}" />
-									<button class="btn btn-sm" type="submit">{m.st5_save()}</button>
-								</form>
-								<form method="POST" action="?/removeQuestion">
-									<input type="hidden" name="id" value={q.id} />
-									<button class="btn-link small" type="submit">{m.st5_remove_question()}</button>
-								</form>
-							</details>
+							<QuestionTags q={{ ...q, maths: !!q.template }} />
+							<a class="small" href="/tutor/bank/{q.id}">{m.st5_edit()}</a>
 						</div>
 					</li>
 				{/each}
 			</ol>
-		{:else}
-			<p class="note">{m.st5_questions_empty()}</p>
-		{/if}
-		<details class="more" open={!data.questions.length || form?.form === 'new'}>
-			<summary>{m.st5_add_question()}</summary>
-			<form method="POST" action="?/addQuestion" class="stack">
-				{#if errFor('new')}<p class="error" role="alert">{errFor('new')}</p>{/if}
-				<QuestionFields key="new" />
-				<button class="btn" type="submit">{m.st5_add_question()}</button>
-			</form>
-		</details>
-	</section>
+		</section>
+	{:else}
+		<section class="part">
+			<div class="section-h"><h2>{m.st5_questions()}</h2></div>
+			{#if data.questions.length}
+				<ol class="rows qlist">
+					{#each data.questions as q, i (q.id)}
+						<li>
+							<div class="grow">
+								<p class="prompt"><span class="n">{i + 1}.</span> {q.prompt}</p>
+								<ul class="small plain">
+									{#each q.choices as c, j (j)}
+										<li class:ok-t={j === q.answer}>
+											{c}{j === q.answer ? ` · ${m.st5_right_answer()}` : ''}
+										</li>
+									{/each}
+								</ul>
+								{#if q.explanation}<p class="small muted">{q.explanation}</p>{/if}
+								<details open={form?.form === `q${q.id}`}>
+									<summary class="small">{m.st5_edit()}</summary>
+									<form method="POST" action="?/editQuestion" class="stack">
+										{#if errFor(`q${q.id}`)}<p class="error" role="alert">
+												{errFor(`q${q.id}`)}
+											</p>{/if}
+										<input type="hidden" name="id" value={q.id} />
+										<QuestionFields {q} key="q{q.id}" />
+										<button class="btn btn-sm" type="submit">{m.st5_save()}</button>
+									</form>
+									<form method="POST" action="?/removeQuestion">
+										<input type="hidden" name="id" value={q.id} />
+										<button class="btn-link small" type="submit">{m.st5_remove_question()}</button>
+									</form>
+								</details>
+							</div>
+						</li>
+					{/each}
+				</ol>
+			{:else}
+				<p class="note">{m.st5_questions_empty()}</p>
+			{/if}
+			<details class="more" open={!data.questions.length || form?.form === 'new'}>
+				<summary>{m.st5_add_question()}</summary>
+				<form method="POST" action="?/addQuestion" class="stack">
+					{#if errFor('new')}<p class="error" role="alert">{errFor('new')}</p>{/if}
+					<QuestionFields key="new" />
+					<button class="btn" type="submit">{m.st5_add_question()}</button>
+				</form>
+			</details>
+		</section>
+	{/if}
 
 	<section class="part">
 		<div class="section-h"><h2>{m.st5_assigned()}</h2></div>
@@ -91,7 +114,14 @@
 									})}{:else}{m.st5_not_done()}{/if}</span
 							></span
 						>
-						{#if a.doneAt && a.score !== null}
+						{#if a.attemptId && a.doneAt}
+							<a
+								class="btn btn-sm {a.needsMarking ? '' : 'btn-secondary'}"
+								href="/tutor/marking/{a.attemptId}"
+								>{a.needsMarking ? m.qb_mark_now() : `${a.score}/${a.maxScore}`}</a
+							>
+							{#if a.late}<span class="ui-pill warn">{m.qb_late()}</span>{/if}
+						{:else if a.doneAt && a.score !== null}
 							<strong>{a.score}/{a.maxScore}</strong>
 						{:else}
 							<form method="POST" action="?/unassign">

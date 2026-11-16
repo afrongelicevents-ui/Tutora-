@@ -118,3 +118,61 @@ The last column says what happened after the fix.
 | N9  | Account restored                          | That person          | none                        | notify                               | fixed |
 | N10 | Buddy encouragement                       | Buddy                | none                        | notify (= S7)                        | fixed |
 | N11 | Support request closed                    | Requester            | none                        | notify                               | fixed |
+
+## Tutora Pro (tutors, $5/month) — 2026-11-16
+
+| ID   | Page → element                                     | Should do                                                    | Backend                                                            | Now   |
+| ---- | -------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------ | ----- |
+| PR1  | Tutor → More → Tutora Pro (`/tutor/pro`)           | Free vs Pro, price, period, trial, Pro settings              | `proLoad` / `proActions` (pro-pages.ts)                            | wired |
+| PR2  | Pro → Pay for Pro                                  | Invoice → checkout with Tutora's details (or "coming soon")  | `createProInvoice`                                                 | wired |
+| PR3  | Checkout → proof upload                            | Proof stored, owner told (link to Payments → Tutora Pro)     | `submitProProof` + storage + `notifyOwners`                        | wired |
+| PR4  | `/tutor/pro/billing`                               | Due / proof sent / paid / overdue with Pay, Upload, Receipt  | `proBilling`; receipt PDF `proReceiptData` (P-000001)              | wired |
+| PR5  | Owner → Money → Payments → Tutora Pro tab          | Confirm (receipt, tutor told) / reject with reason           | `ownerProLoad`, `confirmProInvoice`, `rejectProInvoice`            | wired |
+| PR6  | Owner → Settings → Tutora Pro                      | Pro pilot switch (default on), trial days                    | `saveProSettings` (Family settings untouched)                      | wired |
+| PR7  | Owner → Settings → Free plans for chosen people    | Search, give Pro/Family free (end date), remove with tick    | plan-gifts.ts (`giveGift`, `removeGift`); read by both accesses    | wired |
+| PR8  | Owner → Overview                                   | Pro tutors, Pro money in "this month", Pro proofs to check   | `ownerProStats`                                                    | wired |
+| PR9  | Hourly job                                         | Next Pro invoice, 3 reminders (once each), 7 days → Free     | `runProBilling` (scheduled.ts)                                     | wired |
+| PR10 | Hourly job (Pro, opt-in)                           | Unpaid lessons > 3 days: student + parents reminded weekly   | `runTutorPayReminders` (claimed per student, `tutor_pay_reminder`) | wired |
+| PR11 | Earnings → Earnings reports                        | Income per student (period), per month/year; PDF + CSV       | `incomeByStudent`, `/tutor/payments/report`, `/export` (Pro)       | wired |
+| PR12 | Earnings → By student → Send invoice / Invoice PDF | Student and parents told what is owed; PDF of unpaid lessons | `sendTutorInvoice`, `/tutor/students/[id]/invoice`                 | wired |
+| PR13 | `/tutor/insights`                                  | Falling behind (missed, homework, scores), missed weekday    | `studentInsights` (last 8 weeks)                                   | wired |
+| PR14 | Group lesson → Class tools (`/tutor/class/[id]`)   | Message all, homework for all, mark all present, class link  | `sendMessage` per student, homework `?/send`, `setAttendance`      | wired |
+| PR15 | Branded reports                                    | Tutor name + colour on report PDFs when Pro                  | `tutorBrand(db, tutorId)` (null without Pro)                       | wired |
+| PR16 | Any Pro feature on the Free plan                   | "Pro" pill + Upgrade, never an error                         | `ProLocked` → `/tutor/pro?locked=…`; export redirects there        | wired |
+
+## Simpler lessons, homework, reports and tools — 2026-11-16
+
+| ID   | Page → element                                      | Should do                                                              | Backend                                                             | Now   |
+| ---- | --------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------- | ----- |
+| SL1  | Lesson pages, Today, calendar, student home → Join  | Tutor's Teams/Meet/Zoom link; "join as a guest" note; no Tutora room   | `joinLinks`; `videoRoom` (layout data, flags.ts)                    | wired |
+| SL2  | Lesson with no link yet                             | Student: "hasn't added the link yet"; tutor: "Add the link" button     | `noLink` (student-home), lesson page                                | wired |
+| SL3  | Owner → Settings → Tutora video room (old)          | Off by default; turning on brings the old room back                    | `setFlag('video_room')` in `site_content`, audit log                | wired |
+| SL4  | `/room/[id]` while off                              | Own lesson → back to the lesson (tutor: note); others 404; signals 404 | `videoRoomOn` in the room page, file action and signal endpoint     | wired |
+| SL5  | Marking → Set homework                              | Due date + due time (Zimbabwe time)                                    | `giveHomework` (`due_time`)                                         | wired |
+| SL6  | Student → Homework → Hand in (photo or file)        | Late after the due time; tutor and family told at once                 | `handIn`, `handedInLate`, `homeworkHandedIn` (events.ts)            | wired |
+| SL7  | Marking → mark done / late / missing                | Late suggested; tutor can change; student + family told                | `markAnswer({ mark })`, `setHomeworkMark`, `tellHomeworkMark`       | wired |
+| SL8  | Hourly job                                          | Nothing handed in 24 h after due → missing (once), family told         | `markMissingHomework` (scheduled.ts)                                | wired |
+| SL9  | Parent → child → Homework                           | Waiting / handed in (late) / done / late / missing, due time           | child page load                                                     | wired |
+| SL10 | Tutor → More → Reports (`/tutor/reports`)           | Pick student + dates, figures filled in, note, save, send, delete      | reports.ts (`createReport`, `updateReport`, `sendReport`)           | wired |
+| SL11 | Tutor → report → PDF / Parent → child → Reports PDF | One-page PDF (Pro: tutor's name and colour)                            | `reportPdf`, `reportResponse`; parent only with "progress" shared   | wired |
+| SL12 | Connected tools (tutor, student), Lessons tab tiles | Shortcuts that open Teams/Meet/Zoom/Drive/Kahoot!; no sync, no keys    | tool-shortcuts.ts; OAuth, Drive picker, Meet/Teams API code removed | wired |
+| SL13 | `/student/help`, `/parent/help`, `/tutor/help`      | "How Tutora works" in simple words                                     | HowItWorks.svelte; linked from Account, parent Settings, tutor More | wired |
+
+## Question bank, tests and the AI test maker (D127)
+
+| ID   | Page → element                                         | Should do                                                                  | Backend                                                          | Now   |
+| ---- | ------------------------------------------------------ | -------------------------------------------------------------------------- | ---------------------------------------------------------------- | ----- |
+| TB1  | Tutor → Quizzes & tests (`/tutor/assessments`) cards   | Question bank, Build a test, Marking (count), AI test maker (Pro pill)     | `countBank`, `toMarkCount`, `proAccess`                          | wired |
+| TB2  | `/tutor/bank` → Add a question (4 kinds)               | Saved with tags; private unless "Share" ticked; original-only note         | `addBankQuestion` (`cleanBankQuestion`, `cleanTemplate`)         | wired |
+| TB3  | `/tutor/bank` filters, paging, Share / Stop / Remove   | Own questions only; remove needs the tick                                  | `listBank`, `countBank`, `setShared`, `removeBankQuestion`       | wired |
+| TB4  | `/tutor/bank?view=shared` → Copy to my bank            | Others' shared, not hidden; copied once, private                           | `sharedBank`, `copyShared`                                       | wired |
+| TB5  | `/tutor/bank/[id]` → Save / "Checked, use it"          | Edit; drafts become ready; maths shows two students' versions              | `updateBankQuestion(approve)`, `instantiate`                     | wired |
+| TB6  | `/tutor/tests/new` → Build the test                    | Random pick by subject/form/chapters/difficulty mix; timer; give to pupils | `buildTest`, `pickQuestions`, `assignSet`, notify                | wired |
+| TB7  | `/tutor/assessments/[id]` (built test)                 | Picked questions; who has it; Mark now / score / Late                      | `getSet` → `builtQuestions`; `assignmentsForSet` + attempt       | wired |
+| TB8  | `/student/quiz/[id]` (built test)                      | Own order + numbers; clock; hand in once; late after the limit             | `openAttempt`, `submitAttempt` (`?/test`), tutor notified        | wired |
+| TB9  | `/tutor/marking`, `/tutor/marking/[id]`                | Written answers to mark; change any mark; student told when marked         | `closeExpired`, `markingList`, `saveMarks` → results per chapter | wired |
+| TB10 | Quizzes & tests → Enter a score (Google Forms/Kahoot!) | Own students only; into progress with chapter and term                     | `enterOutsideScore`                                              | wired |
+| TB11 | Parent → Progress → Test scores this year              | Per term and per chapter (only when the child shares progress)             | `testScoresFor`                                                  | wired |
+| TB12 | `/tutor/ai` (Pro)                                      | Notes → drafts in the bank; resting message at the line; Free: Upgrade     | `makeDrafts` (`reserveNeurons`, `settleNeurons`, `parseDrafts`)  | wired |
+| TB13 | Owner → Safety → Checks → Questions in the Tutora bank | Hide / show a shared question (logged)                                     | `ownerSharedQuestions`, `ownerHideShared`, `audit`               | wired |
+| TB14 | Owner → Free limits → AI test maker today              | Live count vs this site's stop line; hourly reading with the 70% alert     | `aiToday`; `scripts/deploy/usage.ts` → `Usage.ai` → `meters`     | wired |

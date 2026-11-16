@@ -7,17 +7,21 @@ import { accountActions } from '#lib/server/sections.ts';
 import { emailEnabled } from '#lib/server/auth.ts';
 import { seedTestData } from '#lib/server/seed.ts';
 import { formObject } from '#lib/validation/auth.ts';
+import { setFlag } from '#lib/server/flags.ts';
 import { doneFrom, doneRedirect } from '../done.ts';
 import { getTutoraSettings } from '#lib/server/family-billing.ts';
 import { ownerFamilyActions } from '#lib/server/family-owner.ts';
+import { ownerGiftsLoad, ownerProActions } from '#lib/server/pro-owner.ts';
 
 /**
  * System → Settings: the owner's own login email and password, two-step login, Tutora payment
- * details (Tutora Family) and the test data.
+ * details (Tutora Family), the Tutora Pro switch, free plans for chosen people and the test data.
  */
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async (event) => {
+	const { locals, url } = event;
 	const u = requireOwner(locals.user, url);
 	return {
+		...(await ownerGiftsLoad(event)),
 		email: u.email,
 		emailOn: emailEnabled,
 		testSite: TEST_SITE === '1',
@@ -29,8 +33,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 // every change to the owner's own sign-in is written to the audit log (never the values)
 const base = accountActions();
+const pro = ownerProActions();
 export const actions: Actions = {
 	familySettings: ownerFamilyActions().familySettings,
+	proSettings: pro.proSettings,
+	giftGive: pro.giftGive,
+	giftRemove: pro.giftRemove,
 	changeEmail: async (ev) => {
 		const r = await base.changeEmail(ev);
 		if (!isActionFailure(r) && ev.locals.user)
@@ -42,6 +50,14 @@ export const actions: Actions = {
 		if (!isActionFailure(r) && ev.locals.user)
 			await audit(ev.locals.db, ev.locals.user.id, 'owner_password_changed', ev.locals.user.id);
 		return r;
+	},
+	/** Tutora's own (old) video lesson room: off by default (lessons on Teams / Meet / Zoom) */
+	videoRoom: async ({ locals, url, request }) => {
+		const me = requireOwner(locals.user, url);
+		const on = formObject(await request.formData()).on === '1';
+		await setFlag(locals.db, 'video_room', on);
+		await audit(locals.db, me.id, on ? 'video_room_on' : 'video_room_off', null);
+		doneRedirect(url, on ? 'owner_done_room_on' : 'owner_done_room_off');
 	},
 	resetTest: async ({ locals, url, request }) => {
 		const me = requireOwner(locals.user, url);

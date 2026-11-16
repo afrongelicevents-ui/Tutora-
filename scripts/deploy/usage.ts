@@ -14,6 +14,7 @@ import { usageAlert, usageSnapshot } from '../../src/lib/server/db/usage.schema.
 import { saveNotification } from '../../src/lib/server/notify-core.ts';
 import { createSendEmail } from '../../src/lib/server/email.ts';
 import { needsAlert, type Usage } from '../../src/lib/server/free-limits.ts';
+import { aiStopLine } from '../../src/lib/server/ai-tests.ts';
 import { m } from '../../src/lib/paraglide/messages.js';
 
 const SITE = process.env.SITE === 'test' ? 'test' : 'live';
@@ -119,8 +120,16 @@ async function main() {
 			.where(eq(usageSnapshot.site, SITE))
 			.orderBy(sql`${usageSnapshot.takenAt} desc`)
 			.limit(1);
+		// the AI test maker's own counter for today (UTC), on this site's database
+		const ai = await db
+			.execute(
+				sql`select coalesce(sum(neurons), 0)::int as n from ai_usage where day = ${now.toISOString().slice(0, 10)}`
+			)
+			.then((r) => Number((r as unknown as { rows?: { n: number }[] }).rows?.[0]?.n ?? 0))
+			.catch(() => null);
 		const usage: Usage = {
 			at: now.toISOString(),
+			...(ai === null ? {} : { ai: { neuronsToday: ai, stopAt: aiStopLine(SITE === 'test') } }),
 			cloudflare: cf,
 			neon: nn,
 			dbSizeMb: +(Number(sizeRows[0]?.b ?? 0) / 1048576).toFixed(1),

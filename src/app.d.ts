@@ -24,7 +24,10 @@ declare global {
 			message: string;
 		}
 		interface Platform {
-			env?: { FILES?: R2Bucket } & Record<string, unknown>;
+			env?: { FILES?: R2Bucket; AI?: import('#lib/server/ai-tests').AiBinding } & Record<
+				string,
+				unknown
+			>;
 			ctx?: { waitUntil(p: Promise<unknown>): void };
 		}
 	}

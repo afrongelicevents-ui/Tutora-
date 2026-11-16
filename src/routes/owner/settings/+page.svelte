@@ -5,6 +5,8 @@
 	import Field from '#lib/components/Field.svelte';
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	import OwnerFamilySettings from '#lib/components/family/OwnerFamilySettings.svelte';
+	import OwnerProSettings from '#lib/components/pro/OwnerProSettings.svelte';
+	import OwnerGifts from '#lib/components/pro/OwnerGifts.svelte';
 	import { m } from '#lib/i18n.ts';
 	let { data, form } = $props();
 	const e = $derived(
@@ -92,6 +94,19 @@
 					><span class="grow">{m.ow_limits()}<span class="sub">{m.ow_limits_sub()}</span></span></a
 				>
 			</div>
+			<section class="ui-card oa-sec" aria-labelledby="room-h">
+				<h2 id="room-h">{m.sl_room_switch_h()}</h2>
+				<p class="small">{m.sl_room_switch_lead()}</p>
+				<p class="small">
+					<strong>{data.videoRoom ? m.sl_room_is_on() : m.sl_room_is_off()}</strong>
+				</p>
+				<form method="POST" action="?/videoRoom">
+					<input type="hidden" name="on" value={data.videoRoom ? '0' : '1'} />
+					<button class="ui-btn-soft" type="submit"
+						>{data.videoRoom ? m.sl_room_turn_off() : m.sl_room_turn_on()}</button
+					>
+				</form>
+			</section>
 			{#if data.testSite}
 				<section class="ui-card cream oa-sec" aria-labelledby="test-h">
 					<h2 id="test-h">{m.owner_test_h()}</h2>
@@ -115,6 +130,15 @@
 			settings={data.familySettings}
 			saved={!!(form && 'familySaved' in form && form.familySaved)}
 		/>
+	</div>
+	<div id="pro-settings">
+		<OwnerProSettings
+			settings={data.familySettings}
+			saved={!!(form && 'proSaved' in form && form.proSaved)}
+		/>
+	</div>
+	<div id="gifts">
+		<OwnerGifts gifts={data.gifts} form={form as Record<string, unknown> | null} />
 	</div>
 </div>
 

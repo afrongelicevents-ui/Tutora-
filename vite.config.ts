@@ -12,7 +12,9 @@ export default defineConfig({
 				runes: ({ filename }) =>
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
-			adapter: adapter(),
+			// local dev never talks to Cloudflare: no remote bindings (Workers AI is then missing
+			// locally and the AI test maker says so; it works on the real sites)
+			adapter: adapter({ platformProxy: { remoteBindings: false } }),
 			// Content-Security-Policy. SvelteKit adds hashes/nonces for its own inline scripts.
 			csp: {
 				// hashes, not per-response nonces: public pages can be kept in memory and served again

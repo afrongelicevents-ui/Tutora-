@@ -16,14 +16,12 @@ import { myFavourites } from '#lib/server/student.ts';
 import { joinLinks } from '#lib/server/meeting-links.ts';
 import { requireRole } from '#lib/server/guards.ts';
 import { afterAccept } from '#lib/server/after-accept.ts';
-import { toolsEnv } from '#lib/server/tools/env.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
 import { OPEN_BEFORE_MIN, CLOSE_AFTER_MIN } from '#lib/server/room.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { fmtDayTime, localDate } from '#lib/tz.ts';
 import { m } from '#lib/paraglide/messages.js';
 import { todoFromTutors } from '#lib/server/student-tutors.ts';
-import { studentToolStatus } from '#lib/server/tool-status.ts';
 import { attendee } from '#lib/server/db/app.schema.ts';
 import { lessonMaterial } from '#lib/server/db/v3.schema.ts';
 import { homework, homeworkAnswer } from '#lib/server/db/app.schema.ts';
@@ -46,9 +44,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const nextId = upcomingLessons[0]?.id ?? null;
 	// "View all" shows every shared material in the same list
 	const allMaterials = url.searchParams.get('materials') === 'all';
-	const [todo, tools, materials, joins, handedIn] = await Promise.all([
+	const [todo, materials, joins, handedIn] = await Promise.all([
 		todoFromTutors(locals.db, u.id, now),
-		studentToolStatus(locals.db, u.id, url),
 		// files and quizzes the tutor shared on this student's lessons, newest first
 		locals.db
 			.select({
@@ -126,7 +123,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		requests,
 		todo: todo.slice(0, 3),
 		todoTotal: todo.length,
-		tools,
 		materials: allMaterials ? materials : materials.slice(0, 4),
 		moreMaterials: !allMaterials && materials.length > 4,
 		nextJoin: (() => {
@@ -197,7 +193,7 @@ export const actions: Actions = {
 		});
 		if (err) return err;
 		// the new time is a real lesson now: meeting link + the student and family are told
-		if (accepted) await afterAccept(locals.db, toolsEnv(url), accepted);
+		if (accepted) await afterAccept(locals.db, accepted);
 		if (tutorId)
 			await notifyTutor(
 				locals.db,

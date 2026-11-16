@@ -461,6 +461,9 @@ export const paymentAllocation = pgTable('payment_allocation', {
 	amountCents: integer('amount_cents').notNull()
 });
 
+export const HOMEWORK_MARKS = ['done', 'late', 'missing'] as const;
+export type HomeworkMark = (typeof HOMEWORK_MARKS)[number];
+
 export const homework = pgTable('homework', {
 	id: serial('id').primaryKey(),
 	tutorId: tutorRef(),
@@ -474,6 +477,14 @@ export const homework = pgTable('homework', {
 	fileKey: text('file_key'),
 	fileName: text('file_name'),
 	dueOn: date('due_on'),
+	/** "HH:MM" Zimbabwe time on the due date (none: the end of that day) */
+	dueTime: text('due_time'),
+	/** the tutor's mark: done, late or missing (late is suggested when handed in after the due
+	 *  time; missing is set by the hourly job when nothing came in) */
+	mark: text('mark', { enum: HOMEWORK_MARKS }),
+	markedAt: ts('marked_at'),
+	/** true when the hourly job marked it missing (the tutor can change it) */
+	markAuto: boolean('mark_auto').notNull().default(false),
 	/** the "due tomorrow" reminder was sent */
 	remindedAt: ts('reminded_at'),
 	createdAt: created()

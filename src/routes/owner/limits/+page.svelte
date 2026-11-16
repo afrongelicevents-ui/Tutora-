@@ -73,6 +73,29 @@
 		{/each}
 	</div>
 
+	<section class="ui-card oa-sec" aria-labelledby="ai-h">
+		<h2 id="ai-h">{m.fl_ai_now_h()}</h2>
+		<div class="oa-meter {data.ai.share >= 1 ? 'over' : data.ai.share >= 0.7 ? 'warn' : 'ok'}">
+			<span
+				><b>{m.fl_name_ai()}</b><span class="small muted block"
+					>{m.fl_ai_now_hint({
+						stop: n(data.ai.stopAt),
+						free: n(data.ai.free),
+						cap: n(data.ai.tutorCap)
+					})}</span
+				></span
+			>
+			<span class="val"
+				>{n(data.ai.used)} / {n(data.ai.stopAt)}
+				<span class="small">({pct(data.ai.share)})</span></span
+			>
+			<span class="bar" aria-hidden="true"
+				><span style="width: {Math.min(100, data.ai.share * 100)}%"></span></span
+			>
+		</div>
+		<p class="small muted">{m.fl_ai_calls({ n: data.ai.calls })}</p>
+	</section>
+
 	<section class="ui-card cream oa-sec" aria-labelledby="if-h">
 		<h2 id="if-h">{m.fl_if_over_h()}</h2>
 		<ul class="small plain">

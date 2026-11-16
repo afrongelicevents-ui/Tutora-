@@ -16,6 +16,10 @@ import { addDays, fromLocal, localDate, startOfLocalWeek } from '#lib/tz.ts';
 import { and, eq, gte, lt, sql } from 'drizzle-orm';
 import { payment } from '#lib/server/db/app.schema.ts';
 import { lessonsBetween } from '#lib/server/bookings.ts';
+import { proAccess, sendTutorInvoice } from '#lib/server/pro.ts';
+import { incomeByStudent } from '#lib/server/pro-earnings.ts';
+import { notifyUser } from '#lib/server/notify.ts';
+import { fail } from '@sveltejs/kit';
 
 type Period = 'week' | 'month' | 'year';
 /** [from, to) of this period and the one before it, Zimbabwe time. */
@@ -49,13 +53,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const pp = url.searchParams.get('period');
 	const period: Period = pp === 'week' || pp === 'year' ? pp : 'month';
 	const r = periodRange(period, now);
-	const [s, pending, recent, bal, students, months] = await Promise.all([
+	const [s, pending, recent, bal, students, months, pro] = await Promise.all([
 		getSettings(locals.db, t),
 		pendingPayments(locals.db, t),
 		recentPayments(locals.db, t, 30),
 		balances(locals.db, t),
 		listStudents(locals.db, t),
-		monthlyTotals(locals.db, t, addDays(now, -3 * 366))
+		monthlyTotals(locals.db, t, addDays(now, -3 * 366)),
+		proAccess(locals.db, t, now)
 	]);
 	const rows = students
 		.map((x) => ({
@@ -90,8 +95,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const lessonsDone = periodLessons.filter(
 		(l) => l.endsAt <= now && l.people.some((p) => p.attendance !== 'absent')
 	).length;
+	// Pro: income per student in this period
+	const perStudent = pro.active
+		? await incomeByStudent(locals.db, t, s.currency, r.from, r.to)
+		: [];
 	return {
 		period,
+		pro: pro.active,
+		perStudent,
 		summary: {
 			total,
 			prevTotal,
@@ -139,4 +150,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	};
 };
 
-export const actions: Actions = inboxActions;
+export const actions: Actions = {
+	...inboxActions,
+	/** Pro: send an invoice for what a student still owes (student and parents are told) */
+	sendInvoice: async ({ locals, url, request }) => {
+		const t = requireTutor(locals.user, url).id;
+		if (!(await proAccess(locals.db, t)).active) return fail(403, { error: 'pro_err_locked' });
+		const sid = String((await request.formData()).get('student') ?? '');
+		const n = await sendTutorInvoice(
+			locals.db,
+			(uid, sub, body, opts) => notifyUser(locals.db, uid, sub, body, opts),
+			t,
+			sid
+		);
+		if (!n) return fail(400, { error: 'pro_err_nothing_owed' });
+		return { invoiceSent: n };
+	}
+};

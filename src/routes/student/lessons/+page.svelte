@@ -140,11 +140,16 @@
 						><LineIcon name="video" size={22} />
 						{joinLabel(data.nextJoin.provider)}</a
 					>
-					<a class="small center" href="/room/{next.id}">{m.ld3_use_room()}</a>
-				{:else if next.mode === 'online' && next.roomOpen}
+					<span class="small center muted">{m.sl_guest_note()}</span>
+					{#if data.videoRoom}<a class="small center" href="/room/{next.id}">{m.ld3_use_room()}</a
+						>{/if}
+				{:else if next.mode === 'online' && next.roomOpen && data.videoRoom}
 					<a class="btn navy big" href="/room/{next.id}"
 						><LineIcon name="video" size={22} /> {m.lt_join()}</a
 					>
+				{:else if next.mode === 'online' && next.roomOpen}
+					<a class="btn navy big" href="/student/lessons/{next.id}">{m.lt_view()}</a>
+					<span class="small center muted">{m.sl_no_link_yet()}</span>
 				{:else}
 					<a class="btn navy big" href="/student/lessons/{next.id}">{m.lt_view()}</a>
 					{#if next.mode === 'online'}<span class="small center muted">{m.lt_join_soon()}</span
@@ -294,7 +299,7 @@
 		{/if}
 	</section>
 
-	<ToolTiles tools={data.tools} />
+	<ToolTiles />
 
 	{#each data.packages as p (p.id)}
 		<div class="rows top">

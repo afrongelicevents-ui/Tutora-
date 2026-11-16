@@ -5,6 +5,7 @@ import {
 	enrollment,
 	homework,
 	homeworkAnswer,
+	type HomeworkMark,
 	lesson,
 	profile,
 	review,
@@ -237,6 +238,8 @@ export async function giveHomework(
 		title: string;
 		note: string | null;
 		dueOn: string | null;
+		/** "HH:MM" Zimbabwe time on the due date */
+		dueTime?: string | null;
 		fileKey: string | null;
 		fileName: string | null;
 		/** optional: lets a marked answer count towards progress on this topic */
@@ -248,6 +251,7 @@ export async function giveHomework(
 		.insert(homework)
 		.values({
 			...v,
+			dueTime: v.dueOn ? (v.dueTime ?? null) : null,
 			subject: v.subject?.trim().slice(0, 60) || null,
 			topic: v.topic?.trim().slice(0, 80) || null,
 			tutorId
@@ -306,6 +310,12 @@ export async function handIn(
 		.insert(homeworkAnswer)
 		.values({ homeworkId, ...v })
 		.returning();
+	// handed in after the hourly job called it missing: the tutor marks it again (late)
+	if (h.markAuto)
+		await db
+			.update(homework)
+			.set({ mark: null, markedAt: null, markAuto: false })
+			.where(and(eq(homework.id, homeworkId), eq(homework.markAuto, true)));
 	return row;
 }
 
@@ -318,9 +328,12 @@ export function answersToCheck(db: DB, tutorId: string) {
 			fileKey: homeworkAnswer.fileKey,
 			fileName: homeworkAnswer.fileName,
 			createdAt: homeworkAnswer.createdAt,
+			homeworkId: homework.id,
 			title: homework.title,
 			subject: homework.subject,
 			topic: homework.topic,
+			dueOn: homework.dueOn,
+			dueTime: homework.dueTime,
 			userId: homework.userId,
 			studentName: user.name
 		})
@@ -338,6 +351,9 @@ export function homeworkWaiting(db: DB, tutorId: string, limit = 30) {
 			id: homework.id,
 			title: homework.title,
 			dueOn: homework.dueOn,
+			dueTime: homework.dueTime,
+			mark: homework.mark,
+			markAuto: homework.markAuto,
 			createdAt: homework.createdAt,
 			studentName: user.name
 		})
@@ -383,7 +399,13 @@ export async function markAnswer(
 	db: DB,
 	tutorId: string,
 	answerId: number,
-	v: { comment: string | null; score?: number | null; maxScore?: number | null },
+	v: {
+		comment: string | null;
+		score?: number | null;
+		maxScore?: number | null;
+		/** done / late / missing on the homework itself */
+		mark?: HomeworkMark | null;
+	},
 	now = new Date()
 ) {
 	const hasScore = v.score !== null && v.score !== undefined && Number.isFinite(v.score);
@@ -407,6 +429,11 @@ export async function markAnswer(
 			)
 			.returning({ id: homeworkAnswer.id, homeworkId: homeworkAnswer.homeworkId });
 		if (!row) return false;
+		if (v.mark)
+			await tx
+				.update(homework)
+				.set({ mark: v.mark, markedAt: now, markAuto: false })
+				.where(and(eq(homework.id, row.homeworkId), eq(homework.tutorId, tutorId)));
 		await tx.delete(assessmentResult).where(eq(assessmentResult.homeworkAnswerId, row.id));
 		if (score !== null && maxScore !== null) {
 			const [h] = await tx

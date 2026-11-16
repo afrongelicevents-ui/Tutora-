@@ -1,25 +1,12 @@
-// Flow: Connected tools for a tutor and a student. Without Google/Microsoft keys every card
-// says so honestly (no dead "Connect" buttons), every link on the pages works, Kahoot! can be
-// switched on, and the student's Lessons tab shows the same status.
-import { expect, test, type Page } from '@playwright/test';
+// Flow: Connected tools are shortcuts only. Each card opens the app (https, a new tab);
+// nothing says "Connected", there is no connect/sync address any more, and Kahoot! quiz
+// links can still be switched on.
+import { expect, test } from '@playwright/test';
 import { as, closeDb, press } from './helpers.ts';
 
 test.afterAll(closeDb);
 
-async function linksWork(page: Page) {
-	const hrefs = await page
-		.locator('main a[href^="/"]')
-		.evaluateAll((as) => [
-			...new Set(as.map((a) => (a as HTMLAnchorElement).getAttribute('href')!))
-		]);
-	for (const h of hrefs) {
-		const r = await page.request.get(h, { maxRedirects: 5 });
-		expect(r.status(), h).toBeLessThan(400);
-	}
-	return hrefs;
-}
-
-test('connected tools: honest status, working links, Kahoot! on', async ({ browser }) => {
+test('connected tools: shortcuts only, no sync, Kahoot! on', async ({ browser }) => {
 	const tutor = await as(browser, 'chipo@example.com');
 	const student = await as(browser, 'nyasha@example.com');
 
@@ -29,29 +16,31 @@ test('connected tools: honest status, working links, Kahoot! on', async ({ brows
 	] as const) {
 		await page.goto(path);
 		const main = page.locator('main');
-		const connectable = await page.locator('main a[href^="/tools/connect/"]').count();
-		if (!connectable) {
-			// no keys on this site: each Google/Microsoft card says it isn't available yet
-			await expect(main).toContainText('Not connected');
-			await expect(main).toContainText('Not available yet');
+		await expect(main).toContainText(/doesn't (sign in to your accounts|connect to any account)/);
+		await expect(main).not.toContainText(/Not connected|Connect Google|Disconnect/);
+		for (const name of ['Microsoft Teams', 'Google Meet', 'Zoom', 'Google Drive', 'Kahoot!']) {
+			const a = main.getByRole('link', { name: `Open ${name}` });
+			await expect(a).toBeVisible();
+			expect(await a.getAttribute('href')).toMatch(/^https:\/\//);
+			expect(await a.getAttribute('target')).toBe('_blank');
 		}
-		await linksWork(page);
-		// going to a connect address by hand never breaks: it comes back with a message
-		const r = await page.request.get('/tools/connect/google', { maxRedirects: 5 });
-		expect(r.status()).toBeLessThan(500);
+		expect(await page.locator('a[href^="/tools/connect"]').count()).toBe(0);
+		const r = await page.request.get('/tools/connect/google', { maxRedirects: 0 });
+		expect(r.status()).toBe(404);
 	}
 
-	// Kahoot! needs no account: the student switches it on, the Lessons tab shows "Ready"
+	// Kahoot! quiz links: the student switches them on
 	await student.goto('/student/tools');
-	const turnOff = student.locator('form[action="?/kahoot"] button.disconnect');
-	if (await turnOff.count()) await press(student, 'form[action="?/kahoot"] button');
+	if (await student.locator('form[action="?/kahoot"] button.disconnect').count())
+		await press(student, 'form[action="?/kahoot"] button');
 	await press(student, 'form[action="?/kahoot"] button');
 	await expect(student.locator('main')).toContainText('no Kahoot! account needed');
+	// the Lessons tab shows the shortcut tiles
 	await student.goto('/student/lessons');
-	await expect(student.locator('main')).toContainText('Kahoot!');
-	await linksWork(student);
+	await expect(student.locator('.tt-tools')).toContainText('Kahoot!');
+	expect(await student.locator('.tt-tools a[href^="https://"]').count()).toBe(4);
 
-	// the tutor switches Kahoot! on too: the quiz page opens
+	// the tutor switches Kahoot! on too: the scores page opens
 	await tutor.goto('/tutor/tools');
 	if (!(await tutor.locator('form[action="?/kahoot"] button.disconnect').count()))
 		await press(tutor, 'form[action="?/kahoot"] button');

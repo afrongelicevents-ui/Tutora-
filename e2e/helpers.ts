@@ -3,7 +3,8 @@ import pg from 'pg';
 
 export const PW = process.env.E2E_PASSWORD ?? 'Shot-pass-123';
 
-const AUTH_DIR = 'test-results/.auth';
+// E2E_AUTH_DIR: keep sessions apart when two local servers are tested at once
+const AUTH_DIR = process.env.E2E_AUTH_DIR ?? 'test-results/.auth';
 
 /**
  * A fresh browser context logged in as this test account. The session is kept between tests

@@ -2,6 +2,15 @@ import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import type { Actions, PageServerLoad } from './$types';
 import { homeworkMarked, homeworkSet } from '#lib/server/events.ts';
+import {
+	cleanDueTime,
+	handedInLate,
+	isHomeworkMark,
+	setHomeworkMark,
+	suggestedMark,
+	tellHomeworkMark
+} from '#lib/server/homework-status.ts';
+import { notifyUser } from '#lib/server/notify.ts';
 import { requireTutor } from '#lib/server/guards.ts';
 import {
 	answersToCheck,
@@ -28,6 +37,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		answers: await Promise.all(
 			answers.map(async (a) => ({
 				...a,
+				late: handedInLate(new Date(a.createdAt), a.dueOn, a.dueTime),
+				suggested: suggestedMark(new Date(a.createdAt), a.dueOn, a.dueTime),
 				fileUrl: a.fileKey ? await fileLink(a.fileKey, a.fileName ?? 'answer') : null
 			}))
 		)
@@ -42,7 +53,11 @@ const schema = z.object({
 	dueOn: z
 		.string()
 		.optional()
-		.refine((v) => !v || isIsoDate(v), 'err_times')
+		.refine((v) => !v || isIsoDate(v), 'err_times'),
+	dueTime: z
+		.string()
+		.optional()
+		.refine((v) => !v || cleanDueTime(v) !== null, 'err_times')
 });
 
 export const actions: Actions = {
@@ -71,6 +86,7 @@ export const actions: Actions = {
 				title: p.data.title,
 				note: p.data.note || null,
 				dueOn: p.data.dueOn || null,
+				dueTime: p.data.dueOn ? cleanDueTime(p.data.dueTime) : null,
 				subject: p.data.subject || null,
 				topic: p.data.topic || null,
 				fileKey,
@@ -102,10 +118,28 @@ export const actions: Actions = {
 		const ok = await markAnswer(locals.db, t, Number(f.id) || 0, {
 			comment: f.comment?.trim().slice(0, 1000) || null,
 			score,
-			maxScore
+			maxScore,
+			mark: isHomeworkMark(f.mark) ? f.mark : null
 		});
 		if (!ok) return fail(404, { error: 'err_not_found' });
 		await homeworkMarked(locals.db, t, Number(f.id) || 0);
 		return { checked: true, scored: score !== null };
+	},
+	/** done / late / missing on homework with nothing to check (e.g. nothing came in) */
+	setMark: async ({ locals, url, request }) => {
+		const t = requireTutor(locals.user, url).id;
+		const f = formObject(await request.formData());
+		const mark = f.mark === 'clear' ? null : isHomeworkMark(f.mark) ? f.mark : undefined;
+		if (mark === undefined) return fail(400, { error: 'err_generic' });
+		const h = await setHomeworkMark(locals.db, t, Number(f.id) || 0, mark);
+		if (!h) return fail(404, { error: 'err_not_found' });
+		if (mark)
+			await tellHomeworkMark(
+				locals.db,
+				(id, subject, body, opts) => notifyUser(locals.db, id, subject, body, opts),
+				h,
+				mark
+			);
+		return { marked: true };
 	}
 };

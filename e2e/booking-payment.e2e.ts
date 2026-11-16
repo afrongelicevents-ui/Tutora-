@@ -1,4 +1,4 @@
-// Flow: student books → tutor accepts → lesson → join → mark done → student pays →
+// Flow: student books → tutor accepts → lesson → Join link → mark done → student pays →
 // tutor confirms → receipt for the student. Student, tutor (and parent view) talk to each other.
 import { expect, test } from '@playwright/test';
 import { as, closeDb, pick, press, sql } from './helpers.ts';
@@ -43,15 +43,19 @@ test('booking to receipt, across student and tutor', async ({ browser }) => {
 	expect(page?.status()).toBe(200);
 	await expect(student.locator('main')).toContainText('Chipo');
 
-	// 3. time moves on: the lesson starts now; both can join the room
+	// 3. time moves on: the lesson starts now. Lessons happen in Teams / Meet / Zoom with the
+	// tutor's link (Tutora's own video room is switched off): the old room address leads back to
+	// the lesson, which shows the Join button, or says the tutor hasn't added the link yet
 	await sql(
 		`update lesson set starts_at = now() - interval '5 minutes', ends_at = now() + interval '55 minutes' where id = $1`,
 		[l.id]
 	);
-	const room = await student.goto(`/room/${l.id}`);
-	expect(room?.status()).toBe(200);
-	const troom = await tutor.goto(`/room/${l.id}`);
-	expect(troom?.status()).toBe(200);
+	await student.goto(`/room/${l.id}`);
+	await expect(student).toHaveURL(new RegExp(`/student/lessons/${l.id}`));
+	await expect(student.locator('#join')).toContainText(/Join on|hasn't added the lesson link yet/);
+	await tutor.goto(`/room/${l.id}`);
+	await expect(tutor).toHaveURL(new RegExp(`/tutor/lessons/${l.id}\\?room=off`));
+	await expect(tutor.locator('main')).toContainText(/Teams, Google Meet or Zoom/);
 
 	// 4. the tutor marks the lesson done
 	await tutor.goto(`/tutor/lessons/${l.id}`);

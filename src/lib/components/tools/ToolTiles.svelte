@@ -1,21 +1,10 @@
 <script lang="ts">
-	// The four connected tools with their official logos and REAL status: Connected, Ready
-	// (no account needed: students join with the tutor's link) or a Connect button.
+	// Shortcuts to the tools students already use: each tile just opens the app or website.
+	// Nothing is connected or synced (no accounts, no API keys).
 	import { m } from '#lib/i18n.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	import ToolLogo, { TOOL_NAME, type Tool } from './ToolLogo.svelte';
-	let {
-		tools
-	}: {
-		tools: {
-			meet: boolean;
-			teams: boolean;
-			driveAvailable: boolean;
-			drive: boolean;
-			kahoot: boolean;
-			driveConnectHref: string;
-		};
-	} = $props();
+	import { shortcutUrl } from '#lib/tool-shortcuts.ts';
 	const SHORT: Record<Tool, string> = {
 		meet: 'Meet',
 		teams: 'Teams',
@@ -23,21 +12,7 @@
 		kahoot: 'Kahoot!',
 		zoom: 'Zoom'
 	};
-	type Tile = { tool: Tool; state: 'connected' | 'ready' | 'connect' | 'soon'; href?: string };
-	// "Not yet" when Tutora has no keys for that service: the same answer as on the tools pages
-	const tiles = $derived<Tile[]>([
-		{ tool: 'meet', state: tools.meet ? 'ready' : 'soon' },
-		{ tool: 'teams', state: tools.teams ? 'ready' : 'soon' },
-		tools.drive
-			? { tool: 'drive', state: 'connected' }
-			: tools.driveAvailable
-				? { tool: 'drive', state: 'connect', href: tools.driveConnectHref }
-				: { tool: 'drive', state: 'soon' },
-		// Kahoot! has no account link: "on" only means quiz links are shown, so it is "Ready"
-		tools.kahoot
-			? { tool: 'kahoot', state: 'ready' }
-			: { tool: 'kahoot', state: 'connect', href: '/student/tools#kahoot' }
-	]);
+	const TILES: Tool[] = ['teams', 'meet', 'drive', 'kahoot'];
 </script>
 
 <section class="tt-tools" aria-labelledby="tt-tools">
@@ -46,28 +21,21 @@
 		<a class="all" href="/student/tools">{m.tt_view_all()} <LineIcon name="chevron" size={16} /></a>
 	</div>
 	<ul class="tiles">
-		{#each tiles as tl (tl.tool)}
+		{#each TILES as tool (tool)}
 			<li class="tile">
-				<ToolLogo tool={tl.tool} size={40} />
-				<span class="tn">{SHORT[tl.tool]}</span>
-				{#if tl.state === 'connected'}
-					<span class="st on">{m.tt_connected()}</span>
-				{:else if tl.state === 'soon'}
-					<span class="st" title={m.tools6_not_ready()}>{m.tt_soon()}</span>
-				{:else if tl.state === 'ready'}
-					<span class="st ready" title={m.tt_ready_hint()}>{m.tt_ready()}</span>
-				{:else}
-					<a
-						class="st connect"
-						href={tl.href}
-						aria-label={`${tl.tool === 'kahoot' ? m.twofa_confirm() : m.tt_connect()} ${TOOL_NAME[tl.tool]}`}
-						>{tl.tool === 'kahoot' ? m.twofa_confirm() : m.tt_connect()}</a
-					>
-				{/if}
+				<ToolLogo {tool} size={40} />
+				<span class="tn">{SHORT[tool]}</span>
+				<a
+					class="st connect"
+					href={shortcutUrl(tool, 'student')}
+					target="_blank"
+					rel="noopener noreferrer"
+					aria-label={m.tl_open({ tool: TOOL_NAME[tool] })}>{m.tl_open_short()}</a
+				>
 			</li>
 		{/each}
 	</ul>
-	<p class="hint">{m.tt_ready_hint()}</p>
+	<p class="hint">{m.tl_tiles_hint()}</p>
 </section>
 
 <style>
@@ -130,14 +98,6 @@
 		width: 100%;
 		max-width: 92px;
 		box-sizing: border-box;
-	}
-	.st.on {
-		background: var(--navy);
-		color: #fff;
-	}
-	.st.ready {
-		background: var(--ice);
-		color: var(--navy);
 	}
 	.st.connect {
 		border: 1.5px solid var(--navy);

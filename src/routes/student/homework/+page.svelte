@@ -3,13 +3,18 @@
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay, fmtWeekday, localDate } from '#lib/tz.ts';
 	import { shrink } from '#lib/shrink.ts';
-	import DrivePickButton from '#lib/components/tools/DrivePickButton.svelte';
 	let { data, form } = $props();
 	const dueDate = (iso: string) => new Date(iso + 'T12:00:00Z');
 	// Harare's date, not UTC (a due date is a Zimbabwe calendar day)
 	const today = localDate(new Date());
-	const dueLabel = (iso: string) =>
-		iso < today ? m.hw3_overdue() : m.hw3_due({ day: fmtWeekday(dueDate(iso)) });
+	const dueLabel = (iso: string, time: string | null) =>
+		iso < today
+			? m.hw3_overdue()
+			: time
+				? m.hws_due_day_time({ day: fmtWeekday(dueDate(iso)), time })
+				: m.hw3_due({ day: fmtWeekday(dueDate(iso)) });
+	const markLabel = (k: string) =>
+		k === 'done' ? m.hws_done() : k === 'late' ? m.hws_late() : m.hws_missing();
 	const source = (k: string) =>
 		k === 'drive'
 			? 'Drive'
@@ -28,7 +33,9 @@
 		<a class="back" href="/student" aria-label={m.v3_back()}>←</a>
 		<h1>{m.hw3_title()}</h1>
 	</div>
-	{#if form?.done}<p class="notice full" role="status">{m.handed_in()}</p>{/if}
+	{#if form?.done}<p class="notice full" role="status">
+			{form.late ? m.hws_handed_in_late() : m.handed_in()}
+		</p>{/if}
 
 	<div class="stack-l">
 		{#each data.items as h (h.id)}
@@ -38,9 +45,12 @@
 			<div class="card hw">
 				<div class="top">
 					<strong>{h.title}</strong>
-					{#if marked}<span class="pill p-ok">{m.hw3_marked()}</span>{:else if sent}<span
-							class="pill p-info">{m.handed_in_pill()}</span
-						>{:else if h.dueOn}<span class="pill p-wait">{dueLabel(h.dueOn)}</span>{/if}
+					{#if h.mark}<span
+							class="pill {h.mark === 'missing' ? 'p-no' : h.mark === 'late' ? 'p-wait' : 'p-ok'}"
+							>{markLabel(h.mark)}</span
+						>{:else if marked}<span class="pill p-ok">{m.hw3_marked()}</span>{:else if sent}<span
+							class="pill p-info">{h.late ? m.hws_handed_late() : m.handed_in_pill()}</span
+						>{:else if h.dueOn}<span class="pill p-wait">{dueLabel(h.dueOn, h.dueTime)}</span>{/if}
 				</div>
 				<span class="small muted"
 					>{[h.tutorName, h.subject, h.topic]
@@ -121,11 +131,6 @@
 						</div>
 						<button class="btn btn-block" type="submit">{m.hand_in()}</button>
 					</form>
-					<DrivePickButton
-						config={data.picker}
-						action="?/attachDrive"
-						fields={{ id: String(h.id) }}
-					/>
 				</details>
 			</div>
 		{:else}

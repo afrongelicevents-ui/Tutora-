@@ -25,18 +25,10 @@ describe('content security policy', () => {
 		expect(CSP_DIRECTIVES['script-src']).not.toContain('unsafe-inline');
 		expect(CSP_DIRECTIVES['script-src']).not.toContain('unsafe-eval');
 	});
-	it('allows exactly what the Google Drive picker needs', () => {
-		expect(CSP_DIRECTIVES['script-src']).toEqual([
-			'self',
-			'https://accounts.google.com/gsi/client',
-			'https://apis.google.com'
-		]);
-		expect(CSP_DIRECTIVES['frame-src']).toEqual([
-			'https://accounts.google.com',
-			'https://docs.google.com',
-			'https://drive.google.com'
-		]);
-		expect(CSP_DIRECTIVES['connect-src']).toEqual(['self', 'https://accounts.google.com/gsi/']);
+	it('loads nothing from other sites (Connected Tools are plain links now)', () => {
+		expect(CSP_DIRECTIVES['script-src']).toEqual(['self']);
+		expect(CSP_DIRECTIVES['frame-src']).toEqual(['none']);
+		expect(CSP_DIRECTIVES['connect-src']).toEqual(['self']);
 		// no wildcards anywhere
 		expect(JSON.stringify(CSP_DIRECTIVES)).not.toContain('*');
 	});

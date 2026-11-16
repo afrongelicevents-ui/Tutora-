@@ -98,7 +98,7 @@
 					>
 				</div>
 			</div>
-			{#if nx.mode === 'online' && nx.open}
+			{#if nx.mode === 'online' && nx.open && (nx.joinUrl || data.videoRoom)}
 				<a
 					class="joinbtn"
 					href={nx.joinUrl ?? `/room/${nx.id}`}
@@ -264,8 +264,10 @@
 							<a class="next-t" href={l.meeting.joinUrl} target="_blank" rel="noopener noreferrer"
 								>{m.tut3_join_on({ tool: toolLabel(l.meeting.provider) })}</a
 							>
-						{:else}
+						{:else if data.videoRoom}
 							<a class="next-t" href="/room/{l.id}">{m.tut3_join()}</a>
+						{:else}
+							<a class="next-t" href="/tutor/lessons/{l.id}">{m.sl_add_link()}</a>
 						{/if}
 					{:else if !started}
 						<span class="note">{m.tut3_later()}</span>
@@ -276,7 +278,7 @@
 						? m.mode_online()
 						: `${m.mode_in_person()}${l.address ? ` · ${l.address}` : ''}`}{l.people.length > 1
 						? ` · ${m.group()}`
-						: ''}{#if l.mode === 'online' && l.meeting && !ended && open}
+						: ''}{#if l.mode === 'online' && l.meeting && !ended && open && data.videoRoom}
 						· <a href="/room/{l.id}">{m.tut3_room_fallback()}</a>{/if}</span
 				>
 				{#if started}

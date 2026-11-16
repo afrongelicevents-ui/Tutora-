@@ -6,7 +6,8 @@ import { overallProgress, recentResults, topicScores, pct } from '#lib/server/pr
 import { sharedCheckins } from '#lib/server/checkins.ts';
 import { shareReport, weekStats } from '#lib/server/planner.ts';
 import { childPhotos } from '#lib/server/parent-home.ts';
-import { addDays } from '#lib/tz.ts';
+import { addDays, localDate } from '#lib/tz.ts';
+import { testScoresFor } from '#lib/server/tests.ts';
 
 /** One child's progress: marks (academic) and, when the child shares it, their own week. */
 export const load: PageServerLoad = async ({ locals, url, cookies }) => {
@@ -15,13 +16,17 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 	if (!current) return { kids, current: null, child: null };
 	const access = await parentAccess(locals.db, u.id, current);
 	const now = new Date();
-	const [overall, topics, results, shares, feelings, photos] = await Promise.all([
+	const [overall, topics, results, shares, feelings, photos, tests] = await Promise.all([
 		access.progress ? overallProgress(locals.db, current, now) : Promise.resolve(null),
 		access.progress ? topicScores(locals.db, current) : Promise.resolve([]),
 		access.progress ? recentResults(locals.db, current, 12) : Promise.resolve([]),
 		shareReport(locals.db, current),
 		access.ok ? sharedCheckins(locals.db, current, addDays(now, -7), 14, now) : Promise.resolve([]),
-		childPhotos(locals.db, [current])
+		childPhotos(locals.db, [current]),
+		// test scores this school year, per term and per chapter
+		access.progress
+			? testScoresFor(locals.db, current, `${localDate(now).slice(0, 4)}-01-01`)
+			: Promise.resolve(null)
 	]);
 	const week = shares ? await weekStats(locals.db, current, now) : null;
 	const kid = kids.find((k) => k.id === current);
@@ -47,6 +52,10 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 				.slice()
 				.reverse()
 				.map((r) => ({ on: r.takenOn, pct: pct(r.score, r.maxScore), title: r.title })),
+			tests:
+				tests && tests.chapters.length
+					? { terms: tests.terms, chapters: tests.chapters.slice(0, 12) }
+					: null,
 			reportShared: shares,
 			week: week
 				? {

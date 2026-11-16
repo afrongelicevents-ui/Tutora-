@@ -135,5 +135,8 @@ export const tutoraSettings = pgTable('tutora_settings', {
 	/** while on, every family has the full app for free (the pilot) */
 	pilotFreeTrial: boolean('pilot_free_trial').notNull().default(true),
 	trialDays: integer('trial_days').notNull().default(30),
+	/** Tutora Pro: while on, every tutor has Pro for free (the pilot) */
+	proPilotFreeTrial: boolean('pro_pilot_free_trial').notNull().default(true),
+	proTrialDays: integer('pro_trial_days').notNull().default(30),
 	updatedAt: ts('updated_at').notNull().defaultNow()
 });

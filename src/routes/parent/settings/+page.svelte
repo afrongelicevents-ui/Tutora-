@@ -46,6 +46,9 @@
 		</div>
 		<a class="ui-btn-soft" href="/account">{m.pf_account()} ›</a>
 	</section>
+	<a class="ui-card help-row" href="/parent/help"
+		><strong>{m.help_nav()}</strong><span class="small muted">{m.help_more_hint()}</span></a
+	>
 
 	<section id="children" aria-labelledby="kids-h" class="stack-s">
 		<div class="ui-sec-h"><h2 id="kids-h">{m.pf_children_h()}</h2></div>
@@ -270,6 +273,13 @@
 </div>
 
 <style>
+	.help-row {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		text-decoration: none;
+		color: var(--navy);
+	}
 	.me {
 		display: flex;
 		align-items: center;

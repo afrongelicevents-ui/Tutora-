@@ -114,6 +114,32 @@
 			<Empty text={m.om_reports_none()} />
 		{/if}
 	</section>
+
+	<section id="shared-questions" class="oa-sec" aria-labelledby="sq-h">
+		<div class="oa-sec-h"><h2 id="sq-h">{m.qb_owner_shared()}</h2></div>
+		<p class="small muted">{m.qb_owner_shared_lead()}</p>
+		{#if data.shared.length}
+			<ul class="oa-cards two">
+				{#each data.shared as q (q.id)}
+					<li class="ui-card oa-card">
+						<span class="meta"
+							>{q.by} · {q.subject} · {q.chapter}{q.hiddenAt ? ` · ${m.qb_hidden()}` : ''}</span
+						>
+						<p class="prewrap">{q.prompt}</p>
+						<form method="POST" action="?/question">
+							<input type="hidden" name="id" value={q.id} />
+							<input type="hidden" name="hide" value={q.hiddenAt ? '0' : '1'} />
+							<button class="ui-btn-soft sm" type="submit"
+								>{q.hiddenAt ? m.qb_show_again() : m.qb_hide()}</button
+							>
+						</form>
+					</li>
+				{/each}
+			</ul>
+		{:else}
+			<Empty text={m.qb_owner_shared_none()} />
+		{/if}
+	</section>
 </div>
 
 <style>

@@ -16,7 +16,7 @@ import {
 import { emailInvite, tellSchoolPlus } from '#lib/server/school-plus-notify.ts';
 import { getSettings } from '#lib/server/settings.ts';
 import { formObject } from '#lib/validation/auth.ts';
-import { toolsEnv } from '#lib/server/tools/env.ts';
+import { ORIGIN } from '$app/env/private';
 import { shortName } from '#lib/names.ts';
 
 /** The tutor's School+ partnerships: agree, invite the teacher, then work together. */
@@ -78,7 +78,7 @@ export const actions: Actions = {
 		const f = formObject(await request.formData());
 		return handle(async () => {
 			const { token, p } = await inviteTeacher(locals.db, me.id, idOf(f));
-			const link = `${toolsEnv(url).origin}/school/${token}`;
+			const link = `${(ORIGIN || url.origin).replace(/\/$/, '')}/school/${token}`;
 			const s = await getSettings(locals.db, me.id);
 			const emailed = await emailInvite(p, link, s.tutorName ?? '');
 			await tellSchoolPlus(locals.db, p, 'teacher_invited', me.id);

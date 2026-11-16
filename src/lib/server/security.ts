@@ -1,27 +1,15 @@
 /**
- * Google sources the Drive file picker needs, and nothing else: Google Identity Services
- * (the browser's own short-lived token) and the Picker (loaded with apis.google.com, shown in
- * a docs.google.com frame). The scripts are only fetched when someone taps a Drive button.
- */
-export const GOOGLE_PICKER_CSP = {
-	script: ['https://accounts.google.com/gsi/client', 'https://apis.google.com'],
-	frame: ['https://accounts.google.com', 'https://docs.google.com', 'https://drive.google.com'],
-	connect: ['https://accounts.google.com/gsi/'],
-	style: ['https://accounts.google.com/gsi/style']
-} as const;
-
-/**
  * The Content-Security-Policy directives. SvelteKit sends the header (see `csp` in
  * vite.config.ts, which uses these) so it can hash its own inline scripts.
  */
 export const CSP_DIRECTIVES = {
 	'default-src': ['self'],
-	'script-src': ['self', ...GOOGLE_PICKER_CSP.script],
-	'style-src': ['self', 'unsafe-inline', ...GOOGLE_PICKER_CSP.style],
+	'script-src': ['self'],
+	'style-src': ['self', 'unsafe-inline'],
 	'img-src': ['self', 'data:', 'blob:'],
 	'font-src': ['self'],
-	'connect-src': ['self', ...GOOGLE_PICKER_CSP.connect],
-	'frame-src': [...GOOGLE_PICKER_CSP.frame],
+	'connect-src': ['self'],
+	'frame-src': ['none'],
 	'media-src': ['self', 'blob:'],
 	'frame-ancestors': ['none'],
 	'form-action': ['self'],

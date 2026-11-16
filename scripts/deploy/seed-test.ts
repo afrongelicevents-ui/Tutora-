@@ -73,7 +73,25 @@ async function main() {
 				.select({ id: schema.user.id })
 				.from(schema.user)
 				.where(eq(schema.user.id, 'test_parent4'));
-			if (seeded && !real && v3 && buddies && msgs && fu && ps && pt && sv && teacher && fam) {
+			// Tutora Pro fake data (chipo's paid Pro plan) is there too?
+			const [pro] = await db
+				.select({ id: schema.proSubscription.id })
+				.from(schema.proSubscription)
+				.where(eq(schema.proSubscription.tutorId, 'test_chipo'));
+			if (
+				seeded &&
+				!real &&
+				v3 &&
+				buddies &&
+				msgs &&
+				fu &&
+				ps &&
+				pt &&
+				sv &&
+				teacher &&
+				fam &&
+				pro
+			) {
 				console.log('Test data already there: kept.');
 				return;
 			}

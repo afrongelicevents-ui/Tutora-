@@ -15,7 +15,9 @@ export const LIMITS = {
 	/** Neon Free: storage (Neon's own pages say 0.5 or 1 GB: we plan for the lower one) */
 	storageMb: 512,
 	/** Neon Free: data sent out of the database per month */
-	egressMbPerMonth: 5 * 1024
+	egressMbPerMonth: 5 * 1024,
+	/** Cloudflare Workers AI Free: neurons per day per account (resets 00:00 UTC) */
+	aiNeuronsPerDay: 10_000
 } as const;
 
 export const WARN_AT = 0.7;
@@ -45,10 +47,15 @@ export interface Usage {
 	dbSizeMb: number;
 	/** heaviest routes from the last measurement, when known */
 	slowest: { route: string; p50: number; p90: number }[] | null;
+	/**
+	 * The AI test maker today (our own counter on this site's database) and where this site
+	 * stops it (the two sites' lines together are 80% of the free allowance).
+	 */
+	ai?: { neuronsToday: number; stopAt: number };
 }
 
 export interface Meter {
-	key: 'requests' | 'cpu' | 'limitErrors' | 'compute' | 'storage' | 'egress';
+	key: 'requests' | 'cpu' | 'limitErrors' | 'compute' | 'storage' | 'egress' | 'ai';
 	used: number;
 	limit: number;
 	/** 0–1 (more than 1 when over) */
@@ -78,6 +85,8 @@ export function meters(u: Usage): Meter[] {
 		if (u.neon.egressMbMonth != null)
 			out.push(meter('egress', u.neon.egressMbMonth, LIMITS.egressMbPerMonth));
 	} else out.push(meter('storage', u.dbSizeMb, LIMITS.storageMb));
+	// against this site's stop line: at 100% the AI test maker rests until 00:00 UTC
+	if (u.ai) out.push(meter('ai', u.ai.neuronsToday, u.ai.stopAt));
 	return out;
 }
 

@@ -47,7 +47,9 @@
 					l.mode === 'online'
 						? l.meeting
 							? m.tut3_online_with({ tool: toolLabel(l.meeting) })
-							: m.tut3_online_room()
+							: data.videoRoom
+								? m.tut3_online_room()
+								: m.sl_online_no_link()
 						: `${m.mode_in_person()}${l.address ? ` · ${l.address}` : ''}`,
 				cls: l.mode === 'online' ? 'on' : 'ip',
 				href: `/tutor/lessons/${l.id}`,
@@ -56,7 +58,7 @@
 					l.endsAt > now &&
 					// "Join" from 10 minutes before (the same rule as the lesson room)
 					l.startsAt.getTime() - 10 * 60_000 <= now.getTime()
-						? (l.joinUrl ?? `/room/${l.id}`)
+						? (l.joinUrl ?? (data.videoRoom ? `/room/${l.id}` : undefined))
 						: undefined,
 				msgHref:
 					l.people.length === 1 && l.endsAt > now

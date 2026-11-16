@@ -13,6 +13,7 @@ import {
 	sendSignal
 } from '#lib/server/room.ts';
 import { fileLink } from '#lib/server/storage.ts';
+import { videoRoomOn } from '#lib/server/flags.ts';
 
 const body = z.discriminatedUnion('op', [
 	z.object({ op: z.literal('poll'), after: z.number().int().min(0) }),
@@ -33,6 +34,7 @@ export const POST: RequestHandler = async ({ locals, url, params, request }) => 
 	const origin = request.headers.get('origin');
 	if (origin && origin !== url.origin) error(403, 'Forbidden');
 	const id = Number(params.id) || 0;
+	if (!(await videoRoomOn(locals.db))) error(404, 'Room closed');
 	const access = await roomAccess(locals.db, u, id);
 	if (!access) error(404, 'Room closed');
 	const raw = await request.text();

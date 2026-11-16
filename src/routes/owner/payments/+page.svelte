@@ -9,6 +9,7 @@
 	import { formatMoney } from '#lib/money.ts';
 	import { methodLabel } from '#lib/components/tutor/labels.ts';
 	import OwnerFamilyInvoices from '#lib/components/family/OwnerFamilyInvoices.svelte';
+	import OwnerProInvoices from '#lib/components/pro/OwnerProInvoices.svelte';
 	let { data, form } = $props();
 	const label = (s: string) =>
 		({
@@ -47,9 +48,32 @@
 			aria-current={data.view === 'family' ? 'page' : undefined}
 			>{m.fb_o_stats()}{#if data.proofsWaiting}<span class="c">{data.proofsWaiting}</span>{/if}</a
 		>
+		<a
+			class="oa-chip"
+			href="/owner/payments?view=pro"
+			aria-current={data.view === 'pro' ? 'page' : undefined}
+			>{m.pro_o_tab()}{#if data.proProofsWaiting}<span class="c">{data.proProofsWaiting}</span
+				>{/if}</a
+		>
 	</nav>
 
-	{#if data.view === 'family'}
+	{#if data.view === 'pro'}
+		<p class="small muted">{m.pro_o_lead()}</p>
+		{#if form && 'proConfirmed' in form && form.proConfirmed}
+			<p class="notice" role="status">
+				{m.ow_family_confirmed({ receipt: String(form.proConfirmed) })}
+			</p>
+		{/if}
+		{#if form && 'proRejected' in form && form.proRejected}
+			<p class="notice" role="status">{m.ow_family_rejected()}</p>
+		{/if}
+		<OwnerProInvoices
+			invoices={data.pro.invoices}
+			status={data.pro.status}
+			error={form && 'proError' in form ? String(form.proError) : null}
+		/>
+		<p class="small"><a href="/owner/settings#gifts">{m.gift_link()} ›</a></p>
+	{:else if data.view === 'family'}
 		<p class="small muted">{m.ow_family_lead()}</p>
 		{#if form && 'familyConfirmed' in form && form.familyConfirmed}
 			<p class="notice" role="status">
@@ -68,6 +92,11 @@
 		{#if data.proofsWaiting}
 			<a class="ui-card sky waiting" href="/owner/payments?view=family&fstatus=proof_sent"
 				>{m.ow_family_proofs({ n: data.proofsWaiting })} ›</a
+			>
+		{/if}
+		{#if data.proProofsWaiting}
+			<a class="ui-card sky waiting" href="/owner/payments?view=pro&pstatus=proof_sent"
+				>{m.pro_o_proofs({ n: data.proProofsWaiting })} ›</a
 			>
 		{/if}
 		<p class="small muted">{m.owner_pay_lead()}</p>

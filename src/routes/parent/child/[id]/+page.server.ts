@@ -1,5 +1,5 @@
 import { error, fail } from '@sveltejs/kit';
-import { and, asc, desc, eq, isNull, lt } from 'drizzle-orm';
+import { and, desc, eq, lt, sql } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 import { parentAccess, childrenOf } from '#lib/server/family.ts';
 import { requireRole } from '#lib/server/guards.ts';
@@ -8,14 +8,7 @@ import { childPhotos } from '#lib/server/parent-home.ts';
 import { readingParents } from '#lib/server/messages.ts';
 import { tutorsForUser } from '#lib/server/people.ts';
 import { shareReport } from '#lib/server/planner.ts';
-import {
-	attendee,
-	homework,
-	homeworkAnswer,
-	lesson,
-	subject,
-	tutorProfile
-} from '#lib/server/db/app.schema.ts';
+import { attendee, homework, lesson, subject, tutorProfile } from '#lib/server/db/app.schema.ts';
 import { openPartnershipOf } from '#lib/server/partnership.ts';
 import {
 	BookingFail,
@@ -23,8 +16,9 @@ import {
 	requestsForUser,
 	respondToProposal
 } from '#lib/server/bookings.ts';
+import { handedInLate } from '#lib/server/homework-status.ts';
+import { sentReportsFor, tutorNames } from '#lib/server/reports.ts';
 import { afterAccept } from '#lib/server/after-accept.ts';
-import { toolsEnv } from '#lib/server/tools/env.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { m } from '#lib/paraglide/messages.js';
@@ -82,23 +76,62 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 		>
 	]);
 	const requests = access.guardian ? await requestsForUser(locals.db, id) : [];
-	const hw: { id: number; title: string; dueOn: string | null; subject: string | null }[] =
-		access.homework
-			? await locals.db
-					.select({
-						id: homework.id,
-						title: homework.title,
-						dueOn: homework.dueOn,
-						subject: homework.subject
-					})
-					.from(homework)
-					.leftJoin(homeworkAnswer, eq(homeworkAnswer.homeworkId, homework.id))
-					.where(and(eq(homework.userId, id), isNull(homeworkAnswer.id)))
-					.orderBy(asc(homework.dueOn), desc(homework.id))
-					.limit(6)
-			: [];
+	// the newest homework with where it stands: waiting, handed in (on time / late), or the
+	// tutor's mark (done / late / missing). Hand-ins and marks show here at once.
+	const hwRows: {
+		id: number;
+		title: string;
+		dueOn: string | null;
+		dueTime: string | null;
+		subject: string | null;
+		mark: 'done' | 'late' | 'missing' | null;
+		handedInAt: Date | null;
+	}[] = access.homework
+		? await locals.db
+				.select({
+					id: homework.id,
+					title: homework.title,
+					dueOn: homework.dueOn,
+					dueTime: homework.dueTime,
+					subject: homework.subject,
+					mark: homework.mark,
+					handedInAt: sql<Date | null>`(select min(a.created_at) from homework_answer a where a.homework_id = ${homework.id})`
+				})
+				.from(homework)
+				.where(eq(homework.userId, id))
+				.orderBy(desc(homework.createdAt))
+				.limit(8)
+		: [];
+	const hw = hwRows.map((h) => {
+		const inAt = h.handedInAt ? new Date(h.handedInAt) : null;
+		const late = !!inAt && handedInLate(inAt, h.dueOn, h.dueTime);
+		return {
+			id: h.id,
+			title: h.title,
+			dueOn: h.dueOn,
+			dueTime: h.dueTime,
+			subject: h.subject,
+			status: (h.mark ?? (inAt ? (late ? 'in_late' : 'in') : 'waiting')) as
+				'done' | 'late' | 'missing' | 'in' | 'in_late' | 'waiting'
+		};
+	});
 	if (!child) error(404, 'Not found');
+	// reports the child's tutors sent (stored in Tutora), when the child shares progress
+	const reports = access.progress ? await sentReportsFor(locals.db, id, 3) : [];
+	const reportTutors = await tutorNames(
+		locals.db,
+		reports.map((r) => r.tutorId)
+	);
 	return {
+		reports: reports.map((r) => ({
+			id: r.id,
+			periodStart: r.periodStart,
+			periodEnd: r.periodEnd,
+			note: r.note,
+			figures: r.figures,
+			sentAt: r.sentAt,
+			tutorName: reportTutors.get(r.tutorId) ?? ''
+		})),
 		child,
 		level: kid?.level ?? null,
 		guardian: access.guardian,
@@ -143,7 +176,7 @@ export const actions: Actions = {
 			if (e instanceof BookingFail) return fail(400, { error: e.code });
 			throw e;
 		}
-		if (accepted) await afterAccept(locals.db, toolsEnv(url), accepted);
+		if (accepted) await afterAccept(locals.db, accepted);
 		if (tutorId)
 			await notifyTutor(
 				locals.db,

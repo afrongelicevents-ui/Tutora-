@@ -54,6 +54,14 @@
 					btn: m.ow_attn_check_btn()
 				},
 				{
+					n: data.pro.proofsWaiting,
+					icon: 'wallet',
+					tone: 'green',
+					what: m.pro_attn_proofs(),
+					href: '/owner/payments?view=pro&pstatus=proof_sent',
+					btn: m.ow_attn_check_btn()
+				},
+				{
 					n: data.family.manyChildren.length,
 					icon: 'family',
 					tone: 'amber',
@@ -149,7 +157,7 @@
 	</section>
 
 	<div id="family-stats">
-		<OwnerFamilyStats stats={data.family} />
+		<OwnerFamilyStats stats={data.family} pro={data.pro} />
 		<p class="fam-links">
 			<a href="/owner/payments?view=family">{m.fb_o_invoices()} ›</a>
 			<a href="/owner/settings#family-pay">{m.fb_o_settings()} ›</a>

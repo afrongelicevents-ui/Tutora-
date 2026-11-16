@@ -32,7 +32,8 @@
 				['/account', 'bell', m.ms_notif(), m.ms_notif_hint()],
 				['/notifications', 'bell', m.notif_title(), m.more_notif_hint()]
 			]
-		]
+		],
+		[m.help_h(), [['/tutor/help', 'chat', m.help_nav(), m.help_more_hint()]]]
 	]);
 </script>
 

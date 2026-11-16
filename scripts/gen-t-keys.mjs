@@ -5,6 +5,16 @@ import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const PREFIXES = [
+	'qb_err_',
+	'qb_done_',
+	'qb_type_',
+	'qb_diff_',
+	'ai_err_',
+	'rp_err_',
+	'pro_f_',
+	'pro_free_',
+	'pro_err_',
+	'gift_err_',
 	'spp_offer_',
 	'spt_done_',
 	'sp3_step_',

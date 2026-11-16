@@ -1,10 +1,8 @@
 <script lang="ts">
-	import { m, t } from '#lib/i18n.ts';
+	import { m } from '#lib/i18n.ts';
 	import ToolCard from '#lib/components/tools/ToolCard.svelte';
+	import { shortcutUrl } from '#lib/tool-shortcuts.ts';
 	let { data, form } = $props();
-	const err = $derived(
-		(form && 'error' in form ? (form.error as string) : null) ?? data.flashError
-	);
 </script>
 
 <svelte:head><title>{m.tools6_title()} · Tutora</title></svelte:head>
@@ -12,58 +10,19 @@
 <div class="screen">
 	<a class="back" href="/student" aria-label={m.tools6_back()}>←</a>
 	<h1>{m.tools6_title()}</h1>
-	<p class="lead">{m.tools6_intro_student()}</p>
-	{#if err}<p class="alert" role="alert">{t(err)}</p>{/if}
-	{#if data.flashConnected && !err}<p class="notice" role="status">
-			{m.tools6_now_connected()}
-		</p>{/if}
+	<p class="lead">{m.tl_intro_student()}</p>
+	{#if form && 'saved' in form}<p class="notice" role="status">{m.saved()}</p>{/if}
+
+	<ToolCard logo="teams" use={m.tl_meeting_use_student()} href={shortcutUrl('teams', 'student')} />
+	<ToolCard logo="meet" use={m.tl_meeting_use_student()} href={shortcutUrl('meet', 'student')} />
+	<ToolCard logo="zoom" use={m.tl_meeting_use_student()} href={shortcutUrl('zoom', 'student')} />
+	<ToolCard logo="drive" use={m.tl_drive_use_student()} href={shortcutUrl('drive', 'student')} />
 
 	<ToolCard
-		name="Google Meet"
-		logo="meet"
-		on={data.ready}
-		status={data.ready ? m.tools6_no_account() : m.tools6_unavailable()}
-		use={m.tools6_meet_use_student()}
-		access={m.tools6_links_only()}
-	/>
-
-	<ToolCard
-		name="Microsoft Teams"
-		logo="teams"
-		on={data.teamsReady}
-		status={data.teamsReady ? m.tools6_no_account() : m.tools6_unavailable()}
-		use={m.tools6_teams_use_student()}
-		access={m.tools6_links_only()}
-	/>
-
-	<ToolCard
-		name="Google Drive"
-		logo="drive"
-		on={data.drive}
-		use={m.tools6_drive_use_student()}
-		access={data.drive ? m.tools6_drive_access() : undefined}
-	>
-		{#if data.googleConnected}
-			{#if data.driveEmail}<p class="note">{m.tools6_as({ email: data.driveEmail })}</p>{/if}
-			<form method="POST" action="?/disconnect">
-				<button class="disconnect" type="submit">{m.tools6_disconnect()}</button>
-			</form>
-		{:else if !data.ready}
-			<p class="note">{m.tools6_not_ready()}</p>
-		{:else if !data.allowed}
-			<p class="note">{m.tools6_err_guardian()}</p>
-		{:else}
-			<a class="btn btn-block" href="/tools/connect/google">{m.tools6_connect_drive()}</a>
-		{/if}
-	</ToolCard>
-
-	<ToolCard
-		name="Kahoot!"
 		logo="kahoot"
-		on={data.pref.kahootOn}
+		use={m.tl_kahoot_use_student()}
+		href={shortcutUrl('kahoot', 'student')}
 		status={data.pref.kahootOn ? m.st_kahoot_on() : m.tools6_off()}
-		use={m.tools6_kahoot_use_student()}
-		access={data.pref.kahootOn ? m.tools6_kahoot_access() : undefined}
 	>
 		<form method="POST" action="?/kahoot">
 			<input type="hidden" name="on" value={data.pref.kahootOn ? '0' : '1'} />
@@ -75,5 +34,5 @@
 		</form>
 	</ToolCard>
 
-	<p class="note">{m.tools6_footer()}</p>
+	<p class="note">{m.tl_footer()}</p>
 </div>

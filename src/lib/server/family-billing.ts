@@ -25,6 +25,7 @@ import {
 	type TutoraInvoiceStatus
 } from './db/family.schema.ts';
 import { perRequest } from './cache.ts';
+import { activeGift } from './plan-gifts.ts';
 import { quote, dollars, isPeriod } from '../family-pricing.ts';
 import { addDays } from '../tz.ts';
 import type { Notify } from './notify-core.ts';
@@ -75,6 +76,8 @@ export const DEFAULT_SETTINGS: TutoraSettings = {
 	discount6mPct: 0,
 	pilotFreeTrial: true,
 	trialDays: 30,
+	proPilotFreeTrial: true,
+	proTrialDays: 30,
 	updatedAt: new Date(0)
 };
 
@@ -160,7 +163,7 @@ export function effectiveState(
 
 export interface FamilyAccess {
 	active: boolean;
-	reason: 'pilot' | FamilyState;
+	reason: 'pilot' | 'gift' | FamilyState;
 	until: Date | null;
 	/** a student under 18 with no parent on Tutora (shown "Ask your parent…") */
 	askParent?: boolean;
@@ -206,6 +209,9 @@ export function familyAccess(db: DB, userId: string, now = new Date()): Promise<
 				)
 		]);
 		if (settings.pilotFreeTrial) return { active: true, reason: 'pilot', until: null };
+		// given free by the owner: to this person, or to a parent who follows them
+		const gift = await activeGift(db, 'family', userId, now, true);
+		if (gift) return { active: true, reason: 'gift', until: gift.until };
 		let best: { state: FamilyState; until: Date | null } = { state: 'free', until: null };
 		const rank: Record<FamilyState, number> = { free: 0, grace: 1, trial: 2, paid: 3 };
 		for (const s of subs) {

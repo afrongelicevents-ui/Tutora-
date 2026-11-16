@@ -79,14 +79,19 @@
 						<a class="btn" href={data.meeting.joinUrl} target="_blank" rel="noopener noreferrer"
 							>{joinLabel(data.meeting.provider)}</a
 						>
-						<a class="btn btn-ghost" href="/room/{l.id}">{m.ld3_use_room()}</a>
+						{#if data.videoRoom}<a class="btn btn-ghost" href="/room/{l.id}">{m.ld3_use_room()}</a
+							>{/if}
 					{:else}<span class="sub small">{m.ml_opens()}</span>{/if}
-				{:else}
+					<span class="sub small">{m.sl_guest_note()}</span>
+				{:else if data.videoRoom}
 					<strong>{m.ld3_room_title()}</strong>
 					<span class="sub small">{m.ld3_room_lead()}</span>
 					{#if l.roomOpen}<a class="btn" href="/room/{l.id}">{m.room_join()}</a>{:else}<span
 							class="sub small">{m.room_opens_10()}</span
 						>{/if}
+				{:else}
+					<strong>{m.sl_no_link_yet()}</strong>
+					<span class="sub small">{m.sl_no_link_lead()}</span>
 				{/if}
 			</div>
 		{:else}

@@ -3,20 +3,22 @@
 Real browsers, several real test accounts talking to each other, pressing the real buttons.
 Every flow runs twice: at phone size (390×844) and at desktop size (1280×800).
 
-| File                     | Flow                                                                          |
-| ------------------------ | ----------------------------------------------------------------------------- |
-| `booking-payment.e2e.ts` | book → accept → lesson → join room → mark done → pay → confirm → receipt      |
-| `homework.e2e.ts`        | set → hand in → mark with a score → feedback → progress → parent told         |
-| `checkin.e2e.ts`         | check in → share → study → "How did it go?" → hourly job → parent sees it     |
-| `planner.e2e.ts`         | task ticked → personal report → parent sees it only when shared               |
-| `family-code.e2e.ts`     | student code → parent connects → parent sees only the shared areas            |
-| `buddies.e2e.ts`         | under-13 code swap → each guardian approves → buddies; a decline tells both   |
-| `tutor-approval.e2e.ts`  | owner approves a waiting tutor → tutor told → appears in Find a tutor         |
-| `owner.e2e.ts`           | approval rules, suspend / restore, hide / show a review, homepage texts       |
-| `owner-pages.e2e.ts`     | every admin page, tabs / side sections, search, filters, paging, photos, etc. |
-| `messages.e2e.ts`        | messages both ways, unread counts on both sides go back to zero after reading |
-| `bell.e2e.ts`            | an event rings the bell → Notifications lists it → the bell is clear          |
-| `tools.e2e.ts`           | Connected tools: honest status without keys, every link works, Kahoot! on     |
+| File                     | Flow                                                                                      |
+| ------------------------ | ----------------------------------------------------------------------------------------- |
+| `booking-payment.e2e.ts` | book → accept → lesson → Join link (room off) → mark done → pay → confirm → receipt       |
+| `homework.e2e.ts`        | set → hand in → mark with a score → feedback → progress → parent told                     |
+| `checkin.e2e.ts`         | check in → share → study → "How did it go?" → hourly job → parent sees it                 |
+| `planner.e2e.ts`         | task ticked → personal report → parent sees it only when shared                           |
+| `family-code.e2e.ts`     | student code → parent connects → parent sees only the shared areas                        |
+| `buddies.e2e.ts`         | under-13 code swap → each guardian approves → buddies; a decline tells both               |
+| `tutor-approval.e2e.ts`  | owner approves a waiting tutor → tutor told → appears in Find a tutor                     |
+| `owner.e2e.ts`           | approval rules, suspend / restore, hide / show a review, homepage texts                   |
+| `owner-pages.e2e.ts`     | every admin page, tabs / side sections, search, filters, paging, photos, etc.             |
+| `messages.e2e.ts`        | messages both ways, unread counts on both sides go back to zero after reading             |
+| `bell.e2e.ts`            | an event rings the bell → Notifications lists it → the bell is clear                      |
+| `tools.e2e.ts`           | Connected tools are shortcuts only (open the app), no sync address, Kahoot! on            |
+| `simplify.e2e.ts`        | room off by default, homework due time → late photo → parent sees, report PDF, help pages |
+| `pro.e2e.ts`             | Free tutor sees Pro + Upgrade → pays → owner confirms → Pro; reports; gifts               |
 
 ```sh
 # a database with the fake TEST data, and a dev server on it
@@ -60,3 +62,11 @@ Answered invite link: `spi-answered` (`data-answered=done|declined`). Parent chi
 `sp-message`, `sp-plan`, `sp-report`, `sp-end`.
 Locally email counts as on (dev), so a new teacher confirms their email first: the test sets
 `email_verified` and logs in from the invite link. On the test site the teacher is signed in at once.
+
+## Tutora Pro test accounts (test site and local seed)
+
+- `chipo@example.com`: Tutora Pro (paid, receipt P-000001, automatic payment reminders on).
+- `tendai@example.com`: Free tutor (Pro features show "Pro" + Upgrade).
+- `farai@example.com`: Free tutor whose Pro payment proof waits in Owner → Money → Payments → Tutora Pro.
+- The Pro pilot switch is OFF in the test data so Free and Pro look different (it is ON on live).
+- `E2E_AUTH_DIR`: a separate folder for saved logins when two local servers are tested at once.

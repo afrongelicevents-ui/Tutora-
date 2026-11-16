@@ -22,11 +22,15 @@
 	};
 	const TOOLS: [string, IconName, string, string][] = [
 		['/tutor/homework', 'clipboard', 'v3_nav_marking', 'tut3_more_marking_hint'],
+		['/tutor/reports', 'doc', 'rp_nav', 'rp_more_hint'],
 		['/tutor/assessments', 'check', 'v3_nav_assessments', 'tut3_more_assess_hint'],
 		['/tutor/resources', 'book', 'res3_nav', 'res3_hint'],
 		['/tutor/tools', 'link', 'v3_nav_tools', 'tut3_more_tools_hint'],
 		['/tutor/school-plus', 'school', 'sp3_title', 'sp3_more_hint'],
-		['/tutor/reviews', 'star', 'reviews_title', 'tut3_more_reviews_hint']
+		['/tutor/reviews', 'star', 'reviews_title', 'tut3_more_reviews_hint'],
+		['/tutor/help', 'chat', 'help_nav', 'help_more_hint'],
+		['/tutor/insights', 'progress', 'pro_f_insights', 'pro_ins_hint'],
+		['/tutor/pro', 'trophy', 'pro_title', 'pro_more_hint']
 	];
 	const now = $derived(new Date(data.day.date));
 </script>

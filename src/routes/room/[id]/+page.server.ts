@@ -15,10 +15,20 @@ import { iceServers } from '#lib/server/ice.ts';
 import { getStore } from '#lib/server/storage.ts';
 import { DOC_KINDS, MB, newKey, readUpload } from '#lib/server/files.ts';
 import { hitLimit } from '#lib/server/rate-limit.ts';
+import { videoRoomOn } from '#lib/server/flags.ts';
 
 export const load: PageServerLoad = async ({ locals, url, params, fetch }) => {
 	const u = requireUser(locals.user, url);
 	const id = Number(params.id) || 0;
+	if (!(await videoRoomOn(locals.db))) {
+		// lessons happen in Teams / Meet / Zoom now: back to the lesson and its Join button
+		const own = await lessonWithPeople(locals.db, id);
+		if (own && u.role === 'tutor' && own.tutorId === u.id)
+			redirect(303, `/tutor/lessons/${id}?room=off`);
+		if (own && u.role === 'student' && own.people.some((p) => p.userId === u.id))
+			redirect(303, `/student/lessons/${id}`);
+		error(404, m.room_off());
+	}
 	const access = await roomAccess(locals.db, u, id);
 	if (!access) {
 		// someone's own lesson outside the open window: back to the lesson, with an honest note
@@ -46,6 +56,7 @@ export const actions: Actions = {
 	file: async ({ locals, url, params, request, platform }) => {
 		const u = requireUser(locals.user, url);
 		const id = Number(params.id) || 0;
+		if (!(await videoRoomOn(locals.db))) return fail(404, { error: 'err_not_found' });
 		const access = await roomAccess(locals.db, u, id);
 		if (!access || !(await isAdmitted(locals.db, id, u.id)))
 			return fail(404, { error: 'err_not_found' });

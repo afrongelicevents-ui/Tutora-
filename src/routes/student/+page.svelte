@@ -166,7 +166,11 @@
 			target={data.next.joinHref.startsWith('https://') ? '_blank' : undefined}
 			rel={data.next.joinHref.startsWith('https://') ? 'noopener noreferrer' : undefined}
 			><LineIcon name="video" size={20} /> {m.ml_join()}</a
-		>{/if}
+		>
+		{#if data.next.joinHref.startsWith('https://')}<p class="small muted center guest-note">
+				{m.sl_guest_note()}
+			</p>{/if}
+	{:else if data.next?.noLink}<p class="small muted center guest-note">{m.sl_no_link_yet()}</p>{/if}
 
 	<!-- D/E. homework, then study progress -->
 	<div class="pair">
@@ -217,6 +221,9 @@
 </div>
 
 <style>
+	.guest-note {
+		margin: 6px 0 0;
+	}
 	.join-now {
 		background: var(--navy);
 		display: inline-flex;

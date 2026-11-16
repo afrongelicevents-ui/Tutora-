@@ -7,17 +7,18 @@ gets close. The owner sees live figures in **Owner → Free limits** and gets an
 
 ## The limits (checked 15 Nov 2026)
 
-| Service                     | Limit                                                                                                   | What happens when it is reached                                                           |
-| --------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Cloudflare Workers          | **100,000 requests a day** (resets 00:00 UTC = 2 AM in Zimbabwe), 1,000 a minute                        | Visitors get a Cloudflare error page until the reset. No data is lost.                    |
-| Cloudflare Workers          | **10 ms of CPU per request** (waiting for the database does not count)                                  | That request is stopped ("exceeded resources", error 1102/503); the person can try again. |
-| Cloudflare Workers          | 50 outside requests per request, 128 MB memory, 3 MB code (compressed)                                  | The request fails. Tutora uses 2–3 outside requests per page (the database).              |
-| Cloudflare Workers Logs     | 200,000 log events a day                                                                                | Older logs are dropped; the site is not affected.                                         |
-| Neon                        | **100 compute hours a month** (live and test share it); the database sleeps after 5 minutes without use | Neon pauses the database until next month: pages can't load data. Data is kept.           |
-| Neon                        | **0.5 GB storage** (Neon's pages say 0.5 or 1 GB; we plan for 0.5)                                      | Writes fail until data is removed.                                                        |
-| Neon                        | 5 GB data sent per month                                                                                | Same as compute: paused until next month.                                                 |
-| GitHub Actions              | Free and unlimited for public repositories                                                              | —                                                                                         |
-| Resend (email, when set up) | 3,000 emails a month, 100 a day                                                                         | Emails stop until the next day/month; the bell still works.                               |
+| Service                     | Limit                                                                                                   | What happens when it is reached                                                            |
+| --------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Cloudflare Workers          | **100,000 requests a day** (resets 00:00 UTC = 2 AM in Zimbabwe), 1,000 a minute                        | Visitors get a Cloudflare error page until the reset. No data is lost.                     |
+| Cloudflare Workers          | **10 ms of CPU per request** (waiting for the database does not count)                                  | That request is stopped ("exceeded resources", error 1102/503); the person can try again.  |
+| Cloudflare Workers          | 50 outside requests per request, 128 MB memory, 3 MB code (compressed)                                  | The request fails. Tutora uses 2–3 outside requests per page (the database).               |
+| Cloudflare Workers Logs     | 200,000 log events a day                                                                                | Older logs are dropped; the site is not affected.                                          |
+| Neon                        | **100 compute hours a month** (live and test share it); the database sleeps after 5 minutes without use | Neon pauses the database until next month: pages can't load data. Data is kept.            |
+| Neon                        | **0.5 GB storage** (Neon's pages say 0.5 or 1 GB; we plan for 0.5)                                      | Writes fail until data is removed.                                                         |
+| Neon                        | 5 GB data sent per month                                                                                | Same as compute: paused until next month.                                                  |
+| GitHub Actions              | Free and unlimited for public repositories                                                              | —                                                                                          |
+| Resend (email, when set up) | 3,000 emails a month, 100 a day                                                                         | Emails stop until the next day/month; the bell still works.                                |
+| Cloudflare Workers AI       | **10,000 neurons a day per account** (live and test share it; resets 00:00 UTC)                         | On the free plan Cloudflare refuses further calls; nothing is charged. Tutora stops first. |
 
 Sources: [Cloudflare Workers limits](https://developers.cloudflare.com/workers/platform/limits/),
 [Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/),
@@ -130,6 +131,22 @@ database batch covers more of each page) and paging long lists.
 Database driver, same 12 queries on Cloudflare: WebSocket 12 ms, HTTP 9 ms, HTTP batch 4 ms.
 Reading pages now use HTTP with automatic batching; form posts keep the WebSocket.
 
+## AI test maker (Workers AI)
+
+- **Free allowance only:** 10,000 neurons a day for the whole Cloudflare account. Model
+  `@cf/meta/llama-3.2-3b-instruct` (about 4,625 neurons per million input tokens and 30,475
+  per million output tokens; Tutora counts 5,000 and 31,000 to stay on the safe side).
+- **Our own counter** (`ai_usage` table, `src/lib/server/ai-tests.ts`) adds the estimate for
+  the prompt plus the longest possible answer (1,200 tokens) BEFORE each call, and the real
+  figure afterwards if Cloudflare reports more. One request costs about 40–50 neurons.
+- **Stop lines:** live 6,500 and test 1,500 a day (together 80% of the allowance); one tutor
+  1,500 a day (about 30 requests). Then the page says: "AI test maker is resting for today,
+  try again tomorrow, or build a test from the question bank." There is no paid fallback.
+- **Owner → Free limits** shows today's count against this site's line (live), and the hourly
+  reading sends the usual alert at 70% of the line.
+- **CPU:** the worker only waits for Cloudflare's answer (waiting is not CPU time) and then
+  parses a small JSON reply; the page stays well inside 10 ms of CPU.
+
 ## If a limit gets close: what helps first
 
 1. **CPU errors appear** → run _Measure CPU (test site)_, find the heaviest page in the table,
@@ -140,5 +157,7 @@ Reading pages now use HTTP with automatic batching; form posts keep the WebSocke
    every 6 hours already; stop them entirely in `.github/workflows/reminders.yml`).
 4. **Neon storage near 0.5 GB** → old notifications and usage snapshots are the biggest
    tables; delete notifications older than a year.
-5. Only if all of that is not enough: Cloudflare Workers Paid ($5/month) lifts the CPU limit
+5. **AI test maker resting too early** → lower `MAX_OUT_TOKENS` or the per-tutor cap in
+   `src/lib/server/ai-tests.ts`; never raise the stop lines above 80% in total.
+6. Only if all of that is not enough: Cloudflare Workers Paid ($5/month) lifts the CPU limit
    to 30 seconds and the requests to 10 million a month. Not done: the free plan was asked for.

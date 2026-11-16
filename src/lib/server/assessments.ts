@@ -3,7 +3,7 @@
  * Questions are picked and marked on the server only; the browser never sees the answers
  * before the work is handed in. Every score is saved with progress.recordResult.
  */
-import { and, asc, desc, eq, inArray, isNull, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { user } from './db/auth.schema.ts';
 import { enrollment } from './db/app.schema.ts';
@@ -14,7 +14,9 @@ import {
 	quizAssignment,
 	schoolSubject
 } from './db/v3.schema.ts';
+import { testAttempt } from './db/tests.schema.ts';
 import { recordResult, weakTopics } from './progress.ts';
+import { builtQuestions } from './tests.ts';
 import { localDate } from '../tz.ts';
 import { m } from '../paraglide/messages.js';
 
@@ -91,7 +93,9 @@ export function listSets(db: DB, tutorId: string) {
 			topic: questionSet.topic,
 			level: questionSet.level,
 			dailyChecks: questionSet.dailyChecks,
-			questions: qCount
+			built: sql<boolean>`${questionSet.questionIds} is not null`,
+			timerMinutes: questionSet.timerMinutes,
+			questions: sql<number>`coalesce(jsonb_array_length(${questionSet.questionIds}), ${qCount})`
 		})
 		.from(questionSet)
 		.where(eq(questionSet.tutorId, tutorId))
@@ -105,6 +109,9 @@ export async function getSet(db: DB, tutorId: string, id: number) {
 		.from(questionSet)
 		.where(and(eq(questionSet.id, id), eq(questionSet.tutorId, tutorId)));
 	if (!set) return null;
+	// a test built from the question bank: its picked questions, in order
+	if (set.questionIds)
+		return { set, questions: await builtQuestions(db, tutorId, set.questionIds) };
 	const questions = await db
 		.select()
 		.from(question)
@@ -143,11 +150,21 @@ export async function addQuestion(db: DB, tutorId: string, setId: number, v: Que
 	const q = cleanQuestion(v);
 	const own = await getSet(db, tutorId, setId);
 	if (!own) throw new AssessFail('st5_err_not_found');
+	if (own.set.questionIds) throw new AssessFail('qb_err_built');
 	if (own.questions.length >= 50) throw new AssessFail('st5_err_too_many');
 	const sortOrder = Math.max(0, ...own.questions.map((x) => x.sortOrder)) + 1;
+	// a quiz's questions are in the tutor's question bank too, tagged from the quiz
 	const [row] = await db
 		.insert(question)
-		.values({ setId, ...q, sortOrder })
+		.values({
+			setId,
+			...q,
+			sortOrder,
+			tutorId,
+			subject: own.set.subject,
+			form: own.set.level,
+			chapter: own.set.topic
+		})
 		.returning();
 	return row;
 }
@@ -219,6 +236,8 @@ export async function assignSet(
 			set: { dueOn, doneAt: null }
 		})
 		.returning();
+	// giving a built test again: a fresh start (the old score stays in progress)
+	if (own.set.questionIds) await db.delete(testAttempt).where(eq(testAttempt.assignmentId, row.id));
 	return { assignment: row, set: own.set };
 }
 
@@ -241,11 +260,18 @@ export async function assignmentsForSet(db: DB, tutorId: string, setId: number) 
 			studentId: quizAssignment.studentId,
 			name: user.name,
 			dueOn: quizAssignment.dueOn,
-			doneAt: quizAssignment.doneAt
+			doneAt: quizAssignment.doneAt,
+			attemptId: testAttempt.id,
+			attemptScore: testAttempt.score,
+			attemptMax: testAttempt.maxScore,
+			startedAt: testAttempt.startedAt,
+			needsMarking: testAttempt.needsMarking,
+			late: testAttempt.late
 		})
 		.from(quizAssignment)
 		.innerJoin(questionSet, eq(questionSet.id, quizAssignment.setId))
 		.innerJoin(user, eq(user.id, quizAssignment.studentId))
+		.leftJoin(testAttempt, eq(testAttempt.assignmentId, quizAssignment.id))
 		.where(and(eq(quizAssignment.setId, setId), eq(questionSet.tutorId, tutorId)))
 		.orderBy(asc(user.name));
 	if (!rows.length) return [];
@@ -264,6 +290,13 @@ export async function assignmentsForSet(db: DB, tutorId: string, setId: number) 
 		)
 		.orderBy(desc(assessmentResult.id));
 	return rows.map((r) => {
+		// a built test: the attempt's own total (its results are saved per chapter)
+		if (r.attemptId)
+			return {
+				...r,
+				score: r.doneAt ? r.attemptScore : null,
+				maxScore: r.doneAt ? r.attemptMax : null
+			};
 		const res = results.find((x) => x.studentId === r.studentId);
 		return { ...r, score: res?.score ?? null, maxScore: res?.maxScore ?? null };
 	});
@@ -271,29 +304,41 @@ export async function assignmentsForSet(db: DB, tutorId: string, setId: number) 
 
 /** Results on the tutor's own sets, for students still enrolled with the tutor (newest first). */
 export function resultsForTutor(db: DB, tutorId: string, limit = 30) {
-	return db
-		.select({
-			id: assessmentResult.id,
-			studentId: assessmentResult.studentId,
-			name: user.name,
-			source: assessmentResult.source,
-			title: assessmentResult.title,
-			topic: assessmentResult.topic,
-			score: assessmentResult.score,
-			maxScore: assessmentResult.maxScore,
-			takenOn: assessmentResult.takenOn,
-			setId: assessmentResult.setId
-		})
-		.from(assessmentResult)
-		.innerJoin(questionSet, eq(questionSet.id, assessmentResult.setId))
-		.innerJoin(
-			enrollment,
-			and(eq(enrollment.tutorId, tutorId), eq(enrollment.userId, assessmentResult.studentId))
-		)
-		.innerJoin(user, eq(user.id, assessmentResult.studentId))
-		.where(eq(questionSet.tutorId, tutorId))
-		.orderBy(desc(assessmentResult.takenOn), desc(assessmentResult.id))
-		.limit(limit);
+	return (
+		db
+			.select({
+				id: assessmentResult.id,
+				studentId: assessmentResult.studentId,
+				name: user.name,
+				source: assessmentResult.source,
+				title: assessmentResult.title,
+				topic: assessmentResult.topic,
+				score: assessmentResult.score,
+				maxScore: assessmentResult.maxScore,
+				takenOn: assessmentResult.takenOn,
+				setId: assessmentResult.setId
+			})
+			.from(assessmentResult)
+			.leftJoin(questionSet, eq(questionSet.id, assessmentResult.setId))
+			.innerJoin(
+				enrollment,
+				and(eq(enrollment.tutorId, tutorId), eq(enrollment.userId, assessmentResult.studentId))
+			)
+			.innerJoin(user, eq(user.id, assessmentResult.studentId))
+			// on the tutor's own quizzes and tests, or scores the tutor entered (Google Forms, Kahoot!)
+			.where(
+				or(
+					eq(questionSet.tutorId, tutorId),
+					and(
+						isNull(assessmentResult.setId),
+						eq(assessmentResult.tutorId, tutorId),
+						inArray(assessmentResult.source, ['google_forms', 'kahoot', 'test'])
+					)
+				)
+			)
+			.orderBy(desc(assessmentResult.takenOn), desc(assessmentResult.id))
+			.limit(limit)
+	);
 }
 
 /* ------------------------------------------------------------------ marking */
@@ -353,6 +398,7 @@ export function myAssignments(db: DB, studentId: string) {
 			title: questionSet.title,
 			subject: questionSet.subject,
 			topic: questionSet.topic,
+			timerMinutes: questionSet.timerMinutes,
 			tutorName: user.name
 		})
 		.from(quizAssignment)

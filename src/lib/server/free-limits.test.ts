@@ -48,6 +48,17 @@ describe('free limits', () => {
 		expect(needsAlert(u).map((m) => m.key)).toEqual(['limitErrors']);
 	});
 
+	it('counts the AI test maker against its stop line, with the 70% alert', () => {
+		expect(meters({ ...base, ai: { neuronsToday: 100, stopAt: 6_500 } }).at(-1)).toMatchObject({
+			key: 'ai',
+			level: 'ok'
+		});
+		const warn = needsAlert({ ...base, ai: { neuronsToday: 4_600, stopAt: 6_500 } });
+		expect(warn.map((m) => [m.key, m.level])).toEqual([['ai', 'warn']]);
+		const over = needsAlert({ ...base, ai: { neuronsToday: 6_500, stopAt: 6_500 } });
+		expect(over[0].level).toBe('over');
+	});
+
 	it('still shows the database size when Neon cannot be read', () => {
 		const u: Usage = { ...base, neon: { ok: false, reason: 'no_permission' }, dbSizeMb: 400 };
 		const s = meters(u).find((m) => m.key === 'storage')!;

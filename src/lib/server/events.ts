@@ -79,6 +79,19 @@ export async function homeworkMarked(db: DB, tutorId: string, answerId: number) 
 	);
 }
 
+/** The child handed in homework: the parents who see homework hear at once (late or on time). */
+export async function homeworkHandedIn(db: DB, studentId: string, title: string, late: boolean) {
+	const child = firstName(await nameOf(db, studentId));
+	for (const p of await parentsWhoSee(db, studentId, 'homework'))
+		await notifyUser(
+			db,
+			p,
+			late ? m.hws_in_late_fam_s({ name: child }) : m.hws_in_fam_s({ name: child }),
+			m.hws_in_fam_b({ title }),
+			{ kind: 'homework', link: `/parent/child/${encodeURIComponent(studentId)}` }
+		);
+}
+
 /** New homework: the student (and parents who see homework). */
 export async function homeworkSet(db: DB, studentId: string, title: string) {
 	const child = firstName(await nameOf(db, studentId));

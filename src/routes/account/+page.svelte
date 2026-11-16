@@ -43,6 +43,11 @@
 			>
 		</div>
 	</div>
+	{#if data.account.role === 'student' || data.account.role === 'parent' || data.account.role === 'tutor'}
+		<a class="softcard help-link" href="/{data.account.role}/help"
+			><strong>{m.help_nav()}</strong><span class="small">{m.help_more_hint()}</span></a
+		>
+	{/if}
 
 	{#if form && 'saved' in form}<p class="notice" role="status">{m.saved()}</p>{/if}
 	{#if data.changed}<p class="notice" role="status">
@@ -142,3 +147,13 @@
 		<button class="btn btn-secondary btn-block" type="submit">{m.nav_logout()}</button>
 	</form>
 </section>
+
+<style>
+	.help-link {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		text-decoration: none;
+		color: var(--navy);
+	}
+</style>

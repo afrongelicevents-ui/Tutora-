@@ -8,6 +8,7 @@ export const FAMILY_FEATURES = {
 	'/student/homework': 'homework',
 	'/student/messages': 'messages',
 	'/student/buddies': 'buddies',
+	'/student/quiz': 'tests',
 	'/parent/progress': 'progress',
 	'/parent/report': 'report',
 	'/parent/personal': 'personal',
@@ -17,6 +18,8 @@ export const FAMILY_FEATURES = {
 export type FamilyFeature = (typeof FAMILY_FEATURES)[keyof typeof FAMILY_FEATURES];
 
 export function familyFeatureFor(pathname: string): FamilyFeature | null {
+	// a tutor's stored reports, opened from the (free) child page
+	if (/^\/parent\/child\/[^/]+\/reports(\/|$)/.test(pathname)) return 'report';
 	for (const [prefix, f] of Object.entries(FAMILY_FEATURES))
 		if (pathname === prefix || pathname.startsWith(prefix + '/')) return f;
 	return null;

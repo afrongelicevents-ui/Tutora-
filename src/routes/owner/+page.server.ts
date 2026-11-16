@@ -4,6 +4,7 @@ import { requireOwner } from '#lib/server/guards.ts';
 import { latestUsage, overviewCounts } from '#lib/server/owner-admin.ts';
 import { doneFrom } from './done.ts';
 import { ownerFamilyStats } from '#lib/server/family-billing.ts';
+import { ownerProStats } from '#lib/server/pro.ts';
 
 /**
  * Overview: what needs the owner now (each with a count and a button), the key numbers and
@@ -12,9 +13,10 @@ import { ownerFamilyStats } from '#lib/server/family-billing.ts';
  */
 export const load: PageServerLoad = async ({ locals, url }) => {
 	requireOwner(locals.user, url);
-	const [counts, family, live, test] = await Promise.all([
+	const [counts, family, pro, live, test] = await Promise.all([
 		overviewCounts(locals.db),
 		ownerFamilyStats(locals.db),
+		ownerProStats(locals.db),
 		latestUsage(locals.db, 'live'),
 		latestUsage(locals.db, 'test')
 	]);
@@ -24,6 +26,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	return {
 		counts,
 		family,
+		pro,
 		usage: here ? { at: here.at, meters: here.meters } : null,
 		testSite,
 		done: doneFrom(url)

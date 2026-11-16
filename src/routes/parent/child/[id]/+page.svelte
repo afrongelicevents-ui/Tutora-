@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ReportFigures from '#lib/components/ReportFigures.svelte';
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay, fmtMinutes, fmtTime, localDate } from '#lib/tz.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
@@ -36,7 +37,29 @@
 	const today = localDate(new Date());
 	const isToday = (d: Date) => localDate(d) === today;
 	const proposed = $derived(data.requests.filter((r) => r.status === 'proposed'));
-	const late = $derived(data.homework.filter((h) => h.dueOn && h.dueOn < today));
+	const late = $derived(
+		data.homework.filter((h) => h.status === 'waiting' && h.dueOn && h.dueOn < today)
+	);
+	const hwLabel = (s: string) =>
+		s === 'done'
+			? m.hws_done()
+			: s === 'late'
+				? m.hws_late()
+				: s === 'missing'
+					? m.hws_missing()
+					: s === 'in'
+						? m.handed_in_pill()
+						: s === 'in_late'
+							? m.hws_handed_late()
+							: m.hws_waiting();
+	const hwPill = (s: string) =>
+		s === 'done' || s === 'in'
+			? 'p-ok'
+			: s === 'missing'
+				? 'p-no'
+				: s === 'waiting'
+					? 'p-info'
+					: 'p-wait';
 	const q = $derived(`child=${encodeURIComponent(c.studentId)}`);
 </script>
 
@@ -163,6 +186,31 @@
 				{/if}
 			</section>
 
+			{#if c.access.progress}
+				<section class="ui-card" id="reports" aria-labelledby="rep-h">
+					<div class="ui-sec-h"><h2 id="rep-h">{m.rp_parent_h()}</h2></div>
+					{#each data.reports as r (r.id)}
+						<article class="rep">
+							<div class="rep-top">
+								<strong
+									>{fmtDay(new Date(r.periodStart + 'T12:00:00Z'))} – {fmtDay(
+										new Date(r.periodEnd + 'T12:00:00Z')
+									)}</strong
+								>
+								<a class="ui-btn-soft" href="/parent/child/{c.studentId}/reports/{r.id}/pdf"
+									>{m.rp_pdf()}</a
+								>
+							</div>
+							<span class="small muted">{m.rp_from_tutor({ name: r.tutorName })}</span>
+							<ReportFigures figures={r.figures} />
+							{#if r.note}<p class="prewrap rep-note">“{r.note}”</p>{/if}
+						</article>
+					{:else}
+						<p class="muted">{m.rp_none_parent({ name: n })}</p>
+					{/each}
+				</section>
+			{/if}
+
 			<section class="ui-card cream tip" aria-labelledby="tip-h">
 				<h2 id="tip-h" class="small-h"><LineIcon name="sun" size={20} /> {m.par3_how_help()}</h2>
 				<p class="ui-serif">{tipText}</p>
@@ -286,10 +334,14 @@
 					<ul class="rows-list">
 						{#each data.homework as h (h.id)}
 							<li>
-								<span>{h.title}</span>
-								<span class="small muted"
-									>{h.dueOn ? fmtDay(new Date(h.dueOn + 'T12:00:00Z')) : m.pf_no_due()}</span
+								<span
+									>{h.title}<span class="small muted hw-due"
+										>{h.dueOn
+											? `${fmtDay(new Date(h.dueOn + 'T12:00:00Z'))}${h.dueTime ? ` · ${h.dueTime}` : ''}`
+											: m.pf_no_due()}</span
+									></span
 								>
+								<span class="pill {hwPill(h.status)}">{hwLabel(h.status)}</span>
 							</li>
 						{:else}
 							<li class="muted">{m.pf_hw_none({ name: n })}</li>
@@ -327,6 +379,29 @@
 </div>
 
 <style>
+	.rep {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding: 10px 0;
+		border-top: 1px solid var(--border);
+	}
+	.rep:first-of-type {
+		border-top: none;
+	}
+	.rep-top {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 8px;
+	}
+	.rep-note {
+		margin: 0;
+		font-style: italic;
+	}
+	.hw-due {
+		display: block;
+	}
 	.who {
 		display: flex;
 		align-items: center;

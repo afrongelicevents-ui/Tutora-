@@ -102,6 +102,31 @@
 								{/each}
 							</ul>
 						{/if}
+						{#if c.tests}
+							<h3 class="sub">{m.qb_parent_tests()}</h3>
+							<ul class="terms">
+								{#each c.tests.terms as tm (tm.term)}
+									<li>
+										<span>{tm.term}</span><strong>{tm.pct}%</strong><span class="small muted"
+											>{m.qb_n_tests({ n: tm.tests })}</span
+										>
+									</li>
+								{/each}
+							</ul>
+							<ul class="bars">
+								{#each c.tests.chapters as ch (ch.subject + ch.chapter)}
+									<li>
+										<span class="lbl"
+											>{ch.chapter} <span class="small muted">· {ch.subject}</span></span
+										>
+										<span class="bar"
+											><span style="width:{ch.pct}%;background:{tone(ch.pct)}"></span></span
+										>
+										<strong>{ch.pct}%</strong>
+									</li>
+								{/each}
+							</ul>
+						{/if}
 					{/if}
 					<a class="ui-btn-soft" href="/parent/report?child={encodeURIComponent(c.id)}"
 						>{m.par3_weekly()} ›</a
@@ -308,5 +333,22 @@
 		.ui-cols {
 			display: grid;
 		}
+	}
+	.terms {
+		list-style: none;
+		margin: 0 0 8px;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	.terms li {
+		display: flex;
+		flex-direction: column;
+		padding: 8px 12px;
+		border-radius: 14px;
+		background: rgba(255, 255, 255, 0.6);
+		border: 1px solid rgba(11, 37, 69, 0.08);
+		min-width: 7rem;
 	}
 </style>

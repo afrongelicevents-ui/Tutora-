@@ -12,6 +12,9 @@
 	// Set this to false once the custom domain is live.
 	"workers_dev": true,
 	"preview_urls": false,
+	// Workers AI (the Pro AI test maker): FREE allowance only. Tutora keeps its own daily
+	// counter and stops at 80% of the free 10,000 neurons (src/lib/server/ai-tests.ts).
+	"ai": { "binding": "AI" },
 	// The TEST site: same code, its own Worker, address and database branch, full of fake data.
 	"env": {
 		"test": {
@@ -22,6 +25,7 @@
 				"binding": "ASSETS",
 				"directory": ".svelte-kit/cloudflare"
 			},
+			"ai": { "binding": "AI" },
 			"vars": { "TEST_SITE": "1" }
 		}
 	}
