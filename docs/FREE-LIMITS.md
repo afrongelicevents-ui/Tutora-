@@ -131,6 +131,24 @@ database batch covers more of each page) and paging long lists.
 Database driver, same 12 queries on Cloudflare: WebSocket 12 ms, HTTP 9 ms, HTTP batch 4 ms.
 Reading pages now use HTTP with automatic batching; form posts keep the WebSocket.
 
+## After the overnight build (test site, 16 Nov 2026)
+
+Tutora Family, Tutora Pro, meeting links, the new owner admin, the question bank, tests and
+the AI test maker were added. Same method (`Measure CPU (test site)`), 234 measured requests:
+
+|                                           | Before tonight | After tonight |
+| ----------------------------------------- | -------------- | ------------- |
+| Median CPU per request                    | 11 ms          | **11 ms**     |
+| p90                                       | 19–21 ms       | **18 ms**     |
+| Requests refused for going over the limit | 0              | **0**         |
+| Errors seen by the visitor                | 0              | **0**         |
+
+Owner pages are 6–19 ms, parent pages 6–22 ms, student pages 6–25 ms, tutor pages 7–19 ms.
+Still above 10 ms and on the watch list: signing in (`POST /login`, 44–55 ms: password check
+plus the rate-limit and lockout bookkeeping; Cloudflare allowed every one) and the hourly
+job endpoint (not used: the jobs run from GitHub Actions). The AI test maker's own CPU is
+small: the Worker waits for Cloudflare's AI, which does not count as CPU.
+
 ## AI test maker (Workers AI)
 
 - **Free allowance only:** 10,000 neurons a day for the whole Cloudflare account. Model
