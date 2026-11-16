@@ -51,6 +51,10 @@
 					></label
 				>
 			{/if}
+			<label class="check"
+				><input type="checkbox" name="iamParent" required />
+				<span>{m.fb_iam_parent({ name: inv.firstName })}</span></label
+			>
 			<button class="btn btn-block" type="submit">{m.v3_code_connect()}</button>
 		</form>
 	{:else if creating || e.form || Object.keys(e).length}
@@ -107,6 +111,11 @@
 					></label
 				>
 			{/if}
+			<label class="check"
+				><input type="checkbox" name="iamParent" required checked={v.iamParent === 'on'} />
+				<span>{m.fb_iam_parent({ name: inv.firstName })}</span></label
+			>
+			{#if e.iamParent}<p class="alert" role="alert">{t(e.iamParent)}</p>{/if}
 			<label class="check">
 				<input
 					type="checkbox"

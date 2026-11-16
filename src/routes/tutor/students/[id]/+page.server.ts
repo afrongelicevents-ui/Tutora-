@@ -36,6 +36,7 @@ import { isIsoDate, localDate } from '#lib/tz.ts';
 import { attendee } from '#lib/server/db/app.schema.ts';
 import { and, eq } from 'drizzle-orm';
 import { m } from '#lib/paraglide/messages.js';
+import { removeStudentLink, saveStudentLink, studentLink } from '#lib/server/meeting-links.ts';
 
 async function student(db: App.Locals['db'], tutorId: string, id: string) {
 	// only this tutor's own students; anyone else is "not found"
@@ -57,7 +58,8 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 		checkin,
 		scores,
 		results,
-		school
+		school,
+		meetLink
 	] = await Promise.all([
 		studentLessons(locals.db, t, s.id),
 		balanceFor(locals.db, t, s.id),
@@ -69,7 +71,8 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 		latestForTutor(locals.db, s.id),
 		topicScores(locals.db, s.id, { weakFirst: true }),
 		recentResults(locals.db, s.id, 10),
-		schoolWork(locals.db, s.id)
+		schoolWork(locals.db, s.id),
+		studentLink(locals.db, t, s.id)
 	]);
 	// what this tutor and student have done together (lessons, paid, homework, marks)
 	const us = await together(locals.db, s.id, t);
@@ -93,6 +96,7 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 			mine: r.tutorId === t
 		})),
 		school,
+		meetLink,
 		lessons,
 		balance,
 		payments: payments.map((p) => ({
@@ -197,6 +201,19 @@ export const actions: Actions = {
 				{ kind: 'lesson', link: `/student/lessons/${before.lessonId}` }
 			);
 		return { done: 'lessonNote' };
+	},
+	// the tutor's own recurring Teams / Meet / Zoom link for this student's lessons
+	meetLink: async ({ locals, url, request, params }) => {
+		const t = requireTutor(locals.user, url).id;
+		const s = await student(locals.db, t, params.id);
+		const f = formObject(await request.formData());
+		if (f.remove) {
+			await removeStudentLink(locals.db, t, s.id);
+			return { done: 'meetLink', removed: true };
+		}
+		const r = await saveStudentLink(locals.db, t, s.id, f.url ?? '');
+		if (!r.ok) return fail(400, { meetError: r.error, meetUrl: (f.url ?? '').slice(0, 500) });
+		return { done: 'meetLink', sharedWith: r.sharedWith };
 	},
 	level: async ({ locals, url, request, params }) => {
 		const t = requireTutor(locals.user, url).id;

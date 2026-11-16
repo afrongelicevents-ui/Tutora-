@@ -12,6 +12,8 @@ import { paraglideMiddleware } from '#lib/paraglide/server.js';
 import { isAllowedAuthPath, securityHeaders } from '#lib/server/security.ts';
 import { isRole } from '#lib/roles.ts';
 import { areaAccess } from '#lib/server/guards.ts';
+import { familyFeatureFor, lockedLocation } from '#lib/family-features.ts';
+import { familyAccess } from '#lib/server/family-billing.ts';
 
 const handleParaglide: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request, locale }) => {
@@ -102,6 +104,19 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 			status: 303,
 			headers: { location: `/no-access?for=${gate.area}` }
 		});
+	}
+	// Tutora Family pages (planner, check-ins, progress, reports…): locked on the free level
+	const u = event.locals.user;
+	if (u && (u.role === 'student' || u.role === 'parent')) {
+		const feature = familyFeatureFor(event.url.pathname);
+		if (feature && !(await familyAccess(event.locals.db, u.id)).active) {
+			if (event.isDataRequest || event.url.pathname.endsWith('/__data.json'))
+				return new Response('Forbidden', { status: 403 });
+			return new Response(null, {
+				status: 303,
+				headers: { location: lockedLocation(event.url.pathname, feature) }
+			});
+		}
 	}
 	return svelteKitHandler({ event, resolve, auth, building });
 };

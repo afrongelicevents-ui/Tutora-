@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { m } from '#lib/i18n.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
+	import { photoSrc } from '#lib/photo-slots.ts';
 	let { data } = $props();
-	// the owner's own homepage photo (Owner → Homepage), else the family photo
-	const photo = $derived(
-		data.heroPhotoV ? `/hero-photo?v=${data.heroPhotoV}` : '/photos/family-study.webp'
-	);
+	// the owner's own homepage photo (Owner → Photos), else the family photo
+	const photo = $derived(photoSrc(data.photos, 'home'));
 	const offers = [
 		{ icon: 'search', tone: 'navy', t: m.home_o1_t(), b: m.home_o1_b(), href: '/tutors' },
 		{ icon: 'calendar', tone: 'blue', t: m.home_o2_t(), b: m.home_o2_b(), href: null },

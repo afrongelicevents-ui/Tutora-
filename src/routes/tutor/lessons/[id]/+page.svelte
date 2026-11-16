@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ToolLogo from '#lib/components/tools/ToolLogo.svelte';
+	import { joinLabel, providerName } from '#lib/components/tools/join.ts';
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDayTime, fmtTime } from '#lib/tz.ts';
 	import MaterialList from '#lib/components/tools/MaterialList.svelte';
@@ -39,31 +40,66 @@
 			{#if l.mode === 'online'}
 				{#if data.meeting}
 					<strong class="withlogo"
-						><ToolLogo tool={data.meeting.provider} size={24} chip />{data.meeting.provider ===
-						'meet'
-							? 'Google Meet'
-							: 'Microsoft Teams'}</strong
+						><ToolLogo tool={data.meeting.provider} size={24} chip />{providerName(
+							data.meeting.provider
+						)}</strong
 					>
-					<a
-						class="btn btn-block"
-						href={data.meeting.joinUrl}
-						target="_blank"
-						rel="noopener noreferrer"
-						>{data.meeting.provider === 'meet' ? m.tools6_join_meet() : m.tools6_join_teams()}</a
-					>
-					{#if data.roomOpen}<a class="btn btn-ghost btn-block" href="/room/{l.id}"
-							>{m.tools6_use_room()}</a
-						>{:else}<span class="small">{m.ld3_room_fallback()}</span>{/if}
+					{#if data.roomOpen}
+						<a
+							class="btn btn-block"
+							href={data.meeting.url}
+							target="_blank"
+							rel="noopener noreferrer">{joinLabel(data.meeting.provider)}</a
+						>
+						<a class="btn btn-ghost btn-block" href="/room/{l.id}">{m.ml_room_alt()}</a>
+					{:else}<span class="small">{m.ml_opens()}</span>{/if}
 				{:else}
 					<strong>{m.tools6_room()}</strong>
 					{#if data.roomOpen}<a class="btn btn-block" href="/room/{l.id}">{m.room_start()}</a
 						>{:else}<span class="small">{m.room_opens_10()}</span>{/if}
+					{#if !data.group && l.people.length === 1}<a
+							class="small"
+							href="/tutor/students/{l.people[0].userId}#lesson-link">{m.ml_h()} ›</a
+						>{/if}
 				{/if}
 			{:else}
 				<strong>{m.mode_in_person()}</strong>
 			{/if}
 			<a class="btn btn-ghost btn-block" href="/lessons/{l.id}/ics">{m.add_to_calendar()}</a>
 		</div>
+	{/if}
+
+	{#if data.group && l.mode === 'online' && l.status === 'scheduled'}
+		<!-- one recurring link for everybody in this group/class lesson (no API keys) -->
+		<section class="block" id="class-link">
+			<div class="section-h"><h2>{m.ml_class_h()}</h2></div>
+			<p class="note">{m.ml_class_lead()}</p>
+			{#if form && 'classDone' in form}<p class="notice" role="status">
+					{form.classDone === 'removed' ? m.ml_removed() : m.ml_saved()}
+				</p>{/if}
+			<form method="POST" action="?/classLink" class="stack">
+				<label for="class-url">{m.ml_label()}</label>
+				<input
+					id="class-url"
+					name="url"
+					type="url"
+					inputmode="url"
+					class="input"
+					required
+					maxlength="500"
+					placeholder="https://meet.google.com/abc-defg-hij"
+					defaultValue={form && 'classUrl' in form ? form.classUrl : (data.classLink?.url ?? '')}
+				/>
+				<span class="note">{m.ml_tip()}</span>
+				<button class="btn btn-sm" type="submit">{m.ml_save()}</button>
+			</form>
+			{#if data.classLink}
+				<form method="POST" action="?/classLink">
+					<input type="hidden" name="remove" value="1" />
+					<button class="btn btn-ghost btn-sm" type="submit">{m.ml_remove()}</button>
+				</form>
+			{/if}
+		</section>
 	{/if}
 
 	<section class="block">

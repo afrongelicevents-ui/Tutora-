@@ -13,7 +13,7 @@ import { packagesForUser } from '#lib/server/billing.ts';
 import { canReview, tutorsForUser } from '#lib/server/people.ts';
 import { getSettings } from '#lib/server/settings.ts';
 import { myFavourites } from '#lib/server/student.ts';
-import { meetingsFor } from '#lib/server/student-home.ts';
+import { joinLinks } from '#lib/server/meeting-links.ts';
 import { requireRole } from '#lib/server/guards.ts';
 import { afterAccept } from '#lib/server/after-accept.ts';
 import { toolsEnv } from '#lib/server/tools/env.ts';
@@ -25,7 +25,7 @@ import { m } from '#lib/paraglide/messages.js';
 import { todoFromTutors } from '#lib/server/student-tutors.ts';
 import { studentToolStatus } from '#lib/server/tool-status.ts';
 import { attendee } from '#lib/server/db/app.schema.ts';
-import { lessonMaterial, lessonMeeting } from '#lib/server/db/v3.schema.ts';
+import { lessonMaterial } from '#lib/server/db/v3.schema.ts';
 import { homework, homeworkAnswer } from '#lib/server/db/app.schema.ts';
 import { gte } from 'drizzle-orm';
 import { and, desc, eq } from 'drizzle-orm';
@@ -46,7 +46,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const nextId = upcomingLessons[0]?.id ?? null;
 	// "View all" shows every shared material in the same list
 	const allMaterials = url.searchParams.get('materials') === 'all';
-	const [todo, tools, materials, nextMeeting, handedIn] = await Promise.all([
+	const [todo, tools, materials, joins, handedIn] = await Promise.all([
 		todoFromTutors(locals.db, u.id, now),
 		studentToolStatus(locals.db, u.id, url),
 		// files and quizzes the tutor shared on this student's lessons, newest first
@@ -63,13 +63,17 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.where(and(eq(attendee.userId, u.id), eq(attendee.status, 'booked')))
 			.orderBy(desc(lessonMaterial.createdAt))
 			.limit(allMaterials ? 200 : 5),
-		// the next lesson's Meet / Teams link (shown only on this student's own lesson)
-		nextId
-			? locals.db
-					.select({ provider: lessonMeeting.provider, joinUrl: lessonMeeting.joinUrl })
-					.from(lessonMeeting)
-					.where(eq(lessonMeeting.lessonId, nextId))
-			: Promise.resolve([]),
+		// how to join each upcoming lesson: the lesson's own meeting, else the tutor's class
+		// link, else the tutor's link for this student (only this student's own lessons)
+		joinLinks(
+			locals.db,
+			upcomingLessons.map((l) => ({
+				lessonId: l.id,
+				tutorId: l.tutorId,
+				studentIds: [u.id],
+				group: l.capacity > 1
+			}))
+		),
 		// homework handed in during the last 7 days
 		locals.db
 			.select({ id: homework.id, title: homework.title, at: homeworkAnswer.createdAt })
@@ -85,10 +89,6 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.limit(3)
 	]);
 
-	const meetings = await meetingsFor(
-		locals.db,
-		lessons.map((l) => l.id)
-	);
 	// each tutor's own cancel rule and contact; and whether this person may review them
 	const myTutors = await Promise.all(
 		tutors.map(async (t) => {
@@ -113,7 +113,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			.filter((l) => l.endsAt.getTime() + CLOSE_AFTER_MIN * 60_000 > now.getTime())
 			.map(({ tutorId, ...l }) => ({
 				...l,
-				meeting: meetings.get(l.id) ?? null,
+				meeting: joins.get(l.id)?.provider ?? null,
 				cancelHours: hours(tutorId),
 				canCancel: l.startsAt.getTime() - now.getTime() >= hours(tutorId) * 3_600_000,
 				roomOpen:
@@ -129,7 +129,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		tools,
 		materials: allMaterials ? materials : materials.slice(0, 4),
 		moreMaterials: !allMaterials && materials.length > 4,
-		nextJoin: nextMeeting[0]?.joinUrl?.startsWith('https://') ? nextMeeting[0] : null,
+		nextJoin: (() => {
+			const j = nextId ? joins.get(nextId) : undefined;
+			return j ? { provider: j.provider, joinUrl: j.url } : null;
+		})(),
 		handedIn,
 		today: localDate(now),
 		packages: packages

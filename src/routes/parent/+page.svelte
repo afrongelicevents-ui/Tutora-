@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { photoSrc } from '#lib/photo-slots.ts';
+	import { page } from '$app/state';
 	import { m } from '#lib/i18n.ts';
 	import { fmtDay, fmtTime, localDate } from '#lib/tz.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	import Hero from '#lib/components/ui/Hero.svelte';
+	import FamilyState from '#lib/components/family/FamilyState.svelte';
 	import IconTile from '#lib/components/ui/IconTile.svelte';
 	import StatTile from '#lib/components/ui/StatTile.svelte';
 	import Avatar from '#lib/components/ui/Avatar.svelte';
@@ -32,7 +35,7 @@
 	<Hero
 		title={hello}
 		lead={m.pf_lead()}
-		photo="/photos/family-study.webp"
+		photo={photoSrc(page.data.photos, 'parent_home')}
 		photoAlt={m.pf_photo_alt()}
 		photoWidth={612}
 		photoHeight={408}
@@ -47,6 +50,19 @@
 				/></svg
 			>{m.pf_motto()}</span
 		>
+		<!-- Tutora Family: the plan's state, and Pay now / Upgrade when needed -->
+		<span class="fam-strip">
+			<FamilyState reason={data.family.reason} until={data.family.until} />
+			{#if data.family.payInvoiceId}
+				<a class="ui-btn" href="/parent/checkout?invoice={data.family.payInvoiceId}"
+					>{m.fb_pay_now()}</a
+				>
+			{:else if !data.family.active || data.family.reason === 'grace'}
+				<a class="ui-btn" href="/parent/plans">{m.fb_upgrade()}</a>
+			{:else}
+				<a class="fam-link" href="/parent/plans">{m.fb_plans_title()} ›</a>
+			{/if}
+		</span>
 	</Hero>
 
 	{#if data.connected}<p class="notice" role="status">
@@ -116,6 +132,17 @@
 						</li>
 					</ul>
 				</div>
+				{#if data.family.reason !== 'pilot' && !data.family.covered.includes(c.id)}
+					<p class="fam-kid">
+						<span class="ui-pill">{m.fb_child_free()}</span>
+						<a
+							href={data.family.payInvoiceId
+								? `/parent/checkout?invoice=${data.family.payInvoiceId}`
+								: '/parent/checkout'}
+							>{data.family.payInvoiceId ? m.fb_pay_now() : m.fb_upgrade()} ›</a
+						>
+					</p>
+				{/if}
 				<a class="ui-btn block" href="/parent/child/{c.id}"
 					>{m.pf_view_child({ name: c.firstName })} →</a
 				>
@@ -216,6 +243,23 @@
 		justify-content: space-between;
 		gap: 12px;
 		flex-wrap: wrap;
+	}
+	.fam-strip {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.6rem;
+		margin-top: 0.6rem;
+	}
+	.fam-link {
+		font-weight: 600;
+	}
+	.fam-kid {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin: 0 0 0.5rem;
+		font-size: 0.9rem;
 	}
 	.kids {
 		display: flex;

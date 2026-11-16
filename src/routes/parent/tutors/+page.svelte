@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { photoSrc } from '#lib/photo-slots.ts';
+	import { page } from '$app/state';
 	import { m } from '#lib/i18n.ts';
 	import { fmtDay, fmtTime } from '#lib/tz.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
@@ -15,7 +17,7 @@
 	<Hero
 		title={m.pf_tutors_h()}
 		lead={m.pf_tutors_lead()}
-		photo="/photos/parent-helping.webp"
+		photo={photoSrc(page.data.photos, 'parent_tutors')}
 		photoAlt={m.pf_photo_helping_alt()}
 		photoWidth={625}
 		photoHeight={640}

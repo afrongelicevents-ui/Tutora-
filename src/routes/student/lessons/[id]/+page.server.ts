@@ -8,7 +8,6 @@ import { OPEN_BEFORE_MIN, CLOSE_AFTER_MIN } from '#lib/server/room.ts';
 import {
 	lessonFeedback,
 	lessonMaterial,
-	lessonMeeting,
 	schoolInfo,
 	schoolSubject
 } from '#lib/server/db/v3.schema.ts';
@@ -16,6 +15,7 @@ import { BookingFail, cancelMyPlace } from '#lib/server/bookings.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
 import { fmtDayTime } from '#lib/tz.ts';
 import { m } from '#lib/paraglide/messages.js';
+import { joinLinks } from '#lib/server/meeting-links.ts';
 
 async function currentTopic(db: App.Locals['db'], studentId: string, subjectName: string | null) {
 	if (!subjectName) return null;
@@ -32,8 +32,11 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 	const l = await myLesson(locals.db, u.id, Number(params.id) || 0);
 	if (!l) error(404, 'Not found');
 	const now = Date.now();
-	const [[meeting], materials, [note], [school], topic] = await Promise.all([
-		locals.db.select().from(lessonMeeting).where(eq(lessonMeeting.lessonId, l.id)),
+	const [joins, materials, [note], [school], topic] = await Promise.all([
+		// the lesson's own meeting, else the tutor's class link, else the tutor's link for me
+		joinLinks(locals.db, [
+			{ lessonId: l.id, tutorId: l.tutorId, studentIds: [u.id], group: l.capacity > 1 }
+		]),
 		locals.db
 			.select({
 				id: lessonMaterial.id,
@@ -73,7 +76,10 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 				+l.startsAt - now >= l.cancelHours * 3_600_000,
 			past: +l.endsAt < now
 		},
-		meeting: meeting ? { provider: meeting.provider, joinUrl: meeting.joinUrl } : null,
+		meeting: (() => {
+			const j = joins.get(l.id);
+			return j ? { provider: j.provider, joinUrl: j.url } : null;
+		})(),
 		materials: await Promise.all(
 			materials.map(
 				async (x: {

@@ -179,6 +179,7 @@ export async function childOverview(db: DB, parentId: string, studentId: string,
 			id: l.id,
 			subjectName: l.subjectName,
 			tutorName: l.tutorName,
+			tutorSlug: l.tutorSlug,
 			startsAt: l.startsAt,
 			mode: l.mode,
 			address: l.address

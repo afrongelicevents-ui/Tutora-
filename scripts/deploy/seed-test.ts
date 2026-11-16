@@ -68,7 +68,12 @@ async function main() {
 				.select({ id: schema.user.id })
 				.from(schema.user)
 				.where(eq(schema.user.id, 'test_teacher'));
-			if (seeded && !real && v3 && buddies && msgs && fu && ps && pt && sv && teacher) {
+			// Tutora Family fake families (parent4@example.com) are there too?
+			const [fam] = await db
+				.select({ id: schema.user.id })
+				.from(schema.user)
+				.where(eq(schema.user.id, 'test_parent4'));
+			if (seeded && !real && v3 && buddies && msgs && fu && ps && pt && sv && teacher && fam) {
 				console.log('Test data already there: kept.');
 				return;
 			}

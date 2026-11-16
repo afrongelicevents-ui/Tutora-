@@ -119,7 +119,8 @@ export const actions: Actions = {
 				username: f.username ?? '',
 				password: f.password ?? '',
 				level: f.level,
-				year: f.year
+				year: f.year,
+				confirmParent: f.iamParent === 'on'
 			});
 			if (!r.ok)
 				return fail(400, {

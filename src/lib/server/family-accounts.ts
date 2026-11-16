@@ -16,6 +16,8 @@ export interface ChildInput {
 	password: string;
 	level?: string | null;
 	year?: string | null;
+	/** the "I am this child's parent or guardian" tick (the page always sends it) */
+	confirmParent?: boolean;
 }
 
 function check(v: { name?: string; username: string; password: string }) {
@@ -42,6 +44,7 @@ export async function createChildAccount(
 		.where(eq(user.id, parentId));
 	if (!p || p.role !== 'parent') throw new FamilyFail('fam_err_not_parent');
 	const { username, errors } = check(v);
+	if (v.confirmParent === false) errors.confirmParent = 'fb_err_confirm_parent';
 	if (Object.keys(errors).length) return { ok: false as const, errors };
 	const ctx = await auth.$context;
 	const email = usernameEmail(username);

@@ -177,9 +177,12 @@ export async function redeemInvite(
 	db: DB,
 	code: string,
 	parentId: string,
-	opts: { guardianClaim: boolean },
+	/** confirmedParent: the "I am this child's parent or guardian" tick; the pages always
+	 * pass it, and an unticked form (false) never connects */
+	opts: { guardianClaim: boolean; confirmedParent?: boolean },
 	now = new Date()
 ) {
+	if (opts.confirmedParent === false) throw new FamilyFail('fb_err_confirm_parent');
 	const [p] = await db.select({ role: user.role }).from(user).where(eq(user.id, parentId));
 	if (!p || p.role !== 'parent') throw new FamilyFail('fam_err_not_parent');
 	return db.transaction(async (tx) => {

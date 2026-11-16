@@ -218,6 +218,11 @@
 				/>
 				<Field name="year" label={m.sw3_year()} value={f?.create?.year ?? ''} />
 				<Field name="level" label={m.find3_level()} value={f?.create?.level ?? ''} />
+				<label class="check"
+					><input type="checkbox" name="iamParent" required />
+					<span>{m.fb_iam_parent_child()}</span></label
+				>
+				{#if ce.confirmParent}<p class="alert" role="alert">{t(ce.confirmParent)}</p>{/if}
 				<button class="ui-btn" type="submit">{m.par3_create_child()}</button>
 			</form>
 		</details>

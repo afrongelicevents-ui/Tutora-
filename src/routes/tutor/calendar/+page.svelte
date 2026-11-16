@@ -54,7 +54,8 @@
 				joinHref:
 					l.mode === 'online' &&
 					l.endsAt > now &&
-					(l.joinUrl || l.startsAt.getTime() - 10 * 60_000 <= now.getTime())
+					// "Join" from 10 minutes before (the same rule as the lesson room)
+					l.startsAt.getTime() - 10 * 60_000 <= now.getTime()
 						? (l.joinUrl ?? `/room/${l.id}`)
 						: undefined,
 				msgHref:

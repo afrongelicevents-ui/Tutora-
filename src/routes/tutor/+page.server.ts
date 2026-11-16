@@ -12,7 +12,7 @@ import { getSettings, listAvailability, listSubjects } from '#lib/server/setting
 import { inboxActions } from '#lib/server/actions/tutor-inbox.ts';
 import { briefsForRequests } from '#lib/server/brief.ts';
 import { attendee, lesson, profile } from '#lib/server/db/app.schema.ts';
-import { lessonMeeting } from '#lib/server/db/v3.schema.ts';
+import { joinLinks } from '#lib/server/meeting-links.ts';
 import { addDays, local, startOfLocalDay, startOfLocalWeek } from '#lib/tz.ts';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -49,16 +49,18 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		.select({ userId: profile.userId, phone: profile.phone, parentPhone: profile.parentPhone })
 		.from(profile)
 		.where(inArray(profile.userId, ids));
-	// today's meeting links and the next lesson's, in one lookup
-	const meetIds = next && !lessonIds.includes(next.id) ? [...lessonIds, next.id] : lessonIds;
-	const meetingsQ = db
-		.select({
-			lessonId: lessonMeeting.lessonId,
-			provider: lessonMeeting.provider,
-			joinUrl: lessonMeeting.joinUrl
-		})
-		.from(lessonMeeting)
-		.where(inArray(lessonMeeting.lessonId, meetIds));
+	// today's join links and the next lesson's, in one go: the lesson's own meeting, else the
+	// class link (group lessons), else the student's own link
+	const forJoin = next && !lessonIds.includes(next.id) ? [...lessons, next] : lessons;
+	const meetingsQ = joinLinks(
+		db,
+		forJoin.map((l) => ({
+			lessonId: l.id,
+			tutorId: t,
+			studentIds: l.people.map((p) => p.userId),
+			group: l.capacity > 1
+		}))
+	);
 	const placesQ = db
 		.select({
 			id: attendee.id,
@@ -84,7 +86,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	])) as [
 		Awaited<ReturnType<typeof conversations>>,
 		{ userId: string; phone: string | null; parentPhone: string | null }[],
-		{ lessonId: number; provider: 'meet' | 'teams'; joinUrl: string }[],
+		Awaited<ReturnType<typeof joinLinks>>,
 		{
 			id: number;
 			lessonId: number;
@@ -93,8 +95,11 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			address: string | null;
 		}[]
 	];
-	const meetings = allMeetings.filter((x) => lessonIds.includes(x.lessonId));
-	const nextMeeting = next ? allMeetings.find((x) => x.lessonId === next.id) : undefined;
+	const meetingOf = (id: number) => {
+		const j = allMeetings.get(id);
+		return j ? { lessonId: id, provider: j.provider, joinUrl: j.url } : null;
+	};
+	const nextMeeting = next ? meetingOf(next.id) : null;
 	// what is still missing from setup (shown as a reminder, never forced)
 	const missing = [
 		!s.tutorName && 'profile',
@@ -135,7 +140,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			return {
 				...l,
 				address: mine.find((p) => p.address)?.address ?? null,
-				meeting: meetings.find((x) => x.lessonId === l.id) ?? null,
+				meeting: meetingOf(l.id),
 				people: l.people.map((p) => {
 					const ph = phones.find((x) => x.userId === p.userId);
 					const a = mine.find((x) => x.userId === p.userId);

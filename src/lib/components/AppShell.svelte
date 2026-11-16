@@ -16,6 +16,7 @@
 	let {
 		tabs,
 		more = [],
+		groups = [],
 		tag,
 		label,
 		unread = 0,
@@ -28,6 +29,8 @@
 		tabs: NavItem[];
 		/** only in the side navigation on wide screens (on phones they are linked from screens) */
 		more?: NavItem[];
+		/** side navigation in titled sections instead of tabs + more (Tutora admin) */
+		groups?: { title: string; items: NavItem[] }[];
 		/** small label next to the wordmark: Student, Family, Tutor */
 		tag: string;
 		label: string;
@@ -51,7 +54,8 @@
 		const mine = score(item);
 		return mine >= 0 && all.every((o) => o === item || score(o) <= mine);
 	}
-	const all = $derived([...tabs, ...more]);
+	const all = $derived([...tabs, ...more, ...groups.flatMap((g) => g.items)]);
+	const side = $derived(groups.length ? groups : [{ title: '', items: [...tabs, ...more] }]);
 </script>
 
 <div class="shell">
@@ -59,8 +63,18 @@
 		<a class="wordmark" href={tabs[0].href}>Tutora</a>
 		<span class="tag">{tag}</span>
 		<nav>
-			{#each all as item (item.href)}
-				<a href={item.href} aria-current={isOn(item, all) ? 'page' : undefined}>{item.label}</a>
+			{#each side as g, gi (gi)}
+				{#if g.title}<span class="group">{g.title}</span>{/if}
+				{#each g.items as item (item.href)}
+					<a
+						href={item.href}
+						class:with-icon={groups.length > 0 && !!item.icon}
+						aria-current={isOn(item, all) ? 'page' : undefined}
+						>{#if groups.length && item.icon}<span class="side-ico"
+								><LineIcon name={item.icon} size={18} /></span
+							>{/if}<span class="grow">{item.label}</span></a
+					>
+				{/each}
 			{/each}
 		</nav>
 		<div class="side-foot">
@@ -293,6 +307,51 @@
 			font-size: 1.75rem;
 			padding: 0 12px;
 			min-height: 0;
+		}
+		.side:has(.group) {
+			overflow-y: auto;
+			padding-top: 20px;
+			padding-bottom: 14px;
+		}
+		.side:has(.group) > * {
+			flex-shrink: 0;
+		}
+		.side:has(.group) .tag {
+			margin-bottom: 8px;
+		}
+		.side .group {
+			margin: 10px 12px 2px;
+			font-size: 0.75rem;
+			font-weight: 700;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+			color: var(--muted);
+		}
+		.side a.with-icon {
+			justify-content: flex-start;
+			gap: 10px;
+			min-height: 34px;
+			font-size: 0.875rem;
+			line-height: 1.2;
+		}
+		.side:has(.group) .side-foot a,
+		.side:has(.group) .side-foot button {
+			min-height: 34px;
+			font-size: 0.875rem;
+		}
+		.side-ico {
+			display: grid;
+			place-items: center;
+			flex-shrink: 0;
+			width: 26px;
+			height: 26px;
+			border-radius: 9px;
+			background: var(--ice);
+			color: var(--ocean);
+		}
+		.side a[aria-current='page'] .side-ico {
+			background: var(--navy);
+			color: #fff;
 		}
 		.side-foot {
 			margin-top: auto;

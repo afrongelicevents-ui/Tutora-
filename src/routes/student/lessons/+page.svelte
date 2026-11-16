@@ -6,6 +6,7 @@
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	import ToolLogo from '#lib/components/tools/ToolLogo.svelte';
 	import ToolTiles from '#lib/components/tools/ToolTiles.svelte';
+	import { joinLabel } from '#lib/components/tools/join.ts';
 	let { data, form } = $props();
 	const next = $derived(data.upcoming[0] ?? null);
 	const rest = $derived(data.upcoming.slice(1));
@@ -92,6 +93,14 @@
 						: '/student/find'}>{m.choose_another_time()}</a
 				>
 			{/if}
+			{#if r.status !== 'declined' && r.tutorSlug}
+				{#if data.tutors.some((x) => x.slug === r.tutorSlug)}<a
+						class="small"
+						href="/student/payments?tutor={encodeURIComponent(r.tutorSlug)}">{m.pay_tutor()}</a
+					>{:else}<span class="small muted"
+						>{m.pay_after_accept({ name: r.tutorName ?? m.tutor_word() })}</span
+					>{/if}
+			{/if}
 		</div>
 	{/each}
 
@@ -129,7 +138,7 @@
 						target="_blank"
 						rel="noopener noreferrer"
 						><LineIcon name="video" size={22} />
-						{data.nextJoin.provider === 'meet' ? m.ld3_join_meet() : m.ld3_join_teams()}</a
+						{joinLabel(data.nextJoin.provider)}</a
 					>
 					<a class="small center" href="/room/{next.id}">{m.ld3_use_room()}</a>
 				{:else if next.mode === 'online' && next.roomOpen}
@@ -141,6 +150,10 @@
 					{#if next.mode === 'online'}<span class="small center muted">{m.lt_join_soon()}</span
 						>{/if}
 				{/if}
+				{#if next.tutorSlug}<a
+						class="btn btn-secondary pay-t"
+						href="/student/payments?tutor={encodeURIComponent(next.tutorSlug)}">{m.pay_tutor()}</a
+					>{/if}
 				{#if !next.canCancel}
 					<span class="note"
 						>{m.cancel_too_late({ hours: next.cancelHours })}{#if waOf(next.tutorSlug)}
@@ -184,6 +197,15 @@
 							<span class="mode">{l.mode === 'online' ? m.lt_online() : m.lt_in_person()}</span>
 							<LineIcon name="chevron" size={20} />
 						</a>
+						<span class="row-acts">
+							{#if l.roomOpen}<a class="small" href="/student/lessons/{l.id}#join">{m.ml_join()}</a
+								>{/if}
+							{#if l.tutorSlug}<a
+									class="small"
+									href="/student/payments?tutor={encodeURIComponent(l.tutorSlug)}"
+									>{m.pay_tutor()}</a
+								>{/if}
+						</span>
 					</li>
 				{/each}
 			</ul>
@@ -459,6 +481,18 @@
 		border: 1px solid var(--border);
 		border-radius: 20px;
 		overflow: hidden;
+	}
+	.row-acts {
+		display: flex;
+		justify-content: flex-end;
+		gap: 16px;
+		padding: 0 14px 10px;
+	}
+	.row-acts:empty {
+		display: none;
+	}
+	.pay-t {
+		margin-top: 8px;
 	}
 	.box li + li {
 		border-top: 1px solid var(--border);

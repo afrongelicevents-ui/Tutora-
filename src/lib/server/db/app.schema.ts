@@ -692,3 +692,19 @@ export const platformSubject = pgTable(
 	},
 	(t) => [uniqueIndex('platform_subject_name').on(t.name)]
 );
+
+/**
+ * A photo the owner chose for one place on the site (Owner → Photos). No row = the standard
+ * photo from the project. `version` changes with every new photo, so it can be cached for good.
+ */
+export const photoSlot = pgTable('photo_slot', {
+	slot: text('slot').primaryKey(),
+	storageKey: text('storage_key').notNull(),
+	version: integer('version').notNull().default(1),
+	/** who took it / where it is from, as the owner wrote it */
+	credit: text('credit'),
+	/** the owner ticked "I have the right to use this photo" */
+	rightsConfirmed: boolean('rights_confirmed').notNull().default(false),
+	setBy: text('set_by').references(() => user.id, { onDelete: 'set null' }),
+	setAt: ts('set_at').notNull().defaultNow()
+});

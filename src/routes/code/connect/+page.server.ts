@@ -41,9 +41,10 @@ async function connect(
 	db: DB,
 	code: string,
 	parent: { id: string; name: string },
-	guardianClaim: boolean
+	guardianClaim: boolean,
+	confirmedParent: boolean
 ) {
-	const r = await redeemInvite(db, code, parent.id, { guardianClaim });
+	const r = await redeemInvite(db, code, parent.id, { guardianClaim, confirmedParent });
 	// waiting for the guardian: the child is told it is not active yet
 	const pending = r.status === 'pending_guardian';
 	await notifyUser(
@@ -87,7 +88,8 @@ export const actions: Actions = {
 				locals.db,
 				code,
 				{ id: locals.user.id, name: locals.user.name },
-				fd.get('guardian') === 'on'
+				fd.get('guardian') === 'on',
+				fd.get('iamParent') === 'on'
 			);
 			forgetCode(cookies);
 			redirect(
@@ -115,6 +117,9 @@ export const actions: Actions = {
 			});
 		const invite = await previewInvite(locals.db, code);
 		if (!invite) return fail(400, { values, errors: { form: 'v3_code_bad' } });
+		// misuse rule: only the child's parent or guardian connects (checked before the account is made)
+		if (input.iamParent !== 'on')
+			return fail(400, { values, errors: { iamParent: 'fb_err_confirm_parent' } });
 		const result = await signUp(
 			{ auth: locals.auth, db: locals.db },
 			{ ...input, accountType: 'parent', isUnder18: '' },
@@ -134,7 +139,8 @@ export const actions: Actions = {
 				locals.db,
 				code,
 				{ id: result.userId, name: input.name?.trim() ?? '' },
-				input.guardian === 'on'
+				input.guardian === 'on',
+				input.iamParent === 'on'
 			);
 			forgetCode(cookies);
 			redirect(

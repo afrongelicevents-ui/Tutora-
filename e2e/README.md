@@ -12,6 +12,8 @@ Every flow runs twice: at phone size (390×844) and at desktop size (1280×800).
 | `family-code.e2e.ts`     | student code → parent connects → parent sees only the shared areas            |
 | `buddies.e2e.ts`         | under-13 code swap → each guardian approves → buddies; a decline tells both   |
 | `tutor-approval.e2e.ts`  | owner approves a waiting tutor → tutor told → appears in Find a tutor         |
+| `owner.e2e.ts`           | approval rules, suspend / restore, hide / show a review, homepage texts       |
+| `owner-pages.e2e.ts`     | every admin page, tabs / side sections, search, filters, paging, photos, etc. |
 | `messages.e2e.ts`        | messages both ways, unread counts on both sides go back to zero after reading |
 | `bell.e2e.ts`            | an event rings the bell → Notifications lists it → the bell is clear          |
 | `tools.e2e.ts`           | Connected tools: honest status without keys, every link works, Kahoot! on     |

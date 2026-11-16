@@ -25,6 +25,8 @@ test('family code connects a parent who sees only shared areas', async ({ browse
 	await parent.fill('input[name=code]', code);
 	await press(parent, 'form.stack button[type=submit]');
 	await expect(parent).toHaveURL(/\/code\/connect/);
+	// misuse rule: the parent must tick "I am this child's parent or guardian"
+	await parent.check('form[action="?/connect"] input[name=iamParent]');
 	await press(parent, 'form[action="?/connect"] button[type=submit]');
 	await expect(parent).toHaveURL(/\/parent\?.*(connected|pending)=/);
 	const [link] = await sql<{ status: string }>(

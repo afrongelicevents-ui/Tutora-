@@ -169,6 +169,20 @@
       "when": 1794747580062,
       "tag": "0023_school_plus_teacher",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794783571133,
+      "tag": "0024_photo_slots",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794785558209,
+      "tag": "0025_meeting_links",
+      "breakpoints": true
     }
   ]
 }

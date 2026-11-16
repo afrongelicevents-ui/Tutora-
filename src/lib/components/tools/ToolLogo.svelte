@@ -4,19 +4,23 @@
 	 * Workspace product logos, Microsoft Fluent brand icons, the Kahoot! press kit). Stored
 	 * unchanged except for lossless SVG clean-up, in /static/brand. Never recolour, stretch or
 	 * crop them: they are always shown whole (object-fit: contain) with clear space around.
+	 * Zoom has no logo here: it is shown with Tutora's own plain video-call icon
+	 * (/brand/video-call.svg), not Zoom's logo.
 	 */
-	export type Tool = 'meet' | 'teams' | 'drive' | 'kahoot';
+	export type Tool = 'meet' | 'teams' | 'drive' | 'kahoot' | 'zoom';
 	export const TOOL_NAME: Record<Tool, string> = {
 		meet: 'Google Meet',
 		teams: 'Microsoft Teams',
 		drive: 'Google Drive',
-		kahoot: 'Kahoot!'
+		kahoot: 'Kahoot!',
+		zoom: 'Zoom'
 	};
 	const FILE: Record<Tool, string> = {
 		meet: '/brand/google-meet.svg',
 		teams: '/brand/microsoft-teams.svg',
 		drive: '/brand/google-drive.svg',
-		kahoot: '/brand/kahoot.svg'
+		kahoot: '/brand/kahoot.svg',
+		zoom: '/brand/video-call.svg'
 	};
 </script>
 

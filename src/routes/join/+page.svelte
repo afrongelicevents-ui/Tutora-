@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { photoSrc } from '#lib/photo-slots.ts';
+	import { page } from '$app/state';
 	import { m } from '#lib/i18n.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	let { data } = $props();
@@ -19,7 +21,7 @@
 <section class="wrap narrow look">
 	<div class="jhero">
 		<img
-			src="/photos/parent-helping.webp"
+			src={photoSrc(page.data.photos, 'join')}
 			alt={m.join_photo_alt()}
 			width="625"
 			height="640"

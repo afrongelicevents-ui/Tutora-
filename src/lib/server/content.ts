@@ -2,7 +2,7 @@ import { eq, inArray } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { siteContent } from './db/app.schema.ts';
 
-/** Homepage texts the owner can change (empty = the built-in wording). */
+/** Homepage texts the owner can change (empty = the built-in wording). Photos: photos.ts. */
 export const CONTENT_KEYS = ['hero_title', 'hero_lead', 'join_lead'] as const;
 export type ContentKey = (typeof CONTENT_KEYS)[number];
 
@@ -10,14 +10,12 @@ export async function getContent(db: DB) {
 	const rows = await db
 		.select()
 		.from(siteContent)
-		.where(inArray(siteContent.key, [...CONTENT_KEYS, 'hero_photo', 'hero_photo_v']));
+		.where(inArray(siteContent.key, [...CONTENT_KEYS]));
 	const get = (k: string) => rows.find((r) => r.key === k)?.value ?? '';
 	return {
 		heroTitle: get('hero_title'),
 		heroLead: get('hero_lead'),
-		joinLead: get('join_lead'),
-		heroPhoto: get('hero_photo') || null,
-		heroPhotoV: Number(get('hero_photo_v')) || 0
+		joinLead: get('join_lead')
 	};
 }
 

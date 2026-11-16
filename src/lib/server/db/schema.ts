@@ -6,3 +6,5 @@ export * from './messages.schema';
 export * from './schedule.schema';
 export * from './personal.schema';
 export * from './usage.schema';
+export * from './meeting.schema';
+export * from './family.schema';

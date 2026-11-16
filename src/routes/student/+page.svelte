@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { photoSrc } from '#lib/photo-slots.ts';
+	import { page } from '$app/state';
 	// Student Home: where am I, what can I continue, what next. Nothing else competes.
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay, fmtTime, localDate } from '#lib/tz.ts';
@@ -56,7 +58,7 @@
 	<Hero
 		title={greet}
 		lead={isNew ? m.sh2_welcome() : m.sh2_keep_going()}
-		photo="/photos/students-together.webp"
+		photo={photoSrc(page.data.photos, 'student_home')}
 		photoAlt={m.st_photo_alt()}
 		photoWidth={640}
 		photoHeight={640}
@@ -157,6 +159,14 @@
 			<span class="go" aria-hidden="true">→</span>
 		</a>
 	{/if}
+	<!-- "Join lesson" from 10 minutes before the next lesson -->
+	{#if data.next?.joinHref}<a
+			class="btn navy join-now"
+			href={data.next.joinHref}
+			target={data.next.joinHref.startsWith('https://') ? '_blank' : undefined}
+			rel={data.next.joinHref.startsWith('https://') ? 'noopener noreferrer' : undefined}
+			><LineIcon name="video" size={20} /> {m.ml_join()}</a
+		>{/if}
 
 	<!-- D/E. homework, then study progress -->
 	<div class="pair">
@@ -207,6 +217,13 @@
 </div>
 
 <style>
+	.join-now {
+		background: var(--navy);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+	}
 	.home {
 		max-width: 720px;
 		margin: 0 auto;

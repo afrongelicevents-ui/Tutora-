@@ -22,6 +22,7 @@ import {
 } from './checkins.ts';
 import { sendPlannerMornings } from './planner.ts';
 import { activeParents } from './family.ts';
+import { runFamilyBilling } from './family-billing.ts';
 import { shortName } from '../names.ts';
 import { t } from '../i18n.ts';
 import { m } from '../paraglide/messages.js';
@@ -61,6 +62,8 @@ export async function runScheduled(db: DB, notify: Notify, origin: string, now =
 	await run('followups', () => sendCheckinFollowups(db, notify, now));
 	await run('days', () => sendDaySummaries(db, notify, now));
 	await run('mornings', () => sendPlannerMornings(db, notify, now));
+	// Tutora Family: next invoices, payment reminders, free level after 7 days unpaid
+	await run('family', () => runFamilyBilling(db, notify, now));
 	await run('shared', () =>
 		sendSharedCheckinNotes(db, (sid, mood) => tellFamilyAbout(db, notify, sid, mood), now)
 	);

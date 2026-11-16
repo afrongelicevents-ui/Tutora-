@@ -61,7 +61,10 @@
 	{#if form?.error}<p class="alert" role="alert">
 			{t(form.error, { minutes: (form as { minutes?: number }).minutes ?? 60 })}
 		</p>{/if}
-	{#if form?.done}<p class="notice" role="status">{t(`pdone_${form.done}`)}</p>{/if}
+	{#if form?.done}<p class="notice" role="status">
+			{t(`pdone_${form.done}`)}
+			{#if form.done !== 'package'}<a href="?{q}&tab=history">{m.pay_see_receipts()} ›</a>{/if}
+		</p>{/if}
 
 	<div class="money3">
 		<div><b>{money(data.balance.paid)}</b><span>{m.paid()}</span></div>
@@ -183,6 +186,10 @@
 			<button class="btn btn-block" type="submit">{m.i_paid_cash()}</button>
 		</form>
 	{:else if data.tab === 'history'}
+		<!-- the next step: pay what is still owed -->
+		{#if toPay > 0}<a class="btn btn-block" href="?{q}&tab=pay"
+				>{m.pay_now_owed({ amount: money(toPay) })}</a
+			>{/if}
 		<ul class="list card">
 			{#each data.payments as p (p.id)}
 				<li>
@@ -199,7 +206,9 @@
 							download>{m.receipt_pdf({ n: p.receipt })}</a
 						>{:else}<span class="pill {p.status === 'rejected' ? 'p-no' : 'p-wait'}"
 							>{p.status === 'rejected' ? m.status_rejected() : m.status_waiting_tutor()}</span
-						>{/if}
+						>{#if p.status === 'rejected'}<a class="btn btn-ghost btn-sm" href="?{q}&tab=pay"
+								>{m.pay_again()}</a
+							>{/if}{/if}
 				</li>
 			{:else}
 				<li class="empty">{m.none_yet()}</li>

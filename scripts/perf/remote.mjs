@@ -146,15 +146,23 @@ const ROLES = {
 	],
 	'owner@example.com': [
 		'/owner',
+		'/owner/tutors',
 		'/owner/students',
+		'/owner/parents',
+		'/owner/teachers',
 		'/owner/bookings',
+		'/owner/subjects',
 		'/owner/payments',
+		'/owner/school-plus',
+		'/owner/safety',
 		'/owner/reports',
 		'/owner/moderation',
 		'/owner/content',
+		'/owner/photos',
 		'/owner/audit',
-		'/owner/account',
-		'/owner/limits'
+		'/owner/settings',
+		'/owner/limits',
+		'/owner/more'
 	]
 };
 

@@ -14,7 +14,13 @@ import { fmtDayTime } from '#lib/tz.ts';
 import { m } from '#lib/paraglide/messages.js';
 import { toolsEnv } from '#lib/server/tools/env.ts';
 import { connections } from '#lib/server/tools/oauth.ts';
-import { cancelMeetingForLesson, getToolPref, meetingFor } from '#lib/server/tools/meetings.ts';
+import { cancelMeetingForLesson, getToolPref } from '#lib/server/tools/meetings.ts';
+import {
+	joinLinks,
+	lessonLink,
+	removeLessonLink,
+	saveLessonLink
+} from '#lib/server/meeting-links.ts';
 import { pickerConfig, shareWithAll, verifyPickedFile } from '#lib/server/tools/drive.ts';
 import {
 	addLessonMaterial,
@@ -34,9 +40,14 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 	const t = requireTutor(locals.user, url).id;
 	const l = await lessonWithPeople(locals.db, lessonId(params.id), t);
 	if (!l) error(404, 'Not found');
-	const [materials, meeting, conn, pref] = await Promise.all([
+	const group = l.capacity > 1;
+	const [materials, joins, classLink, conn, pref] = await Promise.all([
 		lessonMaterialsForTutor(locals.db, t, l.id),
-		meetingFor(locals.db, l.id),
+		// the lesson's own meeting, else the class link, else the student's own link
+		joinLinks(locals.db, [
+			{ lessonId: l.id, tutorId: t, studentIds: l.people.map((p) => p.userId), group }
+		]),
+		group ? lessonLink(locals.db, l.id) : null,
 		connections(locals.db, t),
 		getToolPref(locals.db, t)
 	]);
@@ -54,7 +65,9 @@ export const load: PageServerLoad = async ({ locals, params, url }) => {
 				href: x.url ?? (x.fileKey ? await fileLink(x.fileKey, x.title) : null)
 			}))
 		),
-		meeting,
+		meeting: joins.get(l.id) ?? null,
+		group,
+		classLink,
 		kahootOn: pref.kahootOn,
 		picker: pickerConfig(toolsEnv(url), conn.drive)
 	};
@@ -66,6 +79,19 @@ const materialFail = (e: unknown) => {
 };
 
 export const actions: Actions = {
+	/** one Teams / Meet / Zoom link for everybody in a group (class) lesson */
+	classLink: async ({ locals, url, request, params }) => {
+		const t = requireTutor(locals.user, url).id;
+		const id = lessonId(params.id);
+		const f = formObject(await request.formData());
+		if (f.remove) {
+			await removeLessonLink(locals.db, t, id);
+			return { classDone: 'removed' };
+		}
+		const r = await saveLessonLink(locals.db, t, id, f.url ?? '');
+		if (!r.ok) return fail(400, { error: r.error, classUrl: (f.url ?? '').slice(0, 500) });
+		return { classDone: 'saved' };
+	},
 	/** a file picked with the Google Picker: checked with the tutor's Drive, then shared */
 	attachDrive: async ({ locals, url, request, params }) => {
 		const t = requireTutor(locals.user, url).id;

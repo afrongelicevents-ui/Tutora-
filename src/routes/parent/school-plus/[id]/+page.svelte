@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { photoSrc } from '#lib/photo-slots.ts';
+	import { page } from '$app/state';
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay, fmtDayTime, monthWords } from '#lib/tz.ts';
 	import LineIcon from '#lib/components/LineIcon.svelte';
@@ -33,7 +35,7 @@
 		dark
 		title="School+"
 		lead={m.spp_detail_lead()}
-		photo="/photos/parent-computer.webp"
+		photo={photoSrc(page.data.photos, 'school_plus')}
 		photoAlt={m.spp_photo_alt()}
 		photoWidth={640}
 		photoHeight={640}

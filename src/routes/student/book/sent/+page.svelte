@@ -13,6 +13,12 @@
 		{#if data.family}{m.bk3_sent_family()}{/if}
 	</p>
 	<a class="btn btn-block" href="/student/lessons">{m.bk3_see_lessons()}</a>
+	{#if data.paySlug}<a
+			class="btn btn-secondary btn-block"
+			href="/student/payments?tutor={encodeURIComponent(data.paySlug)}">{m.pay_tutor()}</a
+		>{:else if data.tutorName}<p class="small muted">
+			{m.pay_after_accept({ name: data.tutorName })}
+		</p>{/if}
 </div>
 
 <style>

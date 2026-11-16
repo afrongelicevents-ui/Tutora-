@@ -8,7 +8,7 @@ import { requireTutor } from '#lib/server/guards.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { and, eq, inArray } from 'drizzle-orm';
 import { lesson } from '#lib/server/db/app.schema.ts';
-import { lessonMeeting } from '#lib/server/db/v3.schema.ts';
+import { joinLinks } from '#lib/server/meeting-links.ts';
 import {
 	addDays,
 	addMinutes,
@@ -60,19 +60,25 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	]);
 	// in-person addresses and meeting links of THIS tutor's lessons in the range
 	const ids = lessons.map((l) => l.id);
-	const addrs: { id: number; address: string | null }[] = await locals.db
-		.select({ id: lesson.id, address: lesson.address })
-		.from(lesson)
-		.where(and(eq(lesson.tutorId, t), inArray(lesson.id, ids)));
-	const meetings: { lessonId: number; provider: 'meet' | 'teams'; joinUrl: string }[] =
-		await locals.db
-			.select({
-				lessonId: lessonMeeting.lessonId,
-				provider: lessonMeeting.provider,
-				joinUrl: lessonMeeting.joinUrl
-			})
-			.from(lessonMeeting)
-			.where(inArray(lessonMeeting.lessonId, ids));
+	// both lookups in one database batch
+	const [addrs, joins] = await Promise.all([
+		locals.db
+			.select({ id: lesson.id, address: lesson.address })
+			.from(lesson)
+			.where(and(eq(lesson.tutorId, t), inArray(lesson.id, ids))) as Promise<
+			{ id: number; address: string | null }[]
+		>,
+		// the lesson's own meeting, else the class link, else the student's own link
+		joinLinks(
+			locals.db,
+			lessons.map((l) => ({
+				lessonId: l.id,
+				tutorId: t,
+				studentIds: l.people.map((p) => p.userId),
+				group: l.capacity > 1
+			}))
+		)
+	]);
 	return {
 		view,
 		from,
@@ -83,8 +89,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		lessons: lessons.map((l) => ({
 			...l,
 			address: addrs.find((a) => a.id === l.id)?.address ?? null,
-			meeting: meetings.find((x) => x.lessonId === l.id)?.provider ?? null,
-			joinUrl: meetings.find((x) => x.lessonId === l.id)?.joinUrl ?? null
+			meeting: joins.get(l.id)?.provider ?? null,
+			joinUrl: joins.get(l.id)?.url ?? null
 		})),
 		events,
 		// waiting requests are shown differently (not yet lessons)

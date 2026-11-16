@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { photoSrc } from '#lib/photo-slots.ts';
+	import { page } from '$app/state';
 	import Hero from '#lib/components/ui/Hero.svelte';
 	import { shortName } from '#lib/names.ts';
 	import { m, t } from '#lib/i18n.ts';
@@ -57,7 +59,7 @@
 	<Hero
 		title={`${greeting}, ${first(data.name)}`}
 		lead={m.tt2_lead()}
-		photo="/photos/parent-helping.webp"
+		photo={photoSrc(page.data.photos, 'tutor_home')}
 		photoWidth={625}
 		photoHeight={640}
 	/>

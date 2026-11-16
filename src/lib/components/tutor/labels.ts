@@ -20,5 +20,5 @@ export function methodLabel(k: string): string {
 
 /** The meeting tool's name (product names are not translated). */
 export function toolLabel(k: string): string {
-	return k === 'teams' ? 'Teams' : k === 'meet' ? 'Google Meet' : k;
+	return k === 'teams' ? 'Teams' : k === 'meet' ? 'Google Meet' : k === 'zoom' ? 'Zoom' : k;
 }

@@ -5,6 +5,7 @@
 	import { waLink } from '#lib/whatsapp.ts';
 	import { shrink } from '#lib/shrink.ts';
 	import { moodLabel } from '#lib/components/tutor/mood.ts';
+	import ToolLogo from '#lib/components/tools/ToolLogo.svelte';
 	let { data, form } = $props();
 	// the same 'still to pay' as Earnings and the family see (waiting payments shown on their own)
 	const toPay = $derived(Math.max(0, data.balance.owed - data.balance.waiting));
@@ -26,9 +27,13 @@
 				return m.tut3_done_result();
 			case 'lessonNote':
 				return m.tut3_done_lesson_note();
+			case 'meetLink':
+				return form && 'removed' in form && form.removed ? m.ml_removed() : m.ml_saved();
 		}
 		return null;
 	});
+	const toolName = (k: 'meet' | 'teams' | 'zoom') =>
+		k === 'meet' ? 'Google Meet' : k === 'teams' ? 'Microsoft Teams' : 'Zoom';
 	const meterCls = (pct: number) => (pct < 60 ? 'low' : pct < 70 ? 'mid' : '');
 	const sourceLabel = (k: string) =>
 		({
@@ -285,6 +290,48 @@
 		<button class="btn btn-ghost btn-sm" type="submit">{m.save()}</button>
 	</form>
 
+	<!-- the tutor's own recurring meeting link (no API keys): one per student -->
+	<div class="section-h"><h2>{m.ml_h()}</h2></div>
+	<div class="softcard ml" id="lesson-link">
+		<span class="note">{m.ml_lead({ name: s.childName ?? s.name })}</span>
+		{#if data.meetLink}
+			<span class="ml-now"
+				><ToolLogo tool={data.meetLink.provider} size={20} />
+				{m.ml_current({ tool: toolName(data.meetLink.provider) })}</span
+			>
+		{:else}
+			<span class="note">{m.ml_none()}</span>
+		{/if}
+		{#if form && 'meetError' in form && form.meetError}<p class="alert" role="alert">
+				{t(form.meetError)}
+			</p>{/if}
+		{#if form && 'sharedWith' in form && form.sharedWith?.length}<p class="warn" role="status">
+				{m.ml_shared_warn({ names: form.sharedWith.join(', ') })}
+			</p>{/if}
+		<form method="POST" action="?/meetLink" class="ml-form">
+			<label for="meet-url">{m.ml_label()}</label>
+			<input
+				id="meet-url"
+				name="url"
+				type="url"
+				inputmode="url"
+				class="input"
+				required
+				maxlength="500"
+				placeholder="https://meet.google.com/abc-defg-hij"
+				defaultValue={form && 'meetUrl' in form ? form.meetUrl : (data.meetLink?.url ?? '')}
+			/>
+			<span class="note tip">{m.ml_tip()}</span>
+			<button class="btn btn-primary btn-sm" type="submit">{m.ml_save()}</button>
+		</form>
+		{#if data.meetLink}
+			<form method="POST" action="?/meetLink">
+				<input type="hidden" name="remove" value="1" />
+				<button class="btn btn-ghost btn-sm" type="submit">{m.ml_remove()}</button>
+			</form>
+		{/if}
+	</div>
+
 	<div class="section-h"><h2>{m.payments_h()}</h2></div>
 	<div class="stat3">
 		<div><strong>{money(data.balance.paid)}</strong><span>{m.paid()}</span></div>
@@ -524,6 +571,31 @@
 </section>
 
 <style>
+	.ml {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+	.ml-now {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-weight: 600;
+	}
+	.ml-form {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.ml-form button {
+		align-self: flex-start;
+	}
+	.warn {
+		padding: var(--space-3) var(--space-4);
+		border-radius: 10px;
+		background: var(--warn-bg);
+		color: var(--warn);
+	}
 	.back {
 		align-self: flex-start;
 	}

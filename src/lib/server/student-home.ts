@@ -13,7 +13,8 @@ import {
 	toolPref
 } from './db/v3.schema.ts';
 import { lessonsForUser } from './bookings.ts';
-import { CLOSE_AFTER_MIN } from './room.ts';
+import { CLOSE_AFTER_MIN, OPEN_BEFORE_MIN } from './room.ts';
+import { joinLinks } from './meeting-links.ts';
 import { addDays, localDate } from '../tz.ts';
 
 export async function nextLessonFor(db: DB, userId: string, now = new Date()) {
@@ -23,10 +24,16 @@ export async function nextLessonFor(db: DB, userId: string, now = new Date()) {
 	);
 	const next = upcoming[0];
 	if (!next) return null;
-	const [meeting] = await db
-		.select({ provider: lessonMeeting.provider })
-		.from(lessonMeeting)
-		.where(eq(lessonMeeting.lessonId, next.id));
+	// the lesson's own meeting, else the tutor's class link, else the tutor's link for me
+	const meeting = (
+		await joinLinks(db, [
+			{ lessonId: next.id, tutorId: next.tutorId, studentIds: [userId], group: next.capacity > 1 }
+		])
+	).get(next.id);
+	const open =
+		next.mode === 'online' &&
+		next.status === 'scheduled' &&
+		now.getTime() >= next.startsAt.getTime() - OPEN_BEFORE_MIN * 60_000;
 	return {
 		id: next.id,
 		subjectName: next.subjectName,
@@ -34,7 +41,9 @@ export async function nextLessonFor(db: DB, userId: string, now = new Date()) {
 		kind: next.kind,
 		mode: next.mode,
 		startsAt: next.startsAt,
-		meeting: meeting?.provider ?? null
+		meeting: meeting?.provider ?? null,
+		/** "Join lesson" from 10 minutes before: the meeting link, else the lesson room */
+		joinHref: open ? (meeting?.url ?? `/room/${next.id}`) : null
 	};
 }
 

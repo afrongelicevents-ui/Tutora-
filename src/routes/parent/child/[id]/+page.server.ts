@@ -1,5 +1,5 @@
 import { error, fail } from '@sveltejs/kit';
-import { and, asc, desc, eq, isNull } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, lt } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 import { parentAccess, childrenOf } from '#lib/server/family.ts';
 import { requireRole } from '#lib/server/guards.ts';
@@ -8,7 +8,14 @@ import { childPhotos } from '#lib/server/parent-home.ts';
 import { readingParents } from '#lib/server/messages.ts';
 import { tutorsForUser } from '#lib/server/people.ts';
 import { shareReport } from '#lib/server/planner.ts';
-import { homework, homeworkAnswer } from '#lib/server/db/app.schema.ts';
+import {
+	attendee,
+	homework,
+	homeworkAnswer,
+	lesson,
+	subject,
+	tutorProfile
+} from '#lib/server/db/app.schema.ts';
 import { openPartnershipOf } from '#lib/server/partnership.ts';
 import {
 	BookingFail,
@@ -29,14 +36,50 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 	const access = await parentAccess(locals.db, u.id, id);
 	if (!access.ok) error(404, 'Not found');
 	const kid = (await childrenOf(locals.db, u.id)).find((k) => k.studentId === id);
-	const [child, photos, readers, tutors, sharesReport, sp] = await Promise.all([
+	const [child, photos, readers, tutors, sharesReport, sp, past] = await Promise.all([
 		childOverview(locals.db, u.id, id),
 		childPhotos(locals.db, [id]),
 		readingParents(locals.db, id),
 		tutorsForUser(locals.db, id),
 		shareReport(locals.db, id),
 		// the child's School+ partnership still going, if any (same batch, one small query)
-		openPartnershipOf(locals.db, u.id, id)
+		openPartnershipOf(locals.db, u.id, id),
+		// the last lessons and whether they happened (the tutor marks attendance), only when the
+		// child shares their lessons
+		(access.lessons
+			? locals.db
+					.select({
+						id: lesson.id,
+						startsAt: lesson.startsAt,
+						subjectName: subject.name,
+						tutorName: tutorProfile.tutorName,
+						tutorSlug: tutorProfile.slug,
+						attendance: attendee.attendance
+					})
+					.from(attendee)
+					.innerJoin(lesson, eq(lesson.id, attendee.lessonId))
+					.leftJoin(subject, eq(subject.id, lesson.subjectId))
+					.leftJoin(tutorProfile, eq(tutorProfile.tutorId, lesson.tutorId))
+					.where(
+						and(
+							eq(attendee.userId, id),
+							eq(attendee.status, 'booked'),
+							eq(lesson.status, 'scheduled'),
+							lt(lesson.endsAt, new Date())
+						)
+					)
+					.orderBy(desc(lesson.startsAt))
+					.limit(4)
+			: Promise.resolve([])) as Promise<
+			{
+				id: number;
+				startsAt: Date;
+				subjectName: string | null;
+				tutorName: string | null;
+				tutorSlug: string | null;
+				attendance: 'completed' | 'absent' | null;
+			}[]
+		>
 	]);
 	const requests = access.guardian ? await requestsForUser(locals.db, id) : [];
 	const hw: { id: number; title: string; dueOn: string | null; subject: string | null }[] =
@@ -67,6 +110,7 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 		sharesReport,
 		schoolPlus: sp ?? null,
 		homework: hw,
+		past,
 		booked: url.searchParams.has('booked'),
 		requests: requests.map((r) => ({
 			id: r.id,

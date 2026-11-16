@@ -31,11 +31,11 @@ test('owner approves a tutor, who then appears in Find', async ({ browser }) => 
 	await expect(student.locator('main')).not.toContainText('Rumbi Chikwanha');
 
 	// 2. the owner approves the waiting page
-	await owner.goto('/owner');
+	await owner.goto('/owner/tutors?status=pending');
 	await expect(owner).toHaveURL(/\/owner/); // the owner area opens (two-step on the test site)
 	await press(
 		owner,
-		'form[action="?/status"]:has(input[name=id][value=test_rumbi]):has(input[name=status][value=active]) button'
+		'form[action^="?/status"]:has(input[name=id][value=test_rumbi]):has(input[name=status][value=active]) button'
 	);
 	await expect(owner.locator('.notice')).toBeVisible();
 	const [p] = await sql<{ status: string }>(

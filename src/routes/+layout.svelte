@@ -29,7 +29,7 @@
 	];
 	const showWhatsApp = $derived(!PRIVATE.some((p) => page.url.pathname.startsWith(p)));
 	// App areas bring their own navigation (AppShell); welcome and sign-in screens are full-screen.
-	const APP = ['/student', '/parent', '/tutor'];
+	const APP = ['/student', '/parent', '/tutor', '/owner'];
 	const BARE = [
 		'/get-started',
 		'/login',
@@ -68,11 +68,16 @@
 			{...area}
 			unread={(page.data as { unreadNow?: number }).unreadNow ?? data.unread}
 			bellHref={data.user?.role === 'parent' ? '/parent/notifications' : '/notifications'}
-			accountHref={data.user?.role === 'parent' ? '/parent/settings' : '/account'}
+			accountHref={data.user?.role === 'parent'
+				? '/parent/settings'
+				: data.user?.role === 'owner'
+					? '/owner/settings'
+					: '/account'}
 			initial={data.user?.role === 'tutor' ? '' : initialOf(data.user?.name ?? '')}
 		>
 			{#if data.user?.role === 'student'}<div class="st-area">{@render children()}</div>
 			{:else if data.user?.role === 'tutor'}<div class="tskin">{@render children()}</div>
+			{:else if data.user?.role === 'owner'}<div class="oskin">{@render children()}</div>
 			{:else}{@render children()}{/if}
 		</AppShell>
 	{:else}

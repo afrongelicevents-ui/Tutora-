@@ -184,7 +184,10 @@
 								>
 								<span class="small muted"
 									>{#if r.status === 'requested'}{fmtDay(r.startsAt)}
-										{fmtTime(r.startsAt)} · {m.par3_req_waiting()}{:else}{m.par3_req_declined()}{#if r.tutorSlug}
+										{fmtTime(r.startsAt)} · {m.par3_req_waiting()}{#if data.guardian && r.tutorSlug && data.tutors.some((x) => x.slug === r.tutorSlug)}
+											· <a href="/parent/payments?{q}&tutor={encodeURIComponent(r.tutorSlug)}"
+												>{m.pay_tutor()}</a
+											>{/if}{:else}{m.par3_req_declined()}{#if r.tutorSlug}
 											· <a href="/parent/book?{q}&tutor={encodeURIComponent(r.tutorSlug)}"
 												>{m.choose_another_time()}</a
 											>{/if}{/if}</span
@@ -198,13 +201,42 @@
 								>
 								<span class="small muted"
 									>{isToday(l.startsAt) ? m.sh_today() : fmtDay(l.startsAt)}
-									{fmtTime(l.startsAt)}</span
+									{fmtTime(l.startsAt)}{#if data.guardian && l.tutorSlug}
+										· <a href="/parent/payments?{q}&tutor={encodeURIComponent(l.tutorSlug)}"
+											>{m.pay_tutor()}</a
+										>{/if}</span
 								>
 							</li>
 						{:else}
 							{#if !data.requests.length}<li class="muted">{m.pf_none_booked()}</li>{/if}
 						{/each}
 					</ul>
+					{#if data.past.length}
+						<!-- whether the last lessons happened (marked by the tutor) -->
+						<ul class="rows-list past" data-testid="child-past-lessons">
+							{#each data.past as l (l.id)}
+								<li>
+									<span
+										>{l.subjectName ?? m.intro_chat()}{l.tutorName ? ` · ${l.tutorName}` : ''}
+										<span class="small muted">{fmtDay(l.startsAt)} {fmtTime(l.startsAt)}</span
+										></span
+									>
+									<span
+										class="ui-pill {l.attendance === 'completed'
+											? 'ok'
+											: l.attendance === 'absent'
+												? 'warn'
+												: ''}"
+										>{l.attendance === 'completed'
+											? m.ml_happened()
+											: l.attendance === 'absent'
+												? m.ml_missed()
+												: m.ml_not_marked()}</span
+									>
+								</li>
+							{/each}
+						</ul>
+					{/if}
 				{/if}
 			</section>
 		</div>

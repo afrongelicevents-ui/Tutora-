@@ -6,6 +6,7 @@ import { requireRole } from '#lib/server/guards.ts';
 import { pickChild } from '#lib/server/parent-child.ts';
 import { childCards, familyMonth, greetingKey } from '#lib/server/parent-home.ts';
 import { shortName } from '#lib/names.ts';
+import { familyHomeStrip } from '#lib/server/family-billing.ts';
 
 export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 	const u = requireRole(locals.user, url, ['parent']);
@@ -17,9 +18,10 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 	}
 	const { kids } = await pickChild(locals.db, u.id, url, cookies);
 	const code = await rememberedCode(cookies);
-	const [cards, waiting] = await Promise.all([
+	const [cards, waiting, family] = await Promise.all([
 		childCards(locals.db, u.id, kids),
-		code ? previewInvite(locals.db, code) : Promise.resolve(null)
+		code ? previewInvite(locals.db, code) : Promise.resolve(null),
+		familyHomeStrip(locals.db, u.id)
 	]);
 	return {
 		name: shortName(u.name),
@@ -29,6 +31,7 @@ export const load: PageServerLoad = async ({ locals, url, cookies }) => {
 		month: familyMonth(cards),
 		waitingCode: waiting ? { firstName: waiting.firstName } : null,
 		connected: url.searchParams.get('connected'),
-		pending: url.searchParams.get('pending')
+		pending: url.searchParams.get('pending'),
+		family
 	};
 };

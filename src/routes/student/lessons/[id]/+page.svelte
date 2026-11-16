@@ -1,6 +1,7 @@
 <script lang="ts">
 	import SourceTag from '#lib/components/tools/SourceTag.svelte';
 	import ToolLogo from '#lib/components/tools/ToolLogo.svelte';
+	import { joinLabel, providerName } from '#lib/components/tools/join.ts';
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay, fmtDayTime, fmtTime, localDate } from '#lib/tz.ts';
 	import { formatMoney } from '#lib/money.ts';
@@ -37,13 +38,8 @@
 				: k === 'file'
 					? m.ld3_file()
 					: m.ld3_link();
-	const provider = $derived(
-		data.meeting?.provider === 'meet'
-			? 'Google Meet'
-			: data.meeting?.provider === 'teams'
-				? 'Microsoft Teams'
-				: null
-	);
+	const provider = $derived(data.meeting ? providerName(data.meeting.provider) : null);
+	const payHref = $derived(`/student/payments?tutor=${encodeURIComponent(l.tutorSlug ?? '')}`);
 </script>
 
 <svelte:head><title>{l.subjectName ?? m.intro_chat()} · Tutora</title></svelte:head>
@@ -69,7 +65,7 @@
 
 	{#if l.live && !l.past}
 		{#if l.mode === 'online'}
-			<div class="navycard">
+			<div class="navycard" id="join">
 				<span class="eyebrow">{m.ld3_how_join()}</span>
 				{#if data.meeting}
 					<strong class="withlogo"
@@ -78,11 +74,13 @@
 							name: l.tutorName ?? ''
 						})}</strong
 					>
-					<a class="btn" href={data.meeting.joinUrl} target="_blank" rel="noopener noreferrer"
-						>{data.meeting.provider === 'meet' ? m.ld3_join_meet() : m.ld3_join_teams()}</a
-					>
-					{#if l.roomOpen}<a class="btn btn-ghost" href="/room/{l.id}">{m.ld3_use_room()}</a
-						>{:else}<span class="sub small">{m.ld3_room_fallback()}</span>{/if}
+					<!-- "Join lesson" from 10 minutes before, like the lesson room -->
+					{#if l.roomOpen}
+						<a class="btn" href={data.meeting.joinUrl} target="_blank" rel="noopener noreferrer"
+							>{joinLabel(data.meeting.provider)}</a
+						>
+						<a class="btn btn-ghost" href="/room/{l.id}">{m.ld3_use_room()}</a>
+					{:else}<span class="sub small">{m.ml_opens()}</span>{/if}
 				{:else}
 					<strong>{m.ld3_room_title()}</strong>
 					<span class="sub small">{m.ld3_room_lead()}</span>
@@ -141,9 +139,17 @@
 		</div>
 		<div><span class="muted">{m.ld_payment()}</span><strong>{pay}</strong></div>
 	</div>
-	{#if l.payState === 'due'}<a
-			class="btn btn-ghost btn-block"
-			href="/student/payments?tutor={l.tutorSlug}">{m.ld_pay()}</a
+	<!-- the next payment step, always visible -->
+	{#if l.payState === 'due'}<a class="btn btn-block" href={payHref}>{m.pay_tutor()}</a>
+	{:else if l.payState === 'reported'}<a class="small" href="{payHref}&tab=history"
+			>{m.pay_next_waiting()} ›</a
+		>
+		<a class="btn btn-ghost btn-block" href={payHref}>{m.pay_tutor()}</a>
+	{:else if l.payState === 'paid'}<a class="btn btn-ghost btn-block" href="{payHref}&tab=history"
+			>{m.pay_view_receipt()}</a
+		>
+	{:else if !cancelled && l.tutorSlug}<a class="btn btn-ghost btn-block" href={payHref}
+			>{m.pay_tutor()}</a
 		>{/if}
 
 	{#if l.live && !l.past}

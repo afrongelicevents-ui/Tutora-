@@ -84,6 +84,6 @@ export async function submitForApproval(db: DB, tutorId: string) {
 		db,
 		m.owner_submitted_s(),
 		m.owner_submitted_b({ name: s.tutorName ?? '' }),
-		'/owner'
+		'/owner/tutors?status=pending'
 	);
 }

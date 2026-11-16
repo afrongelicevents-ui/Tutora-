@@ -4,7 +4,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { as, closeDb, press, sql } from './helpers.ts';
 
-const card = (page: Page, name: string) => page.locator('.card', { hasText: name }).first();
+const card = (page: Page, name: string) => page.locator('.oa-card', { hasText: name }).first();
 
 test.beforeAll(async () => {
 	// setup only: Rumbi waits for approval, with no subject students could book
@@ -27,15 +27,15 @@ test.afterAll(async () => {
 
 test('approval is refused while the page has nothing to book', async ({ browser }) => {
 	const owner = await as(browser, 'owner@example.com');
-	await owner.goto('/owner');
+	await owner.goto('/owner/tutors?status=pending');
 	const c = card(owner, 'Rumbi');
 	// warned before approving, and the button is off
 	await expect(c).toContainText('Page not filled in yet');
-	const approve = c.locator('form[action="?/status"] button');
+	const approve = c.locator('form[action^="?/status"] button');
 	await expect(approve).toBeDisabled();
 	// even if the form is sent anyway, the server refuses with a clear reason
 	await approve.evaluate((b) => ((b as HTMLButtonElement).disabled = false));
-	await press(owner, '.card:has-text("Rumbi") form[action="?/status"] button');
+	await press(owner, '.oa-card:has-text("Rumbi") form[action^="?/status"] button');
 	await expect(owner.locator('.alert')).toContainText('no subjects');
 	const [p] = await sql<{ status: string }>(
 		`select status from tutor_profile where tutor_id = 'test_rumbi'`
@@ -47,13 +47,13 @@ test('suspend takes two steps; restoring sends "active again", not a new welcome
 	browser
 }) => {
 	const owner = await as(browser, 'owner@example.com');
-	await owner.goto('/owner');
+	await owner.goto('/owner/tutors');
 	const c = card(owner, 'Tendai');
 	// step 1 only: without "I'm sure" nothing happens
 	await c.locator('summary', { hasText: 'Suspend' }).click();
 	await press(
 		owner,
-		'.card:has-text("Tendai") form[action="?/status"]:has(input[value=suspended]) button'
+		'.oa-card:has-text("Tendai") form[action^="?/status"]:has(input[value=suspended]) button'
 	);
 	await expect(owner.locator('.alert')).toContainText('tick');
 	let [p] = await sql<{ status: string }>(
@@ -68,7 +68,7 @@ test('suspend takes two steps; restoring sends "active again", not a new welcome
 	await c2.locator('input[name=sure]').check();
 	await press(
 		owner,
-		'.card:has-text("Tendai") form[action="?/status"]:has(input[value=suspended]) button'
+		'.oa-card:has-text("Tendai") form[action^="?/status"]:has(input[value=suspended]) button'
 	);
 	await expect(owner.locator('.notice')).toBeVisible();
 	await expect(owner).not.toHaveURL(/\?\//); // no "?/status" left in the address
@@ -83,7 +83,7 @@ test('suspend takes two steps; restoring sends "active again", not a new welcome
 	// restore: "active again"
 	await press(
 		owner,
-		'.card:has-text("Tendai") form[action="?/status"]:has(input[value=active]) button'
+		'.oa-card:has-text("Tendai") form[action^="?/status"]:has(input[value=active]) button'
 	);
 	[p] = await sql(`select status from tutor_profile where tutor_id = 'test_tendai'`);
 	expect(p.status).toBe('active');
@@ -109,17 +109,17 @@ test('a review can be hidden and shown again, and stays on the list', async ({ b
 	const owner = await as(browser, 'owner@example.com');
 	const visitor = await browser.newPage();
 	await owner.goto('/owner/reports');
-	const row = () => owner.locator('.card', { hasText: 'e2e check' }).first();
+	const row = () => owner.locator('.oa-card', { hasText: 'e2e check' }).first();
 	await expect(row()).toContainText('Visible');
 
-	await press(owner, `.card:has-text("e2e check") form[action="?/hide"] button`);
+	await press(owner, `.oa-card:has-text("e2e check") form[action="?/hide"] button`);
 	await expect(owner.locator('.notice')).toContainText('hidden');
 	await expect(row()).toContainText('Hidden');
 	await visitor.goto(`/t/${r.slug}/reviews`);
 	await expect(visitor.locator('main')).not.toContainText(r.text.slice(0, 30));
 
 	// shown again: still on the list (so it can be hidden again), report kept
-	await press(owner, `.card:has-text("e2e check") form[action="?/hide"] button`);
+	await press(owner, `.oa-card:has-text("e2e check") form[action="?/hide"] button`);
 	await expect(owner.locator('.notice')).toContainText('visible again');
 	await expect(row()).toContainText('Visible');
 	await visitor.goto(`/t/${r.slug}/reviews`);

@@ -14,12 +14,23 @@ import {
 } from './db/app.schema.ts';
 import { session, user } from './db/auth.schema.ts';
 import type { SiteSettings } from './settings.ts';
+import { TUTOR_STATUS } from './db/app.schema.ts';
+import { tutorSearch } from './owner-admin.ts';
 import { forgetShared } from './cache.ts';
 
 export type TutorStatus = SiteSettings['status'];
 
-/** Every tutor on the platform, newest first, with a few counts (owner area only). */
-export async function allTutors(db: DB) {
+/**
+ * Tutors on the platform (waiting first, then newest), with a few counts (owner area only).
+ * Optionally one status, a search (name or email) and one page of the list.
+ */
+export async function allTutors(
+	db: DB,
+	o: { status?: string; q?: string; limit?: number; offset?: number } = {}
+) {
+	const st = (TUTOR_STATUS as readonly string[]).includes(o.status ?? '')
+		? (o.status as TutorStatus)
+		: undefined;
 	const rows = await db
 		.select({
 			tutorId: tutorProfile.tutorId,
@@ -36,10 +47,14 @@ export async function allTutors(db: DB) {
 		})
 		.from(tutorProfile)
 		.innerJoin(user, eq(user.id, tutorProfile.tutorId))
+		.where(and(st ? eq(tutorProfile.status, st) : undefined, tutorSearch(o.q)))
 		.orderBy(
 			sql`case ${tutorProfile.status} when 'pending' then 0 when 'active' then 1 when 'draft' then 2 when 'rejected' then 3 else 4 end`,
-			desc(tutorProfile.createdAt)
-		);
+			desc(tutorProfile.createdAt),
+			tutorProfile.tutorId
+		)
+		.limit(o.limit ?? 1000)
+		.offset(o.offset ?? 0);
 	if (!rows.length) return [];
 	const ids = rows.map((r) => r.tutorId);
 	// the same definitions as the Bookings and Payments pages: every booking request and
@@ -155,7 +170,7 @@ export async function audit(
 		.values({ actorId, action, target, detail: detail?.slice(0, 500) ?? null });
 }
 
-export const recentAudit = (db: DB, limit = 200) =>
+export const recentAudit = (db: DB, limit = 200, offset = 0) =>
 	db
 		.select({
 			id: auditLog.id,
@@ -168,7 +183,13 @@ export const recentAudit = (db: DB, limit = 200) =>
 		.from(auditLog)
 		.leftJoin(user, eq(user.id, auditLog.actorId))
 		.orderBy(desc(auditLog.createdAt), desc(auditLog.id))
-		.limit(limit);
+		.limit(limit)
+		.offset(offset);
+
+export async function auditCount(db: DB) {
+	const [r] = await db.select({ n: sql<number>`count(*)::int` }).from(auditLog);
+	return r?.n ?? 0;
+}
 
 /** Not approved, with a reason the tutor sees; they can change their profile and send it again. */
 export async function rejectTutor(db: DB, tutorId: string, reason: string) {
@@ -208,12 +229,15 @@ export function allStudents(db: DB, q?: string) {
 		.limit(200);
 }
 
-/** Suspend or restore a student/parent account (suspended: can't log in, logged out now). */
+/**
+ * Suspend or restore a student, parent or schoolteacher account (suspended: can't log in,
+ * logged out now). Tutors are suspended with setTutorStatus; the owner never here.
+ */
 export async function setStudentSuspended(db: DB, userId: string, suspended: boolean) {
 	const done = await db
 		.update(user)
 		.set({ suspendedAt: suspended ? new Date() : null })
-		.where(and(eq(user.id, userId), inArray(user.role, ['student', 'parent'])))
+		.where(and(eq(user.id, userId), inArray(user.role, ['student', 'parent', 'schoolteacher'])))
 		.returning({ id: user.id });
 	if (done.length && suspended) await db.delete(session).where(eq(session.userId, userId));
 	return done.length > 0;

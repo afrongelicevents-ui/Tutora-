@@ -20,7 +20,8 @@
 		meet: 'Meet',
 		teams: 'Teams',
 		drive: 'Drive',
-		kahoot: 'Kahoot!'
+		kahoot: 'Kahoot!',
+		zoom: 'Zoom'
 	};
 	type Tile = { tool: Tool; state: 'connected' | 'ready' | 'connect' | 'soon'; href?: string };
 	// "Not yet" when Tutora has no keys for that service: the same answer as on the tools pages

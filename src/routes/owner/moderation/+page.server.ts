@@ -23,6 +23,8 @@ export const actions: Actions = {
 		const id = String(f.get('student') ?? '');
 		if ((what !== 'photo' && what !== 'bio') || !id) return fail(400, { error: 'err_generic' });
 		const approve = f.get('approve') === '1';
+		// rejecting deletes the photo (or bio): the owner ticks "I'm sure" first
+		if (!approve && f.get('sure') !== 'on') return fail(400, { error: 'err_tick_sure' });
 		const removedKey = await moderate(locals.db, id, what, approve);
 		if (removedKey)
 			await getStore(platform)
