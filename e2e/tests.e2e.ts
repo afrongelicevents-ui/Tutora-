@@ -59,12 +59,17 @@ test('build from the bank → own order each → timed test → tutor marks → 
 	expect(asg.map((a) => a.student_id)).toEqual(['test_nyasha', 'test_tatenda']);
 	const [ny, ta] = asg;
 
-	// 2. each student opens it: their own order, the clock running
+	// 2. each student opens it: first the "Start test" step (no clock yet), then their own
+	// order with the clock running
 	const nyasha = await as(browser, 'nyasha@example.com');
 	await nyasha.goto(`/student/quiz/${ny.id}`);
+	await expect(nyasha.getByRole('button', { name: 'Start test' })).toBeVisible();
+	expect(await sql(`select 1 from test_attempt where assignment_id = $1`, [ny.id])).toHaveLength(0);
+	await press(nyasha, 'form[action="?/start"] button');
 	await expect(nyasha.getByRole('timer')).toContainText('Time left');
 	const student = await as(browser, 'tatenda@example.com');
 	await student.goto(`/student/quiz/${ta.id}`);
+	await press(student, 'form[action="?/start"] button');
 	await expect(student.getByRole('timer')).toContainText(/1[45]:\d\d/);
 	const atts = await sql<{ assignment_id: number; items: Item[] }>(
 		`select assignment_id, items from test_attempt where assignment_id = any($1::int[]) order by assignment_id`,

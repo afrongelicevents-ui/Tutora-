@@ -14,6 +14,8 @@ import { proInvoice, proSubscription } from './db/pro.schema.ts';
 import { saveProSettings } from './pro.ts';
 import { addMonths } from './family-billing.ts';
 import { addDays } from '../tz.ts';
+import { proQuote } from '../pro-pricing.ts';
+import { DbStore } from './db-store.ts';
 import type { TestLogin } from './seed.ts';
 
 export async function seedProPlans(db: DB, logins: TestLogin[], now = new Date()) {
@@ -27,6 +29,18 @@ export async function seedProPlans(db: DB, logins: TestLogin[], now = new Date()
 		.from(user)
 		.where(eq(user.role, 'owner'))
 		.limit(1);
+
+	/** a 1×1 picture standing in for a payment screenshot, so "View proof" has something */
+	async function fakeProof(key: string) {
+		const png = Uint8Array.from(
+			atob(
+				'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+			),
+			(c) => c.charCodeAt(0)
+		);
+		await new DbStore(db).put(key, png, 'image/png');
+		return key;
+	}
 
 	const chipo = await idOf('chipo@example.com');
 	if (chipo) {
@@ -68,12 +82,15 @@ export async function seedProPlans(db: DB, logins: TestLogin[], now = new Date()
 			tutorId: farai,
 			subscriptionId: s.id,
 			periodMonths: 3,
-			amountCents: 1500,
+			// the price table with the test discounts (5% for 3 months)
+			amountCents: proQuote(3, { discount3mPct: 5, discount6mPct: 10 }).totalCents,
+			discountPct: 5,
 			status: 'proof_sent',
 			dueOn: addDays(now, 2),
 			periodStart: now,
 			method: 'innbucks',
 			reference: 'TEST-PRO-2',
+			proofKey: await fakeProof(`proofs/tutora/${farai}/test-pro-proof.png`),
 			remindedBefore: now
 		});
 	}

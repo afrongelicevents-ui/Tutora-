@@ -92,6 +92,7 @@
 				{:else}
 					<strong>{m.sl_no_link_yet()}</strong>
 					<span class="sub small">{m.sl_no_link_lead()}</span>
+					<a class="btn btn-ghost" href={data.messageHref}>{m.sl_message_tutor()}</a>
 				{/if}
 			</div>
 		{:else}

@@ -9,6 +9,7 @@ import {
 	assessmentResult,
 	connectedAccount,
 	lessonMeeting,
+	quizAssignment,
 	studySession,
 	toolPref
 } from './db/v3.schema.ts';
@@ -52,27 +53,43 @@ export async function nextLessonFor(db: DB, userId: string, now = new Date()) {
 	};
 }
 
-/** Homework not handed in yet: due within the next 7 days (or overdue), or recent with no due date. */
+/**
+ * Homework not handed in yet (due within the next 7 days or overdue, or recent with no due
+ * date) plus quizzes and tests from tutors not done yet, recent ones only.
+ */
 export async function homeworkDueCount(db: DB, userId: string, now = new Date()) {
-	const [r] = await db
+	const quizzes = db
 		.select({ n: count() })
-		.from(homework)
-		.leftJoin(homeworkAnswer, eq(homeworkAnswer.homeworkId, homework.id))
+		.from(quizAssignment)
 		.where(
 			and(
-				eq(homework.userId, userId),
-				isNull(homeworkAnswer.id),
-				or(
-					and(
-						lte(homework.dueOn, localDate(addDays(now, 7))),
-						gte(homework.dueOn, localDate(addDays(now, -30)))
-					),
-					// homework with no due date counts while it is recent (set in the last 30 days)
-					and(isNull(homework.dueOn), gte(homework.createdAt, addDays(now, -30)))
-				)
+				eq(quizAssignment.studentId, userId),
+				isNull(quizAssignment.doneAt),
+				gte(quizAssignment.createdAt, addDays(now, -30))
 			)
 		);
-	return r?.n ?? 0;
+	const [[q], [r]] = await Promise.all([
+		quizzes,
+		db
+			.select({ n: count() })
+			.from(homework)
+			.leftJoin(homeworkAnswer, eq(homeworkAnswer.homeworkId, homework.id))
+			.where(
+				and(
+					eq(homework.userId, userId),
+					isNull(homeworkAnswer.id),
+					or(
+						and(
+							lte(homework.dueOn, localDate(addDays(now, 7))),
+							gte(homework.dueOn, localDate(addDays(now, -30)))
+						),
+						// homework with no due date counts while it is recent (set in the last 30 days)
+						and(isNull(homework.dueOn), gte(homework.createdAt, addDays(now, -30)))
+					)
+				)
+			)
+	]);
+	return (r?.n ?? 0) + (q?.n ?? 0);
 }
 
 /** Names of the tools this person has switched on (for "Connected tools · Meet, Drive"). */

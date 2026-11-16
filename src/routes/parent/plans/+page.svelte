@@ -58,15 +58,19 @@
 	</article>
 
 	<div class="fam-actions">
-		{#if data.canStartTrial}
-			<form method="POST" action="?/trial">
-				<button class="ui-btn-soft" type="submit"
-					>{m.fb_trial_start({ days: data.trialDays })}</button
-				>
-			</form>
+		{#if data.pilot}
+			<a class="ui-btn-soft" href="/parent/billing">{m.fb_billing_link()}</a>
+		{:else}
+			{#if data.canStartTrial}
+				<form method="POST" action="?/trial">
+					<button class="ui-btn-soft" type="submit"
+						>{m.fb_trial_start({ days: data.trialDays })}</button
+					>
+				</form>
+			{/if}
+			<a class="ui-btn" href="/parent/checkout">{m.fb_go_checkout()}</a>
+			<a class="ui-btn-soft" href="/parent/billing">{m.fb_billing_link()}</a>
 		{/if}
-		<a class="ui-btn" href="/parent/checkout">{m.fb_go_checkout()}</a>
-		<a class="ui-btn-soft" href="/parent/billing">{m.fb_billing_link()}</a>
 	</div>
 </section>
 

@@ -63,6 +63,11 @@
 				<a class="fam-link" href="/parent/plans">{m.fb_plans_title()} ›</a>
 			{/if}
 		</span>
+		{#if data.family.overdueSince}
+			<span class="ui-pill warn"
+				>{m.fb_overdue_since({ date: fmtDay(new Date(data.family.overdueSince)) })}</span
+			>
+		{/if}
 	</Hero>
 
 	{#if data.connected}<p class="notice" role="status">

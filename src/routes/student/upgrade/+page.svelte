@@ -51,6 +51,7 @@
 			invoices={data.invoices}
 			payHref={(id) => `/student/upgrade?invoice=${id}`}
 			receiptHref={(id) => `/student/upgrade/${id}/receipt`}
+			pilot={data.pilot}
 		/>
 	{/if}
 </section>

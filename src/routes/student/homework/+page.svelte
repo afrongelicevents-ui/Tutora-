@@ -136,9 +136,30 @@
 		{:else}
 			<p class="lead">{m.no_homework()}</p>
 		{/each}
-		<a class="softcard quizlink" href="/student/study#quizzes"
-			><strong>{m.hw3_quizzes()}</strong><span class="small">{m.hw3_quizzes_sub()}</span></a
-		>
+		<div class="softcard quizlink" id="quizzes">
+			<strong>{m.hw3_quizzes()}</strong><span class="small">{m.hw3_quizzes_sub()}</span>
+			{#if data.quizzes.length}
+				<ul class="quizlist" role="list">
+					{#each data.quizzes as q (q.id)}
+						<li>
+							<a href="/student/quiz/{q.id}"
+								><strong>{q.title}</strong>
+								<span class="small"
+									>{q.kind === 'test' ? m.hw3_test() : m.tt_quiz()} · {m.tt_from({
+										name: q.tutorName ?? ''
+									})}{q.timerMinutes ? ` · ${m.hw3_minutes({ n: q.timerMinutes })}` : ''}{q.dueOn
+										? ` · ${m.hw3_due({ day: fmtWeekday(dueDate(q.dueOn)) })}`
+										: ''}</span
+								></a
+							>
+						</li>
+					{/each}
+				</ul>
+			{:else}
+				<span class="small muted">{m.hw3_quizzes_none()}</span>
+			{/if}
+			<a class="small" href="/student/study#quizzes">{m.hw3_quizzes_all()} ›</a>
+		</div>
 	</div>
 
 	<section class="side" id="resources">
@@ -210,6 +231,17 @@
 	.subj {
 		margin: 10px 0 0;
 		font-weight: 600;
+	}
+	.quizlist {
+		list-style: none;
+		margin: 0.4rem 0;
+		padding: 0;
+		display: grid;
+		gap: 0.4rem;
+	}
+	.quizlist a {
+		display: grid;
+		gap: 0.1rem;
 	}
 	.quizlink {
 		text-decoration: none;

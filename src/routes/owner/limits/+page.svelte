@@ -93,7 +93,9 @@
 				><span style="width: {Math.min(100, data.ai.share * 100)}%"></span></span
 			>
 		</div>
-		<p class="small muted">{m.fl_ai_calls({ n: data.ai.calls })}</p>
+		<p class="small muted">
+			{data.ai.calls === 1 ? m.fl_ai_call1() : m.fl_ai_calls({ n: data.ai.calls })}
+		</p>
 	</section>
 
 	<section class="ui-card cream oa-sec" aria-labelledby="if-h">

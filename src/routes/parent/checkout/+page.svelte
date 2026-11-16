@@ -19,6 +19,7 @@
 	<p><a href="/parent/plans">← {m.fb_plans_title()}</a></p>
 	<h1 class="ui-serif">{m.fb_checkout_title()}</h1>
 	<p class="small">{m.fb_plans_lead()}</p>
+	{#if data.pilot}<p class="notice">{m.fb_pilot_on()}</p>{/if}
 	{#if inv}
 		<article class="ui-card stack-s">
 			<h2 class="ui-serif">{m.fb_invoice_for({ amount: formatMoney(inv.amountCents) })}</h2>
@@ -27,6 +28,9 @@
 					date: fmtDay(new Date(inv.dueOn))
 				})}
 			</p>
+			{#if inv.status === 'overdue' && !data.pilot}
+				<p class="ui-pill warn">{m.fb_overdue_since({ date: fmtDay(new Date(inv.dueOn)) })}</p>
+			{/if}
 			{#if inv.rejectReason && inv.status === 'rejected'}
 				<p class="small">{m.fb_rejected_why({ reason: inv.rejectReason })}</p>
 			{/if}

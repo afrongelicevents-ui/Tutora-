@@ -1,5 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import type { Actions, PageServerLoad } from './$types';
 import { requireRole } from '#lib/server/guards.ts';
 import {
@@ -23,12 +23,28 @@ import { nameOf } from '#lib/server/events.ts';
 import { m } from '#lib/paraglide/messages.js';
 import { shortName } from '#lib/names.ts';
 import { getPrefs } from '#lib/server/notify.ts';
-import { notificationPref } from '#lib/server/db/app.schema.ts';
+import { enrollment, notificationPref } from '#lib/server/db/app.schema.ts';
 import { childPhotos } from '#lib/server/parent-home.ts';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const u = requireRole(locals.user, url, ['parent']);
 	const kids = await childrenOf(locals.db, u.id);
+	// which children have a tutor (paying a tutor only makes sense then)
+	const withTutor = new Set(
+		kids.length
+			? (
+					await locals.db
+						.selectDistinct({ id: enrollment.userId })
+						.from(enrollment)
+						.where(
+							inArray(
+								enrollment.userId,
+								kids.map((k) => k.studentId)
+							)
+						)
+				).map((r: { id: string }) => r.id)
+			: []
+	);
 	const details = await Promise.all(
 		kids.map(async (k) => {
 			const [acc] = await locals.db
@@ -55,6 +71,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 				level: k.level,
 				status: k.status,
 				guardian: k.guardian,
+				hasTutor: withTutor.has(k.studentId),
 				managed: !!k.managed,
 				isUnder18: !!k.isUnder18,
 				username:

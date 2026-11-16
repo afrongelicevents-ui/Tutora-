@@ -4,6 +4,7 @@
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	import Hero from '#lib/components/ui/Hero.svelte';
 	import Avatar from '#lib/components/ui/Avatar.svelte';
+	import { initialOf } from '#lib/names.ts';
 	let { data, form } = $props();
 	type F = {
 		error?: string;
@@ -39,7 +40,7 @@
 		</p>{/if}
 
 	<section class="ui-card me" aria-labelledby="me-h">
-		<span class="ui-ico navy big">{data.me.name.trim()[0]?.toUpperCase() ?? '?'}</span>
+		<span class="ui-ico navy big">{initialOf(data.me.name)}</span>
 		<div>
 			<h2 id="me-h" class="ui-serif">{data.me.name}</h2>
 			{#if !data.me.email.endsWith('.invalid')}<span class="small muted">{data.me.email}</span>{/if}
@@ -71,9 +72,13 @@
 					<nav class="links" aria-label={k.short}>
 						<a href="/parent/child/{k.id}"><span>{m.pf_view_child({ name: k.short })}</span>›</a>
 						{#if k.guardian}
-							<a href="/parent/payments?child={k.id}"
-								><span>{m.par3_pay_for({ name: k.short })}</span>›</a
-							>
+							{#if k.hasTutor}
+								<a href="/parent/payments?child={k.id}"
+									><span>{m.par3_pay_for({ name: k.short })}</span>›</a
+								>
+							{:else}
+								<a href="/parent/tutors?child={k.id}"><span>{m.par3_no_tutor_find()}</span>›</a>
+							{/if}
 							<a href="/parent/book?child={k.id}"
 								><span>{m.par3_book_for({ name: k.short })}</span>›</a
 							>

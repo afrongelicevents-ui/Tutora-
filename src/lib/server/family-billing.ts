@@ -884,7 +884,7 @@ export async function familyHomeStrip(db: DB, parentId: string, now = new Date()
 	const [access, [open], covered] = await Promise.all([
 		familyAccess(db, parentId, now),
 		db
-			.select({ id: tutoraInvoice.id, status: tutoraInvoice.status })
+			.select({ id: tutoraInvoice.id, status: tutoraInvoice.status, dueOn: tutoraInvoice.dueOn })
 			.from(tutoraInvoice)
 			.where(
 				and(
@@ -904,7 +904,9 @@ export async function familyHomeStrip(db: DB, parentId: string, now = new Date()
 		reason: access.reason,
 		until: access.until,
 		active: access.active,
-		payInvoiceId: open?.id ?? null,
+		// during the pilot nothing is due: no Pay now, no overdue warning
+		payInvoiceId: access.reason === 'pilot' ? null : (open?.id ?? null),
+		overdueSince: access.reason !== 'pilot' && open?.status === 'overdue' ? open.dueOn : null,
 		covered: covered.map((c) => c.studentId)
 	};
 }

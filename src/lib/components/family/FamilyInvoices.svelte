@@ -15,9 +15,12 @@
 	let {
 		invoices,
 		payHref,
-		receiptHref
+		receiptHref,
+		pilot = false
 	}: {
 		invoices: Inv[];
+		/** during the pilot nothing is due: no Pay buttons, no overdue warnings */
+		pilot?: boolean;
 		/** where "Pay" / "Upload proof" leads, given the invoice id */
 		payHref: (id: number) => string;
 		receiptHref: (id: number) => string;
@@ -36,8 +39,10 @@
 					<span
 						class="ui-pill"
 						class:ok={i.status === 'paid'}
-						class:warn={i.status === 'overdue' || i.status === 'rejected'}
-						>{t(`fb_st_${i.status}`)}</span
+						class:warn={!pilot && (i.status === 'overdue' || i.status === 'rejected')}
+						>{pilot && i.status !== 'paid' && i.status !== 'proof_sent'
+							? m.fb_st_pilot()
+							: t(`fb_st_${i.status}`)}</span
 					>
 				</div>
 				<p class="small muted">
@@ -48,7 +53,9 @@
 				{#if i.status === 'rejected' && i.rejectReason}
 					<p class="small">{m.fb_rejected_why({ reason: i.rejectReason })}</p>
 				{/if}
-				{#if i.status === 'paid'}
+				{#if pilot && i.status !== 'paid' && i.status !== 'proof_sent'}
+					<p class="small">{m.fb_pilot_nothing_due()}</p>
+				{:else if i.status === 'paid'}
 					<a class="ui-btn-soft" href={receiptHref(i.id)}>{m.fb_view_receipt()}</a>
 				{:else if i.status === 'proof_sent'}
 					<p class="small">{m.fb_waiting()}</p>

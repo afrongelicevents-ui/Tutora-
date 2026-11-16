@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	import { withoutTitle } from '#lib/names.ts';
 	/** Initials on a coloured circle (one of a few calm blues, picked from the name). */
 	const COLOURS = ['#1a5fae', '#0b2545', '#2f6f9f', '#3d86d8', '#1f4e8a', '#285f86'];
 	export function avatarColour(name: string) {
@@ -7,8 +8,8 @@
 		return COLOURS[h % COLOURS.length];
 	}
 	export function initialsOf(name: string) {
-		return name
-			.replace(/\./g, '')
+		// never the letter of a title ("Mrs Grace Zulu" → "GZ")
+		return withoutTitle(name.replace(/\./g, ''))
 			.split(/\s+/)
 			.filter(Boolean)
 			.slice(0, 2)

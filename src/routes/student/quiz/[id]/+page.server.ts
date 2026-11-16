@@ -1,4 +1,4 @@
-import { error, fail } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { requireRole } from '#lib/server/guards.ts';
 import { eq } from 'drizzle-orm';
@@ -18,7 +18,7 @@ const idOf = (v: string) => (/^\d{1,9}$/.test(v) ? Number(v) : 0);
 export const load: PageServerLoad = async ({ locals, url, params }) => {
 	const me = requireRole(locals.user, url, ['student']).id;
 	// a test built from the question bank: the student's own copy, with the timer
-	const test = await openAttempt(locals.db, me, idOf(params.id));
+	const test = await openAttempt(locals.db, me, idOf(params.id), new Date(), { start: false });
 	if (test) return { quiz: null, test };
 	// only the student's own assignment; anything else looks like it doesn't exist
 	const a = await assignmentToTake(locals.db, me, idOf(params.id));
@@ -27,6 +27,13 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 };
 
 export const actions: Actions = {
+	/** "Start test": the clock starts now (timed tests only wait for this). */
+	start: async ({ locals, url, params }) => {
+		const me = requireRole(locals.user, url, ['student']).id;
+		const t = await openAttempt(locals.db, me, idOf(params.id), new Date(), { start: true });
+		if (!t) error(404, 'Not found');
+		redirect(303, url.pathname);
+	},
 	/** Hand in a test built from the bank (marked on the server, late after the timer). */
 	test: async ({ locals, url, params, request }) => {
 		const me = requireRole(locals.user, url, ['student']).id;

@@ -31,7 +31,7 @@
 	<nav class="ofi-f" aria-label={m.fb_o_invoices()}>
 		{#each filters as f (f)}
 			<a href="?fstatus={f}" aria-current={status === f ? 'true' : undefined}
-				>{f === 'open' || f === 'all' ? f : t(`fb_st_${f}`)}</a
+				>{f === 'open' ? m.fb_o_f_open() : f === 'all' ? m.fb_o_f_all() : t(`fb_st_${f}`)}</a
 			>
 		{/each}
 	</nav>
@@ -66,25 +66,24 @@
 						</p>{/if}
 					{#if i.proofUrl}<a href={i.proofUrl} target="_blank" rel="noopener">{m.fb_o_proof()}</a
 						>{/if}
-					{#if i.status !== 'paid' && i.status !== 'cancelled'}
+					<!-- only a sent proof can be confirmed or rejected -->
+					{#if i.status === 'proof_sent'}
 						<div class="ofi-act">
 							<form method="POST" action="?/familyConfirm">
 								<input type="hidden" name="id" value={i.id} />
 								<button class="ui-btn sm" type="submit">{m.fb_o_confirm()}</button>
 							</form>
-							{#if i.status !== 'rejected'}
-								<form method="POST" action="?/familyReject" class="ofi-rej">
-									<input type="hidden" name="id" value={i.id} />
-									<input
-										name="reason"
-										required
-										maxlength="300"
-										aria-label={m.fb_o_reason()}
-										placeholder={m.fb_o_reason()}
-									/>
-									<button class="ui-btn-soft sm" type="submit">{m.fb_o_reject()}</button>
-								</form>
-							{/if}
+							<form method="POST" action="?/familyReject" class="ofi-rej">
+								<input type="hidden" name="id" value={i.id} />
+								<input
+									name="reason"
+									required
+									maxlength="300"
+									aria-label={m.fb_o_reason()}
+									placeholder={m.fb_o_reason()}
+								/>
+								<button class="ui-btn-soft sm" type="submit">{m.fb_o_reject()}</button>
+							</form>
 						</div>
 					{/if}
 				</li>

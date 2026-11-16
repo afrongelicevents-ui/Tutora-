@@ -88,8 +88,8 @@
 							><input type="radio" name="period" value={p.period} bind:group={period} />
 							<span
 								>{t(`fb_months_${p.period}`)} ·
-								<strong>{formatMoney(p.totalCents)}</strong>{#if p.discountPct}
-									· {m.fb_discount({ pct: p.discountPct })}{/if}</span
+								<strong>{formatMoney(p.totalCents)}</strong
+								>{#if p.discountPct}{` · ${m.fb_discount({ pct: p.discountPct })}`}{/if}</span
 							></label
 						>
 					{/each}

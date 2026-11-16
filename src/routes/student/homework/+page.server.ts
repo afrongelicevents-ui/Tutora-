@@ -2,6 +2,7 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { getHomework, handIn, homeworkForUser } from '#lib/server/people.ts';
 import { requireRole } from '#lib/server/guards.ts';
+import { myAssignments } from '#lib/server/assessments.ts';
 import { fileLink, getStore } from '#lib/server/storage.ts';
 import { DOC_KINDS, MB, newKey, readUpload } from '#lib/server/files.ts';
 import { hitLimit } from '#lib/server/rate-limit.ts';
@@ -61,14 +62,27 @@ import { m } from '#lib/paraglide/messages.js';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const u = requireRole(locals.user, url, ['student']);
-	const [items, resources, links] = await Promise.all([
+	const [items, resources, links, assigned] = await Promise.all([
 		homeworkForUser(locals.db, u.id),
 		revisionResources(locals.db, u.id),
-		homeworkLinks(locals.db, u.id)
+		homeworkLinks(locals.db, u.id),
+		myAssignments(locals.db, u.id)
 	]);
 	const link = (k: string | null, n: string | null) => (k ? fileLink(k, n ?? 'file') : null);
 	return {
 		resources,
+		// quizzes and tests from tutors not done yet (the same ones the home page counts)
+		quizzes: assigned
+			.filter((a) => !a.doneAt)
+			.map((a) => ({
+				id: a.id,
+				kind: a.kind,
+				title: a.title,
+				subject: a.subject,
+				dueOn: a.dueOn,
+				timerMinutes: a.timerMinutes,
+				tutorName: a.tutorName
+			})),
 		items: await Promise.all(
 			items.map(async (h) => ({
 				...h,

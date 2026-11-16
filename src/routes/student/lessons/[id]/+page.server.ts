@@ -60,6 +60,7 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 	]);
 	const { tutorId: _t, ...lesson } = l;
 	return {
+		messageHref: `/student/messages/${encodeURIComponent(l.tutorId)}`,
 		lesson: {
 			...lesson,
 			minutes: Math.round((+l.endsAt - +l.startsAt) / 60_000),

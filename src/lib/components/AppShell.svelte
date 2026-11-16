@@ -148,7 +148,8 @@
 	}
 	.shell {
 		min-height: 100dvh;
-		padding-bottom: calc(60px + env(safe-area-inset-bottom));
+		/* room for the tab bar plus a gap, so the last button never touches it */
+		padding-bottom: calc(84px + env(safe-area-inset-bottom));
 	}
 	.side {
 		display: none;
@@ -252,6 +253,13 @@
 			display: grid;
 			grid-template-columns: 240px minmax(0, 1fr);
 			padding-bottom: 0;
+			/* the white side column runs the full height of long pages too */
+			background-image: linear-gradient(
+				90deg,
+				#fff 0 239px,
+				var(--border) 239px 240px,
+				transparent 240px
+			);
 		}
 		.tabbar,
 		.topbar {

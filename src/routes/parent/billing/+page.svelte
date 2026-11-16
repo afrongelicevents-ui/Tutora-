@@ -16,6 +16,9 @@
 		invoices={data.invoices}
 		payHref={(id) => `/parent/checkout?invoice=${id}`}
 		receiptHref={(id) => `/parent/billing/${id}/receipt`}
+		pilot={data.pilot}
 	/>
-	<p><a class="ui-btn-soft" href="/parent/checkout">{m.fb_go_checkout()}</a></p>
+	{#if data.pilot}<p class="notice">{m.fb_pilot_on()}</p>{:else}<p>
+			<a class="ui-btn-soft" href="/parent/checkout">{m.fb_go_checkout()}</a>
+		</p>{/if}
 </section>

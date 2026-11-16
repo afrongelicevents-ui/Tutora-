@@ -336,3 +336,27 @@ Full audit in docs/WIRING.md (86 rows, every one now fixed or decided). Choices 
 - **The maths calculator is hand-written and tiny:** numbers, letters, + − × ÷ ^ and brackets, nothing else (no eval, no Function); limits on length, depth, size and powers. Numbers are re-picked until the answer is clean (whole, or to the decimal places asked).
 - **AI test maker (Tutora Pro) on FREE Workers AI only.** Model `@cf/meta/llama-3.2-3b-instruct`. The free allowance is 10,000 neurons a day per Cloudflare account (00:00 UTC); on the free plan Cloudflare just refuses calls over it, it never charges. Our own counter (`ai_usage`) adds a careful estimate BEFORE each call (prompt + the most the answer may be, at prices rounded up), and the real figure afterwards if it was more. The live and test sites share the account, so live stops at 6,500 and test at 1,500 (together 80%); one tutor at most 1,500 a day. At the line the page shows exactly "AI test maker is resting for today, try again tomorrow, or build a test from the question bank." No paid fallback, ever. Drafts must be checked ("Checked, use it") before a test can use them.
 - **Local dev has no Workers AI.** Remote bindings are turned off for `vite dev` (`platformProxy.remoteBindings: false`), so dev and the e2e tests never call Cloudflare; the page then says the AI test maker isn't available here.
+
+## D128 — Stronger login, Cloudflare bindings, owner admin, money model wording (2026-11-16)
+
+- **Password hashing stays PBKDF2-SHA256 at 30,000 rounds** (WebCrypto). That is as strong as
+  the 10 ms CPU limit of the Workers free plan allows with room for the rest of the sign-in;
+  older hashes (100,000 rounds, scrypt) still work and are re-made at the next sign-in. No
+  "pepper": rotating the secret would lock everyone out.
+- **Lockout:** 10 wrong passwords for one account in 30 minutes lock that account for the
+  rest of the 30 minutes (`loginFail` in rate-limit.ts). The owner of the account gets a
+  bell message with a "reset your password" link; a right password clears the count. The
+  existing per-IP and per-account limits stay (the per-account one raised to 40 an hour so
+  the lockout, not the general limit, is what people meet).
+- **Cloudflare bindings** (Workers AI, R2) are read from `cloudflare:workers`
+  (`src/lib/server/cf-env.ts`): this adapter does not put them on `event.platform`.
+- **Owner admin** is organised as Overview · People · Learning · Money · School+ · Safety ·
+  Content · System (phone: bottom tabs; desktop: side sections), with a Photos manager
+  (WebP under 60 KB, credit, "I have the right to use this photo").
+- **Money model wording everywhere:** "No Tutora fee for students — you only pay your tutor.
+  Tutora Family is for the system: planning, consistency, progress, reports and support."
+  Tutors are paid directly; Tutora never takes a cut.
+- **Pilot switches** for Family and Pro are ON by default so nobody on the live site loses a
+  feature until the owner fills in Tutora's payment details and switches them off.
+- **Reports and student tests are Tutora Family features**; the parent's child page and
+  paying the tutor stay free.

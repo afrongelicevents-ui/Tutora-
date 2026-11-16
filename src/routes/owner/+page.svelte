@@ -17,7 +17,7 @@
 					n: c.tutorsPending,
 					icon: 'tutors',
 					tone: 'amber',
-					what: m.ow_attn_tutors(),
+					what: c.tutorsPending === 1 ? m.ow_attn_tutors1() : m.ow_attn_tutors(),
 					href: '/owner/tutors?status=pending',
 					btn: m.ow_attn_tutors_btn()
 				},
@@ -33,7 +33,7 @@
 					n: c.checksWaiting,
 					icon: 'eye',
 					tone: 'navy',
-					what: m.ow_attn_checks(),
+					what: c.checksWaiting === 1 ? m.ow_attn_checks1() : m.ow_attn_checks(),
 					href: '/owner/moderation',
 					btn: m.ow_attn_check_btn()
 				},
@@ -49,7 +49,7 @@
 					n: data.family.proofsWaiting,
 					icon: 'wallet',
 					tone: 'green',
-					what: m.ow_attn_proofs(),
+					what: data.family.proofsWaiting === 1 ? m.ow_attn_proofs1() : m.ow_attn_proofs(),
 					href: '/owner/payments?view=family&fstatus=proof_sent',
 					btn: m.ow_attn_check_btn()
 				},
@@ -57,7 +57,7 @@
 					n: data.pro.proofsWaiting,
 					icon: 'wallet',
 					tone: 'green',
-					what: m.pro_attn_proofs(),
+					what: data.pro.proofsWaiting === 1 ? m.pro_attn_proofs1() : m.pro_attn_proofs(),
 					href: '/owner/payments?view=pro&pstatus=proof_sent',
 					btn: m.ow_attn_check_btn()
 				},
@@ -65,7 +65,7 @@
 					n: data.family.manyChildren.length,
 					icon: 'family',
 					tone: 'amber',
-					what: m.ow_attn_many(),
+					what: data.family.manyChildren.length === 1 ? m.ow_attn_many1() : m.ow_attn_many(),
 					href: '/owner#family-stats',
 					btn: m.ow_attn_look()
 				},
@@ -73,7 +73,7 @@
 					n: c.paymentsStale,
 					icon: 'wallet',
 					tone: 'amber',
-					what: m.ow_attn_payments(),
+					what: c.paymentsStale === 1 ? m.ow_attn_payments1() : m.ow_attn_payments(),
 					href: '/owner/payments?status=stale',
 					btn: m.ow_attn_look()
 				},

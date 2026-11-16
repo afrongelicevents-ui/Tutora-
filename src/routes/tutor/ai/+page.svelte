@@ -62,10 +62,10 @@
 						required
 						maxlength="60"
 						list="ai-subjects"
-						defaultValue={v?.subject ?? ''}
+						defaultValue={v?.subject ?? data.subjects[0] ?? ''}
 					/>
 					<datalist id="ai-subjects"
-						>{#each data.tags.subjects as s (s)}<option value={s}></option>{/each}</datalist
+						>{#each data.subjects as s (s)}<option value={s}></option>{/each}</datalist
 					>
 				</div>
 				<div class="field">
@@ -124,7 +124,10 @@
 			<p class="note small">{m.ai_check_note()}</p>
 			<button class="btn btn-block" type="submit">{m.ai_make()}</button>
 		</form>
-		<p class="small muted">{m.ai_today({ used: data.usedPct, stop: data.stopPct })}</p>
+		<p class="small muted">
+			{m.ai_today()}
+			{data.left === 1 ? m.ai_left_one() : m.ai_left({ n: data.left })}
+		</p>
 	{/if}
 </div>
 

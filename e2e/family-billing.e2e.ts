@@ -10,8 +10,9 @@ const PNG = Buffer.from(
 );
 const pilot = (on: boolean) => sql(`update tutora_settings set pilot_free_trial = $1`, [on]);
 
+// the test seed has the pilot switch OFF (gifts keep the other test families open)
 test.afterAll(async () => {
-	await pilot(true);
+	await pilot(false);
 	await closeDb();
 });
 
@@ -121,5 +122,5 @@ test('pilot off: a Family page is locked with Upgrade; a child is told to ask', 
 	});
 	expect(r.status()).toBe(303);
 	expect(r.headers().location).toContain('/student/upgrade');
-	await pilot(true);
+	await pilot(false);
 });

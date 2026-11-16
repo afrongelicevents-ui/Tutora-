@@ -9,12 +9,15 @@ import { account, user } from './db/auth.schema.ts';
 import { profile } from './db/app.schema.ts';
 import { familyLink } from './db/v3.schema.ts';
 import { familySubscription, subscriptionChild, tutoraInvoice } from './db/family.schema.ts';
+import { planGift } from './db/pro.schema.ts';
+import { DbStore } from './db-store.ts';
 import { saveTutoraSettings, addMonths } from './family-billing.ts';
 import { quote } from '../family-pricing.ts';
 import { addDays } from '../tz.ts';
 import type { TestLogin } from './seed.ts';
 
-const NONE = { discount3mPct: 0, discount6mPct: 0 };
+/** the same discounts as the fake settings below, so invoices follow the price table */
+const DISCOUNTS = { discount3mPct: 5, discount6mPct: 10 };
 
 export async function seedFamilyBilling(
 	db: DB,
@@ -22,7 +25,8 @@ export async function seedFamilyBilling(
 	logins: TestLogin[],
 	now = new Date()
 ) {
-	// obviously fake details (TEST), the pilot free trial stays ON like on live
+	// obviously fake details (TEST). The pilot switch is OFF here (on live it starts ON) so the
+	// paying flows can be seen; everyone the walkthroughs use is given Family free below.
 	await saveTutoraSettings(db, {
 		ecocashNumber: '0770 000 000 (TEST)',
 		ecocashName: 'Tutora TEST',
@@ -33,9 +37,8 @@ export async function seedFamilyBilling(
 		bankAccountNumber: '0000 0000 0000 (TEST)',
 		bankBranch: 'Test branch',
 		notes: 'Test site: these are not real payment details.',
-		discount3mPct: 5,
-		discount6mPct: 10,
-		pilotFreeTrial: true,
+		...DISCOUNTS,
+		pilotFreeTrial: false,
 		trialDays: 14
 	});
 
@@ -87,6 +90,18 @@ export async function seedFamilyBilling(
 		return { id, kids: ids };
 	}
 
+	/** a 1×1 picture standing in for a payment screenshot, so "View proof" has something */
+	async function fakeProof(key: string) {
+		const png = Uint8Array.from(
+			atob(
+				'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+			),
+			(c) => c.charCodeAt(0)
+		);
+		await new DbStore(db).put(key, png, 'image/png');
+		return key;
+	}
+
 	let receipt = 0;
 	async function invoice(
 		parentId: string,
@@ -97,7 +112,7 @@ export async function seedFamilyBilling(
 		dueOn: Date,
 		extra: Partial<typeof tutoraInvoice.$inferInsert> = {}
 	) {
-		const q = quote(kids.length, period, NONE);
+		const q = quote(kids.length, period, DISCOUNTS);
 		const paid = status === 'paid';
 		await db.insert(tutoraInvoice).values({
 			parentId,
@@ -105,6 +120,7 @@ export async function seedFamilyBilling(
 			children: kids.map((k, i) => ({ id: k.id, name: k.name, cents: q.perChildCents[i] })),
 			periodMonths: q.period,
 			amountCents: q.totalCents,
+			discountPct: q.discountPct,
 			status,
 			dueOn,
 			periodStart: dueOn,
@@ -165,7 +181,8 @@ export async function seedFamilyBilling(
 			addDays(now, 2),
 			{
 				method: 'innbucks',
-				reference: 'TEST-INN-0042'
+				reference: 'TEST-INN-0042',
+				proofKey: await fakeProof(`proofs/tutora/${banda}/test-proof.png`)
 			}
 		);
 	}
@@ -202,5 +219,30 @@ export async function seedFamilyBilling(
 		);
 		await invoice(p4.id, sub, p4.kids, 1, 'paid', addMonths(ended, -1));
 		await invoice(p4.id, sub, p4.kids, 1, 'overdue', ended, { remindedDue: ended });
+	}
+
+	// Family free (an owner gift) for the other test families and the students without a
+	// parent, so their pages work with the pilot switch off. Banda (proof waiting), the
+	// 3-children family (due) and the 4-children family (overdue) show the paying flows.
+	for (const email of [
+		'ruth@example.com',
+		'grace@example.com',
+		'peter@example.com',
+		'blessing@example.com',
+		'chiedza@example.com',
+		'fadzai@example.com',
+		'kuda@example.com',
+		'panashe@example.com',
+		'simba@example.com',
+		'tinashe@example.com',
+		'tsitsi@example.com',
+		'vimbai@example.com'
+	]) {
+		const id = await idOf(email);
+		if (id)
+			await db
+				.insert(planGift)
+				.values({ userId: id, plan: 'family', note: 'Test site', givenBy: owner?.id ?? null })
+				.onConflictDoNothing();
 	}
 }

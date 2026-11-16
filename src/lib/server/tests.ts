@@ -680,12 +680,15 @@ export async function openAttempt(
 	db: DB,
 	studentId: string,
 	assignmentId: number,
-	now = new Date()
+	now = new Date(),
+	/** start: false → a timed test is only shown (questions count, time) until "Start test" */
+	opts: { start?: boolean } = {}
 ) {
 	const a = await assignmentWithSet(db, studentId, assignmentId);
 	if (!a || !a.set.questionIds) return null;
 	let [att] = await db.select().from(testAttempt).where(eq(testAttempt.assignmentId, assignmentId));
-	if (!att && !a.assignment.doneAt) {
+	const waitForStart = !att && !a.assignment.doneAt && !!a.set.timerMinutes && opts.start === false;
+	if (!att && !a.assignment.doneAt && !waitForStart) {
 		const qs = await builtQuestions(db, a.set.tutorId, a.set.questionIds);
 		if (!qs.length) throw new TestFail('st5_err_no_questions');
 		const items = itemsFor(qs, assignmentId, studentId, a.set.topic);
@@ -714,6 +717,9 @@ export async function openAttempt(
 	const done = !!att?.submittedAt;
 	const t = att ? totals(att.items) : null;
 	return {
+		/** timed and not started yet: show the "Start test" step */
+		notStarted: waitForStart,
+		questionCount: a.set.questionIds.length,
 		id: a.assignment.id,
 		title: a.set.title,
 		subject: a.set.subject,

@@ -28,6 +28,9 @@
 		error = null
 	}: {
 		test: {
+			/** timed and not started: the "Start test" step */
+			notStarted?: boolean;
+			questionCount?: number;
 			id: number;
 			title: string;
 			subject: string;
@@ -149,6 +152,16 @@
 			{/each}
 		</ol>
 		<a class="btn btn-secondary" href="/student/study">{m.st5_back_study()}</a>
+	{:else if test.notStarted}
+		<div class="ui-card stack-s start">
+			<p class="lead">
+				{m.qb_start_lead({ n: test.questionCount ?? 0, minutes: test.timerMinutes ?? 0 })}
+			</p>
+			<p class="small muted">{m.qb_start_note()}</p>
+			<form method="POST" action="?/start">
+				<button class="btn btn-block" type="submit">{m.qb_start()}</button>
+			</form>
+		</div>
 	{:else}
 		{#if left !== null}
 			<div class="clock" class:low={left < 60} role="timer" aria-live="off">

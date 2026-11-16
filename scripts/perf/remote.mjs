@@ -123,7 +123,11 @@ const ROLES = {
 		'/parent/messages',
 		'/parent/buddies',
 		'/parent/school-plus',
-		'/parent/book?tutor=chipo-moyo&child=test_tatenda'
+		'/parent/book?tutor=chipo-moyo&child=test_tatenda',
+		'/parent/plans',
+		'/parent/checkout',
+		'/parent/billing',
+		'/parent/help'
 	],
 	'chipo@example.com': [
 		'/tutor',
@@ -142,7 +146,15 @@ const ROLES = {
 		'/tutor/assessments',
 		'/tutor/tools',
 		'/tutor/settings',
-		'/tutor/school-plus'
+		'/tutor/school-plus',
+		'/tutor/pro',
+		'/tutor/pro/billing',
+		'/tutor/insights',
+		'/tutor/reports',
+		'/tutor/bank',
+		'/tutor/tests/new',
+		'/tutor/marking',
+		'/tutor/ai'
 	],
 	'owner@example.com': [
 		'/owner',

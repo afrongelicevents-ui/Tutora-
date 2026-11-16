@@ -153,7 +153,9 @@ export function buildMessages(v: AiInput) {
 				'only, no other text: {"questions":[{"type":"mcq","prompt":"...","choices":["...","...",' +
 				'"...","..."],"answer":0,"explanation":"..."},{"type":"short","prompt":"...","answers":' +
 				'["..."]},{"type":"written","prompt":"...","explanation":"what a good answer says"}]}. ' +
-				'For mcq, "answer" is the index (0-3) of the right choice.'
+				'For mcq, "answer" is the index (0-3) of the right choice. For short, "answers" lists ' +
+				'only correct ways to write the ONE right answer (e.g. "6" and "six"), never wrong ' +
+				'options. Every question must be about the subject and chapter given.'
 		},
 		{
 			role: 'user',
