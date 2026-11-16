@@ -7,6 +7,7 @@ import { and, asc, desc, eq, gte, lt, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { assessmentResult, exam, RESULT_SOURCES } from './db/v3.schema.ts';
 import { addDays, localDate } from '../tz.ts';
+import { perRequest } from './cache.ts';
 
 /** A topic counts as "ready" when the average of its latest 3 results is at least this. */
 export const READY_PCT = 70;
@@ -72,12 +73,7 @@ export interface TopicScore {
 	lastOn: string;
 }
 
-/** Score per topic: average of each topic's latest 3 results. Lowest first when `weakFirst`. */
-export async function topicScores(
-	db: DB,
-	studentId: string,
-	opts: { subject?: string; weakFirst?: boolean } = {}
-): Promise<TopicScore[]> {
+async function topicRows(db: DB, studentId: string, subject?: string): Promise<TopicScore[]> {
 	const rows = await db.execute(sql`
 		with ranked as (
 			select subject, topic, score, max_score, taken_on,
@@ -85,7 +81,7 @@ export async function topicScores(
 				count(*) over (partition by lower(subject), lower(topic)) as n
 			from ${assessmentResult}
 			where student_id = ${studentId}
-			${opts.subject ? sql`and lower(subject) = lower(${opts.subject})` : sql``}
+			${subject ? sql`and lower(subject) = lower(${subject})` : sql``}
 		)
 		select min(subject) as subject, min(topic) as topic,
 			round(100.0 * sum(score) / nullif(sum(max_score), 0))::int as pct,
@@ -100,13 +96,26 @@ export async function topicScores(
 		results: number;
 		last_on: string;
 	}[];
-	const out = list.map((r) => ({
+	return list.map((r) => ({
 		subject: r.subject,
 		topic: r.topic,
 		pct: Number(r.pct),
 		results: Number(r.results),
 		lastOn: r.last_on
 	}));
+}
+
+/** Score per topic: average of each topic's latest 3 results. Lowest first when `weakFirst`. */
+export async function topicScores(
+	db: DB,
+	studentId: string,
+	opts: { subject?: string; weakFirst?: boolean } = {}
+): Promise<TopicScore[]> {
+	// the same page often asks twice (progress card + exam tips): one query per page
+	const cached = await perRequest(db, `topic-scores:${studentId}:${opts.subject ?? ''}`, () =>
+		topicRows(db, studentId, opts.subject)
+	);
+	const out = cached.map((r) => ({ ...r }));
 	out.sort(
 		(a, b) => (opts.weakFirst ? a.pct - b.pct : b.pct - a.pct) || a.topic.localeCompare(b.topic)
 	);
