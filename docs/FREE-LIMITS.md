@@ -176,6 +176,37 @@ now runs 34 queries (was 39) and the Tutors page 15 (was 19). The tutor list use
 recommendations is kept in memory for 5 minutes. Next step if needed: page the child page's
 lesson and homework lists.
 
+## Visitor errors in the speed check, and the lighter child page (16 Nov 2026, evening)
+
+**Where the "visitor errors" came from.** The speed check now records every error with its
+page, status and what came back, and every Cloudflare log entry that was not "ok". Three
+runs 40 minutes apart, with no deploys in between:
+
+| Run (UTC) | Errors seen by the checker              | Cloudflare: refused for CPU | Cloudflare: app errors |
+| --------- | --------------------------------------- | --------------------------- | ---------------------- |
+| 16:05     | 2 × "no answer" (connection failed)     | 0                           | 0                      |
+| 16:45     | 0                                       | 0                           | 0                      |
+| 17:26     | 1 × connection failed, 1 × 20 s timeout | 0                           | 0                      |
+
+Every error was a request that never got an answer on the GitHub machine running the check
+(status 599: a dropped connection, or our own 20-second limit). Cloudflare logged no error
+page, no refusal and no exception for any of them; the one timeout shows in Cloudflare's log
+as "canceled" (the checker hung up), with 32 ms of CPU. The earlier noisy run (10 errors)
+matches this: Cloudflare logged only 1 CPU refusal and no app errors then, so the other 9
+were the same kind of dropped connection. Not a Tutora bug. Note: Cloudflare's live log
+drops some events on busy runs (run 1 kept 261 of 432), so a page can be missing from one
+run's table.
+
+**Parent child page** (latest 5 lessons and homework, a short progress summary, "See all"
+pages; 17 database queries in two rounds instead of 35 one after another):
+
+| Run                   | `/parent/child/[id]` CPU (median) |
+| --------------------- | --------------------------------- |
+| Before (14:35, 15:23) | 31 ms, 27 ms                      |
+| After, run 16:45      | **15 ms**                         |
+| After, run 17:26      | **12 ms**                         |
+| After, run 16:05      | not in the log (events dropped)   |
+
 ## AI test maker (Workers AI)
 
 - **Free allowance only:** 10,000 neurons a day for the whole Cloudflare account. Model
