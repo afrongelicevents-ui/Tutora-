@@ -165,6 +165,68 @@ export function buildMessages(v: AiInput) {
 	];
 }
 
+/**
+ * Small models sometimes write almost-JSON: a list not closed before the next key
+ * (`"choices":["a","b","answer":0`) or the reply cut off at the length limit. This mends
+ * those two cases only; anything else is left for the parser to refuse.
+ */
+export function repairJson(text: string): string {
+	let out = '';
+	const stack: string[] = [];
+	/** where the last comma inside the innermost list was written */
+	const commaAt: number[] = [];
+	let i = 0;
+	while (i < text.length) {
+		const ch = text[i];
+		if (ch === '"') {
+			let j = i + 1;
+			while (j < text.length && text[j] !== '"') j += text[j] === '\\' ? 2 : 1;
+			const str = text.slice(i, j + 1);
+			let k = j + 1;
+			while (k < text.length && /\s/.test(text[k])) k++;
+			if (text[k] === ':' && stack.at(-1) === '[') {
+				// a key inside a list: the list should have ended before the comma
+				const at = commaAt.at(-1) ?? out.length;
+				out = out.slice(0, at) + ']' + out.slice(at);
+				stack.pop();
+				commaAt.pop();
+			}
+			out += str;
+			i = j + 1;
+			continue;
+		}
+		if (ch === '[' || ch === '{') {
+			stack.push(ch);
+			commaAt.push(-1);
+		} else if (ch === ']' || ch === '}') {
+			stack.pop();
+			commaAt.pop();
+		} else if (ch === ',' && stack.at(-1) === '[') {
+			commaAt[commaAt.length - 1] = out.length;
+		}
+		out += ch;
+		i++;
+	}
+	return out;
+}
+
+/** A reply cut off part-way: keep the questions that were finished. */
+function closeCutReply(text: string): string | null {
+	const start = text.indexOf('[');
+	if (start < 0) return null;
+	for (let end = text.lastIndexOf('}'); end > start; end = text.lastIndexOf('}', end - 1)) {
+		const head = text.slice(0, end + 1);
+		const tryIt = head.trimStart().startsWith('{') ? head + ']}' : head + ']';
+		try {
+			JSON.parse(tryIt);
+			return tryIt;
+		} catch {
+			/* try the question before */
+		}
+	}
+	return null;
+}
+
 /** Takes the model's text and returns valid questions only (anything odd is dropped). */
 export function parseDrafts(raw: unknown, max = MAX_DRAFTS) {
 	const text = typeof raw === 'string' ? raw : '';
@@ -185,6 +247,16 @@ export function parseDrafts(raw: unknown, max = MAX_DRAFTS) {
 			const c = text.indexOf('[');
 			const d = text.lastIndexOf(']');
 			if (c >= 0 && d > c) data = tryParse(text.slice(c, d + 1));
+		}
+	}
+	if (!data) {
+		// mend common small-model slips, then keep only finished questions if it was cut off
+		const from = text.indexOf('{');
+		const mended = repairJson(from >= 0 ? text.slice(from) : text);
+		data = tryParse(mended);
+		if (!data) {
+			const closed = closeCutReply(mended);
+			if (closed) data = tryParse(closed);
 		}
 	}
 	const list: unknown[] = Array.isArray(data)

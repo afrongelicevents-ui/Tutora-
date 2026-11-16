@@ -144,6 +144,22 @@ describe('question bank and tests (no database)', () => {
 		expect(termOf('2026-11-16')).toBe('Term 3');
 	});
 
+	it('mends the slips a small model makes: an unclosed list, a cut-off reply', () => {
+		// what the free model really wrote on the test site
+		const real =
+			'{"questions":[{"type":"mcq","prompt":"What is the main function of chlorophyll?","choices":["To absorb light energy","To convert CO2 to glucose","To release oxygen","To absorb carbon dioxide","answer":0,"explanation":"It absorbs sunlight."},' +
+			'{"type":"short","prompt":"What are the products of photosynthesis?","answers":["Glucose and oxygen","Oxygen and glucose","answer":["Glucose and oxygen"]},' +
+			'{"type":"written","prompt":"Explain the';
+		const got = parseDrafts(real);
+		expect(got.map((q) => q.type)).toEqual(['mcq', 'short']);
+		expect(got[0].choices).toHaveLength(4);
+		expect(got[0].answer).toBe(0);
+		expect(got[1].accepted).toContain('Glucose and oxygen');
+		expect(
+			parseDrafts('{"questions":[{"type":"written","prompt":"Why?"},{"type":"mc')
+		).toHaveLength(1);
+	});
+
 	it('reads only valid questions from the model, whatever it wraps them in', () => {
 		const good = parseDrafts(
 			'Sure! ```json\n{"questions":[{"type":"mcq","prompt":"2+2?","choices":["3","4"],"answer":1},' +
