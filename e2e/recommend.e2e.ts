@@ -48,18 +48,24 @@ test('Family parent: 3–5 matching tutors, pinned first, never hidden or their 
 	await expect(recFor(p).first().getByRole('link', { name: 'Book a lesson' })).toBeVisible();
 });
 
-test('free level: a locked preview with Upgrade and no tutor names', async ({ browser }) => {
+test('free level: a locked preview with no tutor names; Add this child opens checkout', async ({
+	browser
+}) => {
 	const p = await as(browser, 'parent3@example.com');
 	await p.goto('/parent/tutors');
 	const locked = p.locator('[data-testid=recommended][data-locked=yes]').first();
 	await expect(locked).toBeVisible();
-	await expect(locked.getByRole('link', { name: /Upgrade/ })).toHaveAttribute(
-		'href',
-		/\/parent\/plans/
-	);
 	const html = await locked.innerHTML();
 	for (const name of ['Nyasha Gumbo', 'Kudakwashe', 'Tafadzwa', 'Ropafadzo'])
 		expect(html).not.toContain(name);
+	// the button opens checkout with that child already ticked, like "Add this child"
+	const add = locked.getByRole('link', { name: 'Add this child to Tutora Family' });
+	const href = (await add.getAttribute('href')) ?? '';
+	const child = new URL(href, 'http://x').searchParams.get('child');
+	expect(href).toMatch(/^\/parent\/checkout\?child=/);
+	await add.click();
+	await expect(p).toHaveURL(/\/parent\/checkout\?child=/);
+	await expect(p.locator(`input[name=child][value="${child}"]`)).toBeChecked();
 });
 
 test('owner hides a tutor (gone for families), then pins one (shown first)', async ({

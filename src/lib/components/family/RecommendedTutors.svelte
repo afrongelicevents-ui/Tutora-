@@ -44,7 +44,9 @@
 			{/each}
 		</ul>
 		<p class="small">{m.rec_locked()}</p>
-		<a class="ui-btn sm" href="/parent/plans?locked=recommend">{m.fb_upgrade()}</a>
+		<a class="ui-btn sm" href="/parent/checkout?child={encodeURIComponent(childId)}"
+			>{m.fb_child_add()}</a
+		>
 	{:else if rec.tutors.length}
 		<p class="small muted">{rec.hasSubjects ? m.rec_lead() : m.rec_lead_nosubj()}</p>
 		<ul class="cards">
