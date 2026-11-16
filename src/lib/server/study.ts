@@ -38,7 +38,7 @@ export async function todaysPlan(
 	studentId: string,
 	now = new Date()
 ): Promise<TodaySlot[]> {
-	const { weekday, minutes } = local(now);
+	const { weekday } = local(now);
 	const items = (await planFor(db, studentId)).filter((i) => i.weekday === weekday);
 	if (!items.length) return [];
 	const sessions = await db
@@ -54,6 +54,24 @@ export async function todaysPlan(
 				)
 			)
 		);
+	return slotsFor(items, sessions, now);
+}
+
+/** Today's plan slots and their state, from the plan and today's sessions (no queries). */
+export function slotsFor(
+	plan: {
+		id: number;
+		weekday: number;
+		startMinute: number;
+		minutes: number;
+		subject: string;
+		topic: string | null;
+	}[],
+	sessions: { id: number; planItemId: number | null; status: string }[],
+	now = new Date()
+): TodaySlot[] {
+	const { weekday, minutes } = local(now);
+	const items = plan.filter((i) => i.weekday === weekday);
 	let nextGiven = false;
 	return items.map((i) => {
 		const s = sessions.find((x) => x.planItemId === i.id && x.status !== 'stopped');

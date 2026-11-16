@@ -26,6 +26,7 @@ import {
 } from './db/family.schema.ts';
 import { perRequest } from './cache.ts';
 import { activeGift } from './plan-gifts.ts';
+import { planGift } from './db/pro.schema.ts';
 import { quote, dollars, isPeriod } from '../family-pricing.ts';
 import { addDays } from '../tz.ts';
 import type { Notify } from './notify-core.ts';
@@ -251,25 +252,33 @@ export function familyCoverage(
 	now = new Date()
 ): Promise<{ all: boolean; covered: string[] }> {
 	return perRequest(db, `family-coverage:${parentId}`, async () => {
-		const [settings, [sub], gift] = await Promise.all([
-			getTutoraSettings(db),
-			db
-				.select({
-					id: familySubscription.id,
-					status: familySubscription.status,
-					paidUntil: familySubscription.paidUntil
-				})
-				.from(familySubscription)
-				.where(eq(familySubscription.parentId, parentId)),
-			activeGift(db, 'family', parentId, now)
-		]);
-		if (settings.pilotFreeTrial || gift) return { all: true, covered: [] };
+		// one query (this runs on every parent page): the pilot switch, a Family gift to the
+		// parent, the parent's subscription and the children it covers
+		const res = await db.execute(sql`
+			select
+				coalesce((select pilot_free_trial from ${tutoraSettings} where id = 1),
+					${DEFAULT_SETTINGS.pilotFreeTrial}) as pilot,
+				exists(select 1 from ${planGift} g where g.plan = 'family' and g.user_id = ${parentId}
+					and (g.until is null or g.until > ${now.toISOString()}::timestamptz)) as gift,
+				s.status, s.paid_until,
+				coalesce((select array_agg(c.student_id) from ${subscriptionChild} c
+					where c.subscription_id = s.id and c.active), '{}') as kids
+			from (select 1) one
+			left join ${familySubscription} s on s.parent_id = ${parentId}`);
+		const [r] = ((res as unknown as { rows?: unknown[] }).rows ??
+			(res as unknown as unknown[])) as {
+			pilot: boolean;
+			gift: boolean;
+			status: string | null;
+			paid_until: string | Date | null;
+			kids: string[] | null;
+		}[];
+		if (!r || r.pilot || r.gift) return { all: true, covered: [] };
+		const sub = r.status
+			? { status: r.status, paidUntil: r.paid_until ? new Date(r.paid_until) : null }
+			: null;
 		if (!sub || effectiveState(sub, now).state === 'free') return { all: false, covered: [] };
-		const rows = await db
-			.select({ studentId: subscriptionChild.studentId })
-			.from(subscriptionChild)
-			.where(and(eq(subscriptionChild.subscriptionId, sub.id), eq(subscriptionChild.active, true)));
-		return { all: false, covered: rows.map((r) => r.studentId) };
+		return { all: false, covered: r.kids ?? [] };
 	});
 }
 

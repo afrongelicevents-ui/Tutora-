@@ -182,13 +182,6 @@
 				{:else}
 					<p class="muted">{m.par3_no_scores()}</p>
 				{/if}
-				{#each c.exams as e (e.id)}
-					<p class="small">
-						{m.pg3_exam({ title: e.title })}{e.daysLeft !== null
-							? ` · ${m.pg3_days({ n: e.daysLeft })}`
-							: ''} · <strong>{m.pg3_ready({ ready: e.ready, total: e.total })}</strong>
-					</p>
-				{/each}
 				{#if c.week}
 					<p class="small">
 						{m.par3_sessions_week()}:
@@ -300,6 +293,11 @@
 							{/each}
 						</ul>
 					{/if}
+					<a
+						class="see-all"
+						href="/parent/child/{c.studentId}/lessons"
+						data-testid="child-lessons-all">{m.pf_see_all()} ›</a
+					>
 				{/if}
 			</section>
 		</div>
@@ -368,6 +366,11 @@
 							<li class="muted">{m.pf_hw_none({ name: n })}</li>
 						{/each}
 					</ul>
+					{#if data.homework.length}<a
+							class="see-all"
+							href="/parent/child/{c.studentId}/homework"
+							data-testid="child-homework-all">{m.pf_see_all()} ›</a
+						>{/if}
 				{/if}
 			</section>
 
@@ -400,6 +403,11 @@
 </div>
 
 <style>
+	.see-all {
+		display: inline-block;
+		margin-top: 8px;
+		font-weight: 600;
+	}
 	.rep {
 		display: flex;
 		flex-direction: column;

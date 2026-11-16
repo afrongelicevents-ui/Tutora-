@@ -10,7 +10,7 @@
  */
 import { and, desc, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
-import { attendee, homework, lesson } from './db/app.schema.ts';
+import { attendee, homework, lesson, tutorProfile } from './db/app.schema.ts';
 import { user } from './db/auth.schema.ts';
 import { assessmentResult, checkin } from './db/v3.schema.ts';
 import { studentReport, type ReportFigures } from './db/report.schema.ts';
@@ -335,6 +335,27 @@ export function sentReportsFor(db: DB, studentId: string, limit = 12) {
 		.limit(limit);
 }
 
+/** The newest sent reports about this child with the tutor's name (one query). */
+export function sentReportsNamed(db: DB, studentId: string, limit = 3) {
+	return db
+		.select({
+			id: studentReport.id,
+			tutorId: studentReport.tutorId,
+			periodStart: studentReport.periodStart,
+			periodEnd: studentReport.periodEnd,
+			note: studentReport.note,
+			figures: studentReport.figures,
+			sentAt: studentReport.sentAt,
+			tutorName: sql<string>`coalesce(${tutorProfile.tutorName}, ${user.name}, '')`
+		})
+		.from(studentReport)
+		.leftJoin(tutorProfile, eq(tutorProfile.tutorId, studentReport.tutorId))
+		.leftJoin(user, eq(user.id, studentReport.tutorId))
+		.where(and(eq(studentReport.studentId, studentId), eq(studentReport.status, 'sent')))
+		.orderBy(desc(studentReport.sentAt))
+		.limit(limit);
+}
+
 /** One sent report about this child, or null. */
 export async function sentReport(db: DB, studentId: string, id: number) {
 	const [r] = await db
@@ -355,12 +376,11 @@ export async function tutorNames(db: DB, ids: string[]) {
 	const uniq = [...new Set(ids)];
 	if (!uniq.length) return new Map<string, string>();
 	const rows = await db
-		.select({ id: user.id, name: user.name })
+		.select({ id: user.id, name: user.name, tutorName: tutorProfile.tutorName })
 		.from(user)
+		.leftJoin(tutorProfile, eq(tutorProfile.tutorId, user.id))
 		.where(inArray(user.id, uniq));
-	const out = new Map<string, string>();
-	for (const r of rows) out.set(r.id, await tutorNameOf(db, r.id).catch(() => r.name));
-	return out;
+	return new Map(rows.map((r) => [r.id, r.tutorName ?? r.name]));
 }
 
 /**
