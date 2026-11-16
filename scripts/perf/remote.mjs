@@ -15,6 +15,8 @@ if (!SITE || !PW) throw new Error('SITE and TEST_PASSWORD are needed');
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const statuses = [];
+/** every error a visitor saw: page, status, and what the answer said */
+const failures = [];
 
 // 1. start listening
 const tail = spawn('npx', ['wrangler', 'tail', WORKER, '--format', 'json'], {
@@ -37,6 +39,18 @@ async function reqRaw(path, { cookie = '', method = 'GET', body, headers = {} } 
 		headers: { cookie, 'user-agent': 'tutora-perf', origin: SITE, ...headers }
 	});
 	const text = await res.text().catch(() => '');
+	if (res.status >= 500)
+		failures.push({
+			path,
+			status: res.status,
+			at: new Date().toISOString(),
+			ray: res.headers.get('cf-ray'),
+			said: text
+				.replace(/<[^>]+>/g, ' ')
+				.replace(/\s+/g, ' ')
+				.trim()
+				.slice(0, 160)
+		});
 	return { res, text };
 }
 
@@ -60,7 +74,15 @@ async function login(email) {
 async function req(path, opts) {
 	try {
 		return await reqRaw(path, opts);
-	} catch {
+	} catch (e) {
+		// no answer at all (our 20 s timeout or a dropped connection): not a Cloudflare error
+		failures.push({
+			path,
+			status: 599,
+			at: new Date().toISOString(),
+			ray: null,
+			said: String(e?.name ?? e).slice(0, 80)
+		});
 		return { res: new Response(null, { status: 599 }), text: '' };
 	}
 }
@@ -244,12 +266,20 @@ const norm = (u) => {
 };
 const by = new Map();
 const outcomes = {};
+const notOk = [];
 const warnings = {};
 let withCpu = 0;
 for (const e of events) {
 	const r = e.event?.request;
 	if (!r?.url || r.url.includes('__warm=1')) continue;
 	outcomes[e.outcome] = (outcomes[e.outcome] ?? 0) + 1;
+	if (e.outcome !== 'ok' || (e.exceptions ?? []).length)
+		notOk.push({
+			route: `${r.method} ${norm(r.url)}`,
+			outcome: e.outcome,
+			cpu: e.cpuTime ?? null,
+			exceptions: (e.exceptions ?? []).map((x) => String(x.message ?? x.name).slice(0, 120))
+		});
 	for (const l of e.logs ?? []) {
 		const msg = String(l.message?.[0] ?? '').slice(0, 60);
 		if (l.level === 'warn' || l.level === 'error') warnings[msg] = (warnings[msg] ?? 0) + 1;
@@ -275,6 +305,8 @@ const summary = {
 	eventsSeen: events.length,
 	eventsWithCpu: withCpu,
 	outcomes,
+	failures,
+	notOk,
 	overall: all.length ? { p50: q(all, 0.5), p90: q(all, 0.9), max: all.at(-1) } : null,
 	over10ms: rows.filter((r) => r.p50 >= 10).length,
 	routes: rows
@@ -284,6 +316,11 @@ console.log(
 	`requests ${visited.length}, log events ${events.length}, with CPU ${withCpu}, 5xx seen ${summary.errorsSeenByVisitor}`
 );
 console.log('outcomes', JSON.stringify(outcomes));
+console.log('errors the visitor saw (599 = no answer within 20 s, not from Cloudflare):');
+for (const f of failures) console.log(`  ${f.status} ${f.path} ${f.ray ?? ''} — ${f.said}`);
+console.log('worker log entries that were not ok:');
+for (const n of notOk)
+	console.log(`  ${n.outcome} ${n.route} cpu=${n.cpu} ${n.exceptions.join(' | ')}`);
 console.log('warnings in the worker log', JSON.stringify(warnings));
 if (summary.overall)
 	console.log(
