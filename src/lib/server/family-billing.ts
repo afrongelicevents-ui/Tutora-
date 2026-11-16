@@ -239,6 +239,46 @@ export function familyAccess(db: DB, userId: string, now = new Date()): Promise<
 	});
 }
 
+/**
+ * Which of a parent's children Tutora Family covers right now. `all`: the pilot, or a Family
+ * gift to the parent. Otherwise only the children on a paid, trial or grace subscription
+ * (`subscription_child.active`): a family that paid for one child of three has Family for
+ * that one child only. Remembered for the page being built.
+ */
+export function familyCoverage(
+	db: DB,
+	parentId: string,
+	now = new Date()
+): Promise<{ all: boolean; covered: string[] }> {
+	return perRequest(db, `family-coverage:${parentId}`, async () => {
+		const [settings, [sub], gift] = await Promise.all([
+			getTutoraSettings(db),
+			db
+				.select({
+					id: familySubscription.id,
+					status: familySubscription.status,
+					paidUntil: familySubscription.paidUntil
+				})
+				.from(familySubscription)
+				.where(eq(familySubscription.parentId, parentId)),
+			activeGift(db, 'family', parentId, now)
+		]);
+		if (settings.pilotFreeTrial || gift) return { all: true, covered: [] };
+		if (!sub || effectiveState(sub, now).state === 'free') return { all: false, covered: [] };
+		const rows = await db
+			.select({ studentId: subscriptionChild.studentId })
+			.from(subscriptionChild)
+			.where(and(eq(subscriptionChild.subscriptionId, sub.id), eq(subscriptionChild.active, true)));
+		return { all: false, covered: rows.map((r) => r.studentId) };
+	});
+}
+
+/** Does Tutora Family cover this child of this parent? */
+export async function childCovered(db: DB, parentId: string, childId: string, now = new Date()) {
+	const c = await familyCoverage(db, parentId, now);
+	return c.all || c.covered.includes(childId);
+}
+
 /* ------------------------------------------------------------------ the family */
 
 /**
@@ -881,7 +921,7 @@ export async function runFamilyBilling(db: DB, notify: Notify, now = new Date())
 
 /** Parent home: the plan's state, an invoice to pay, and which children are covered. */
 export async function familyHomeStrip(db: DB, parentId: string, now = new Date()) {
-	const [access, [open], covered] = await Promise.all([
+	const [access, [open], coverage] = await Promise.all([
 		familyAccess(db, parentId, now),
 		db
 			.select({ id: tutoraInvoice.id, status: tutoraInvoice.status, dueOn: tutoraInvoice.dueOn })
@@ -894,11 +934,7 @@ export async function familyHomeStrip(db: DB, parentId: string, now = new Date()
 			)
 			.orderBy(desc(tutoraInvoice.createdAt))
 			.limit(1),
-		db
-			.select({ studentId: subscriptionChild.studentId })
-			.from(subscriptionChild)
-			.innerJoin(familySubscription, eq(familySubscription.id, subscriptionChild.subscriptionId))
-			.where(and(eq(familySubscription.parentId, parentId), eq(subscriptionChild.active, true)))
+		familyCoverage(db, parentId, now)
 	]);
 	return {
 		reason: access.reason,
@@ -907,6 +943,8 @@ export async function familyHomeStrip(db: DB, parentId: string, now = new Date()
 		// during the pilot nothing is due: no Pay now, no overdue warning
 		payInvoiceId: access.reason === 'pilot' ? null : (open?.id ?? null),
 		overdueSince: access.reason !== 'pilot' && open?.status === 'overdue' ? open.dueOn : null,
-		covered: covered.map((c) => c.studentId)
+		/** every child is covered (pilot or a gift) */
+		all: coverage.all,
+		covered: coverage.covered
 	};
 }

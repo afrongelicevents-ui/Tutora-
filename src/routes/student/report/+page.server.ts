@@ -16,6 +16,7 @@ import { reportShared } from '#lib/server/events.ts';
 import { familyOf } from '#lib/server/family.ts';
 import { shortName } from '#lib/names.ts';
 import { isIsoDate } from '#lib/tz.ts';
+import { studentReports, tutorNames } from '#lib/server/reports.ts';
 
 /**
  * My personal report: today (plan vs done, tasks, check-ins, a short summary), this week
@@ -26,7 +27,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const u = requireRole(locals.user, url, ['student']);
 	const now = new Date();
 	const before = url.searchParams.get('before');
-	const [t, cv, w, g, feelings, hist, shared, family] = await Promise.all([
+	const [t, cv, w, g, feelings, hist, shared, family, tutorReports] = await Promise.all([
 		today(locals.db, u.id, now),
 		checkinView(locals.db, u.id, now),
 		weekStats(locals.db, u.id, now),
@@ -36,8 +37,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			before: before && isIsoDate(before) ? before : undefined
 		}),
 		shareReport(locals.db, u.id),
-		familyOf(locals.db, u.id)
+		familyOf(locals.db, u.id),
+		studentReports(locals.db, u.id, 6)
 	]);
+	const names = await tutorNames(
+		locals.db,
+		tutorReports.map((r) => r.tutorId)
+	);
 	const startMood = cv.ck.start?.mood ?? null;
 	const endMood = cv.ck.followup?.mood ?? null;
 	return {
@@ -57,7 +63,14 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		moreHistory: hist.more,
 		paged: !!before,
 		shared,
-		family: family.filter((f) => f.status === 'active').map((f) => f.label || shortName(f.name))
+		family: family.filter((f) => f.status === 'active').map((f) => f.label || shortName(f.name)),
+		// reports from my tutors: list only (the note is on the report's own page, when shown)
+		tutorReports: tutorReports.map((r) => ({
+			id: r.id,
+			tutor: names.get(r.tutorId) ?? '',
+			periodStart: r.periodStart,
+			periodEnd: r.periodEnd
+		}))
 	};
 };
 

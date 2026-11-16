@@ -196,7 +196,8 @@ export async function createReport(
 	studentId: string,
 	period: { from: string; to: string },
 	note: unknown,
-	now = new Date()
+	now = new Date(),
+	noteVisible = false
 ) {
 	if (!(await isEnrolled(db, tutorId, studentId))) throw new ReportFail('err_not_found');
 	const p = cleanPeriod(period.from, period.to);
@@ -209,6 +210,7 @@ export async function createReport(
 			periodStart: p.from,
 			periodEnd: p.to,
 			note: cleanNote(note),
+			noteVisible: noteVisible === true,
 			figures
 		})
 		.returning();
@@ -221,14 +223,20 @@ export async function updateReport(
 	tutorId: string,
 	id: number,
 	note: unknown,
-	now = new Date()
+	now = new Date(),
+	noteVisible?: boolean
 ) {
 	const r = await tutorReport(db, tutorId, id);
 	if (!r) throw new ReportFail('err_not_found');
 	const figures = await buildFigures(db, tutorId, r.studentId, r.periodStart, r.periodEnd, now);
 	const [row] = await db
 		.update(studentReport)
-		.set({ note: cleanNote(note), figures, updatedAt: now })
+		.set({
+			note: cleanNote(note),
+			...(noteVisible === undefined ? {} : { noteVisible: noteVisible === true }),
+			figures,
+			updatedAt: now
+		})
 		.where(and(eq(studentReport.id, id), eq(studentReport.tutorId, tutorId)))
 		.returning();
 	return row;
@@ -293,6 +301,7 @@ export function reportsByTutor(db: DB, tutorId: string, studentId?: string) {
 			status: studentReport.status,
 			sentAt: studentReport.sentAt,
 			note: studentReport.note,
+			noteVisible: studentReport.noteVisible,
 			figures: studentReport.figures,
 			updatedAt: studentReport.updatedAt
 		})
@@ -352,4 +361,33 @@ export async function tutorNames(db: DB, ids: string[]) {
 	const out = new Map<string, string>();
 	for (const r of rows) out.set(r.id, await tutorNameOf(db, r.id).catch(() => r.name));
 	return out;
+}
+
+/**
+ * What the STUDENT may see of a report: the figures always, the tutor's note only when the
+ * tutor chose "visible to student" (a parent-only note never leaves the server for them).
+ */
+export function forStudent<T extends { note: string | null; noteVisible: boolean }>(r: T) {
+	const { note, noteVisible, ...rest } = r;
+	return { ...rest, note: noteVisible ? note : null };
+}
+
+/** The student's own sent reports, newest first (parent-only notes removed). */
+export async function studentReports(db: DB, studentId: string, limit = 12) {
+	const rows = await db
+		.select({
+			id: studentReport.id,
+			tutorId: studentReport.tutorId,
+			periodStart: studentReport.periodStart,
+			periodEnd: studentReport.periodEnd,
+			note: studentReport.note,
+			noteVisible: studentReport.noteVisible,
+			figures: studentReport.figures,
+			sentAt: studentReport.sentAt
+		})
+		.from(studentReport)
+		.where(and(eq(studentReport.studentId, studentId), eq(studentReport.status, 'sent')))
+		.orderBy(desc(studentReport.sentAt))
+		.limit(limit);
+	return rows.map(forStudent);
 }

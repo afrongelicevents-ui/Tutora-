@@ -48,7 +48,9 @@ export const actions: Actions = {
 				t,
 				f.studentId ?? '',
 				{ from: f.from ?? '', to: f.to ?? '' },
-				f.note
+				f.note,
+				new Date(),
+				f.noteVisible === 'student'
 			);
 			return { created: r.id };
 		});
@@ -57,7 +59,14 @@ export const actions: Actions = {
 		const t = requireTutor(locals.user, url).id;
 		const f = formObject(await request.formData());
 		return handle(async () => {
-			await updateReport(locals.db, t, Number(f.id) || 0, f.note);
+			await updateReport(
+				locals.db,
+				t,
+				Number(f.id) || 0,
+				f.note,
+				new Date(),
+				f.noteVisible === 'student'
+			);
 			return { saved: true };
 		});
 	},
@@ -67,7 +76,8 @@ export const actions: Actions = {
 		return handle(async () => {
 			const id = Number(f.id) || 0;
 			// the note as written in the box, then send
-			if (f.note !== undefined) await updateReport(locals.db, t, id, f.note);
+			if (f.note !== undefined)
+				await updateReport(locals.db, t, id, f.note, new Date(), f.noteVisible === 'student');
 			await sendReport(locals.db, t, id);
 			return { sent: true };
 		});

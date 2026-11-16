@@ -5,6 +5,7 @@
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	import Avatar from '#lib/components/ui/Avatar.svelte';
 	import ProgressRing from '#lib/components/ui/ProgressRing.svelte';
+	import RecommendedTutors from '#lib/components/family/RecommendedTutors.svelte';
 	let { data, form } = $props();
 	const c = $derived(data.child);
 	const n = $derived(c.firstName);
@@ -75,6 +76,20 @@
 				>{/if}
 		</div>
 	</header>
+
+	{#if !data.familyCovered}
+		<section class="ui-card sky fam-add" aria-labelledby="fam-add-h">
+			<h2 id="fam-add-h" class="ui-serif">
+				{data.lockedFeature
+					? m.fb_child_locked({ feature: t(`fb_f_${data.lockedFeature}`), name: n })
+					: m.fb_child_not_covered_h({ name: n })}
+			</h2>
+			<p class="small">{m.fb_child_not_covered({ name: n })}</p>
+			<a class="ui-btn" href="/parent/checkout?child={encodeURIComponent(c.studentId)}"
+				>{m.fb_child_add()}</a
+			>
+		</section>
+	{/if}
 
 	{#if form?.responded}<p class="notice" role="status">
 			{form.responded === 'yes' ? m.par3_req_yes() : m.par3_req_no()}
@@ -311,6 +326,12 @@
 				{#if data.readsMessages}<a class="ui-btn-soft" href="/parent/messages?{q}"
 						><LineIcon name="chat" size={18} /> {m.msg_parent_link()}</a
 					>{/if}
+				<RecommendedTutors
+					rec={data.recommended}
+					childId={c?.studentId ?? ''}
+					childName={c?.firstName ?? ''}
+					canBook={data.guardian}
+				/>
 			</section>
 
 			{#if data.schoolPlus}

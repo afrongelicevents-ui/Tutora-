@@ -78,7 +78,13 @@ async function main() {
 				.select({ id: schema.proSubscription.id })
 				.from(schema.proSubscription)
 				.where(eq(schema.proSubscription.tutorId, 'test_chipo'));
+			// "Tutora recommended tutors" fake tutors are there too?
+			const [rec] = await db
+				.select({ id: schema.recommendPref.tutorId })
+				.from(schema.recommendPref)
+				.limit(1);
 			if (
+				rec &&
 				seeded &&
 				!real &&
 				v3 &&

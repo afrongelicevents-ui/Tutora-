@@ -39,6 +39,7 @@ import { addDays, fromLocal, localDate } from '../tz.ts';
 import { seedV3 } from './seed-v3.ts';
 import { seedFamilyBilling } from './seed-family.ts';
 import { seedProPlans } from './seed-pro.ts';
+import { seedRecommendations } from './seed-recommend.ts';
 import { saveStudentLink } from './meeting-links.ts';
 import { seedQuestionBank } from './seed-tests.ts';
 
@@ -718,6 +719,8 @@ export async function seedTestData(
 	await seedProPlans(db, logins);
 	// question bank: original questions only, one shared, a built timed test
 	await seedQuestionBank(db, logins);
+	// more approved tutors for "Tutora recommended tutors" (one pinned, one hidden)
+	await seedRecommendations(db);
 	// one student with a (made-up) Google Meet link, so the Join button can be seen
 	await saveStudentLink(db, 'test_chipo', 'test_nyasha', 'https://meet.google.com/abc-defg-hij');
 

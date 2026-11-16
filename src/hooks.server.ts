@@ -14,6 +14,7 @@ import { isRole } from '#lib/roles.ts';
 import { areaAccess } from '#lib/server/guards.ts';
 import { familyFeatureFor, lockedLocation } from '#lib/family-features.ts';
 import { familyAccess } from '#lib/server/family-billing.ts';
+import { parentFamilyGate } from '#lib/server/family-gate.ts';
 
 const handleParaglide: Handle = ({ event, resolve }) =>
 	paraglideMiddleware(event.request, ({ request, locale }) => {
@@ -109,7 +110,11 @@ const handleAuth: Handle = async ({ event, resolve }) => {
 	const u = event.locals.user;
 	if (u && (u.role === 'student' || u.role === 'parent')) {
 		const feature = familyFeatureFor(event.url.pathname);
-		if (feature && !(await familyAccess(event.locals.db, u.id)).active) {
+		// a parent: per child (a plan that covers one child of three opens that child only)
+		if (feature && u.role === 'parent') {
+			const stop = await parentFamilyGate(event, feature);
+			if (stop) return stop;
+		} else if (feature && !(await familyAccess(event.locals.db, u.id)).active) {
 			if (event.isDataRequest || event.url.pathname.endsWith('/__data.json'))
 				return new Response('Forbidden', { status: 403 });
 			return new Response(null, {

@@ -11,6 +11,7 @@ export const FAMILY_FEATURES = {
 	'/student/quiz': 'tests',
 	'/parent/progress': 'progress',
 	'/parent/report': 'report',
+	'/student/reports': 'report',
 	'/parent/personal': 'personal',
 	'/parent/school-plus': 'school'
 } as const;

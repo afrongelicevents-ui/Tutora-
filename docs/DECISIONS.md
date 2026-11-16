@@ -360,3 +360,46 @@ Full audit in docs/WIRING.md (86 rows, every one now fixed or decided). Choices 
   feature until the owner fills in Tutora's payment details and switches them off.
 - **Reports and student tests are Tutora Family features**; the parent's child page and
   paying the tutor stay free.
+
+## D129a — Tutora Family per child (2026-11-16)
+
+A plan covers the children it was paid for (`subscription_child.active`), not the whole
+family: a parent who paid for 1 of 3 children gets progress, reports, the personal report,
+School+ and saved report PDFs for that child only. Checked on the server for every request
+to a Family page, form posts and files included (`family-gate.ts`, from hooks.server.ts). An
+uncovered child goes to their own free page with "Add this child to Tutora Family", which
+opens checkout with that child and the already-covered children ticked. The pilot switch and a
+Family gift to the parent still open every child.
+
+## D129c — Students see their own reports; the tutor's note is parent-only by default (2026-11-16)
+
+- A student finds the reports their tutors **sent** about them on **You → My personal report**
+  ("Reports from your tutors", only when there is one, below the past days), and each opens
+  at `/student/reports/[id]` with the figures and a PDF. The You page itself is unchanged.
+- Each report's note has a choice on the tutor's form: **Parent only** (the default, also for
+  every report made before this) or **Visible to student**. A parent-only note never reaches
+  the student: it is removed on the server before the page, its page data and the student's
+  PDF are made (`forStudent` in reports.ts, `reportPdfData(…, { forStudent: true })`).
+  Parents always see the note.
+- `/student/reports/*` is a Tutora Family feature, like the parent's reports.
+
+## D129b — Tutora recommended tutors (2026-11-16)
+
+- **What:** on the parent's Tutors page and each child's page, 3–5 approved tutors per child
+  (`src/lib/server/recommend.ts`). Matched by the child's school subjects (School info) and
+  level (profile level / school year; "Form 3" matches a tutor's "O Level", Grade 1–7 is
+  primary, Form 5–6 A Level), then ordered: owner-pinned first, more of the child's subjects,
+  rating (real visible reviews), approved by the Tutora team ("Checked by Tutora"), open
+  weekly lesson times, lessons taught. Never the child's own tutors, never suspended or
+  waiting tutors, never the parent themselves. With no school subjects yet: any tutor at the
+  child's level, with a hint to add subjects.
+- **Family only, per child** (`childCovered`): a child not covered shows a blurred preview
+  with the "Family" pill and Upgrade; the preview carries no tutor names.
+- **The owner decides, nobody pays:** Owner → People → Tutors → "Recommend first" / "Don't
+  recommend" / "Recommend normally" (table `recommend_pref`, logged in the activity log).
+  There is no tutor-facing setting and no paid boost; the page says "Tutors can't pay to be
+  shown here."
+- **Light:** the tutor pool (Find-a-tutor list + approval + weekly hours + pins) is kept in
+  the worker's memory for 5 minutes and cleared when the owner changes a pin in that
+  worker (other workers follow within 5 minutes); each parent page adds one batch of five
+  small queries for its children.

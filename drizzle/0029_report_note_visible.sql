@@ -1,0 +1,1 @@
+ALTER TABLE "student_report" ADD COLUMN "note_visible" boolean DEFAULT false NOT NULL;

@@ -137,15 +137,10 @@
 						</li>
 					</ul>
 				</div>
-				{#if data.family.reason !== 'pilot' && !data.family.covered.includes(c.id)}
+				{#if !data.family.all && !data.family.covered.includes(c.id)}
 					<p class="fam-kid">
 						<span class="ui-pill">{m.fb_child_free()}</span>
-						<a
-							href={data.family.payInvoiceId
-								? `/parent/checkout?invoice=${data.family.payInvoiceId}`
-								: '/parent/checkout'}
-							>{data.family.payInvoiceId ? m.fb_pay_now() : m.fb_upgrade()} ›</a
-						>
+						<a href="/parent/checkout?child={encodeURIComponent(c.id)}">{m.fb_child_add()} ›</a>
 					</p>
 				{/if}
 				<a class="ui-btn block" href="/parent/child/{c.id}"

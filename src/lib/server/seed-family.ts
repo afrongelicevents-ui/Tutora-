@@ -186,14 +186,16 @@ export async function seedFamilyBilling(
 			}
 		);
 	}
-	// 3 children: an invoice due now, an older one rejected and one cancelled
+	// 3 children, only the first on Tutora Family (paid): the other two show "Add this child".
+	// Also an invoice due now for all three, an older one rejected and one cancelled.
 	const p3 = await parentWithKids('Mrs Rutendo Mhlanga', 'parent3@example.com', [
 		'Tino Mhlanga',
 		'Tanaka Mhlanga',
 		'Tadiwa Mhlanga'
 	]);
 	{
-		const sub = await subscription(p3.id, 'free', null, []);
+		const sub = await subscription(p3.id, 'active', addDays(now, 20), [p3.kids[0].id]);
+		await invoice(p3.id, sub, [p3.kids[0]], 1, 'paid', addDays(now, -11));
 		await invoice(p3.id, sub, p3.kids, 1, 'cancelled', addDays(now, -20));
 		await invoice(p3.id, sub, p3.kids, 1, 'rejected', addDays(now, -10), {
 			rejectReason: 'The amount on the proof does not match the invoice (TEST).',

@@ -43,6 +43,7 @@
 	{:else}
 		<FamilyCheckout
 			children={data.children}
+			preselect={data.preselect}
 			discounts={data.discounts}
 			error={form?.error ?? null}
 		/>

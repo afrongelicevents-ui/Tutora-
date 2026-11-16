@@ -166,6 +166,27 @@
 			>{/if}
 	</section>
 
+	<!-- reports from my tutors (sent ones only) -->
+	{#if data.tutorReports.length}
+		<section class="softcard" aria-labelledby="pr-tutor-reports">
+			<h2 id="pr-tutor-reports" class="h3">{m.rp_student_h()}</h2>
+			<ul class="rep-list">
+				{#each data.tutorReports as r (r.id)}
+					<li>
+						<a href="/student/reports/{r.id}"
+							><strong>{r.tutor}</strong>
+							<span class="small muted"
+								>{fmtDay(new Date(r.periodStart + 'T12:00:00Z'))} – {fmtDay(
+									new Date(r.periodEnd + 'T12:00:00Z')
+								)}</span
+							></a
+						>
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
+
 	<!-- sharing -->
 	{#if data.family.length}
 		<form method="POST" action="?/shareReport" class="softcard share">
@@ -195,6 +216,22 @@
 </div>
 
 <style>
+	.rep-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.4rem;
+	}
+	.rep-list a {
+		display: flex;
+		flex-direction: column;
+		padding: 0.55rem 0.7rem;
+		border-radius: 12px;
+		background: rgb(255 255 255 / 0.6);
+		color: inherit;
+		text-decoration: none;
+	}
 	.back {
 		align-self: flex-start;
 		color: var(--ocean);

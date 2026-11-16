@@ -18,6 +18,7 @@ import { tempPassword } from '#lib/server/account.ts';
 import { notifyUser } from '#lib/server/notify.ts';
 import { m } from '#lib/paraglide/messages.js';
 import { formObject } from '#lib/validation/auth.ts';
+import { RecommendFail, recommendModes, setRecommendMode } from '#lib/server/recommend.ts';
 
 /** People → Tutors: waiting, approved and suspended tutors, with search and filters. */
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -26,11 +27,20 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	const status = (TUTOR_FILTERS as readonly string[]).includes(raw) ? raw : '';
 	const q = searchFrom(url);
 	const { page, limit, offset } = pageFrom(url);
-	const [tutors, counts] = await Promise.all([
+	const [tutors, counts, modes] = await Promise.all([
 		allTutors(locals.db, { status, q, limit, offset }),
-		tutorCounts(locals.db, q)
+		tutorCounts(locals.db, q),
+		recommendModes(locals.db)
 	]);
-	return { tutors, counts, status, q, page, total: counts[status] ?? 0, done: doneFrom(url) };
+	return {
+		tutors: tutors.map((t) => ({ ...t, recommend: modes.get(t.tutorId) ?? null })),
+		counts,
+		status,
+		q,
+		page,
+		total: counts[status] ?? 0,
+		done: doneFrom(url)
+	};
 };
 
 const statusForm = z.object({
@@ -39,7 +49,25 @@ const statusForm = z.object({
 	sure: z.string().optional()
 });
 
+const recommendForm = z.object({
+	id: z.string().min(1).max(100),
+	mode: z.enum(['pinned', 'hidden', 'normal'])
+});
+
 export const actions: Actions = {
+	/** Tutora recommended tutors: pin, hide or back to normal (owner only, logged) */
+	recommend: async ({ locals, url, request }) => {
+		const me = requireOwner(locals.user, url);
+		const p = recommendForm.safeParse(formObject(await request.formData()));
+		if (!p.success) return fail(400, { error: 'err_generic' });
+		try {
+			await setRecommendMode(locals.db, me.id, p.data.id, p.data.mode);
+		} catch (e) {
+			if (e instanceof RecommendFail) return fail(404, { error: 'err_not_found' });
+			throw e;
+		}
+		doneRedirect(url, `owner_done_rec_${p.data.mode}`);
+	},
 	status: async ({ locals, url, request }) => {
 		const me = requireOwner(locals.user, url);
 		const p = statusForm.safeParse(formObject(await request.formData()));

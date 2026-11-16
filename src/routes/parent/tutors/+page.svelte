@@ -6,6 +6,7 @@
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	import Hero from '#lib/components/ui/Hero.svelte';
 	import Avatar from '#lib/components/ui/Avatar.svelte';
+	import RecommendedTutors from '#lib/components/family/RecommendedTutors.svelte';
 	let { data } = $props();
 	const guardians = $derived(data.kids.filter((k) => k.guardian));
 	const readers = $derived(data.kids.filter((k) => k.readsMessages));
@@ -48,6 +49,12 @@
 					<li class="muted">{m.pf_no_tutor_for({ name: k.name })}</li>
 				{/each}
 			</ul>
+			<RecommendedTutors
+				rec={k.recommended}
+				childId={k.id}
+				childName={k.name}
+				canBook={k.guardian}
+			/>
 			{#if k.lessonsShared && k.upcoming.length}
 				<h3 class="sub">{m.par3_upcoming()}</h3>
 				<ul class="rows-list">

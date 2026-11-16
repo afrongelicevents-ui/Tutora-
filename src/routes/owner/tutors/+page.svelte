@@ -120,6 +120,32 @@
 							</Sure>
 						{:else if tu.status === 'active'}
 							<a class="ui-btn-soft sm" href="/t/{tu.slug}">{m.ow_view_page()}</a>
+							<!-- Tutora recommended tutors: only the owner decides, never for money -->
+							<form
+								method="POST"
+								action="?/recommend{keep}"
+								class="rec"
+								data-rec={tu.recommend ?? 'normal'}
+							>
+								<input type="hidden" name="id" value={tu.tutorId} />
+								{#if tu.recommend}<Pill
+										tone={tu.recommend === 'pinned' ? 'ok' : 'no'}
+										text={tu.recommend === 'pinned' ? m.rec_pinned() : m.rec_hidden()}
+									/>{/if}
+								{#if tu.recommend !== 'pinned'}<button
+										class="ui-btn-soft sm"
+										name="mode"
+										value="pinned">{m.rec_pin()}</button
+									>{/if}
+								{#if tu.recommend !== 'hidden'}<button
+										class="ui-btn-soft sm"
+										name="mode"
+										value="hidden">{m.rec_hide()}</button
+									>{/if}
+								{#if tu.recommend}<button class="ui-btn-soft sm" name="mode" value="normal"
+										>{m.rec_normal()}</button
+									>{/if}
+							</form>
 							<!-- two steps: suspending logs the tutor out at once -->
 							<Sure
 								label={m.owner_suspend()}

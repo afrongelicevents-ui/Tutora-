@@ -7,6 +7,7 @@ import { childOverview } from '#lib/server/parent.ts';
 import { childPhotos } from '#lib/server/parent-home.ts';
 import { readingParents } from '#lib/server/messages.ts';
 import { tutorsForUser } from '#lib/server/people.ts';
+import { recommendationsFor } from '#lib/server/recommend.ts';
 import { shareReport } from '#lib/server/planner.ts';
 import { attendee, homework, lesson, subject, tutorProfile } from '#lib/server/db/app.schema.ts';
 import { openPartnershipOf } from '#lib/server/partnership.ts';
@@ -19,6 +20,8 @@ import {
 import { handedInLate } from '#lib/server/homework-status.ts';
 import { sentReportsFor, tutorNames } from '#lib/server/reports.ts';
 import { afterAccept } from '#lib/server/after-accept.ts';
+import { childCovered } from '#lib/server/family-billing.ts';
+import { FAMILY_FEATURES } from '#lib/family-features.ts';
 import { notifyTutor } from '#lib/server/notify.ts';
 import { formObject } from '#lib/validation/auth.ts';
 import { m } from '#lib/paraglide/messages.js';
@@ -117,12 +120,24 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 	});
 	if (!child) error(404, 'Not found');
 	// reports the child's tutors sent (stored in Tutora), when the child shares progress
-	const reports = access.progress ? await sentReportsFor(locals.db, id, 3) : [];
-	const reportTutors = await tutorNames(
-		locals.db,
-		reports.map((r) => r.tutorId)
-	);
+	// Tutora Family covers this child? (the page itself is free; reports are a Family feature)
+	const familyCovered = await childCovered(locals.db, u.id, id);
+	const reports = access.progress && familyCovered ? await sentReportsFor(locals.db, id, 3) : [];
+	const [reportTutors, recs] = await Promise.all([
+		tutorNames(
+			locals.db,
+			reports.map((r) => r.tutorId)
+		),
+		// Tutora recommended tutors for this child (Family; a teaser on the free level)
+		recommendationsFor(locals.db, u.id, [id])
+	]);
 	return {
+		familyCovered,
+		lockedFeature:
+			familyCovered ||
+			!(Object.values(FAMILY_FEATURES) as string[]).includes(url.searchParams.get('locked') ?? '')
+				? null
+				: url.searchParams.get('locked'),
 		reports: reports.map((r) => ({
 			id: r.id,
 			periodStart: r.periodStart,
@@ -137,6 +152,7 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 		guardian: access.guardian,
 		photo: photos.get(id) ?? null,
 		readsMessages: readers.includes(u.id),
+		recommended: recs.get(id) ?? { locked: true as const, count: 3 },
 		tutors: tutors
 			.filter((t) => t.status === 'active')
 			.map((t) => ({ slug: t.slug, name: t.name })),

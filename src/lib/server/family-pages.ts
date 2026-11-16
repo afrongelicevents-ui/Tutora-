@@ -57,6 +57,11 @@ export async function familyLoad(event: RequestEvent, roles: Role[]) {
 				}
 			: null,
 		children: b.children,
+		/** "Add this child to Tutora Family": the child to tick (with the ones already covered) */
+		preselect: (() => {
+			const want = event.url.searchParams.get('child');
+			return want && b.children.some((c) => c.id === want && !c.elsewhere) ? want : null;
+		})(),
 		invoices: b.invoices.map((i) => ({
 			id: i.id,
 			children: i.children.map((c) => c.name),

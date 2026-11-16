@@ -149,6 +149,14 @@ plus the rate-limit and lockout bookkeeping; Cloudflare allowed every one) and t
 job endpoint (not used: the jobs run from GitHub Actions). The AI test maker's own CPU is
 small: the Worker waits for Cloudflare's AI, which does not count as CPU.
 
+## Tutora recommended tutors (16 Nov 2026)
+
+The parent Tutors page and child page add one batch of five small queries (the children's
+level, subjects and tutors); the list of approved tutors with their hours and the owner's
+pins is kept in the worker's memory for 5 minutes, so it is not rebuilt on every visit.
+Ranking is a few dozen comparisons in memory. Not measured on Cloudflare yet: re-check
+with _Measure CPU (test site)_ after deploying.
+
 ## AI test maker (Workers AI)
 
 - **Free allowance only:** 10,000 neurons a day for the whole Cloudflare account. Model

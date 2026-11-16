@@ -9,16 +9,23 @@
 		children,
 		discounts,
 		self = false,
+		preselect = null,
 		error = null
 	}: {
 		children: Child[];
 		discounts: { discount3mPct: number; discount6mPct: number };
 		/** an adult student paying for themselves: no child list */
 		self?: boolean;
+		/** adding one child: tick that child and the ones already on Tutora Family */
+		preselect?: string | null;
 		error?: string | null;
 	} = $props();
 	// svelte-ignore state_referenced_locally
-	let chosen = $state<string[]>(children.filter((c) => !c.elsewhere).map((c) => c.id));
+	let chosen = $state<string[]>(
+		children
+			.filter((c) => !c.elsewhere && (!preselect || c.covered || c.id === preselect))
+			.map((c) => c.id)
+	);
 	let period = $state(1);
 	const n = $derived(self ? 1 : chosen.length);
 	const q = $derived(quote(n, period, discounts));
@@ -49,6 +56,7 @@
 						<span
 							>{shortName(c.name)}
 							{#if c.elsewhere}<br /><span class="small muted">{m.fb_child_elsewhere()}</span
+								>{:else if c.covered}<br /><span class="small muted">{m.fb_child_on_family()}</span
 								>{/if}</span
 						>
 					</label>

@@ -53,6 +53,17 @@
 					><span class="label">{m.rp_note()}</span><span class="hint">{m.rp_note_hint()}</span
 					><textarea name="note" rows="3" maxlength="1500"></textarea></label
 				>
+				<fieldset class="vis">
+					<legend class="label">{m.rp_vis_h()}</legend>
+					<label class="radio"
+						><input type="radio" name="noteVisible" value="parent" checked />
+						{m.rp_vis_parent()}</label
+					>
+					<label class="radio"
+						><input type="radio" name="noteVisible" value="student" />
+						{m.rp_vis_student()}</label
+					>
+				</fieldset>
 				<button class="btn btn-block" type="submit">{m.rp_make()}</button>
 			</form>
 		{:else}
@@ -80,6 +91,17 @@
 						maxlength="1500"
 						value={r.note ?? ''}></textarea></label
 				>
+				<fieldset class="vis">
+					<legend class="label">{m.rp_vis_h()}</legend>
+					<label class="radio"
+						><input type="radio" name="noteVisible" value="parent" checked={!r.noteVisible} />
+						{m.rp_vis_parent()}</label
+					>
+					<label class="radio"
+						><input type="radio" name="noteVisible" value="student" checked={r.noteVisible} />
+						{m.rp_vis_student()}</label
+					>
+				</fieldset>
 				<div class="btn-row">
 					<button class="btn btn-ghost btn-sm" formaction="?/save" type="submit"
 						>{m.rp_save()}</button
@@ -107,6 +129,23 @@
 </section>
 
 <style>
+	.vis {
+		border: 0;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem 1rem;
+	}
+	.vis legend {
+		width: 100%;
+		margin-bottom: 0.25rem;
+	}
+	.radio {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
 	.back {
 		align-self: flex-start;
 	}

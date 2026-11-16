@@ -1,4 +1,4 @@
-import { date, index, jsonb, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
+import { boolean, date, index, jsonb, pgTable, serial, text, timestamp } from 'drizzle-orm/pg-core';
 import { user } from './auth.schema';
 
 const ts = (name: string) => timestamp(name, { withTimezone: true });
@@ -34,6 +34,8 @@ export const studentReport = pgTable(
 		periodStart: date('period_start').notNull(),
 		periodEnd: date('period_end').notNull(),
 		note: text('note'),
+		/** the tutor's note is for the parents only unless the tutor shows it to the student */
+		noteVisible: boolean('note_visible').notNull().default(false),
 		figures: jsonb('figures').$type<ReportFigures>().notNull(),
 		status: text('status', { enum: REPORT_STATUS }).notNull().default('draft'),
 		sentAt: ts('sent_at'),
