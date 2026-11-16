@@ -8,7 +8,7 @@
  * Light on CPU: the tutor pool (the "Find a tutor" list + approval + weekly hours + the
  * owner's pins) is kept in memory for 5 minutes; each page adds one batch for its children.
  */
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import type { DB } from './db/types.ts';
 import { profile, child, enrollment, availability, tutorProfile } from './db/app.schema.ts';
 import { schoolInfo, schoolSubject } from './db/v3.schema.ts';
@@ -181,40 +181,41 @@ export async function childNeeds(
 ): Promise<Map<string, ChildNeeds>> {
 	const out = new Map<string, ChildNeeds>();
 	if (!childIds.length) return out;
-	const [levels, years, kidRows, subs, has] = await Promise.all([
-		db
-			.select({ id: profile.userId, level: profile.level })
-			.from(profile)
-			.where(inArray(profile.userId, childIds)),
-		db
-			.select({ id: schoolInfo.studentId, year: schoolInfo.year })
-			.from(schoolInfo)
-			.where(inArray(schoolInfo.studentId, childIds)),
-		db
-			.select({ id: child.studentId, level: child.level, year: child.schoolYear })
-			.from(child)
-			.where(and(eq(child.parentId, parentId), inArray(child.studentId, childIds))),
-		db
-			.select({ id: schoolSubject.studentId, subject: schoolSubject.subject })
-			.from(schoolSubject)
-			.where(inArray(schoolSubject.studentId, childIds)),
-		db
-			.select({ id: enrollment.userId, tutorId: enrollment.tutorId })
-			.from(enrollment)
-			.where(inArray(enrollment.userId, childIds))
-	]);
+	// one query (each query costs about 1 ms of CPU on Cloudflare): level from the profile,
+	// the school year, or the parent's own note; school subjects; tutors the child has
+	const rows = (await db.execute(sql`
+		select c.id,
+			coalesce(
+				nullif(p.level, ''),
+				nullif(si.year, ''),
+				nullif(k.level, ''),
+				nullif(k.school_year, '')
+			) as level,
+			coalesce((select array_agg(distinct ss.subject) from ${schoolSubject} ss
+				where ss.student_id = c.id), '{}') as subjects,
+			coalesce((select array_agg(e.tutor_id) from ${enrollment} e
+				where e.user_id = c.id), '{}') as tutors
+		from unnest(${sql`array[${sql.join(
+			childIds.map((id) => sql`${id}`),
+			sql`, `
+		)}]::text[]`}) as c(id)
+		left join ${profile} p on p.user_id = c.id
+		left join ${schoolInfo} si on si.student_id = c.id
+		left join ${child} k on k.student_id = c.id and k.parent_id = ${parentId}
+	`)) as unknown as { rows?: unknown[] } | unknown[];
+	const list = (Array.isArray(rows) ? rows : (rows.rows ?? [])) as {
+		id: string;
+		level: string | null;
+		subjects: string[] | null;
+		tutors: string[] | null;
+	}[];
 	for (const id of childIds) {
-		const level =
-			levels.find((r) => r.id === id)?.level ||
-			years.find((r) => r.id === id)?.year ||
-			kidRows.find((r) => r.id === id)?.level ||
-			kidRows.find((r) => r.id === id)?.year ||
-			null;
+		const r = list.find((x) => x.id === id);
 		out.set(id, {
-			level,
-			subjects: [...new Set(subs.filter((s) => s.id === id).map((s) => s.subject))],
+			level: r?.level ?? null,
+			subjects: r?.subjects ?? [],
 			// never recommend a tutor the child already has, nor the parent themselves
-			exclude: [...has.filter((h) => h.id === id).map((h) => h.tutorId), parentId]
+			exclude: [...(r?.tutors ?? []), parentId]
 		});
 	}
 	return out;
