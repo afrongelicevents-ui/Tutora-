@@ -12,6 +12,7 @@
 	<h1>{m.forgot_title()}</h1>
 	{#if !data.emailOn}
 		<p class="notice" role="status">{m.forgot_ask_tutor()}</p>
+		<a class="btn" href="/contact">{m.forgot_contact()}</a>
 	{:else if form && 'sent' in form}
 		<p class="notice" role="status">{m.forgot_sent()}</p>
 	{:else}

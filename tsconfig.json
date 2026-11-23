@@ -12,5 +12,6 @@
 		"eslint.config.js",
 		"playwright.config.ts",
 		"drizzle.config.ts"
-	]
+	],
+	"exclude": ["src/service-worker"]
 }

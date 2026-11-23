@@ -50,11 +50,13 @@
 	const weekPct = $derived(
 		data.week.planned ? Math.min(100, Math.round((100 * data.week.done) / data.week.planned)) : 0
 	);
+	import InstallCard from '#lib/components/pwa/InstallCard.svelte';
 </script>
 
 <svelte:head><title>{m.v3_nav_home()} · Tutora</title></svelte:head>
 
 <div class="home">
+	<InstallCard />
 	<Hero
 		title={greet}
 		lead={isNew ? m.sh2_welcome() : m.sh2_keep_going()}

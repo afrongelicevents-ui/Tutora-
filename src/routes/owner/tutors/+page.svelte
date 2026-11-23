@@ -5,6 +5,7 @@
 	import Pager from '#lib/components/owner/Pager.svelte';
 	import Empty from '#lib/components/owner/Empty.svelte';
 	import Sure from '#lib/components/owner/Sure.svelte';
+	import ResetLink from '#lib/components/owner/ResetLink.svelte';
 	import Pill from '#lib/components/owner/Pill.svelte';
 	import Avatar from '#lib/components/ui/Avatar.svelte';
 	import Field from '#lib/components/Field.svelte';
@@ -164,6 +165,12 @@
 						{:else}
 							<span class="small muted">{m.ev_owner_not_submitted()}</span>
 						{/if}
+						<ResetLink
+							id={tu.tutorId}
+							result={form && 'resetLink' in form
+								? (form.resetLink as { for: string; name: string; link: string; wa: string })
+								: null}
+						/>
 					</div>
 				</li>
 			{/each}

@@ -80,7 +80,8 @@ export function cleanQuestion(v: QuestionInput) {
 	return { prompt, choices, answer, explanation: v.explanation?.trim().slice(0, 1000) || null };
 }
 
-const qCount = sql<number>`(select count(*)::int from ${question} where ${question.setId} = ${questionSet.id})`;
+// written out in full: inside a subquery a bare "id" would mean the question's own id
+const qCount = sql<number>`(select count(*)::int from ${question} q where q.set_id = "question_set"."id")`;
 
 /** The tutor's own sets, newest first, with how many questions each has. */
 export function listSets(db: DB, tutorId: string) {

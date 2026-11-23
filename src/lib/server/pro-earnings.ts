@@ -103,7 +103,9 @@ export async function studentInsights(
 			.select({
 				userId: homework.userId,
 				dueOn: homework.dueOn,
-				answeredAt: sql<Date | null>`min(${homeworkAnswer.createdAt})`
+				answeredAt: sql<
+					number | null
+				>`(extract(epoch from min(${homeworkAnswer.createdAt})) * 1000)::float8`
 			})
 			.from(homework)
 			.leftJoin(homeworkAnswer, eq(homeworkAnswer.homeworkId, homework.id))
@@ -151,7 +153,7 @@ export async function studentInsights(
 			const due = h.filter((x) => x.dueOn && x.dueOn < today);
 			const missing = due.filter((x) => !x.answeredAt).length;
 			const late = h.filter(
-				(x) => x.dueOn && x.answeredAt && localDate(new Date(x.answeredAt)) > x.dueOn
+				(x) => x.dueOn && x.answeredAt && localDate(new Date(Number(x.answeredAt))) > x.dueOn
 			).length;
 			const sc = scores.filter((x) => x.studentId === s.id);
 			const avg = (rows: typeof sc) =>

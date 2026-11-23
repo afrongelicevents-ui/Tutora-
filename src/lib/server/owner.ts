@@ -304,7 +304,7 @@ export function allPayments(db: DB, status?: string, staleOnly = false) {
 export const reportedReviews = (db: DB) =>
 	db
 		.select({
-			handled: sql<boolean>`exists (select 1 from ${auditLog} where ${auditLog.target} = ${review.id}::text and ${auditLog.action} in ('review_hidden','review_shown','report_dismissed') and ${auditLog.createdAt} > now() - interval '30 days')`,
+			handled: sql<boolean>`exists (select 1 from ${auditLog} where ${auditLog.target} = "review"."id"::text and ${auditLog.action} in ('review_hidden','review_shown','report_dismissed') and ${auditLog.createdAt} > now() - interval '30 days')`,
 			id: review.id,
 			rating: review.rating,
 			text: review.text,
@@ -321,7 +321,7 @@ export const reportedReviews = (db: DB) =>
 			or(
 				isNotNull(review.reportedAt),
 				eq(review.hidden, true),
-				sql`exists (select 1 from ${auditLog} where ${auditLog.target} = ${review.id}::text and ${auditLog.action} in ('review_hidden','review_shown','report_dismissed') and ${auditLog.createdAt} > now() - interval '30 days')`
+				sql`exists (select 1 from ${auditLog} where ${auditLog.target} = "review"."id"::text and ${auditLog.action} in ('review_hidden','review_shown','report_dismissed') and ${auditLog.createdAt} > now() - interval '30 days')`
 			)
 		)
 		.orderBy(sql`${review.reportedAt} desc nulls last`, desc(review.id))

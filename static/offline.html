@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="theme-color" content="#0B2545" />
+		<title>You're offline · Tutora</title>
+		<style>
+			@font-face {
+				font-family: 'Fraunces';
+				font-weight: 600;
+				font-display: swap;
+				src: url('/fonts/fraunces-600.woff2') format('woff2');
+			}
+			* {
+				box-sizing: border-box;
+			}
+			html,
+			body {
+				margin: 0;
+				min-height: 100%;
+			}
+			body {
+				min-height: 100dvh;
+				padding: calc(24px + env(safe-area-inset-top, 0px)) 20px
+					calc(24px + env(safe-area-inset-bottom, 0px));
+				display: grid;
+				place-items: center;
+				font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+				color: #0b2545;
+				background:
+					radial-gradient(90% 50% at 100% 0%, #fdf3e2 0%, transparent 45%),
+					linear-gradient(180deg, #e7f0fa 0, #f5f8fc 320px);
+			}
+			body::before {
+				content: '';
+				position: fixed;
+				inset: 0 0 auto 0;
+				height: env(safe-area-inset-top, 0px);
+				background: #0b2545;
+			}
+			.card {
+				width: min(420px, 100%);
+				padding: 32px 26px;
+				text-align: center;
+				border-radius: 24px;
+				background: rgba(255, 255, 255, 0.72);
+				border: 1px solid rgba(255, 255, 255, 0.9);
+				box-shadow: 0 18px 40px rgba(11, 37, 69, 0.12);
+				backdrop-filter: blur(14px);
+			}
+			.wordmark {
+				font-family: 'Fraunces', Georgia, serif;
+				font-weight: 600;
+				font-size: 1.75rem;
+			}
+			.wordmark i {
+				display: inline-block;
+				width: 7px;
+				height: 7px;
+				margin-left: 3px;
+				border-radius: 50%;
+				background: #6fb3ea;
+				vertical-align: top;
+			}
+			.icon {
+				width: 64px;
+				height: 64px;
+				margin: 22px auto 14px;
+				display: grid;
+				place-items: center;
+				border-radius: 20px;
+				background: #e7f0fa;
+			}
+			h1 {
+				font-family: 'Fraunces', Georgia, serif;
+				font-weight: 600;
+				font-size: 1.5rem;
+				margin: 0 0 8px;
+			}
+			p {
+				margin: 0 0 22px;
+				line-height: 1.55;
+				color: #51627a;
+			}
+			a.btn {
+				display: inline-block;
+				padding: 13px 26px;
+				border-radius: 999px;
+				background: #0b2545;
+				color: #fff;
+				font-weight: 600;
+				text-decoration: none;
+			}
+		</style>
+	</head>
+	<body>
+		<main class="card">
+			<div class="wordmark">Tutora<i></i></div>
+			<div class="icon" aria-hidden="true">
+				<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1a5fae" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.8a15 15 0 0 1 20 0"/><path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16.1a5 5 0 0 1 7 0"/><path d="M12 20h.01"/><path d="M3 3l18 18"/></svg>
+			</div>
+			<h1>You're offline</h1>
+			<p>Tutora needs a connection to show your lessons and messages. Check your data or Wi-Fi, then try again.</p>
+			<a class="btn" href="">Try again</a>
+		</main>
+	</body>
+</html>

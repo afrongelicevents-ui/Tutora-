@@ -223,6 +223,15 @@ pages; 17 database queries in two rounds instead of 35 one after another):
 - **CPU:** the worker only waits for Cloudflare's answer (waiting is not CPU time) and then
   parses a small JSON reply; the page stays well inside 10 ms of CPU.
 
+## Installed app (service worker), 23 Nov 2026
+
+The service worker adds no work for the Worker: it keeps only static files (icons, fonts,
+built code, the offline page), and Cloudflare serves those from its asset store, which is
+free and does not count against the 100,000 requests or the CPU limit. Pages and page data
+still go to the Worker exactly as before, never from the store. Once installed, repeat
+visits fetch fewer files (the shell comes from the phone), so data use goes down. The
+worker file itself is about 30 KB and is checked by the browser at most once a day.
+
 ## If a limit gets close: what helps first
 
 1. **CPU errors appear** → run _Measure CPU (test site)_, find the heaviest page in the table,

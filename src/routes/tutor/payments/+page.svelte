@@ -7,6 +7,7 @@
 	import LineIcon from '#lib/components/LineIcon.svelte';
 	import ProLocked from '#lib/components/pro/ProLocked.svelte';
 	import ProPill from '#lib/components/pro/ProPill.svelte';
+	import ShareWhatsApp from '#lib/components/ShareWhatsApp.svelte';
 	let { data, form } = $props();
 	const money = (c: number) => formatMoney(c, data.currency);
 	const prevLabel = $derived(
@@ -269,6 +270,10 @@
 							<a class="small" href="/tutor/students/{r.id}/invoice" download
 								>{m.pro_invoice_pdf()}</a
 							>
+							<ShareWhatsApp
+								text={m.share_tutor_invoice({ name: r.name, amount: money(r.owed) })}
+								path="/notifications"
+							/>
 						</span>
 					{/if}
 				</span>

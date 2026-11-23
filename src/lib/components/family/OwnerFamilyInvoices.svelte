@@ -2,6 +2,7 @@
 	import { m, t } from '#lib/i18n.ts';
 	import { formatMoney } from '#lib/money.ts';
 	import { fmtDay } from '#lib/tz.ts';
+	import ShareWhatsApp from '#lib/components/ShareWhatsApp.svelte';
 	/** Owner: Tutora Family invoices, proof first; confirm (receipt) or reject with a reason. */
 	type Inv = {
 		id: number;
@@ -60,7 +61,15 @@
 					{#if i.method || i.reference}
 						<p class="small">{i.method ? t(`fb_m_${i.method}`) : ''} {i.reference ?? ''}</p>
 					{/if}
-					{#if i.receipt}<p class="small">{i.receipt}</p>{/if}
+					{#if i.receipt}<p class="small">{i.receipt}</p>
+						<ShareWhatsApp
+							text={m.share_tutora_receipt({
+								plan: m.share_plan_family(),
+								number: i.receipt,
+								amount: formatMoney(i.amountCents)
+							})}
+							path="/parent/billing"
+						/>{/if}
 					{#if i.rejectReason}<p class="small">
 							{m.fb_rejected_why({ reason: i.rejectReason })}
 						</p>{/if}

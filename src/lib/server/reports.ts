@@ -98,7 +98,7 @@ export async function buildFigures(
 			.select({
 				mark: homework.mark,
 				dueOn: homework.dueOn,
-				handedIn: sql<boolean>`exists (select 1 from homework_answer a where a.homework_id = ${homework.id})`
+				handedIn: sql<boolean>`exists (select 1 from homework_answer a where a.homework_id = "homework"."id")`
 			})
 			.from(homework)
 			.where(

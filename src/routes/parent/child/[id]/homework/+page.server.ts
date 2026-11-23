@@ -26,7 +26,10 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 				dueTime: homework.dueTime,
 				subject: homework.subject,
 				mark: homework.mark,
-				handedInAt: sql<Date | null>`(select min(a.created_at) from homework_answer a where a.homework_id = ${homework.id})`
+				// milliseconds as a number: drivers return timestamps as text in different formats
+				handedInAt: sql<
+					number | null
+				>`(select (extract(epoch from min(a.created_at)) * 1000)::float8 from homework_answer a where a.homework_id = "homework"."id")`
 			})
 			.from(homework)
 			.where(eq(homework.userId, id))
@@ -39,7 +42,7 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 		dueTime: string | null;
 		subject: string | null;
 		mark: 'done' | 'late' | 'missing' | null;
-		handedInAt: Date | null;
+		handedInAt: number | null;
 	};
 	const rows: Row[] = access.homework ? ((await list()) as Row[]) : [];
 	return {
@@ -47,7 +50,7 @@ export const load: PageServerLoad = async ({ locals, url, params }) => {
 		firstName: shortName(kid.name ?? ''),
 		shared: access.homework,
 		homework: rows.map((h) => {
-			const inAt = h.handedInAt ? new Date(h.handedInAt) : null;
+			const inAt = h.handedInAt != null ? new Date(Number(h.handedInAt)) : null;
 			const late = !!inAt && handedInLate(inAt, h.dueOn, h.dueTime);
 			return {
 				id: h.id,

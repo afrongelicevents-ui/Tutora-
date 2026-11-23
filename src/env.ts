@@ -43,6 +43,11 @@ export const variables = defineEnvVars({
 			'Optional. Brevo API key (free plan, 300 emails a day). Works without a domain: EMAIL_FROM can be a normal Gmail address verified as a sender in Brevo. Used instead of Resend when set.',
 		schema: optional
 	},
+	EMAIL_OFF: {
+		description:
+			'Local testing only: set to 1 to run as the published site does without an email service (no emails, no email confirmation).',
+		schema: optional
+	},
 	CRON_SECRET: {
 		description:
 			'Optional. Long random text; the hourly reminder job must send it. Reminders are off without it.',

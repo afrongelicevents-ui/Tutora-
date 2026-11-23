@@ -17,6 +17,7 @@
 						? m.role_schoolteacher()
 						: m.role_student()
 	);
+	import InstallItem from '#lib/components/pwa/InstallItem.svelte';
 </script>
 
 <svelte:head><title>{m.account_title()} · Tutora</title></svelte:head>
@@ -146,6 +147,7 @@
 	<form method="POST" action="/logout">
 		<button class="btn btn-secondary btn-block" type="submit">{m.nav_logout()}</button>
 	</form>
+	<InstallItem />
 </section>
 
 <style>

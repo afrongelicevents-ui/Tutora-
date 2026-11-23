@@ -17,6 +17,10 @@ export const LIMITS = {
 	tutorSetup: { max: 5, windowSeconds: 60 * 60 },
 	signup: { max: 5, windowSeconds: 60 * 60 },
 	passwordReset: { max: 3, windowSeconds: 60 * 60 },
+	/** one-time reset links the owner makes (per owner) */
+	resetLink: { max: 30, windowSeconds: 60 * 60 },
+	/** reset-link pages opened or used from one address */
+	resetLinkUse: { max: 20, windowSeconds: 60 * 60 },
 	twoFactor: { max: 5, windowSeconds: 60 },
 	booking: { max: 10, windowSeconds: 60 * 60 },
 	upload: { max: 20, windowSeconds: 60 * 60 },

@@ -126,7 +126,7 @@ export async function markMissingHomework(db: DB, notify: Notify, now = new Date
 				sql`${homework.dueOn} <= ${cutoff}`,
 				// only the last week: old lists from before marks existed stay as they were
 				sql`${homework.dueOn} >= ${localDate(new Date(now.getTime() - 7 * 24 * HOUR))}`,
-				sql`not exists (select 1 from homework_answer a where a.homework_id = ${homework.id})`
+				sql`not exists (select 1 from homework_answer a where a.homework_id = "homework"."id")`
 			)
 		)
 		.limit(500);
@@ -142,7 +142,7 @@ export async function markMissingHomework(db: DB, notify: Notify, now = new Date
 					due.map((h) => h.id)
 				),
 				isNull(homework.mark),
-				sql`not exists (select 1 from homework_answer a where a.homework_id = ${homework.id})`
+				sql`not exists (select 1 from homework_answer a where a.homework_id = "homework"."id")`
 			)
 		)
 		.returning({ userId: homework.userId, title: homework.title });

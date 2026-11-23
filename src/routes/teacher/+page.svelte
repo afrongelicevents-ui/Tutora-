@@ -2,11 +2,13 @@
 	import Hero from '#lib/components/ui/Hero.svelte';
 	import { m, t } from '#lib/i18n.ts';
 	let { data } = $props();
+	import InstallCard from '#lib/components/pwa/InstallCard.svelte';
 </script>
 
 <svelte:head><title>School+ · Tutora</title></svelte:head>
 
 <div class="screen tskin ui-page tpage">
+	<InstallCard />
 	<Hero dark title={m.spx_title()} lead={m.spx_lead()}>
 		{#snippet badge()}<span class="ui-pill gold">School+</span>{/snippet}
 	</Hero>

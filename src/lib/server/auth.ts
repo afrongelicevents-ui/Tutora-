@@ -3,7 +3,8 @@ import {
 	BETTER_AUTH_SECRET,
 	RESEND_API_KEY,
 	BREVO_API_KEY,
-	EMAIL_FROM
+	EMAIL_FROM,
+	EMAIL_OFF
 } from '$app/env/private';
 import { dev } from '$app/env';
 import { getRequestEvent } from '$app/server';
@@ -12,8 +13,13 @@ import type { DB } from './db/types';
 import { createAuth } from './auth-config';
 import { createSendEmail } from './email';
 
-/** Emails work in development (printed to the log) or when a Brevo or Resend key is set. */
-export const emailEnabled = dev || !!BREVO_API_KEY || !!RESEND_API_KEY;
+/**
+ * Emails work in development (printed to the log) or when a Brevo or Resend key is set. Without
+ * them (no email service yet) the site runs in "no email" mode: no email confirmation, no "check
+ * your email" messages, password resets by a one-time link from the owner. EMAIL_OFF=1 forces
+ * that mode locally, for tests.
+ */
+export const emailEnabled = EMAIL_OFF !== '1' && (dev || !!BREVO_API_KEY || !!RESEND_API_KEY);
 
 const send = createSendEmail({
 	apiKey: RESEND_API_KEY,

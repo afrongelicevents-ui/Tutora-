@@ -12,6 +12,7 @@ import {
 } from '#lib/server/owner.ts';
 import { pageFrom, searchFrom, tutorCounts, TUTOR_FILTERS } from '#lib/server/owner-admin.ts';
 import { doneFrom, doneRedirect } from '../done.ts';
+import { makeResetLink } from '../people.ts';
 import { getSettings } from '#lib/server/settings.ts';
 import { addTutorByOwner } from '#lib/server/actions/setup.ts';
 import { tempPassword } from '#lib/server/account.ts';
@@ -55,6 +56,8 @@ const recommendForm = z.object({
 });
 
 export const actions: Actions = {
+	/** a one-time password reset link (24 hours) the owner copies or sends on WhatsApp */
+	resetLink: makeResetLink,
 	/** Tutora recommended tutors: pin, hide or back to normal (owner only, logged) */
 	recommend: async ({ locals, url, request }) => {
 		const me = requireOwner(locals.user, url);

@@ -10,6 +10,7 @@
 	import { methodLabel } from '#lib/components/tutor/labels.ts';
 	import OwnerFamilyInvoices from '#lib/components/family/OwnerFamilyInvoices.svelte';
 	import OwnerProInvoices from '#lib/components/pro/OwnerProInvoices.svelte';
+	import ShareWhatsApp from '#lib/components/ShareWhatsApp.svelte';
 	let { data, form } = $props();
 	const label = (s: string) =>
 		({
@@ -135,7 +136,15 @@
 								>{#if p.status === 'confirmed' && p.receiptNo}<a
 										href="/owner/payments/{p.id}/receipt"
 										download>#{p.receiptNo}</a
-									>{:else}<span class="muted">—</span>{/if}</td
+									><ShareWhatsApp
+										text={m.share_tutor_receipt({
+											tutor: p.tutorName ?? m.tutor_word(),
+											number: `#${p.receiptNo}`,
+											amount: formatMoney(p.amountCents, p.currency),
+											date: fmtDay(p.createdAt)
+										})}
+										path="/notifications"
+									/>{:else}<span class="muted">—</span>{/if}</td
 							>
 						</tr>
 					{/each}

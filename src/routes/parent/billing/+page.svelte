@@ -16,6 +16,7 @@
 		invoices={data.invoices}
 		payHref={(id) => `/parent/checkout?invoice=${id}`}
 		receiptHref={(id) => `/parent/billing/${id}/receipt`}
+		sharePath="/parent/billing"
 		pilot={data.pilot}
 	/>
 	{#if data.pilot}<p class="notice">{m.fb_pilot_on()}</p>{:else}<p>

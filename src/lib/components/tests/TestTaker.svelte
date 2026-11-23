@@ -232,7 +232,7 @@
 	}
 	.clock {
 		position: sticky;
-		top: 8px;
+		top: calc(8px + env(safe-area-inset-top, 0px));
 		z-index: 2;
 		align-self: flex-start;
 		padding: 8px 14px;

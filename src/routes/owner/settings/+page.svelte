@@ -12,6 +12,7 @@
 	const e = $derived(
 		((form && 'errors' in form ? form.errors : {}) ?? {}) as Record<string, string>
 	);
+	import InstallItem from '#lib/components/pwa/InstallItem.svelte';
 </script>
 
 <svelte:head><title>{m.ow_settings()} · {m.ow_label()} · Tutora</title></svelte:head>
@@ -140,6 +141,7 @@
 	<div id="gifts">
 		<OwnerGifts gifts={data.gifts} form={form as Record<string, unknown> | null} />
 	</div>
+	<InstallItem />
 </div>
 
 <style>

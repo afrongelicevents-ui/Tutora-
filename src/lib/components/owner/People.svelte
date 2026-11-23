@@ -10,6 +10,7 @@
 	import Pill from './Pill.svelte';
 	import Avatar from '#lib/components/ui/Avatar.svelte';
 	import Field from '#lib/components/Field.svelte';
+	import ResetLink from './ResetLink.svelte';
 	import { m } from '#lib/i18n.ts';
 	import { fmtDay } from '#lib/tz.ts';
 	interface Person {
@@ -47,7 +48,7 @@
 		tone?: 'navy' | 'blue' | 'green' | 'amber';
 		/** what the number means for one person ("2 tutors") */
 		extra: (n: number) => string;
-		/** show "Reset a password" (students and parents) */
+		/** show "Reset a password" by email (students and parents) */
 		reset?: boolean;
 	} = $props();
 	const chips = $derived([
@@ -59,9 +60,10 @@
 	const keep = $derived(
 		(data.q ? `&q=${encodeURIComponent(data.q)}` : '') + (data.state ? `&state=${data.state}` : '')
 	);
-	const resetDone = $derived(
-		form && 'reset' in form ? (form.reset as { name: string; password: string }) : null
-	);
+	type Made = { for: string; name: string; link: string; wa: string };
+	const made = $derived(form && 'resetLink' in form ? (form.resetLink as Made) : null);
+	// a link made from the "by email" form for someone not on this page of the list
+	const madeElsewhere = $derived(made && !data.people.some((p) => p.id === made.for) ? made : null);
 </script>
 
 <div class="oa">
@@ -113,6 +115,7 @@
 								open={!!(form && form.suspendFor === p.id)}
 							/>
 						{/if}
+						<ResetLink id={p.id} result={made} />
 					</div>
 				</li>
 			{/each}
@@ -125,11 +128,7 @@
 	{#if reset}
 		<section id="reset" class="ui-card oa-sec" aria-labelledby="reset-h">
 			<h2 id="reset-h">{m.owner_reset_h()}</h2>
-			{#if resetDone}
-				<p class="notice" role="status">
-					{m.owner_reset_done({ name: resetDone.name, password: resetDone.password })}
-				</p>
-			{/if}
+			{#if madeElsewhere}<ResetLink id={madeElsewhere.for} result={madeElsewhere} />{/if}
 			<form method="POST" action="?/resetStudent" class="oa-form" novalidate>
 				<p class="small muted">{m.owner_reset_lead()}</p>
 				<Field
@@ -141,9 +140,6 @@
 					error={form && 'resetError' in form ? (form.resetError as string) : undefined}
 					required
 				/>
-				<label class="check"
-					><input type="checkbox" name="sure" /> <span>{m.ow_reset_sure()}</span></label
-				>
 				<button class="ui-btn" type="submit">{m.owner_reset_btn()}</button>
 			</form>
 		</section>

@@ -3,6 +3,7 @@
 	import { formatMoney } from '#lib/money.ts';
 	import { fmtDay } from '#lib/tz.ts';
 	import { shrink } from '#lib/shrink.ts';
+	import ShareWhatsApp from '#lib/components/ShareWhatsApp.svelte';
 	import type { paymentsLoad } from '#lib/server/payments-page.ts';
 	type Data = Awaited<ReturnType<typeof paymentsLoad>>;
 	let {
@@ -200,10 +201,20 @@
 								: ''}{p.status === 'rejected' && p.rejectReason ? ` · ${p.rejectReason}` : ''}</span
 						></span
 					>
-					{#if p.receipt}<a
-							class="btn btn-secondary btn-sm"
-							href="{receiptBase}/{p.id}/receipt{extra ? `?${extra}` : ''}"
-							download>{m.receipt_pdf({ n: p.receipt })}</a
+					{#if p.receipt}<span class="rc-acts"
+							><a
+								class="btn btn-secondary btn-sm"
+								href="{receiptBase}/{p.id}/receipt{extra ? `?${extra}` : ''}"
+								download>{m.receipt_pdf({ n: p.receipt })}</a
+							><ShareWhatsApp
+								text={m.share_tutor_receipt({
+									tutor: data.tutor.name ?? m.tutor_word(),
+									number: p.receipt,
+									amount: money(p.amountCents),
+									date: fmtDay(p.paidOn ? new Date(p.paidOn + 'T12:00:00Z') : p.createdAt)
+								})}
+								path="{receiptBase}?{q}&tab=history"
+							/></span
 						>{:else}<span class="pill {p.status === 'rejected' ? 'p-no' : 'p-wait'}"
 							>{p.status === 'rejected' ? m.status_rejected() : m.status_waiting_tutor()}</span
 						>{#if p.status === 'rejected'}<a class="btn btn-ghost btn-sm" href="?{q}&tab=pay"
@@ -241,3 +252,13 @@
 		<p class="small muted">{m.package_how()}</p>
 	{/if}
 </section>
+
+<style>
+	.rc-acts {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.4rem;
+		flex-shrink: 0;
+	}
+</style>

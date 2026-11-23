@@ -22,6 +22,7 @@
 	} | null;
 	const f = $derived(form as F);
 	const ce = $derived(f?.create ? (f.errors ?? {}) : {});
+	import InstallItem from '#lib/components/pwa/InstallItem.svelte';
 </script>
 
 <svelte:head><title>{m.nav_settings()} · Tutora</title></svelte:head>
@@ -275,6 +276,7 @@
 	<form method="POST" action="/logout" class="out">
 		<button class="ui-btn-soft" type="submit">{m.nav_logout()}</button>
 	</form>
+	<InstallItem />
 </div>
 
 <style>

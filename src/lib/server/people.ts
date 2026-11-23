@@ -362,7 +362,7 @@ export function homeworkWaiting(db: DB, tutorId: string, limit = 30) {
 		.where(
 			and(
 				eq(homework.tutorId, tutorId),
-				sql`not exists (select 1 from homework_answer a where a.homework_id = ${homework.id})`
+				sql`not exists (select 1 from homework_answer a where a.homework_id = "homework"."id")`
 			)
 		)
 		.orderBy(desc(homework.createdAt))

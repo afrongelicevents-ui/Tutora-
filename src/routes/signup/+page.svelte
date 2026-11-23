@@ -14,7 +14,7 @@
 	<a class="back" href="/get-started" aria-label={m.v3_back()}>←</a>
 	<h1>{m.signup_title()}</h1>
 	{#if data.tutorName}<p class="muted">{m.signup_with_tutor({ name: data.tutorName })}</p>{/if}
-	<p class="muted">{m.signup_lead()}</p>
+	<p class="muted">{data.emailOn ? m.signup_lead() : m.signup_lead_noemail()}</p>
 
 	{#if e.form}
 		<p class="alert" role="alert">{t(e.form, { minutes: form?.retryMinutes ?? 60 })}</p>
