@@ -17,9 +17,16 @@ async function main() {
 	const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 2 });
 	const db = drizzle(pool) as unknown as DB;
 	const key = process.env.RESEND_API_KEY?.trim();
-	const send = key
-		? createSendEmail({ apiKey: key, from: process.env.EMAIL_FROM, production: true })
-		: null;
+	const brevo = process.env.BREVO_API_KEY?.trim();
+	const send =
+		key || brevo
+			? createSendEmail({
+					apiKey: key,
+					brevoApiKey: brevo,
+					from: process.env.EMAIL_FROM,
+					production: true
+				})
+			: null;
 	try {
 		const notify = async (
 			userId: string,

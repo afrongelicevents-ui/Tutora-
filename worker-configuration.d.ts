@@ -9,6 +9,7 @@ interface __BaseEnv_Env {
 	BETTER_AUTH_SECRET: string;
 	TUTOR_EMAIL: string;
 	RESEND_API_KEY: string;
+	BREVO_API_KEY: string;
 	EMAIL_FROM: string;
 }
 declare namespace Cloudflare {
@@ -22,7 +23,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "DATABASE_URL" | "ORIGIN" | "BETTER_AUTH_SECRET" | "TUTOR_EMAIL" | "RESEND_API_KEY" | "EMAIL_FROM">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "DATABASE_URL" | "ORIGIN" | "BETTER_AUTH_SECRET" | "TUTOR_EMAIL" | "RESEND_API_KEY" | "BREVO_API_KEY" | "EMAIL_FROM">> {}
 }
 declare module "*.txt" {
 	const value: string;

@@ -20,7 +20,7 @@ The same workflow also publishes `tutora-test` (its own address, its own databas
 
 ## Optional, later
 
-- **Emails** (booking confirmations, reminders, "forgot password" links): sign up at https://resend.com, then in Cloudflare → Workers & Pages → **tutora** → **Settings → Variables and Secrets** add `RESEND_API_KEY` and `EMAIL_FROM`, both as type **Secret**, (`Tutora <onboarding@resend.dev>`; your own domain later).
+- **Emails** (password resets, invoices, receipts, reminders), no domain needed: make a free Gmail for Tutora, sign up at https://www.brevo.com (free, 300 emails a day), add that Gmail as a sender (Senders & IP → Senders, click the link Brevo emails you), and create an API key (SMTP & API → API keys). Then in GitHub → Settings → Secrets and variables → Actions add `BREVO_API_KEY` (the key) and `EMAIL_FROM` (`Tutora <your.tutora@gmail.com>`), and run Actions → Deploy. The deploy uploads them to the live site. Resend (`RESEND_API_KEY`) still works later with your own domain.
 - **Own domain** (`tutora.co.zw`): Cloudflare → tutora → **Settings → Domains & Routes → Add → Custom domain**.
 - **Lesson reminders** (needs emails): add GitHub secrets `SITE_URL` (the website address) and `CRON_SECRET` (any long random text), then run Deploy again: it passes `CRON_SECRET` to Cloudflare.
 - **Calls on difficult networks:** Cloudflare → **Realtime → TURN** → create → add `TURN_KEY_ID` and `TURN_KEY_API_TOKEN` as Cloudflare secrets.

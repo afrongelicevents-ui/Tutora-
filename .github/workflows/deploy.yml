@@ -148,6 +148,19 @@ jobs:
           BETTER_AUTH_SECRET: ${{ env.BETTER_AUTH_SECRET }}
           CRON_SECRET: ${{ env.CRON_SECRET }}
 
+      - name: Email secrets (Brevo, only if set in GitHub Secrets)
+        if: steps.check.outputs.ready == 'true'
+        env:
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ -z "$BREVO_API_KEY" ]; then echo "No BREVO_API_KEY secret: emails stay off (the app bell still works)."; exit 0; fi
+          [ -n "$EMAIL_FROM" ] || { echo "::warning::BREVO_API_KEY is set but EMAIL_FROM is not; emails stay off."; exit 0; }
+          printf '%s' "$BREVO_API_KEY" | pnpm exec wrangler secret put BREVO_API_KEY
+          printf '%s' "$EMAIL_FROM" | pnpm exec wrangler secret put EMAIL_FROM
+          echo "Brevo email secrets uploaded to the live site."
+
       - name: Check the website answers
         if: steps.check.outputs.ready == 'true'
         run: |

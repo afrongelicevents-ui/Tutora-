@@ -146,9 +146,16 @@ async function main() {
 		const day = now.toISOString().slice(0, 10);
 		const owners = await db.select({ id: user.id }).from(user).where(eq(user.role, 'owner'));
 		const key = process.env.RESEND_API_KEY?.trim();
-		const send = key
-			? createSendEmail({ apiKey: key, from: process.env.EMAIL_FROM, production: true })
-			: null;
+		const brevo = process.env.BREVO_API_KEY?.trim();
+		const send =
+			key || brevo
+				? createSendEmail({
+						apiKey: key,
+						brevoApiKey: brevo,
+						from: process.env.EMAIL_FROM,
+						production: true
+					})
+				: null;
 		let alerts = 0;
 		for (const a of needsAlert(usage)) {
 			const claimed = await db
