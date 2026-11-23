@@ -3,6 +3,7 @@ import { freshDb, hasTestDb } from './testing/db.ts';
 import { makeUser } from './testing/fixtures.ts';
 import type { DB } from './db/types.ts';
 import { personalTask } from './db/personal.schema.ts';
+import { personalActivity } from './db/schedule.schema.ts';
 import { eq } from 'drizzle-orm';
 import { addActivity } from './schedule.ts';
 import {
@@ -38,6 +39,11 @@ describe.skipIf(!hasTestDb)('personal planner (real database)', () => {
 		// timetable made the week before
 		await addActivity(db, s.id, { kind: 'school', label: '', days: [1, 2], start: 450, end: 810 });
 		await addActivity(db, s.id, { kind: 'sleep', label: '', days: [1, 2], start: 1290, end: 1440 });
+		// the database stamps "now"; move it back so the test does not depend on today's date
+		await db
+			.update(personalActivity)
+			.set({ createdAt: at(9, 7) })
+			.where(eq(personalActivity.studentId, s.id));
 		expect(
 			(
 				await addTask(
