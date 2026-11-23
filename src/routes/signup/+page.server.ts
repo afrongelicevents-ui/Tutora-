@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	if (locals.user) redirect(303, homeFor(locals.user.role));
 	// signing up from a tutor's page: show whose student they will be
 	const tutor = await activeTutorBySlug(locals.db, url.searchParams.get('tutor') ?? '');
-	return { tutorName: tutor?.tutorName ?? null };
+	return { tutorName: tutor?.tutorName ?? null, emailOn: emailEnabled };
 };
 
 export const actions: Actions = {

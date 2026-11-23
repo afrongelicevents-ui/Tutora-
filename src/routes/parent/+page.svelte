@@ -27,11 +27,13 @@
 	};
 	const first = $derived(data.cards[0]);
 	const one = $derived(data.cards.length === 1);
+	import InstallCard from '#lib/components/pwa/InstallCard.svelte';
 </script>
 
 <svelte:head><title>{m.v3_nav_home()} · Tutora</title></svelte:head>
 
 <div class="screen ui-page">
+	<InstallCard />
 	<Hero
 		title={hello}
 		lead={m.pf_lead()}

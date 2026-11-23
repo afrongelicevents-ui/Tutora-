@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ShareWhatsApp from '#lib/components/ShareWhatsApp.svelte';
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtMonth, fmtDay, fmtDate } from '#lib/tz.ts';
 	import { formatMoney } from '#lib/money.ts';
@@ -362,8 +363,15 @@
 		{#each data.payments as p (p.id)}
 			<li>
 				<span>{money(p.amountCents)} · {fmtDay(p.createdAt)}</span>
-				{#if p.receipt}<a href="/tutor/payments/{p.id}/receipt">{p.receipt}</a>{:else}<span
-						class={p.status === 'rejected' ? 'note' : 'warn-t small'}
+				{#if p.receipt}<a href="/tutor/payments/{p.id}/receipt">{p.receipt}</a><ShareWhatsApp
+						text={m.share_tutor_receipt({
+							tutor: data.user?.name ?? m.tutor_word(),
+							number: p.receipt,
+							amount: money(p.amountCents),
+							date: fmtDay(p.createdAt)
+						})}
+						path="/notifications"
+					/>{:else}<span class={p.status === 'rejected' ? 'note' : 'warn-t small'}
 						>{p.status === 'rejected' ? m.status_rejected() : m.status_waiting()}</span
 					>{/if}
 			</li>

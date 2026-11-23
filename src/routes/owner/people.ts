@@ -5,7 +5,7 @@ import { requireOwner } from '#lib/server/guards.ts';
 import { audit, setStudentSuspended } from '#lib/server/owner.ts';
 import { pageFrom, peopleList, searchFrom, type PeopleRole } from '#lib/server/owner-admin.ts';
 import { notifyUser } from '#lib/server/notify.ts';
-import { setPasswordFor, studentByEmail, tempPassword } from '#lib/server/account.ts';
+import { createResetLink, ResetLinkFail } from '#lib/server/reset-links.ts';
 import { user } from '#lib/server/db/auth.schema.ts';
 import { formObject, newEmailField as emailField } from '#lib/validation/auth.ts';
 import { m } from '#lib/paraglide/messages.js';
@@ -54,23 +54,51 @@ export async function suspendPerson({ locals, url, request }: RequestEvent) {
 	redirect(303, `${url.pathname}?${back}`);
 }
 
-/** A temporary password for a student or parent who forgot theirs (shown once). */
+/** What the owner sees after making a reset link: Copy and Share on WhatsApp. */
+function linkResult(origin: string, forId: string, r: Awaited<ReturnType<typeof createResetLink>>) {
+	const link = `${origin}/reset/${r.token}`;
+	const text = m.rl_wa_text({ name: r.name.split(' ')[0] || r.name, link });
+	const wa = `https://wa.me/${r.phone ?? ''}?text=${encodeURIComponent(text)}`;
+	return { resetLink: { for: forId, name: r.name, link, wa } };
+}
+
+/**
+ * "Reset password" on a person's card: a one-time link (24 hours) the owner copies or sends
+ * on WhatsApp. Nothing changes for the person until they use it.
+ */
+export async function makeResetLink({ locals, url, request }: RequestEvent) {
+	const me = requireOwner(locals.user, url);
+	const f = formObject(await request.formData());
+	const id = (f.id ?? '').trim();
+	if (!id) return fail(400, { error: 'err_generic' });
+	try {
+		const r = await createResetLink(locals.db, me.id, id);
+		return linkResult(url.origin, id, r);
+	} catch (e) {
+		if (e instanceof ResetLinkFail) return fail(400, { error: e.code, resetFor: id });
+		throw e;
+	}
+}
+
+/** "Reset a password" by email (any account but the owner's): the same one-time link. */
 export async function resetPassword({ locals, url, request }: RequestEvent) {
 	const me = requireOwner(locals.user, url);
 	const f = formObject(await request.formData());
 	if (!(f.email ?? '').trim()) return fail(400, { resetError: 'err_required' });
 	const email = emailField.safeParse(f.email ?? '');
 	if (!email.success) return fail(400, { resetError: 'err_email' });
-	// the person's password changes at once: the owner ticks "I'm sure" first
-	if (f.sure !== 'on') return fail(400, { resetError: 'err_tick_sure', resetEmail: email.data });
-	const s = await studentByEmail(locals.db, email.data);
-	if (!s) return fail(404, { resetError: 'owner_reset_none' });
-	const password = tempPassword();
-	if (!(await setPasswordFor({ auth: locals.auth, db: locals.db }, s.id, password)))
-		return fail(400, { resetError: 'owner_reset_none' });
-	// tell the account holder (by email, when email is switched on)
-	await notifyUser(locals.db, s.id, m.email_pw_reset_s(), m.email_pw_reset_b());
-	await audit(locals.db, me.id, 'password_reset', s.id, s.name);
-	// shown once to the owner; the student must change it at their next login
-	return { reset: { name: s.name, password } };
+	const [u] = await locals.db
+		.select({ id: user.id, role: user.role })
+		.from(user)
+		.where(eq(user.email, email.data.toLowerCase()));
+	if (!u || u.role === 'owner')
+		return fail(404, { resetError: 'owner_reset_none', resetEmail: email.data });
+	try {
+		const r = await createResetLink(locals.db, me.id, u.id);
+		return linkResult(url.origin, u.id, r);
+	} catch (e) {
+		if (e instanceof ResetLinkFail)
+			return fail(400, { resetError: e.code, resetEmail: email.data });
+		throw e;
+	}
 }

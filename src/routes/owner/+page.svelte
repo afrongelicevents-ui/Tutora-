@@ -97,11 +97,13 @@
 	);
 	const errors = $derived(data.usage?.meters.find((x) => x.key === 'limitErrors'));
 	const pct = (s: number) => `${Math.round(s * 100)}%`;
+	import InstallCard from '#lib/components/pwa/InstallCard.svelte';
 </script>
 
 <svelte:head><title>{m.ow_nav_overview()} · {m.ow_label()} · Tutora</title></svelte:head>
 
 <div class="oa">
+	<InstallCard />
 	<Head title={m.ow_nav_overview()} lead={m.ow_overview_lead()} icon="home" tone="navy" />
 	<Flash done={data.done} />
 

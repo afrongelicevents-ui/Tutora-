@@ -1937,7 +1937,7 @@ input[type='submit']:disabled {
 }
 .oa-progress {
 	position: fixed;
-	top: 0;
+	top: env(safe-area-inset-top, 0px);
 	left: 0;
 	z-index: 100;
 	height: 3px;
@@ -2499,4 +2499,22 @@ input[type='submit']:disabled {
 	.oa-hub a {
 		padding: 10px 14px;
 	}
+}
+
+/* Installed app on iPhone (status bar "black-translucent"): the page starts below the
+   notch, and a navy strip sits behind the clock and battery. In a normal browser tab the
+   inset is 0, so nothing changes there. */
+body {
+	padding-top: env(safe-area-inset-top, 0px);
+}
+body::before {
+	content: '';
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: env(safe-area-inset-top, 0px);
+	background: var(--navy);
+	z-index: 1000;
+	pointer-events: none;
 }

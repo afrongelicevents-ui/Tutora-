@@ -403,3 +403,49 @@ Family gift to the parent still open every child.
   the worker's memory for 5 minutes and cleared when the owner changes a pin in that
   worker (other workers follow within 5 minutes); each parent page adds one batch of five
   small queries for its children.
+
+## D131 — Tutora works with no email service (no domain yet) (2026-11-23)
+
+- **Email-off mode** = no `RESEND_API_KEY` in production (`emailEnabled` in auth.ts;
+  `EMAIL_OFF=1` forces it locally for tests). Then: sign-up logs the person straight in (no
+  email confirmation), and no page says "check your email" (/verify-email sends people to log
+  in). "Forgot password" says to ask the Tutora team on WhatsApp for a reset link. With an
+  email service set up, everything works as before.
+- **One-time reset links instead of emails.** The owner presses "Reset password" on any
+  person (students, parents, tutors, schoolteachers; not the owner's own account) and gets a
+  link to copy or send on WhatsApp (to the person's number when one is on file). Only a
+  SHA-256 hash of the link's secret is stored (`password_reset_link`); a link works once, for
+  24 hours, and a newer link replaces an older one. Using it sets the new password, signs the
+  person out everywhere, clears the wrong-password lockout and "change your password". Both
+  steps are in the activity log (never the secret); 30 links an hour per owner. The page
+  `/reset/[token]` is never cached and sends no referrer.
+- **Receipts and invoices go to the bell** (they already did) and every invoice and receipt
+  has "Share on WhatsApp": a short summary (who, what, amount, number) plus a link to the
+  page in Tutora, which needs a login. No PDF and no other private data goes into WhatsApp.
+
+## D130 — Tutora installs as an app (PWA) (2026-11-23)
+
+- **Manifest** (`static/manifest.webmanifest`): name "Tutora", the Tutora wordmark as the
+  icon (48–512 px, maskable 192 and 512 with the word inside the safe circle, a 180 px
+  iPhone icon), navy theme and splash colour. `display: standalone`: no browser bar, but
+  the phone's clock and battery stay visible ("fullscreen" would hide them, which suits
+  games, not a school app). It opens at `/app`, which sends each person to their own home
+  (student, parent, tutor, owner, schoolteacher) or to log in and back.
+- **Icons and iPhone splash screens** are made from the real wordmark font by
+  `scripts/pwa-assets.mjs` (re-run after a brand change); `src/lib/pwa.ts` lists the splash
+  sizes and a unit test checks every file exists at its size and stays small.
+- **Service worker** (`src/service-worker/index.ts`, rules in `src/lib/sw-policy.ts`):
+  keeps only the app shell (start-up code, root styles, fonts, a few icons, the offline
+  page; other built files the first time they load). Pages, page data, forms, `/api`,
+  files, receipts and payments are never stored: they always come from the network, and
+  with no connection a page shows "You're offline" instead of old private data. Each new
+  version replaces the old store. Registered only in the production build.
+- **No extra JavaScript on normal pages:** the worker registration and the install buttons
+  are one plain 2 KB script (`static/pwa.js`), so the low-data rule (D30) still holds.
+- **"Install Tutora"**: Android/Chrome uses the browser's real install prompt; iPhone shows
+  "Tap Share → Add to Home Screen" in a small sheet. It shows once on the home page right
+  after login (then never again on that phone), and always in the account menu
+  (Account / parent Settings / owner Settings) until the app is installed. A browser that
+  can't install shows the written steps there instead of a dead button.
+- **iPhone status bar** is navy ("black-translucent" plus a navy strip behind the clock);
+  pages start below the notch (`viewport-fit=cover` and `env(safe-area-inset-*)`).

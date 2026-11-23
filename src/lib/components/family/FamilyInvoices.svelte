@@ -2,6 +2,7 @@
 	import { m, t } from '#lib/i18n.ts';
 	import { fmtDay } from '#lib/tz.ts';
 	import { formatMoney } from '#lib/money.ts';
+	import ShareWhatsApp from '#lib/components/ShareWhatsApp.svelte';
 	/** The payer's Tutora invoices with the next step for each. */
 	type Inv = {
 		id: number;
@@ -11,12 +12,15 @@
 		status: string;
 		dueOn: Date | string;
 		rejectReason: string | null;
+		receiptNo?: number | null;
 	};
 	let {
 		invoices,
 		payHref,
 		receiptHref,
-		pilot = false
+		pilot = false,
+		plan = 'family',
+		sharePath
 	}: {
 		invoices: Inv[];
 		/** during the pilot nothing is due: no Pay buttons, no overdue warnings */
@@ -24,7 +28,28 @@
 		/** where "Pay" / "Upload proof" leads, given the invoice id */
 		payHref: (id: number) => string;
 		receiptHref: (id: number) => string;
+		/** which Tutora plan, for the WhatsApp summary */
+		plan?: 'family' | 'pro';
+		/** the page in Tutora the shared message links to */
+		sharePath: string;
 	} = $props();
+	const prefix = $derived(plan === 'pro' ? 'P' : 'T');
+	const planName = $derived(plan === 'pro' ? m.share_plan_pro() : m.share_plan_family());
+	function shareText(i: Inv) {
+		const amount = formatMoney(i.amountCents);
+		if (i.status === 'paid' && i.receiptNo)
+			return m.share_tutora_receipt({
+				plan: planName,
+				number: `${prefix}-${String(i.receiptNo).padStart(6, '0')}`,
+				amount
+			});
+		return m.share_tutora_invoice({
+			plan: planName,
+			number: `#${i.id}`,
+			amount,
+			date: fmtDay(new Date(i.dueOn))
+		});
+	}
 	const shown = $derived(invoices.filter((i) => i.status !== 'cancelled'));
 </script>
 
@@ -52,6 +77,9 @@
 				</p>
 				{#if i.status === 'rejected' && i.rejectReason}
 					<p class="small">{m.fb_rejected_why({ reason: i.rejectReason })}</p>
+				{/if}
+				{#if !(pilot && i.status !== 'paid' && i.status !== 'proof_sent')}
+					<ShareWhatsApp text={shareText(i)} path={sharePath} />
 				{/if}
 				{#if pilot && i.status !== 'paid' && i.status !== 'proof_sent'}
 					<p class="small">{m.fb_pilot_nothing_due()}</p>

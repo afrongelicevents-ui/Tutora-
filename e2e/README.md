@@ -3,22 +3,24 @@
 Real browsers, several real test accounts talking to each other, pressing the real buttons.
 Every flow runs twice: at phone size (390×844) and at desktop size (1280×800).
 
-| File                     | Flow                                                                                      |
-| ------------------------ | ----------------------------------------------------------------------------------------- |
-| `booking-payment.e2e.ts` | book → accept → lesson → Join link (room off) → mark done → pay → confirm → receipt       |
-| `homework.e2e.ts`        | set → hand in → mark with a score → feedback → progress → parent told                     |
-| `checkin.e2e.ts`         | check in → share → study → "How did it go?" → hourly job → parent sees it                 |
-| `planner.e2e.ts`         | task ticked → personal report → parent sees it only when shared                           |
-| `family-code.e2e.ts`     | student code → parent connects → parent sees only the shared areas                        |
-| `buddies.e2e.ts`         | under-13 code swap → each guardian approves → buddies; a decline tells both               |
-| `tutor-approval.e2e.ts`  | owner approves a waiting tutor → tutor told → appears in Find a tutor                     |
-| `owner.e2e.ts`           | approval rules, suspend / restore, hide / show a review, homepage texts                   |
-| `owner-pages.e2e.ts`     | every admin page, tabs / side sections, search, filters, paging, photos, etc.             |
-| `messages.e2e.ts`        | messages both ways, unread counts on both sides go back to zero after reading             |
-| `bell.e2e.ts`            | an event rings the bell → Notifications lists it → the bell is clear                      |
-| `tools.e2e.ts`           | Connected tools are shortcuts only (open the app), no sync address, Kahoot! on            |
-| `simplify.e2e.ts`        | room off by default, homework due time → late photo → parent sees, report PDF, help pages |
-| `pro.e2e.ts`             | Free tutor sees Pro + Upgrade → pays → owner confirms → Pro; reports; gifts               |
+| File                     | Flow                                                                                                                                                                       |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `booking-payment.e2e.ts` | book → accept → lesson → Join link (room off) → mark done → pay → confirm → receipt                                                                                        |
+| `homework.e2e.ts`        | set → hand in → mark with a score → feedback → progress → parent told                                                                                                      |
+| `checkin.e2e.ts`         | check in → share → study → "How did it go?" → hourly job → parent sees it                                                                                                  |
+| `planner.e2e.ts`         | task ticked → personal report → parent sees it only when shared                                                                                                            |
+| `family-code.e2e.ts`     | student code → parent connects → parent sees only the shared areas                                                                                                         |
+| `buddies.e2e.ts`         | under-13 code swap → each guardian approves → buddies; a decline tells both                                                                                                |
+| `tutor-approval.e2e.ts`  | owner approves a waiting tutor → tutor told → appears in Find a tutor                                                                                                      |
+| `owner.e2e.ts`           | approval rules, suspend / restore, hide / show a review, homepage texts                                                                                                    |
+| `owner-pages.e2e.ts`     | every admin page, tabs / side sections, search, filters, paging, photos, etc.                                                                                              |
+| `messages.e2e.ts`        | messages both ways, unread counts on both sides go back to zero after reading                                                                                              |
+| `bell.e2e.ts`            | an event rings the bell → Notifications lists it → the bell is clear                                                                                                       |
+| `no-email.e2e.ts`        | email off: sign-up straight in, owner reset link (once), receipt in bell + WhatsApp                                                                                        |
+| `tools.e2e.ts`           | Connected tools are shortcuts only (open the app), no sync address, Kahoot! on                                                                                             |
+| `pwa.e2e.ts`             | Installed app: manifest, `/app` opens each role's home, offline page, install card once + menu item (service worker itself: `scripts/pwa-check.mjs` on a production build) |
+| `simplify.e2e.ts`        | room off by default, homework due time → late photo → parent sees, report PDF, help pages                                                                                  |
+| `pro.e2e.ts`             | Free tutor sees Pro + Upgrade → pays → owner confirms → Pro; reports; gifts                                                                                                |
 
 ```sh
 # a database with the fake TEST data, and a dev server on it
@@ -70,3 +72,6 @@ Locally email counts as on (dev), so a new teacher confirms their email first: t
 - `farai@example.com`: Free tutor whose Pro payment proof waits in Owner → Money → Payments → Tutora Pro.
 - The Pro pilot switch is OFF in the test data so Free and Pro look different (it is ON on live).
 - `E2E_AUTH_DIR`: a separate folder for saved logins when two local servers are tested at once.
+
+`no-email.e2e.ts` needs a server started with `EMAIL_OFF=1` (as the published site runs
+without an email service); on a server with email on, its email-off checks are skipped.

@@ -51,11 +51,13 @@
 		return `${t(`done_${form.done}`)}${'receipt' in form && form.receipt ? ` ${form.receipt}` : ''}`;
 	});
 	const now = $derived(new Date(data.now));
+	import InstallCard from '#lib/components/pwa/InstallCard.svelte';
 </script>
 
 <svelte:head><title>{m.today_title()} · Tutora</title></svelte:head>
 
 <section class="screen">
+	<InstallCard />
 	<Hero
 		title={`${greeting}, ${first(data.name)}`}
 		lead={m.tt2_lead()}

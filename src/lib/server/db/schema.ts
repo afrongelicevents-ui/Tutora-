@@ -12,3 +12,4 @@ export * from './pro.schema';
 export * from './tests.schema';
 export * from './report.schema';
 export * from './recommend.schema';
+export * from './reset.schema';

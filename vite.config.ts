@@ -21,7 +21,10 @@ export default defineConfig({
 				mode: 'hash',
 				// one source of truth, with tests: src/lib/server/security.ts
 				directives: cspDirectives()
-			}
+			},
+			// the installed app's service worker (src/service-worker.ts) is registered by the
+			// root layout, and only in the production build: dev and the e2e tests run without it
+			serviceWorker: { register: false }
 		}),
 
 		paraglideVitePlugin({

@@ -210,3 +210,24 @@ The last column says what happened after the fix.
 | RT2 | Parent → child page → Tutors card                            | Same list for that child                                            | `recommendationsFor`                                            | wired |
 | RT3 | Child not covered by Tutora Family                           | Blurred preview, "Family" pill, Upgrade → /parent/plans, no names   | `childCovered`                                                  | wired |
 | RT4 | Owner → People → Tutors → Recommend first / Don't / Normally | Pinned first when matching; hidden never shown; logged              | `setRecommendMode`, `recommendModes`, `audit`                   | wired |
+
+## No email service (D131) — 2026-11-23
+
+| ID  | Page → element                                        | Should do                                                     | Backend                                                 | Now   |
+| --- | ----------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------- | ----- |
+| NE1 | `/signup` (email off)                                 | Straight into the account, no "check your email"              | `signUp`, `emailEnabled` (Better Auth: no verification) | wired |
+| NE2 | `/forgot-password` (email off)                        | "Ask the Tutora team on WhatsApp for a reset link" + Contact  | `emailEnabled`                                          | wired |
+| NE3 | `/verify-email` (email off)                           | Goes to log in (or where the person was going)                | `verify-email/+page.server.ts`                          | wired |
+| NE4 | Owner → People / Tutors → card → Reset password       | One-time link (24 h): Copy, Share on WhatsApp                 | `createResetLink` (reset-links.ts)                      | wired |
+| NE5 | Owner → Students / Parents → Reset a password (email) | The same link, by login email                                 | `resetPassword` (owner/people.ts)                       | wired |
+| NE6 | `/reset/[token]`                                      | New password once; others signed out; lockout cleared; logged | `readResetLink`, `useResetLink`                         | wired |
+| NE7 | Invoices and receipts (parent, student, tutor, owner) | Share on WhatsApp: summary + link to the page in Tutora       | ShareWhatsApp.svelte                                    | wired |
+
+## Installed app (D130) — 2026-11-23
+
+| ID   | Page → element                                           | Should do                                                                        | Backend                                       | Now   |
+| ---- | -------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------- | ----- |
+| PWA1 | Home screen icon → opens `/app?source=pwa`               | Own home page by role; logged out → login, then back to the own home             | `src/routes/app/+page.server.ts` (`homeFor`)  | wired |
+| PWA2 | Home page after login → "Get Tutora on your home screen" | Once per phone; Android: real install prompt; iPhone: Share → Add steps          | `static/pwa.js`, `InstallCard.svelte`         | wired |
+| PWA3 | Account / parent Settings / owner Settings → Install     | Button when the phone can install, written steps when not, hidden when installed | `static/pwa.js`, `InstallItem.svelte`         | wired |
+| PWA4 | Any page with no connection                              | "You're offline" page with Try again; never stored private pages                 | `src/service-worker/index.ts`, `sw-policy.ts` | wired |

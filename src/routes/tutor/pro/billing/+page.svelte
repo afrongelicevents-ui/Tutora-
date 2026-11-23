@@ -19,6 +19,8 @@
 			invoices={data.invoices}
 			payHref={(id) => `/tutor/pro/checkout?invoice=${id}`}
 			receiptHref={(id) => `/tutor/pro/billing/${id}/receipt`}
+			sharePath="/tutor/pro/billing"
+			plan="pro"
 		/>
 		<p><a class="ui-btn" href="/tutor/pro">{m.pro_pay_now()}</a></p>
 	</div>

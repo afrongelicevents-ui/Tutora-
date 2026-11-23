@@ -38,6 +38,11 @@ export const variables = defineEnvVars({
 			'Optional. Resend API key for sending emails. Without it the site works without emails: no email confirmation, no reminder or receipt emails.',
 		schema: optional
 	},
+	EMAIL_OFF: {
+		description:
+			'Local testing only: set to 1 to run as the published site does without an email service (no emails, no email confirmation).',
+		schema: optional
+	},
 	CRON_SECRET: {
 		description:
 			'Optional. Long random text; the hourly reminder job must send it. Reminders are off without it.',

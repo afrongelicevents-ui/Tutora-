@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { SPLASH } from '#lib/pwa.ts';
+	import { dev } from '$app/env';
 	import '#lib/styles/app.css';
 	import favicon from '#lib/assets/favicon.svg';
 	import Header from '#lib/components/Header.svelte';
@@ -55,8 +57,22 @@
 <svelte:head>
 	<link rel="icon" href={favicon} type="image/svg+xml" />
 	<link rel="manifest" href="/manifest.webmanifest" />
-	<link rel="apple-touch-icon" href="/icon-192.png" />
+	<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 	<meta name="theme-color" content="#0B2545" />
+	<!-- installed app: full screen, navy status bar, Tutora name and splash on iPhone -->
+	<meta name="mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="apple-mobile-web-app-title" content="Tutora" />
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+	<!-- service worker (production only) and the "Install Tutora" buttons: a tiny plain script -->
+	<script src="/pwa.js" defer data-sw={dev ? '0' : '1'}></script>
+	{#each SPLASH as [w, h, dw, dh, r] (w + 'x' + h)}
+		<link
+			rel="apple-touch-startup-image"
+			href="/splash/splash-{w}x{h}.png"
+			media="(device-width: {dw}px) and (device-height: {dh}px) and (-webkit-device-pixel-ratio: {r}) and (orientation: portrait)"
+		/>
+	{/each}
 </svelte:head>
 
 <a class="sr-only skip" href="#main">{m.skip_to_content()}</a>

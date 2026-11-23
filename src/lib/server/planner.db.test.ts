@@ -3,7 +3,7 @@ import { freshDb, hasTestDb } from './testing/db.ts';
 import { makeUser } from './testing/fixtures.ts';
 import type { DB } from './db/types.ts';
 import { personalTask } from './db/personal.schema.ts';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { addActivity } from './schedule.ts';
 import {
 	addGoal,
@@ -65,6 +65,13 @@ describe.skipIf(!hasTestDb)('personal planner (real database)', () => {
 			(await addTask(db, s.id, { title: 'x', minute: null, days: [], onlyToday: false }, mon)).ok
 		).toBe(false);
 
+		// the database stamps rows with the real clock: put them back to before the test's week
+		await db.execute(
+			sql`update personal_activity set created_at = '2026-11-09T00:00:00Z' where student_id = ${s.id}`
+		);
+		await db.execute(
+			sql`update personal_task set created_at = '2026-11-09T00:00:00Z' where student_id = ${s.id}`
+		);
 		let t = await today(db, s.id, mon);
 		// school + 2 tasks count; sleep is shown but not counted
 		expect(t.items.map((i) => i.kind).sort()).toEqual(['school', 'sleep', 'task', 'task']);
