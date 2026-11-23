@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { freshDb, hasTestDb } from './testing/db.ts';
 import { makeUser } from './testing/fixtures.ts';
 import type { DB } from './db/types.ts';
-import { personalTask } from './db/personal.schema.ts';
+import { personalGoal, personalTask } from './db/personal.schema.ts';
 import { personalActivity } from './db/schedule.schema.ts';
 import { eq } from 'drizzle-orm';
 import { addActivity } from './schedule.ts';
@@ -71,6 +71,10 @@ describe.skipIf(!hasTestDb)('personal planner (real database)', () => {
 			(await addTask(db, s.id, { title: 'x', minute: null, days: [], onlyToday: false }, mon)).ok
 		).toBe(false);
 
+		await db
+			.update(personalTask)
+			.set({ createdAt: at(16, 6) })
+			.where(eq(personalTask.studentId, s.id));
 		let t = await today(db, s.id, mon);
 		// school + 2 tasks count; sleep is shown but not counted
 		expect(t.items.map((i) => i.kind).sort()).toEqual(['school', 'sleep', 'task', 'task']);
@@ -104,6 +108,10 @@ describe.skipIf(!hasTestDb)('personal planner (real database)', () => {
 		const g = await addGoal(db, s.id, 'Go to bed by 9 PM', 2);
 		expect(g.ok).toBe(true);
 		expect((await addGoal(db, s.id, 'x', 9)).ok).toBe(false);
+		await db
+			.update(personalGoal)
+			.set({ createdAt: at(16, 6) })
+			.where(eq(personalGoal.studentId, s.id));
 		const gid = (await goals(db, s.id, mon)).active[0].id;
 		expect(await tickGoal(db, other.id, gid, true, mon)).toBe(false);
 		await tickGoal(db, s.id, gid, true, mon);
