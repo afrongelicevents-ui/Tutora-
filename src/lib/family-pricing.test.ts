@@ -48,3 +48,20 @@ describe('Tutora Family features', () => {
 		expect(lockedLocation('/student/check', 'check')).toBe('/student/upgrade?locked=check');
 	});
 });
+
+describe('per-term prices', () => {
+	it('charges $25 for the first child and 10% less for each other child', async () => {
+		const { termQuote, childTermCents } = await import('./family-pricing');
+		expect(childTermCents(0)).toBe(2500);
+		expect(childTermCents(1)).toBe(2250);
+		expect(termQuote(1).totalCents).toBe(2500);
+		expect(termQuote(3).totalCents).toBe(7000);
+	});
+	it('charges only the rest of the term when joining mid-term', async () => {
+		const { termQuote } = await import('./family-pricing');
+		const q = termQuote(2, 0.5);
+		expect(q.perChildCents).toEqual([1250, 1150]);
+		expect(q.totalCents).toBe(2400);
+		expect(q.fullCents).toBe(4750);
+	});
+});

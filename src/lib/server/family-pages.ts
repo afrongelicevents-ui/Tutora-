@@ -10,6 +10,7 @@ import {
 	FamilyBillingFail,
 	familyBilling,
 	hasPaymentDetails,
+	schoolTerms,
 	myInvoice,
 	startTrial,
 	submitProof,
@@ -21,6 +22,7 @@ import { hitLimit } from './rate-limit.ts';
 import { notifyOwners } from './notify.ts';
 import { receiptPdf } from './pdf.ts';
 import { familyFeatureFor, FAMILY_FEATURES, type FamilyFeature } from '../family-features.ts';
+import { billTerm } from '../terms.ts';
 
 type Role = 'parent' | 'student';
 
@@ -42,6 +44,15 @@ export async function familyLoad(event: RequestEvent, roles: Role[]) {
 		trialDays: s.trialDays,
 		pilot: s.pilotFreeTrial,
 		discounts: { discount3mPct: s.discount3mPct, discount6mPct: s.discount6mPct },
+		/** the school term a payment made now is for (same rule as the invoice) */
+		term: (() => {
+			const sub = b.subscription;
+			const now = new Date();
+			const from =
+				b.state.state === 'paid' && sub?.paidUntil && sub.status !== 'trial' ? sub.paidUntil : now;
+			const t = billTerm(schoolTerms(s), from);
+			return { name: t.name, start: t.start, end: t.end, fraction: t.fraction };
+		})(),
 		// only what a family needs to pay: never anything else from the settings
 		details: hasPaymentDetails(s)
 			? {

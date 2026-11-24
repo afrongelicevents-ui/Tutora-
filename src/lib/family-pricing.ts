@@ -1,5 +1,41 @@
 // Tutora Family prices (pure: used by the checkout page's live total and by the server).
-// 1st child $12 a month, 2nd and 3rd $8 each, 4th and more $10 each.
+// Paid per school term: $25 for the 1st child, 10% off ($22.50) for each other child.
+// A family joining mid-term pays only for the part of the term still to come.
+// (The monthly prices below are kept for invoices made before terms.)
+
+export const TERM_FIRST_CENTS = 2500;
+export const SIBLING_DISCOUNT_PCT = 10;
+
+/** term price in cents of the child in position `i` (0 = first child) */
+export function childTermCents(i: number): number {
+	const full = TERM_FIRST_CENTS;
+	return i <= 0 ? full : Math.round((full * (100 - SIBLING_DISCOUNT_PCT)) / 100);
+}
+
+export interface TermQuote {
+	children: number;
+	/** share of the term being paid for, 0..1 */
+	fraction: number;
+	/** the whole term, before any mid-term reduction */
+	fullCents: number;
+	totalCents: number;
+	/** per child (sums to totalCents) */
+	perChildCents: number[];
+}
+
+/** Rounded to 50 cents (easy to pay in cash), never below $1 a child. */
+export function termQuote(n: number, fraction = 1): TermQuote {
+	const f = Math.max(0, Math.min(1, Number.isFinite(fraction) ? fraction : 1));
+	const full = Array.from({ length: n }, (_, i) => childTermCents(i));
+	const perChild = full.map((c) => (f >= 1 ? c : Math.max(100, Math.round((c * f) / 50) * 50)));
+	return {
+		children: n,
+		fraction: f,
+		fullCents: full.reduce((a, b) => a + b, 0),
+		totalCents: perChild.reduce((a, b) => a + b, 0),
+		perChildCents: perChild
+	};
+}
 
 export const PERIODS = [1, 3, 6] as const;
 export type Period = (typeof PERIODS)[number];

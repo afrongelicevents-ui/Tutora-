@@ -27,7 +27,8 @@ import {
 import { perRequest } from './cache.ts';
 import { activeGift } from './plan-gifts.ts';
 import { planGift } from './db/pro.schema.ts';
-import { quote, dollars, isPeriod } from '../family-pricing.ts';
+import { termQuote, dollars, isPeriod } from '../family-pricing.ts';
+import { billTerm, DEFAULT_TERMS, cleanTerms, type SchoolTerm } from '../terms.ts';
 import { addDays } from '../tz.ts';
 import type { Notify } from './notify-core.ts';
 import type { ReceiptData } from './billing.ts';
@@ -75,6 +76,7 @@ export const DEFAULT_SETTINGS: TutoraSettings = {
 	notes: null,
 	discount3mPct: 0,
 	discount6mPct: 0,
+	termDates: null,
 	pilotFreeTrial: true,
 	trialDays: 30,
 	proPilotFreeTrial: true,
@@ -87,6 +89,12 @@ export function getTutoraSettings(db: DB): Promise<TutoraSettings> {
 		const [row] = await db.select().from(tutoraSettings).where(eq(tutoraSettings.id, 1));
 		return row ?? DEFAULT_SETTINGS;
 	});
+}
+
+/** The school terms families pay by: the owner's, or rough defaults until they are set. */
+export function schoolTerms(s: TutoraSettings): SchoolTerm[] {
+	const t = cleanTerms(s.termDates);
+	return t.length ? t : DEFAULT_TERMS;
 }
 
 /** true when the owner has filled in at least one way to pay */
@@ -106,6 +114,7 @@ export interface SettingsInput {
 	notes?: string | null;
 	discount3mPct?: number | string | null;
 	discount6mPct?: number | string | null;
+	termDates?: SchoolTerm[] | null;
 	pilotFreeTrial?: boolean;
 	trialDays?: number | string | null;
 }
@@ -130,6 +139,7 @@ export async function saveTutoraSettings(db: DB, v: SettingsInput) {
 		notes: clean(v.notes, 400),
 		discount3mPct: pct(v.discount3mPct),
 		discount6mPct: pct(v.discount6mPct),
+		...(v.termDates !== undefined ? { termDates: cleanTerms(v.termDates) } : {}),
 		pilotFreeTrial: !!v.pilotFreeTrial,
 		trialDays: Math.max(0, Math.min(90, Math.round(Number(v.trialDays) || 0))),
 		updatedAt: new Date()
@@ -473,12 +483,14 @@ export async function createCheckoutInvoice(
 	)
 		throw new FamilyBillingFail('fb_err_other_parent');
 	const settings = await getTutoraSettings(db);
-	const q = quote(chosen.length, period, settings);
 	const sub = await subscriptionFor(db, payerId);
 	const st = effectiveState(sub, now);
 	// a paid period continues from its end; otherwise it starts now
 	const periodStart =
 		st.state === 'paid' && sub.paidUntil && sub.status !== 'trial' ? sub.paidUntil : now;
+	// paid per school term: joining mid-term pays only for the rest of it
+	const term = billTerm(schoolTerms(settings), periodStart);
+	const q = termQuote(chosen.length, term.fraction);
 	// an unpaid invoice from before is replaced (one with proof sent stays for the owner)
 	await db
 		.update(tutoraInvoice)
@@ -495,12 +507,13 @@ export async function createCheckoutInvoice(
 			parentId: payerId,
 			subscriptionId: sub.id,
 			children,
-			periodMonths: q.period,
+			periodMonths: 3,
 			amountCents: q.totalCents,
-			discountPct: q.discountPct,
+			discountPct: 0,
 			status: 'due',
 			dueOn: addDays(now, 3),
 			periodStart,
+			periodEnd: term.coversUntil,
 			// made by the parent just now: no "due soon" reminder needed
 			remindedBefore: now
 		})
@@ -633,7 +646,9 @@ export async function confirmInvoice(
 				: inv.periodStart > now
 					? inv.periodStart
 					: now;
-		const paidUntil = addMonths(from, inv.periodMonths);
+		// per-term invoices run to the term's end (the next term's start); older ones by months
+		const paidUntil =
+			inv.periodEnd && inv.periodEnd > from ? inv.periodEnd : addMonths(from, inv.periodMonths);
 		const [paid] = await tx
 			.update(tutoraInvoice)
 			.set({ status: 'paid', receiptNo: n, confirmedBy: ownerId, confirmedAt: now, updatedAt: now })
@@ -779,7 +794,12 @@ export async function tutoraReceiptData(
 		amountCents: inv.inv.amountCents,
 		currency: 'USD',
 		covers: inv.inv.children.map((c) => ({
-			description: m.fb_receipt_line({ name: shortName(c.name), months }),
+			description: inv.inv.periodEnd
+				? m.fb_receipt_line_term({
+						name: shortName(c.name),
+						until: inv.inv.periodEnd.toISOString().slice(0, 10)
+					})
+				: m.fb_receipt_line({ name: shortName(c.name), months }),
 			amountCents: c.cents
 		})),
 		tutorName: 'Tutora',
@@ -829,17 +849,19 @@ export async function runFamilyBilling(db: DB, notify: Notify, now = new Date())
 			.where(and(eq(subscriptionChild.subscriptionId, sub.id), eq(subscriptionChild.active, true)))
 			.orderBy(asc(subscriptionChild.createdAt));
 		if (!kids.length) continue;
-		const q = quote(kids.length, sub.periodMonths, settings);
+		const term = billTerm(schoolTerms(settings), sub.paidUntil!);
+		const q = termQuote(kids.length, term.fraction);
 		await db.insert(tutoraInvoice).values({
 			parentId: sub.parentId,
 			subscriptionId: sub.id,
 			children: kids.map((k, i) => ({ id: k.id, name: k.name, cents: q.perChildCents[i] })),
-			periodMonths: q.period,
+			periodMonths: 3,
 			amountCents: q.totalCents,
-			discountPct: q.discountPct,
+			discountPct: 0,
 			status: 'due',
 			dueOn: sub.paidUntil!,
-			periodStart: sub.paidUntil!
+			periodStart: sub.paidUntil!,
+			periodEnd: term.coversUntil
 		});
 	}
 

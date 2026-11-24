@@ -44,7 +44,7 @@
 		<FamilyCheckout
 			children={data.children}
 			preselect={data.preselect}
-			discounts={data.discounts}
+			term={data.term}
 			error={form?.error ?? null}
 		/>
 		<FamilyPayDetails details={data.details} />

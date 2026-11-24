@@ -46,15 +46,6 @@
 			<li>{m.fb_price_3()}</li>
 		</ul>
 		<p class="small muted">{m.fb_price_eg()}</p>
-		{#if data.discounts.discount3mPct || data.discounts.discount6mPct}
-			<p class="small">
-				{#if data.discounts.discount3mPct}{m.fb_months_3()}: {m.fb_discount({
-						pct: data.discounts.discount3mPct
-					})}{/if}
-				{#if data.discounts.discount6mPct}
-					· {m.fb_months_6()}: {m.fb_discount({ pct: data.discounts.discount6mPct })}{/if}
-			</p>
-		{/if}
 	</article>
 
 	<div class="fam-actions">

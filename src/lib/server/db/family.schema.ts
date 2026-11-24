@@ -11,6 +11,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { user } from './auth.schema';
+import type { SchoolTerm } from '../../terms';
 
 const ts = (name: string) => timestamp(name, { withTimezone: true });
 const userRef = (name: string) =>
@@ -97,6 +98,8 @@ export const tutoraInvoice = pgTable(
 		dueOn: ts('due_on').notNull(),
 		/** the period this invoice pays for */
 		periodStart: ts('period_start').notNull(),
+		/** per-term invoices: paid access runs until here (older monthly invoices: null) */
+		periodEnd: ts('period_end'),
 		proofKey: text('proof_key'),
 		reference: text('reference'),
 		method: text('method', { enum: TUTORA_PAY_METHODS }),
@@ -132,6 +135,8 @@ export const tutoraSettings = pgTable('tutora_settings', {
 	notes: text('notes'),
 	discount3mPct: integer('discount_3m_pct').notNull().default(0),
 	discount6mPct: integer('discount_6m_pct').notNull().default(0),
+	/** Zimbabwe school terms Tutora Family is billed by (owner edits them each year) */
+	termDates: jsonb('term_dates').$type<SchoolTerm[]>(),
 	/** while on, every family has the full app for free (the pilot) */
 	pilotFreeTrial: boolean('pilot_free_trial').notNull().default(true),
 	trialDays: integer('trial_days').notNull().default(30),

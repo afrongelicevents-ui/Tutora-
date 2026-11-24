@@ -149,7 +149,8 @@ export function buildMessages(v: AiInput) {
 			role: 'system',
 			content:
 				'You write original school test questions for a tutor in Zimbabwe. Write NEW questions ' +
-				'only: never copy exam papers or textbooks. Simple, clear English. Answer with JSON ' +
+				'only that test what the notes teach: never copy questions from an exam paper or a book ' +
+				'word for word. Simple, clear English. Answer with JSON ' +
 				'only, no other text: {"questions":[{"type":"mcq","prompt":"...","choices":["...","...",' +
 				'"...","..."],"answer":0,"explanation":"..."},{"type":"short","prompt":"...","answers":' +
 				'["..."]},{"type":"written","prompt":"...","explanation":"what a good answer says"}]}. ' +

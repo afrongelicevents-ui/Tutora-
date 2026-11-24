@@ -29,6 +29,7 @@ import { fileLink } from './storage.ts';
 import { notifyUser } from './notify.ts';
 import { formObject } from '../validation/auth.ts';
 import type { Notify } from './notify-core.ts';
+import { parseTermLines } from '../terms.ts';
 
 export async function ownerFamilyLoad(event: RequestEvent) {
 	requireOwner(event.locals.user, event.url);
@@ -68,6 +69,7 @@ export function ownerFamilyActions() {
 			const f = formObject(await event.request.formData());
 			await saveTutoraSettings(event.locals.db, {
 				...f,
+				termDates: typeof f.termLines === 'string' ? parseTermLines(f.termLines) : undefined,
 				pilotFreeTrial: f.pilotFreeTrial === 'on'
 			});
 			return { familySaved: true };

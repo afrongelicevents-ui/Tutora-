@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { m } from '#lib/i18n.ts';
+	import { DEFAULT_TERMS, termLines, type SchoolTerm } from '#lib/terms.ts';
 	/** Owner: how families pay Tutora, discounts and the pilot free trial (?/familySettings). */
 	type S = {
 		ecocashNumber: string | null;
@@ -13,6 +14,7 @@
 		notes: string | null;
 		discount3mPct: number;
 		discount6mPct: number;
+		termDates?: SchoolTerm[] | null;
 		pilotFreeTrial: boolean;
 		trialDays: number;
 	};
@@ -97,6 +99,11 @@
 					max="50"
 					value={settings.discount6mPct}
 				/></label
+			>
+			<label class="ofset-terms"
+				><span>{m.fb_o_terms()}</span><textarea name="termLines" rows="5"
+					>{termLines(settings.termDates?.length ? settings.termDates : DEFAULT_TERMS)}</textarea
+				><span class="small muted">{m.fb_o_terms_hint()}</span></label
 			>
 			<label
 				><span>{m.fb_o_trial_days()}</span><input

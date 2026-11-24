@@ -218,6 +218,13 @@
       "when": 1795457647542,
       "tag": "0030_reset_links",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1795554868409,
+      "tag": "0031_school_terms",
+      "breakpoints": true
     }
   ]
 }

@@ -43,7 +43,7 @@
 			{#if form?.error}<p class="alert" role="alert">{t(form.error)}</p>{/if}
 			<FamilyProofForm invoiceId={inv.id} />
 		{:else if !data.access.active || data.access.reason === 'grace'}
-			<FamilyCheckout children={[]} self discounts={data.discounts} error={form?.error ?? null} />
+			<FamilyCheckout children={[]} self term={data.term} error={form?.error ?? null} />
 			<FamilyPayDetails details={data.details} />
 		{/if}
 		<h2 class="ui-serif">{m.fb_billing_title()}</h2>
