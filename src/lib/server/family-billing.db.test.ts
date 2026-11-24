@@ -27,6 +27,7 @@ import { createInvite, redeemInvite } from './family.ts';
 import { createChildAccount } from './family-accounts.ts';
 import { receiptPdf } from './pdf.ts';
 import { addDays } from '../tz.ts';
+import { harareDate } from '../terms.ts';
 import type { Notify } from './notify-core.ts';
 
 describe('effectiveState (no database)', () => {
@@ -85,8 +86,15 @@ describe.skipIf(!hasTestDb)('Tutora Family billing', () => {
 		}
 		return { parent, kids };
 	}
+	// school terms well after `now`: a checkout now pays for the whole first term
+	const TERMS = [
+		{ name: 'Term 1', start: '2030-01-10', end: '2030-04-10' },
+		{ name: 'Term 2', start: '2030-05-06', end: '2030-08-08' },
+		{ name: 'Term 3', start: '2030-09-09', end: '2030-12-05' }
+	];
+	const termStart = (i: number) => harareDate(TERMS[i].start).toISOString();
 	const pilot = (on: boolean, extra: Record<string, unknown> = {}) =>
-		saveTutoraSettings(db, { pilotFreeTrial: on, trialDays: 14, ...extra });
+		saveTutoraSettings(db, { pilotFreeTrial: on, trialDays: 14, termDates: TERMS, ...extra });
 
 	it('the pilot free trial (default ON) gives every family access', async () => {
 		const { parent, kids } = await family(1);
@@ -104,9 +112,9 @@ describe.skipIf(!hasTestDb)('Tutora Family billing', () => {
 		});
 		const adult = await makeUser(db, 'student', 'Adult Learner', null);
 		expect(await familyAccess(db, adult.id, now)).toMatchObject({ canPaySelf: true });
-		// the adult pays for themselves at the one-child price
+		// the adult pays for themselves at the one-child price: $25 a term
 		const inv = await createCheckoutInvoice(db, adult.id, [adult.id], 1, now);
-		expect(inv.amountCents).toBe(1200);
+		expect(inv.amountCents).toBe(2500);
 		// a child under 18 can't
 		await expect(createCheckoutInvoice(db, kids[0].id, [kids[0].id], 1, now)).rejects.toThrow(
 			'fb_err_no_children'
@@ -118,12 +126,13 @@ describe.skipIf(!hasTestDb)('Tutora Family billing', () => {
 		const { parent, kids } = await family(4);
 		const ids = kids.map((k) => k.id);
 		const one = await createCheckoutInvoice(db, parent.id, ids.slice(0, 1), 1, now);
-		expect(one.amountCents).toBe(1200);
+		expect(one.amountCents).toBe(2500);
 		const four = await createCheckoutInvoice(db, parent.id, ids, 1, now);
-		expect(four.amountCents).toBe(3800);
+		expect(four.amountCents).toBe(9250); // 25 + 3 × 22.50 (10% off each other child)
+		expect(four.periodEnd?.toISOString()).toBe(termStart(1));
 		const three = await createCheckoutInvoice(db, parent.id, ids.slice(0, 3), 3, now);
-		expect(three.amountCents).toBe(7560); // 28 × 3 − 10%
-		expect(three.discountPct).toBe(10);
+		expect(three.amountCents).toBe(7000); // per term: the Pro discounts don't apply
+		expect(three.discountPct).toBe(0);
 		// a new checkout replaces the unpaid one
 		const [old] = await db.select().from(tutoraInvoice).where(eq(tutoraInvoice.id, four.id));
 		expect(old.status).toBe('cancelled');
@@ -149,7 +158,7 @@ describe.skipIf(!hasTestDb)('Tutora Family billing', () => {
 			3,
 			now
 		);
-		expect(inv.amountCents).toBe(6000);
+		expect(inv.amountCents).toBe(4750);
 		const owners: string[] = [];
 		await submitProof(
 			db,
@@ -178,7 +187,8 @@ describe.skipIf(!hasTestDb)('Tutora Family billing', () => {
 		});
 		const r = await confirmInvoice(db, owner.id, inv.id, notify, now);
 		expect(r.inv.status).toBe('paid');
-		expect(r.paidUntil.toISOString()).toBe(addMonths(now, 3).toISOString());
+		// the term runs until the next one starts (the holiday is included)
+		expect(r.paidUntil.toISOString()).toBe(termStart(1));
 		expect(sent.at(-1)?.to).toBe(parent.id);
 		// can't be confirmed twice
 		await expect(confirmInvoice(db, owner.id, inv.id, notify, now)).rejects.toThrow();
@@ -189,7 +199,7 @@ describe.skipIf(!hasTestDb)('Tutora Family billing', () => {
 		expect(rec?.number).toMatch(/^T-\d{6}$/);
 		expect(rec?.tutorName).toBe('Tutora');
 		expect(rec?.covers).toHaveLength(2);
-		expect(rec?.covers.reduce((a, c) => a + c.amountCents, 0)).toBe(6000);
+		expect(rec?.covers.reduce((a, c) => a + c.amountCents, 0)).toBe(4750);
 		expect(await tutoraReceiptData(db, inv.id, other.id)).toBeNull();
 		const pdf = await receiptPdf(rec!);
 		expect(pdf.byteLength).toBeGreaterThan(500);
@@ -235,7 +245,8 @@ describe.skipIf(!hasTestDb)('Tutora Family billing', () => {
 		await runFamilyBilling(db, notify, at(-5));
 		const [next] = await invoices();
 		expect(next.dueOn.toISOString()).toBe(paidUntil.toISOString());
-		expect(next.amountCents).toBe(1200);
+		expect(next.amountCents).toBe(2500);
+		expect(next.periodEnd?.toISOString()).toBe(termStart(2));
 		expect(mine()).toBe(before);
 		await runFamilyBilling(db, notify, at(-5));
 		expect(await invoices()).toHaveLength(1);
@@ -283,10 +294,10 @@ describe.skipIf(!hasTestDb)('Tutora Family billing', () => {
 		expect(
 			(await db.select().from(tutoraInvoice).where(eq(tutoraInvoice.parentId, parent.id))).length
 		).toBe(2);
-		// paying the overdue invoice later opens everything again, from that day
+		// paying the overdue invoice later opens everything again, to the end of that term
 		const late = at(10);
 		const r = await confirmInvoice(db, owner.id, next.id, notify, late);
-		expect(r.paidUntil.toISOString()).toBe(addMonths(late, 1).toISOString());
+		expect(r.paidUntil.toISOString()).toBe(termStart(2));
 		expect((await familyAccess(db, kids[0].id, late)).active).toBe(true);
 	});
 
