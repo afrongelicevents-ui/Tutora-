@@ -49,9 +49,7 @@
 		{/if}
 		<div class="rem">
 			{#if data.toCheck}<a href="/tutor/homework">{m.td_mark({ n: data.toCheck })} →</a>{/if}
-			{#if data.toConfirm}<a href="/tutor/payments#confirm"
-					>{toConfirm(data.toConfirm)} →</a
-				>{/if}
+			{#if data.toConfirm}<a href="/tutor/payments#confirm">{toConfirm(data.toConfirm)} →</a>{/if}
 		</div>
 	</section>
 	{#if err('')}<p class="alert" role="alert">{err('')}</p>{/if}
