@@ -1,0 +1,79 @@
+name: Daily backup
+
+# Every night: a full copy of the LIVE database, ENCRYPTED, kept for 30 days as a download on
+# this workflow's runs (Actions → Daily backup → a run → Artifacts). The repository is public,
+# so the copy is locked with scripts/deploy/backup.pub.pem: only the owner's private key
+# (tutora-backup-private-key.pem, kept safe outside GitHub) can open it. How to restore:
+# docs/BACKUPS.md. Free: no Cloudflare or Neon limits are used beyond one short database read.
+
+on:
+  schedule:
+    - cron: '23 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check secrets are set
+        id: check
+        env:
+          NEON: ${{ secrets.NEON_API_KEY }}
+        run: |
+          if [ -z "$NEON" ]; then
+            echo "::notice::Backups not set up yet (NEON_API_KEY missing). Skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v5
+        if: steps.check.outputs.ready == 'true'
+        with:
+          ref: main
+      - uses: actions/setup-node@v5
+        if: steps.check.outputs.ready == 'true'
+        with:
+          node-version: 22
+      - name: Find the live database
+        if: steps.check.outputs.ready == 'true'
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+        run: node scripts/deploy/neon.mjs
+      - name: Copy and lock the database
+        if: steps.check.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          umask 077
+          stamp=$(date -u +%Y-%m-%d)
+          mkdir -p out
+          # Postgres 17 tools, same version as the Neon database
+          docker run --rm -e PGURL="$DATABASE_URL" -v "$PWD/out:/out" postgres:17 \
+            sh -c 'pg_dump --format=custom --no-owner --no-privileges "$PGURL" > /out/db.dump'
+          size=$(stat -c%s out/db.dump)
+          [ "$size" -gt 1000 ] || { echo "::error::The backup is suspiciously small ($size bytes)."; exit 1; }
+          # a fresh random key per backup, itself locked with the owner's public key
+          openssl rand -out out/key.bin 32
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in out/db.dump -out "out/tutora-$stamp.dump.enc" -pass file:out/key.bin
+          openssl pkeyutl -encrypt -pubin -inkey scripts/deploy/backup.pub.pem \
+            -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 \
+            -in out/key.bin -out "out/tutora-$stamp.key.enc"
+          rm -f out/db.dump out/key.bin
+          echo "STAMP=$stamp" >> "$GITHUB_ENV"
+          echo "Backup made and locked: $((size / 1024)) KB before locking."
+          { echo "## Tutora backup $stamp"; echo ""; echo "Locked copy of the live database, kept 30 days. Restore: docs/BACKUPS.md."; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: steps.check.outputs.ready == 'true'
+        with:
+          name: tutora-backup-${{ env.STAMP }}
+          path: |
+            out/*.dump.enc
+            out/*.key.enc
+          retention-days: 30
+          if-no-files-found: error
