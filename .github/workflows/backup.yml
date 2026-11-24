@@ -41,6 +41,7 @@ jobs:
         if: steps.check.outputs.ready == 'true'
         with:
           node-version: 22
+          package-manager-cache: false
       - name: Find the live database
         if: steps.check.outputs.ready == 'true'
         env:
