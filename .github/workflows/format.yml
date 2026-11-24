@@ -1,0 +1,30 @@
+name: Format code
+
+# Run by hand on a branch (Actions → Format code → Run workflow): tidies the code layout with
+# Prettier and commits the result to that branch. Handy when working without a computer.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format
+      - name: Commit if anything changed
+        run: |
+          if git diff --quiet; then echo "Already tidy."; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "Format code"
+          git push
