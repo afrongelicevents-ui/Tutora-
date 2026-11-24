@@ -5,7 +5,7 @@
 	import { shortName } from '#lib/names.ts';
 	/** Choose children; paid per school term. The total updates as you choose (works without JS). */
 	type Child = { id: string; name: string; covered: boolean; elsewhere: boolean };
-	type Term = { name: string; start: string; end: string; fraction: number };
+	type Term = { name: string; start: string; end: string; fraction: number; restFree?: boolean };
 	let {
 		children,
 		term,
@@ -73,7 +73,9 @@
 		<p class="small muted">
 			{term.fraction < 1
 				? m.fb_term_part({ pct: Math.round(term.fraction * 100) })
-				: m.fb_term_full()}
+				: term.restFree
+					? m.fb_term_rest_free()
+					: m.fb_term_full()}
 		</p>
 		<input type="hidden" name="period" value="3" />
 	</div>

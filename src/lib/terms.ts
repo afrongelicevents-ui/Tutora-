@@ -67,7 +67,12 @@ export interface BillTerm {
 	coversUntil: Date;
 	/** share of the term still to come, 0..1: a family joining mid-term pays only for the rest */
 	fraction: number;
+	/** joined near the end of a term: the rest of that term comes free with the next one */
+	restFree?: boolean;
 }
+
+/** with less than this share of a term left, the next term is billed (the rest is free) */
+export const NEAR_END = 0.25;
 
 /**
  * The term a payment made from `from` is for: the term running then (only the part still to
@@ -85,6 +90,14 @@ export function billTerm(terms: SchoolTerm[], from: Date): BillTerm {
 		if (from > start) {
 			if (from >= end) continue; // in the holiday after this term: bill the next one
 			fraction = (end.getTime() - from.getTime()) / (end.getTime() - start.getTime());
+			// near the end: pay for the next term in full, the rest of this one is free
+			if (fraction < NEAR_END && list[i + 1]) {
+				const n = list[i + 1];
+				const after = list[i + 2]
+					? harareDate(list[i + 2].start)
+					: new Date(harareDate(n.end).getTime() + 7 * DAY);
+				return { ...n, coversUntil: after, fraction: 1, restFree: true };
+			}
 		}
 		return { name: t.name, start: t.start, end: t.end, coversUntil: next, fraction };
 	}

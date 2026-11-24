@@ -3370,6 +3370,7 @@
 	"fb_term_title": "School term",
 	"fb_term_dates": "{name}: {start} to {end}",
 	"fb_term_part": "You join mid-term, so you pay only for the part still to come ({pct}% of the term).",
+	"fb_term_rest_free": "This term is nearly over, so you pay for the next term and the rest of this one is free.",
 	"fb_term_full": "You pay for the whole term. Access runs until the next term starts.",
 	"fb_o_terms": "School terms (one per line: name, start, end)",
 	"fb_o_terms_hint": "Families pay per term. Example: Term 1 2027, 2027-01-12, 2027-04-09. Check the dates each year.",

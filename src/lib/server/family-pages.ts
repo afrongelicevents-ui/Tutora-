@@ -51,7 +51,13 @@ export async function familyLoad(event: RequestEvent, roles: Role[]) {
 			const from =
 				b.state.state === 'paid' && sub?.paidUntil && sub.status !== 'trial' ? sub.paidUntil : now;
 			const t = billTerm(schoolTerms(s), from);
-			return { name: t.name, start: t.start, end: t.end, fraction: t.fraction };
+			return {
+				name: t.name,
+				start: t.start,
+				end: t.end,
+				fraction: t.fraction,
+				restFree: !!t.restFree
+			};
 		})(),
 		// only what a family needs to pay: never anything else from the settings
 		details: hasPaymentDetails(s)

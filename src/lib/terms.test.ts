@@ -22,6 +22,13 @@ describe('school terms', () => {
 		expect(t.fraction).toBeLessThan(0.6);
 	});
 
+	it('near the end of a term, bills the next term and the rest is free', () => {
+		const t = billTerm(terms, harareDate('2027-04-01'));
+		expect(t.name).toBe('Term 2');
+		expect(t.fraction).toBe(1);
+		expect(t.restFree).toBe(true);
+	});
+
 	it('bills the next term during the holiday', () => {
 		const t = billTerm(terms, harareDate('2027-04-20'));
 		expect(t.name).toBe('Term 2');
