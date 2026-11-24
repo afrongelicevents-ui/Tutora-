@@ -54,8 +54,8 @@ jobs:
           umask 077
           stamp=$(date -u +%Y-%m-%d)
           mkdir -p out
-          # Postgres 17 tools, same version as the Neon database
-          docker run --rm -e PGURL="$DATABASE_URL" -v "$PWD/out:/out" postgres:17 \
+          # Postgres 18 tools, same version as the Neon database (pg_dump must not be older)
+          docker run --rm -e PGURL="$DATABASE_URL" -v "$PWD/out:/out" postgres:18 \
             sh -c 'pg_dump --format=custom --no-owner --no-privileges "$PGURL" > /out/db.dump'
           size=$(stat -c%s out/db.dump)
           [ "$size" -gt 1000 ] || { echo "::error::The backup is suspiciously small ($size bytes)."; exit 1; }
