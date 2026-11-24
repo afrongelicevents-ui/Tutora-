@@ -32,3 +32,12 @@ export function lockedLocation(pathname: string, feature: FamilyFeature) {
 		? `/parent/plans?locked=${feature}`
 		: `/student/upgrade?locked=${feature}`;
 }
+
+/** Marks links to Tutora Family pages (`data-fam`), for the free level's "Tutora Family" label. */
+export function labelFamilyLinks(html: string, label: string): string {
+	const safe = label.replace(/[&<>"']/g, '');
+	return html.replace(/<a\b([^>]*?)\shref="(\/[^"]*)"/g, (all, before: string, href: string) => {
+		if (before.includes('data-fam') || !familyFeatureFor(href.split(/[?#]/)[0])) return all;
+		return `<a${before} data-fam="${safe}" href="${href}"`;
+	});
+}

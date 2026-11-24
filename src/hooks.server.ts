@@ -12,7 +12,8 @@ import { paraglideMiddleware } from '#lib/paraglide/server.js';
 import { isAllowedAuthPath, securityHeaders } from '#lib/server/security.ts';
 import { isRole } from '#lib/roles.ts';
 import { areaAccess } from '#lib/server/guards.ts';
-import { familyFeatureFor, lockedLocation } from '#lib/family-features.ts';
+import { familyFeatureFor, labelFamilyLinks, lockedLocation } from '#lib/family-features.ts';
+import { m } from '#lib/i18n.ts';
 import { familyAccess } from '#lib/server/family-billing.ts';
 import { parentFamilyGate } from '#lib/server/family-gate.ts';
 
@@ -152,10 +153,21 @@ const handlePublicCache: Handle = async ({ event, resolve }) => {
 	return keepPage(key, await resolve(event));
 };
 
+/** A student on the free level sees "Tutora Family" on links to paid pages before tapping. */
+const handleFamilyLabels: Handle = async ({ event, resolve }) => {
+	const u = event.locals.user;
+	if (!u || u.role !== 'student' || !event.url.pathname.startsWith('/student'))
+		return resolve(event);
+	if ((await familyAccess(event.locals.db, u.id)).active) return resolve(event);
+	const label = m.fb_family_pill();
+	return resolve(event, { transformPageChunk: ({ html }) => labelFamilyLinks(html, label) });
+};
+
 export const handle: Handle = sequence(
 	handlePublicCache,
 	handleHeaders,
 	handleDb,
 	handleParaglide,
-	handleAuth
+	handleAuth,
+	handleFamilyLabels
 );
