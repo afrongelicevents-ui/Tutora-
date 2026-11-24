@@ -36,6 +36,7 @@
 	const py = (v: number) => 130 - (v / maxT) * 110;
 	const line = $derived(trend.map((x, i) => `${i ? 'L' : 'M'}${px(i)},${py(x.total)}`).join(' '));
 	const area = $derived(`${line} L${px(5)},130 L${px(0)},130 Z`);
+	const nPay = (n: number) => (n === 1 ? m.payments_count_one() : m.payments_count({ n }));
 </script>
 
 <svelte:head><title>{m.v3_nav_earnings()} · Tutora</title></svelte:head>
@@ -179,7 +180,7 @@
 				{#each data.perStudent as x (x.id)}
 					<li>
 						<a class="who" href="/tutor/students/{x.id}"
-							>{x.name}<span class="note block">{m.payments_count({ n: x.count })}</span></a
+							>{x.name}<span class="note block">{nPay(x.count)}</span></a
 						>
 						<strong>{money(x.total)}</strong>
 					</li>
@@ -290,7 +291,7 @@
 				<li>
 					<span>{fmtMonth(fromLocal(mo.month + '-15', 600))}</span><span
 						><strong>{formatMoney(mo.total, mo.currency)}</strong>
-						<span class="note">({m.payments_count({ n: mo.count })})</span></span
+						<span class="note">({nPay(mo.count)})</span></span
 					>
 				</li>
 			{:else}
@@ -304,7 +305,7 @@
 				<li>
 					<span>{y.year}</span><span
 						><strong>{formatMoney(y.total, y.currency)}</strong>
-						<span class="note">({m.payments_count({ n: y.count })})</span></span
+						<span class="note">({nPay(y.count)})</span></span
 					>
 				</li>
 			{:else}

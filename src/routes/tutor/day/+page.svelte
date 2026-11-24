@@ -20,6 +20,7 @@
 	const pct = $derived(data.stats.pct ?? 0);
 	const err = (where: string) =>
 		form && 'error' in form && (form.where ?? '') === where ? t(form.error as string) : null;
+	const toConfirm = (n: number) => (n === 1 ? m.td_confirm_one() : m.td_confirm({ n }));
 </script>
 
 <svelte:head><title>{m.td_title()} · Tutora</title></svelte:head>
@@ -49,7 +50,7 @@
 		<div class="rem">
 			{#if data.toCheck}<a href="/tutor/homework">{m.td_mark({ n: data.toCheck })} →</a>{/if}
 			{#if data.toConfirm}<a href="/tutor/payments#confirm"
-					>{m.td_confirm({ n: data.toConfirm })} →</a
+					>{toConfirm(data.toConfirm)} →</a
 				>{/if}
 		</div>
 	</section>
